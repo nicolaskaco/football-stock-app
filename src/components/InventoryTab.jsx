@@ -26,7 +26,7 @@ export const InventoryTab = ({ inventory, saveInventory, setShowModal }) => {
               }} 
             />
           )} 
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-900"
         >
           <Plus className="w-5 h-5" />
           Add Item
