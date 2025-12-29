@@ -11,8 +11,8 @@ export const LoginView = ({ onLogin }) => {
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <Package className="w-16 h-16 text-blue-600 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-800">Football Club</h1>
-          <p className="text-gray-600">Stock Management System</p>
+          <h1 className="text-3xl font-bold text-gray-800">Club Atlético Peñarol</h1>
+          <p className="text-gray-600">Aplicación para administrar la Ropa</p>
         </div>
         <div className="flex gap-2 mb-6">
           <button 

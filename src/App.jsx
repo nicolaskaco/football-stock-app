@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { LoginView } from './components/LoginView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { EmployeeView } from './components/EmployeeView';
-import { storage } from './utils/storage';
+import { database } from './utils/database';
 
 const TestComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
-    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol 2026
+    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol 2026 -5
   </div>
 );
 
@@ -22,35 +22,35 @@ const App = () => {
     loadData();
   }, []);
 
-  const loadData = () => {
+  const loadData = async () => {
     try {
-      const empData = storage.get('employees');
-      const invData = storage.get('inventory');
-      const distData = storage.get('distributions');
+      const [empData, invData, distData] = await Promise.all([
+        database.getEmployees(),
+        database.getInventory(),
+        database.getDistributions()
+      ]);
       
-      if (empData) setEmployees(empData);
-      if (invData) setInventory(invData);
-      if (distData) setDistributions(distData);
+      setEmployees(empData || []);
+      setInventory(invData || []);
+      setDistributions(distData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     }
     setLoading(false);
   };
 
-  const saveEmployees = (data) => {
+  const saveEmployees = async (data) => {
     setEmployees(data);
-    storage.set('employees', data);
+    // Data is saved via individual operations in components
   };
 
-  const saveInventory = (data) => {
+  const saveInventory = async (data) => {
     setInventory(data);
-    storage.set('inventory', data);
-    storage.checkLowStock(data);
+    await database.checkLowStock();
   };
 
-  const saveDistributions = (data) => {
+  const saveDistributions = async (data) => {
     setDistributions(data);
-    storage.set('distributions', data);
   };
 
   const handleLogin = (username, password, isAdmin) => {
@@ -63,7 +63,7 @@ const App = () => {
       setCurrentView('dashboard');
     } else if (!isAdmin) {
       const employee = employees.find(
-        e => e.govId === username && e.id === password
+        e => e.gov_id === username && e.id === password
       );
       if (employee) {
         setCurrentUser({ ...employee, isAdmin: false });
@@ -104,9 +104,7 @@ const App = () => {
           inventory={inventory}
           distributions={distributions}
           onLogout={handleLogout}
-          saveEmployees={saveEmployees}
-          saveInventory={saveInventory}
-          saveDistributions={saveDistributions}
+          onDataChange={loadData}
         />
       )}
       {currentView === 'employee-view' && (

@@ -5,13 +5,13 @@ export const ReportsTab = ({ distributions, employees, inventory }) => {
   const [selectedEmployee, setSelectedEmployee] = useState('');
 
   const employeeDistributions = selectedEmployee 
-    ? distributions.filter(d => d.employeeId === selectedEmployee) 
+    ? distributions.filter(d => d.employee_id === selectedEmployee) 
     : [];
   const selectedEmp = employees.find(e => e.id === selectedEmployee);
 
   const allDistributions = employees.map(emp => ({
     employee: emp,
-    distributions: distributions.filter(d => d.employeeId === emp.id)
+    distributions: distributions.filter(d => d.employee_id === emp.id)
   }));
 
   const monthlyStats = distributions.reduce((acc, dist) => {
@@ -25,7 +25,7 @@ export const ReportsTab = ({ distributions, employees, inventory }) => {
       acc[item.category] = { total: 0, lowStock: 0 };
     }
     acc[item.category].total += item.quantity;
-    if (item.quantity <= item.minStock) {
+    if (item.quantity <= item.min_stock) {
       acc[item.category].lowStock += 1;
     }
     return acc;
@@ -54,7 +54,7 @@ export const ReportsTab = ({ distributions, employees, inventory }) => {
             onChange={(e) => setSelectedEmployee(e.target.value)} 
             className="mb-6 px-4 py-2 border rounded-lg"
           >
-            <option value="">Select Employee</option>
+            <option value="">Seleccione Funcionario</option>
             {employees.map(emp => (
               <option key={emp.id} value={emp.id}>{emp.name}</option>
             ))}
@@ -62,27 +62,27 @@ export const ReportsTab = ({ distributions, employees, inventory }) => {
           {selectedEmp && (
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-xl font-bold mb-4">
-                {selectedEmp.name} - Distribution History
+                {selectedEmp.name} - Historia Ropa Entregada
               </h3>
               <div className="mb-4 text-sm text-gray-600">
-                <p>Role: {selectedEmp.role}</p>
-                <p>Preferred Sizes: Upper {selectedEmp.upperSize}, Lower {selectedEmp.lowerSize}</p>
-                <p>Total Items Received: {employeeDistributions.length}</p>
+                <p>Rol: {selectedEmp.role}</p>
+                <p>Talles preferido: Superior {selectedEmp.upper_size}, Inferior {selectedEmp.lower_size}</p>
+                <p>Total ropa entregada: {employeeDistributions.length}</p>
               </div>
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Date</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Item</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Size</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Qty</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Condition</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Fecha</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Tipo de Ropa</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Talle</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Cantidad</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Condición</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {employeeDistributions.map(dist => {
-                    const item = inventory.find(i => i.id === dist.itemId);
+                    const item = inventory.find(i => i.id === dist.item_id);
                     return (
                       <tr key={dist.id}>
                         <td className="px-4 py-2 text-sm">{dist.date}</td>
@@ -91,7 +91,7 @@ export const ReportsTab = ({ distributions, employees, inventory }) => {
                         <td className="px-4 py-2 text-sm">{dist.quantity}</td>
                         <td className="px-4 py-2 text-sm">{dist.condition}</td>
                         <td className="px-4 py-2 text-sm">
-                          {dist.returnDate ? `Returned ${dist.returnDate}` : 'Active'}
+                          {dist.return_date ? `Returned ${dist.return_date}` : 'Active'}
                         </td>
                       </tr>
                     );
@@ -123,10 +123,10 @@ export const ReportsTab = ({ distributions, employees, inventory }) => {
                   <td className="px-4 py-2 text-sm">{employee.role}</td>
                   <td className="px-4 py-2 text-sm">{dists.length}</td>
                   <td className="px-4 py-2 text-sm">
-                    {dists.filter(d => !d.returnDate).length}
+                    {dists.filter(d => !d.return_date).length}
                   </td>
                   <td className="px-4 py-2 text-sm">
-                    {dists.filter(d => d.returnDate).length}
+                    {dists.filter(d => d.return_date).length}
                   </td>
                 </tr>
               ))}

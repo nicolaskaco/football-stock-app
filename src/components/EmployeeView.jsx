@@ -2,9 +2,9 @@ import React from 'react';
 import { Package } from 'lucide-react';
 
 export const EmployeeView = ({ employee, distributions, inventory, onLogout }) => {
-  const myDistributions = distributions.filter(d => d.employeeId === employee.id);
-  const activeDistributions = myDistributions.filter(d => !d.returnDate);
-  const returnedDistributions = myDistributions.filter(d => d.returnDate);
+  const myDistributions = distributions.filter(d => d.employee_id === employee.id);
+  const activeDistributions = myDistributions.filter(d => !d.return_date);
+  const returnedDistributions = myDistributions.filter(d => d.return_date);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -28,9 +28,9 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex items-start gap-4">
-            {employee.photoUrl ? (
+            {employee.photo_url ? (
               <img 
-                src={employee.photoUrl} 
+                src={employee.photo_url} 
                 alt={employee.name} 
                 className="w-20 h-20 rounded-full object-cover" 
               />
@@ -45,7 +45,7 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
               <h2 className="text-2xl font-bold text-gray-800">{employee.name}</h2>
               <p className="text-gray-600">{employee.role}</p>
               <div className="mt-2 text-sm text-gray-600">
-                <p>Preferred Sizes: Upper {employee.upperSize}, Lower {employee.lowerSize}</p>
+                <p>Preferred Sizes: Upper {employee.upper_size}, Lower {employee.lower_size}</p>
                 <p>Total Items Received: {myDistributions.length}</p>
                 <p>Currently Holding: {activeDistributions.length} items</p>
               </div>
@@ -71,7 +71,7 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
                 </thead>
                 <tbody className="divide-y">
                   {activeDistributions.map(dist => {
-                    const item = inventory.find(i => i.id === dist.itemId);
+                    const item = inventory.find(i => i.id === dist.item_id);
                     return (
                       <tr key={dist.id}>
                         <td className="px-4 py-2 text-sm">{dist.date}</td>
@@ -106,11 +106,11 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
                 </thead>
                 <tbody className="divide-y">
                   {returnedDistributions.map(dist => {
-                    const item = inventory.find(i => i.id === dist.itemId);
+                    const item = inventory.find(i => i.id === dist.item_id);
                     return (
                       <tr key={dist.id}>
                         <td className="px-4 py-2 text-sm">{dist.date}</td>
-                        <td className="px-4 py-2 text-sm">{dist.returnDate}</td>
+                        <td className="px-4 py-2 text-sm">{dist.return_date}</td>
                         <td className="px-4 py-2 text-sm font-medium">{item?.name || 'N/A'}</td>
                         <td className="px-4 py-2 text-sm">{dist.size}</td>
                         <td className="px-4 py-2 text-sm">{dist.quantity}</td>

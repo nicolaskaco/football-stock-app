@@ -10,29 +10,29 @@ export const OverviewTab = ({
   setActiveTab 
 }) => (
   <div>
-    <h2 className="text-2xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
+    <h2 className="text-2xl font-bold text-gray-800 mb-6">Vista General</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <StatCard 
         icon={<Package className="w-8 h-8" />} 
-        label="Total Items" 
+        label="Total Ropa entregada" 
         value={totalItems} 
-        color="blue" 
+        color="black" 
       />
       <StatCard 
         icon={<Users className="w-8 h-8" />} 
-        label="Total Employees" 
+        label="Total Funcionarios" 
         value={totalEmployees} 
         color="green" 
       />
       <StatCard 
         icon={<TrendingDown className="w-8 h-8" />} 
-        label="Active Distributions" 
+        label="Ropa Entregada en activo" 
         value={activeDistributions} 
         color="purple" 
       />
       <StatCard 
         icon={<AlertCircle className="w-8 h-8" />} 
-        label="Low Stock Alerts" 
+        label="Alerta bajo Stock" 
         value={lowStockItems.length} 
         color="red" 
       />
@@ -41,7 +41,7 @@ export const OverviewTab = ({
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
         <div className="flex items-center gap-2 mb-4">
           <AlertCircle className="w-6 h-6 text-red-600" />
-          <h3 className="text-lg font-semibold text-red-800">Low Stock Alerts</h3>
+          <h3 className="text-lg font-semibold text-red-800">Alerta Stock Bajo</h3>
         </div>
         <div className="space-y-2">
           {lowStockItems.map(item => (
@@ -51,7 +51,7 @@ export const OverviewTab = ({
                 <span className="text-sm text-gray-600 ml-2">Size {item.size}</span>
               </div>
               <span className="text-red-600 font-semibold">
-                {item.quantity} / {item.minStock} min
+                {item.quantity} / {item.min_stock} min
               </span>
             </div>
           ))}
@@ -60,7 +60,7 @@ export const OverviewTab = ({
           onClick={() => setActiveTab('inventory')} 
           className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
         >
-          View Inventory →
+          Ver Inventario →
         </button>
       </div>
     )}

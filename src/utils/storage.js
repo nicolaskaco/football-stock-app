@@ -47,7 +47,7 @@ export const storage = {
 
   // Check low stock and log alert
   checkLowStock: (inventory) => {
-    const lowStockItems = inventory.filter(item => item.quantity <= item.minStock);
+    const lowStockItems = inventory.filter(item => item.quantity <= item.min_stock);
     if (lowStockItems.length > 0) {
       console.log('Low stock alert would be sent to: nicomultimanya@gmail.com');
       console.log('Low stock items:', lowStockItems);

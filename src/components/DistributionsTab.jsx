@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { DistributionForm } from '../forms/DistributionForm';
+import { database } from '../utils/database';
+
 
 export const DistributionsTab = ({ 
   distributions, 
@@ -8,42 +10,75 @@ export const DistributionsTab = ({
   inventory, 
   saveDistributions, 
   saveInventory, 
-  setShowModal 
+  setShowModal, 
+  onDataChange 
 }) => {
   const [filter, setFilter] = useState('all');
   const filtered = distributions.filter(d => 
     filter === 'all' || 
-    (filter === 'active' && !d.returnDate) || 
-    (filter === 'returned' && d.returnDate)
+    (filter === 'active' && !d.return_date) || 
+    (filter === 'returned' && d.return_date)
   );
 
-  const handleAdd = (dist) => {
-    const item = inventory.find(i => i.id === dist.itemId);
+  const handleAdd = async (dist) => {
+    const item = inventory.find(i => i.id === dist.item_id || i.id === dist.item_id);
     if (item && item.quantity >= dist.quantity) {
-      saveInventory(inventory.map(i => 
-        i.id === dist.itemId ? { ...i, quantity: i.quantity - dist.quantity } : i
-      ));
-      saveDistributions([...distributions, { ...dist, id: Date.now().toString() }]);
-      setShowModal(null);
+      try {
+        // Add distribution
+        await database.addDistribution({
+          employee_id: dist.employee_id,
+          item_id: dist.item_id,
+          size: dist.size,
+          quantity: dist.quantity,
+          date: dist.date,
+          condition: dist.condition,
+          authorized_by: dist.authorized_by
+        });
+        
+        // Update inventory
+        await database.updateInventoryItem(item.id, {
+          ...item,
+          quantity: item.quantity - dist.quantity
+        });
+        
+        await onDataChange();
+        setShowModal(null);
+      } catch (error) {
+        alert('Error creating distribution: ' + error.message);
+      }
     } else {
       alert('Insufficient inventory');
     }
   };
 
-  const handleReturn = (distId) => {
+  const handleReturn = async (distId) => {
     const dist = distributions.find(d => d.id === distId);
     if (dist) {
-      const returnDate = prompt(
+      const return_date = prompt(
         'Return date (YYYY-MM-DD):', 
         new Date().toISOString().split('T')[0]
       );
-      if (returnDate) {
-        saveDistributions(distributions.map(d => 
-          d.id === distId ? { ...d, returnDate } : d
-        ));
-        saveInventory(inventory.map(i => 
-          i.id === dist.itemId ? { ...i, quantity: i.quantity + dist.quantity } : i
-        ));
+      if (return_date) {
+        try {
+          // Update distribution
+          await database.updateDistribution(dist.id, {
+            ...dist,
+            return_date: return_date
+          });
+          
+          // Return to inventory
+          const item = inventory.find(i => i.id === dist.item_id);
+          if (item) {
+            await database.updateInventoryItem(item.id, {
+              ...item,
+              quantity: item.quantity + dist.quantity
+            });
+          }
+          
+          await onDataChange();
+        } catch (error) {
+          alert('Error returning item: ' + error.message);
+        }
       }
     }
   };
@@ -51,19 +86,16 @@ export const DistributionsTab = ({
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Distributions</h2>
+        <h2 className="text-2xl font-bold">Ropa Entregada</h2>
         <button 
-          onClick={() => setShowModal(
-            <DistributionForm 
-              employees={employees} 
-              inventory={inventory} 
-              onSubmit={handleAdd} 
-            />
-          )} 
+          onClick={() => setShowModal({
+            title: "Entregar Ropa",
+            content: <DistributionForm employees={employees} inventory={inventory} onSubmit={handleAdd} />
+          })} 
           className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-900"
         >
           <Plus className="w-5 h-5" />
-          New Distribution
+          Nueva entrega de Ropa
         </button>
       </div>
       <div className="bg-white rounded-lg shadow mb-6 p-4">
@@ -72,30 +104,30 @@ export const DistributionsTab = ({
           onChange={(e) => setFilter(e.target.value)} 
           className="px-4 py-2 border rounded-lg"
         >
-          <option value="all">All</option>
-          <option value="active">Active</option>
-          <option value="returned">Returned</option>
+          <option value="all">Todo</option>
+          <option value="active">Activo</option>
+          <option value="returned">Devuelto</option>
         </select>
       </div>
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Size</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Condition</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Authorized</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Funcionario</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo de ROpa</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Talle</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Condición</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Autorizado por</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {filtered.map(dist => {
-              const emp = employees.find(e => e.id === dist.employeeId);
-              const item = inventory.find(i => i.id === dist.itemId);
+              const emp = employees.find(e => e.id === dist.employee_id);
+              const item = inventory.find(i => i.id === dist.item_id);
               return (
                 <tr key={dist.id}>
                   <td className="px-6 py-4 text-sm">{dist.date}</td>
@@ -104,25 +136,25 @@ export const DistributionsTab = ({
                   <td className="px-6 py-4 text-sm">{dist.size}</td>
                   <td className="px-6 py-4 text-sm">{dist.quantity}</td>
                   <td className="px-6 py-4 text-sm">{dist.condition}</td>
-                  <td className="px-6 py-4 text-sm">{dist.authorizedBy}</td>
+                  <td className="px-6 py-4 text-sm">{dist.authorized_by}</td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      dist.returnDate ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'
+                      dist.return_date ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'
                     }`}>
-                      {dist.returnDate ? 'Returned' : 'Active'}
+                      {dist.return_date ? 'Devuelto' : 'Activo'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    {!dist.returnDate && (
+                    {!dist.return_date && (
                       <button 
                         onClick={() => handleReturn(dist.id)} 
                         className="text-blue-600 text-sm hover:underline"
                       >
-                        Return
+                        Devolver Ropa
                       </button>
                     )}
-                    {dist.returnDate && (
-                      <span className="text-gray-400 text-sm">{dist.returnDate}</span>
+                    {dist.return_date && (
+                      <span className="text-gray-400 text-sm">{dist.return_date}</span>
                     )}
                   </td>
                 </tr>
