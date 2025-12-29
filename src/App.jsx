@@ -6,7 +6,7 @@ import { storage } from './utils/storage';
 
 const TestComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
-    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol
+    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol 2026
   </div>
 );
 
