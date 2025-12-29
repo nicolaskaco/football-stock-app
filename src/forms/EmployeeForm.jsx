@@ -3,11 +3,11 @@ import React, { useState } from 'react';
 export const EmployeeForm = ({ employee, onSubmit }) => {
   const [formData, setFormData] = useState(employee || { 
     name: '', 
-    govId: '', 
+    gov_id: '', 
     role: '', 
-    photoUrl: '', 
-    upperSize: '', 
-    lowerSize: '' 
+    photo_url: '', 
+    upper_size: '', 
+    lower_size: '' 
   });
 
   const handleSubmit = (e) => {
@@ -19,11 +19,11 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Full Name
+          Nombre Completo
         </label>
         <input 
           type="text" 
-          placeholder="Full Name" 
+          placeholder="Diego Aguirre" 
           required 
           value={formData.name} 
           onChange={(e) => setFormData({...formData, name: e.target.value})} 
@@ -33,25 +33,25 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Government ID
+          Cédula de Identidad/Pasaporte
         </label>
         <input 
           type="text" 
-          placeholder="Government ID" 
+          placeholder="12345678" 
           required 
-          value={formData.govId} 
-          onChange={(e) => setFormData({...formData, govId: e.target.value})} 
+          value={formData.gov_id} 
+          onChange={(e) => setFormData({...formData, gov_id: e.target.value})} 
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Role
+          Rol
         </label>
         <input 
           type="text" 
-          placeholder="e.g., Head Coach, Player, Staff" 
+          placeholder="ej: Entrenador, Ayudante, Fisio, Médico" 
           required 
           value={formData.role} 
           onChange={(e) => setFormData({...formData, role: e.target.value})} 
@@ -61,29 +61,28 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Photo URL (optional)
+          Foto URL (opcional)
         </label>
         <input 
           type="url" 
           placeholder="https://example.com/photo.jpg" 
-          value={formData.photoUrl} 
-          onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} 
+          value={formData.photo_url} 
+          onChange={(e) => setFormData({...formData, photo_url: e.target.value})} 
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Upper Body Size
+          Talle parte superior
         </label>
         <select 
           required 
-          value={formData.upperSize} 
-          onChange={(e) => setFormData({...formData, upperSize: e.target.value})} 
+          value={formData.upper_size} 
+          onChange={(e) => setFormData({...formData, upper_size: e.target.value})} 
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">Select Upper Body Size</option>
-          <option value="XS">XS</option>
+          <option value="">Elige talle superior</option>
           <option value="S">S</option>
           <option value="M">M</option>
           <option value="L">L</option>
@@ -94,16 +93,15 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Lower Body Size
+          Talle parte inferior
         </label>
         <select 
           required 
-          value={formData.lowerSize} 
-          onChange={(e) => setFormData({...formData, lowerSize: e.target.value})} 
+          value={formData.lower_size} 
+          onChange={(e) => setFormData({...formData, lower_size: e.target.value})} 
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
         >
-          <option value="">Select Lower Body Size</option>
-          <option value="XS">XS</option>
+          <option value="">Elige talle inferior</option>
           <option value="S">S</option>
           <option value="M">M</option>
           <option value="L">L</option>
@@ -116,7 +114,7 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
         type="submit" 
         className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium"
       >
-        {employee ? 'Update' : 'Add'} Employee
+        {employee ? 'Actualizar' : 'Agregar'} Funcionario
       </button>
     </form>
   );

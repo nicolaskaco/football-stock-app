@@ -12,17 +12,15 @@ export const AdminDashboard = ({
   inventory, 
   distributions, 
   onLogout, 
-  saveEmployees, 
-  saveInventory, 
-  saveDistributions 
+  onDataChange  // Make sure this is here
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showModal, setShowModal] = useState(null);
 
-  const lowStockItems = inventory.filter(item => item.quantity <= item.minStock);
+  const lowStockItems = inventory.filter(item => item.quantity <= item.min_stock);
   const totalEmployees = employees.length;
   const totalItems = inventory.reduce((sum, item) => sum + item.quantity, 0);
-  const activeDistributions = distributions.filter(d => !d.returnDate).length;
+  const activeDistributions = distributions.filter(d => !d.return_date && !d.return_date).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -30,8 +28,8 @@ export const AdminDashboard = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <Package className="w-8 h-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-800">Stock Management</h1>
+              <Package className="w-8 h-8 text-black-600" />
+              <h1 className="text-xl font-bold text-gray-800">Ropa CAP</h1>
             </div>
             <button 
               onClick={onLogout} 
@@ -70,15 +68,15 @@ export const AdminDashboard = ({
         {activeTab === 'inventory' && (
           <InventoryTab 
             inventory={inventory} 
-            saveInventory={saveInventory} 
-            setShowModal={setShowModal} 
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}  // Add this
           />
         )}
         {activeTab === 'employees' && (
           <EmployeesTab 
             employees={employees} 
-            saveEmployees={saveEmployees} 
-            setShowModal={setShowModal} 
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}  // Add this
           />
         )}
         {activeTab === 'distributions' && (
@@ -86,9 +84,8 @@ export const AdminDashboard = ({
             distributions={distributions} 
             employees={employees} 
             inventory={inventory} 
-            saveDistributions={saveDistributions} 
-            saveInventory={saveInventory} 
-            setShowModal={setShowModal} 
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}  // Add this
           />
         )}
         {activeTab === 'reports' && (
@@ -100,7 +97,14 @@ export const AdminDashboard = ({
         )}
       </div>
 
-      {showModal && <Modal onClose={() => setShowModal(null)}>{showModal}</Modal>}
+      {showModal && (
+        <Modal 
+          onClose={() => setShowModal(null)}
+          title={showModal.title}
+        >
+          {showModal.content}
+        </Modal>
+      )}
     </div>
   );
 };
