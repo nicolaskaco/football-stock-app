@@ -6,7 +6,7 @@ import { database } from './utils/database';
 
 const TestComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
-    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol 2026 -5
+    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol 2026 v1
   </div>
 );
 
