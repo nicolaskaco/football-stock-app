@@ -13,7 +13,7 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
               <Package className="w-8 h-8 text-blue-600" />
-              <h1 className="text-xl font-bold text-gray-800">My Items</h1>
+              <h1 className="text-xl font-bold text-gray-800">Mi Ropa</h1>
             </div>
             <button 
               onClick={onLogout} 
@@ -45,28 +45,28 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
               <h2 className="text-2xl font-bold text-gray-800">{employee.name}</h2>
               <p className="text-gray-600">{employee.role}</p>
               <div className="mt-2 text-sm text-gray-600">
-                <p>Preferred Sizes: Upper {employee.upper_size}, Lower {employee.lower_size}</p>
-                <p>Total Items Received: {myDistributions.length}</p>
-                <p>Currently Holding: {activeDistributions.length} items</p>
+                <p>Talles sugerido: Superior {employee.upper_size}, Inferior {employee.lower_size}</p>
+                <p>Total Ropa devuelta: {myDistributions.length}</p>
+                <p>Ropa que posee: {activeDistributions.length} unidad(es)</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h3 className="text-xl font-bold mb-4">Currently Holding</h3>
+          <h3 className="text-xl font-bold mb-4">Ropa que posee actualmente</h3>
           {activeDistributions.length === 0 ? (
-            <p className="text-gray-500">No active items</p>
+            <p className="text-gray-500">Ninguna ropa</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Date Received</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Fecha Recibida</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Item</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Size</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Quantity</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Condition</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Talle</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Cantidad</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Condición</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -89,19 +89,19 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-bold mb-4">Return History</h3>
+          <h3 className="text-xl font-bold mb-4">Historial de Ropa devuelta</h3>
           {returnedDistributions.length === 0 ? (
-            <p className="text-gray-500">No returned items</p>
+            <p className="text-gray-500">Ninguna unidad devuelta</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Received</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Returned</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Recibido</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Fecha de retorno</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Item</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Size</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Quantity</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Talle</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Cantidad</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">

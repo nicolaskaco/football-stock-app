@@ -3,6 +3,7 @@ import { LoginView } from './components/LoginView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { EmployeeView } from './components/EmployeeView';
 import { database } from './utils/database';
+import { supabase } from './supabaseClient';
 
 const TestComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
@@ -19,8 +20,32 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
+    checkSession();
   }, []);
+
+  const checkSession = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // User is already logged in
+        const user = session.user;
+        const isAdmin = user.user_metadata?.role === 'authenticated';
+        
+        if (isAdmin) {
+          setCurrentUser({ 
+            email: user.email, 
+            isAdmin: true, 
+            name: 'Administrator' 
+          });
+          await loadData();
+          setCurrentView('dashboard');
+        }
+      }
+    } catch (error) {
+      console.error('Session check error:', error);
+    }
+    setLoading(false);
+  };
 
   const loadData = async () => {
     try {
@@ -53,30 +78,57 @@ const App = () => {
     setDistributions(data);
   };
 
-  const handleLogin = (username, password, isAdmin) => {
-    if (isAdmin && username === 'admin' && password === 'admin123') {
-      setCurrentUser({ 
-        username: 'admin', 
-        isAdmin: true, 
-        name: 'Administrator' 
+  const handleLogin = async (emailOrGovId, password, isAdmin) => {
+  if (isAdmin) {
+    // --- ADMIN LOGIN (unchanged) ---
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: emailOrGovId,
+        password,
       });
+
+      if (error) throw error;
+
+      setCurrentUser({
+        email: data.user.email,
+        isAdmin: true,
+        name: 'Administrator',
+      });
+
+      await loadData();
       setCurrentView('dashboard');
-    } else if (!isAdmin) {
-      const employee = employees.find(
-        e => e.gov_id === username && e.id === password
+    } catch (error) {
+      alert('Invalid admin credentials: ' + error.message);
+    }
+  } else {
+    // --- EMPLOYEE LOGIN (FIXED) ---
+    try {
+      const empData = await database.getEmployees();
+
+      const employee = empData.find(
+        e =>
+          e.gov_id === emailOrGovId &&
+          String(e.id) === String(password)
       );
+
       if (employee) {
+        await loadData();
         setCurrentUser({ ...employee, isAdmin: false });
         setCurrentView('employee-view');
       } else {
         alert('Invalid credentials. Please check your Government ID and Employee ID.');
       }
-    } else {
-      alert('Invalid admin credentials.');
+    } catch (error) {
+      console.error(error);
+      alert('Error validating employee');
     }
-  };
+  }
+};
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (currentUser?.isAdmin) {
+      await supabase.auth.signOut();
+    }
     setCurrentUser(null);
     setCurrentView('login');
   };
