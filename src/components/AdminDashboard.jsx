@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { Package } from 'lucide-react';
+import logo from '../assets/logo.jpeg';
 import { Modal } from './Modal';
 import { OverviewTab } from './OverviewTab';
 import { InventoryTab } from './InventoryTab';
 import { EmployeesTab } from './EmployeesTab';
 import { DistributionsTab } from './DistributionsTab';
+import { PlayersTab } from './PlayersTab';
 import { ReportsTab } from './ReportsTab';
 
 export const AdminDashboard = ({ 
   employees, 
   inventory, 
   distributions, 
+  players, 
   onLogout, 
   onDataChange  // Make sure this is here
 }) => {
@@ -28,7 +31,11 @@ export const AdminDashboard = ({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <Package className="w-8 h-8 text-black-600" />
+              <img
+                src={logo}
+                alt="Ropa CAP logo"
+                className="w-8 h-8 object-contain"
+              />
               <h1 className="text-xl font-bold text-gray-800">Ropa CAP</h1>
             </div>
             <button 
@@ -43,7 +50,7 @@ export const AdminDashboard = ({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {['overview', 'inventory', 'employees', 'distributions', 'reports'].map(tab => (
+          {['overview', 'inventory', 'employees', 'distributions', 'players', 'reports'].map(tab => (
             <button 
               key={tab} 
               onClick={() => setActiveTab(tab)} 
@@ -51,7 +58,12 @@ export const AdminDashboard = ({
                 activeTab === tab ? 'bg-black text-yellow-400' : 'bg-white text-gray-600'
               }`}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'overview' && 'Resumen'}
+              {tab === 'inventory' && 'Inventario'}
+              {tab === 'employees' && 'Funcionarios'}
+              {tab === 'players' && 'Jugadores'}
+              {tab === 'distributions' && 'Distribuciones'}
+              {tab === 'reports' && 'Reportes'}
             </button>
           ))}
         </div>
@@ -93,6 +105,13 @@ export const AdminDashboard = ({
             distributions={distributions} 
             employees={employees} 
             inventory={inventory} 
+          />
+        )}
+        {activeTab === 'players' && (
+          <PlayersTab 
+            players={players} 
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}
           />
         )}
       </div>

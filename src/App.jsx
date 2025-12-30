@@ -5,9 +5,15 @@ import { EmployeeView } from './components/EmployeeView';
 import { database } from './utils/database';
 import { supabase } from './supabaseClient';
 
-const TestComponent = () => (
+const HeaderComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
-    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol 2026 v1
+    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol 2026 v3
+  </div>
+);
+
+const FooterComponent = () => (
+  <div className="bg-black text-yellow-400 p-4 text-center">
+    Todos los derechos reservados
   </div>
 );
 
@@ -17,6 +23,7 @@ const App = () => {
   const [employees, setEmployees] = useState([]);
   const [inventory, setInventory] = useState([]);
   const [distributions, setDistributions] = useState([]);
+  const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,15 +56,17 @@ const App = () => {
 
   const loadData = async () => {
     try {
-      const [empData, invData, distData] = await Promise.all([
+      const [empData, invData, distData, playersData] = await Promise.all([
         database.getEmployees(),
         database.getInventory(),
-        database.getDistributions()
+        database.getDistributions(),
+        database.getPlayers()
       ]);
       
       setEmployees(empData || []);
       setInventory(invData || []);
       setDistributions(distData || []);
+      setPlayers(playersData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -88,6 +97,11 @@ const App = () => {
       });
 
       if (error) throw error;
+
+      const { data: { user } } = await supabase.auth.getUser();
+      console.error(user);
+
+      //Here I can put a check for Rodrigo/Emiliano not to see the Players tab
 
       setCurrentUser({
         email: data.user.email,
@@ -146,7 +160,7 @@ const App = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <TestComponent />
+      <HeaderComponent />
       {currentView === 'login' && (
         <LoginView onLogin={handleLogin} />
       )}
@@ -155,6 +169,7 @@ const App = () => {
           employees={employees}
           inventory={inventory}
           distributions={distributions}
+          players={players}
           onLogout={handleLogout}
           onDataChange={loadData}
         />
@@ -167,6 +182,7 @@ const App = () => {
           onLogout={handleLogout}
         />
       )}
+      <FooterComponent />
     </div>
   );
 };
