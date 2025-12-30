@@ -58,7 +58,7 @@ export const OverviewTab = ({
         </div>
         <button 
           onClick={() => setActiveTab('inventory')} 
-          className="mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
+          className="mt-4 text-sm text-yellow-600 hover:text-yellow-700 font-medium"
         >
           Ver Inventario →
         </button>

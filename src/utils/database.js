@@ -115,6 +115,47 @@ export const database = {
     return data[0];
   },
 
+  // PLAYERS (NEW)
+  async getPlayers() {
+    const { data, error } = await supabase
+      .from('players')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async addPlayer(player) {
+    const { data, error } = await supabase
+      .from('players')
+      .insert([player])
+      .select();
+    
+    if (error) throw error;
+    return data[0];
+  },
+
+  async updatePlayer(id, player) {
+    const { data, error } = await supabase
+      .from('players')
+      .update(player)
+      .eq('id', id)
+      .select();
+    
+    if (error) throw error;
+    return data[0];
+  },
+
+  async deletePlayer(id) {
+    const { error } = await supabase
+      .from('players')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+
   // LOW STOCK CHECK
   async checkLowStock() {
     const { data, error } = await supabase
