@@ -98,11 +98,6 @@ const App = () => {
 
       if (error) throw error;
 
-      const { data: { user } } = await supabase.auth.getUser();
-      console.error(user);
-
-      //Here I can put a check for Rodrigo/Emiliano not to see the Players tab
-
       setCurrentUser({
         email: data.user.email,
         isAdmin: true,
