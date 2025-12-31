@@ -1,5 +1,6 @@
 import React from 'react';
 import { Package } from 'lucide-react';
+import logo from '../../public/logo.jpeg';
 
 export const EmployeeView = ({ employee, distributions, inventory, onLogout }) => {
   const myDistributions = distributions.filter(d => d.employee_id === employee.id);
@@ -19,7 +20,11 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <Package className="w-8 h-8 text-blue-600" />
+              <img
+                src={logo}
+                alt="Ropa CAP logo"
+                className="w-8 h-8 object-contain"
+              />
               <h1 className="text-xl font-bold text-gray-800">Mi Ropa</h1>
             </div>
             <button 

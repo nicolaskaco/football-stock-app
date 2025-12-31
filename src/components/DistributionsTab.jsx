@@ -148,7 +148,7 @@ export const DistributionsTab = ({
                     {!dist.return_date && (
                       <button 
                         onClick={() => handleReturn(dist.id)} 
-                        className="text-blue-600 text-sm hover:underline"
+                        className="text-yellow-600 text-sm hover:underline"
                       >
                         Devolver Ropa
                       </button>
