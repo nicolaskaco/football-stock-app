@@ -53,6 +53,36 @@ export const database = {
     return data;
   },
 
+  async getEmployeeInventory(employeeId) {
+    const { data, error } = await supabase
+      .from('distributions')
+      .select(`
+        item_id,
+        inventory:item_id (
+          id,
+          name,
+          category,
+          size,
+          quantity,
+          min_stock,
+          created_at
+        )
+      `)
+      .eq('employee_id', employeeId);
+    
+    if (error) throw error;
+    
+    // Extract unique inventory items (avoid duplicates if employee has multiple distributions of same item)
+    const inventoryMap = new Map();
+    data.forEach(dist => {
+      if (dist.inventory && !inventoryMap.has(dist.inventory.id)) {
+        inventoryMap.set(dist.inventory.id, dist.inventory);
+      }
+    });
+    
+    return Array.from(inventoryMap.values());
+  },
+
   async addInventoryItem(item) {
     const { data, error } = await supabase
       .from('inventory')
@@ -102,6 +132,18 @@ export const database = {
     const { data, error } = await supabase
       .from('distributions')
       .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Add these new functions for employee view
+  async getEmployeeDistributions(employeeId) {
+    const { data, error } = await supabase
+      .from('distributions')
+      .select('*')
+      .eq('employee_id', employeeId)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
@@ -185,5 +227,18 @@ export const database = {
     }
     
     return data;
-  }
+  },
+
+  // Validate employee credentials via Edge Function
+  //https://czboublvkbkvtbkmkqmx.supabase.co/functions/v1/validate-employee
+  async validateEmployee(govId, employeeId) {
+    const { data, error } = await supabase.functions.invoke('validate-employee', {
+      body: { gov_id: govId, employee_id: employeeId }
+    });
+    
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
+    
+    return data.employee;
+  },
 };
