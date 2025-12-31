@@ -36,13 +36,27 @@ const App = () => {
       if (session) {
         // User is already logged in
         const user = session.user;
-        const isAdmin = user.user_metadata?.role === 'authenticated';
+        //const isAdmin = user.user_metadata?.role === 'authenticated';
+
+        const { data: permissions, error: permError } = await supabase
+        .from('user_permissions')
+        .select('*')
+        .eq('email', user.email)
+        .single();
+
+        if (permError) {
+          console.error('Error fetching permissions:', permError);
+        }
+
+        const isAdmin = permissions?.can_access_players || false;
+        //console.error('Nico:::',permissions);
         
         if (isAdmin) {
           setCurrentUser({ 
             email: user.email, 
             isAdmin: true, 
-            name: 'Administrator' 
+            name: 'Administrator', 
+            canAccessPlayers: permissions?.can_access_players || false 
           });
           await loadData();
           setCurrentView('dashboard');
@@ -98,10 +112,21 @@ const App = () => {
 
       if (error) throw error;
 
+      const { data: permissions, error: permError } = await supabase
+        .from('user_permissions')
+        .select('*')
+        .eq('email', emailOrGovId)
+        .single();
+
+      if (permError) {
+        console.error('Error fetching permissions:', permError);
+      }
+
+      // Set the current user with permissions
       setCurrentUser({
-        email: data.user.email,
+        email: emailOrGovId,
         isAdmin: true,
-        name: 'Administrator',
+        canAccessPlayers: permissions?.can_access_players || false
       });
 
       await loadData();
@@ -165,6 +190,7 @@ const App = () => {
           inventory={inventory}
           distributions={distributions}
           players={players}
+          currentUser={currentUser}
           onLogout={handleLogout}
           onDataChange={loadData}
         />

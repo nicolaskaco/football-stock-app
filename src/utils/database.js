@@ -75,6 +75,20 @@ export const database = {
   },
 
   async deleteInventoryItem(id) {
+    // First, check if this item has any distributions
+    const { data: distributions, error: checkError } = await supabase
+      .from('distributions')
+      .select('id')
+      .eq('item_id', id)
+      .limit(1);
+    
+    if (checkError) throw checkError;
+    
+    if (distributions && distributions.length > 0) {
+      throw new Error('No se puede eliminar este artículo porque tiene distribuciones asociadas. Elimine primero las distribuciones.');
+    }
+    
+    // If no distributions, proceed with deletion
     const { error } = await supabase
       .from('inventory')
       .delete()

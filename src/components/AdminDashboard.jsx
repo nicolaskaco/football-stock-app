@@ -15,7 +15,8 @@ export const AdminDashboard = ({
   distributions, 
   players, 
   onLogout, 
-  onDataChange  // Make sure this is here
+  onDataChange, 
+  currentUser
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showModal, setShowModal] = useState(null);
@@ -24,6 +25,22 @@ export const AdminDashboard = ({
   const totalEmployees = employees.length;
   const totalItems = inventory.reduce((sum, item) => sum + item.quantity, 0);
   const activeDistributions = distributions.filter(d => !d.return_date && !d.return_date).length;
+
+  // Use the permission from currentUser instead of hardcoded emails
+  const canAccessPlayers = currentUser?.canAccessPlayers || false;
+
+  // Rest of your code stays the same...
+  const tabs = [
+    { id: 'overview', label: 'Resumen', show: true },
+    { id: 'inventory', label: 'Inventario', show: true },
+    { id: 'employees', label: 'Funcionarios', show: true },
+    { id: 'players', label: 'Jugadores', show: canAccessPlayers },
+    { id: 'distributions', label: 'Distribuciones', show: true },
+    { id: 'reports', label: 'Reportes', show: true }
+  ];
+
+  // Filter visible tabs
+  const visibleTabs = tabs.filter(tab => tab.show);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -50,20 +67,15 @@ export const AdminDashboard = ({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          {['overview', 'inventory', 'employees', 'distributions', 'players', 'reports'].map(tab => (
+          {visibleTabs.map(tab => (
             <button 
-              key={tab} 
-              onClick={() => setActiveTab(tab)} 
+              key={tab.id} 
+              onClick={() => setActiveTab(tab.id)} 
               className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap ${
-                activeTab === tab ? 'bg-black text-yellow-400' : 'bg-white text-gray-600'
+                activeTab === tab.id ? 'bg-black text-yellow-400' : 'bg-white text-gray-600'
               }`}
             >
-              {tab === 'overview' && 'Resumen'}
-              {tab === 'inventory' && 'Inventario'}
-              {tab === 'employees' && 'Funcionarios'}
-              {tab === 'players' && 'Jugadores'}
-              {tab === 'distributions' && 'Distribuciones'}
-              {tab === 'reports' && 'Reportes'}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -100,6 +112,13 @@ export const AdminDashboard = ({
             onDataChange={onDataChange}  // Add this
           />
         )}
+        {activeTab === 'players' && canAccessPlayers && (
+          <PlayersTab 
+            players={players} 
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}
+          />
+        )}
         {activeTab === 'reports' && (
           <ReportsTab 
             distributions={distributions} 
@@ -107,12 +126,13 @@ export const AdminDashboard = ({
             inventory={inventory} 
           />
         )}
-        {activeTab === 'players' && (
-          <PlayersTab 
-            players={players} 
-            setShowModal={setShowModal}
-            onDataChange={onDataChange}
-          />
+        {/* Show access denied message if trying to access restricted tab */}
+        {activeTab === 'players' && !canAccessPlayers && (
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <div className="text-6xl mb-4">🔒</div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">Acceso Restringido</h3>
+            <p className="text-gray-600">No tienes permiso para acceder a esta sección.</p>
+          </div>
         )}
       </div>
 
