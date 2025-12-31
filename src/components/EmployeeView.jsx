@@ -6,6 +6,13 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
   const activeDistributions = myDistributions.filter(d => !d.return_date);
   const returnedDistributions = myDistributions.filter(d => d.return_date);
 
+  // Format date from YYYY-MM-DD to DD/MM/YYYY
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    const [year, month, day] = dateString.split('-');
+    return `${day}/${month}/${year}`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm border-b">
@@ -19,7 +26,7 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
               onClick={onLogout} 
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
             >
-              Logout
+              Cerrar sesión
             </button>
           </div>
         </div>
@@ -45,7 +52,7 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
               <h2 className="text-2xl font-bold text-gray-800">{employee.name}</h2>
               <p className="text-gray-600">{employee.role}</p>
               <div className="mt-2 text-sm text-gray-600">
-                <p>Talles sugerido: Superior {employee.upper_size}, Inferior {employee.lower_size}</p>
+                <p>Talles sugeridos: Superior {employee.upper_size}, Inferior {employee.lower_size}</p>
                 <p>Total Ropa devuelta: {myDistributions.length}</p>
                 <p>Ropa que posee: {activeDistributions.length} unidad(es)</p>
               </div>
@@ -74,7 +81,7 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
                     const item = inventory.find(i => i.id === dist.item_id);
                     return (
                       <tr key={dist.id}>
-                        <td className="px-4 py-2 text-sm">{dist.date}</td>
+                        <td className="px-4 py-2 text-sm">{formatDate(dist.date)}</td>
                         <td className="px-4 py-2 text-sm font-medium">{item?.name || 'N/A'}</td>
                         <td className="px-4 py-2 text-sm">{dist.size}</td>
                         <td className="px-4 py-2 text-sm">{dist.quantity}</td>
@@ -109,8 +116,8 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
                     const item = inventory.find(i => i.id === dist.item_id);
                     return (
                       <tr key={dist.id}>
-                        <td className="px-4 py-2 text-sm">{dist.date}</td>
-                        <td className="px-4 py-2 text-sm">{dist.return_date}</td>
+                        <td className="px-4 py-2 text-sm">{formatDate(dist.date)}</td>
+                        <td className="px-4 py-2 text-sm">{formatDate(dist.return_date)}</td>
                         <td className="px-4 py-2 text-sm font-medium">{item?.name || 'N/A'}</td>
                         <td className="px-4 py-2 text-sm">{dist.size}</td>
                         <td className="px-4 py-2 text-sm">{dist.quantity}</td>

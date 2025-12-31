@@ -76,7 +76,7 @@ export const LoginView = ({ onLogin }) => {
             disabled={loading}
             className="w-full bg-black text-yellow-400 py-3 rounded-lg font-medium hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Logging in...' : 'Ingresar'}
+            {loading ? 'Iniciando sesión...' : 'Ingresar'}
           </button>
         </form>
 

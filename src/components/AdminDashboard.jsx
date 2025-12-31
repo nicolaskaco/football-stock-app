@@ -59,7 +59,7 @@ export const AdminDashboard = ({
               onClick={onLogout} 
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
             >
-              Logout
+              Cerrar sesión
             </button>
           </div>
         </div>
