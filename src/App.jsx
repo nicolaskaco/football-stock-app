@@ -55,7 +55,8 @@ const App = () => {
             email: user.email, 
             isAdmin: true, 
             name: 'Administrator', 
-            canAccessPlayers: permissions?.can_access_players || false 
+            canAccessPlayers: permissions?.can_access_players || false, 
+            canAccessViaticos: permissions?.can_access_viatico || false 
           });
           await loadData();
           setCurrentView('dashboard');
@@ -125,7 +126,8 @@ const App = () => {
       setCurrentUser({
         email: emailOrGovId,
         isAdmin: true,
-        canAccessPlayers: permissions?.can_access_players || false
+        canAccessPlayers: permissions?.can_access_players || false,
+        canAccessViaticos: permissions?.can_access_viatico || false
       });
 
       await loadData();
