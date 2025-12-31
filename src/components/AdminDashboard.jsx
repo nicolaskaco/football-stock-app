@@ -7,6 +7,7 @@ import { InventoryTab } from './InventoryTab';
 import { EmployeesTab } from './EmployeesTab';
 import { DistributionsTab } from './DistributionsTab';
 import { PlayersTab } from './PlayersTab';
+import { PlayersTabViatico } from './PlayersTabViatico';
 import { ReportsTab } from './ReportsTab';
 
 export const AdminDashboard = ({ 
@@ -28,6 +29,7 @@ export const AdminDashboard = ({
 
   // Use the permission from currentUser instead of hardcoded emails
   const canAccessPlayers = currentUser?.canAccessPlayers || false;
+  const canAccessViaticos = currentUser?.canAccessViaticos || false;
 
   // Rest of your code stays the same...
   const tabs = [
@@ -35,6 +37,7 @@ export const AdminDashboard = ({
     { id: 'inventory', label: 'Inventario', show: true },
     { id: 'employees', label: 'Funcionarios', show: true },
     { id: 'players', label: 'Jugadores', show: canAccessPlayers },
+    { id: 'players_viatico', label: 'Viáticos', show: canAccessViaticos },
     { id: 'distributions', label: 'Distribuciones', show: true },
     { id: 'reports', label: 'Reportes', show: true }
   ];
@@ -110,6 +113,13 @@ export const AdminDashboard = ({
             inventory={inventory} 
             setShowModal={setShowModal}
             onDataChange={onDataChange}  // Add this
+          />
+        )}
+        {activeTab === 'players_viatico' && canAccessViaticos && (
+          <PlayersTabViatico 
+            players={players} 
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}
           />
         )}
         {activeTab === 'players' && canAccessPlayers && (
