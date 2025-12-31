@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Users } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download } from 'lucide-react';
 import { PlayerForm } from '../forms/PlayerForm';
 import { database } from '../utils/database';
+import * as XLSX from 'xlsx';
 
-export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {  // ADD = []
+export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('all');
 
@@ -12,7 +13,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {  /
   // Add safety check
   const safePlayers = Array.isArray(players) ? players : [];
 
-  const filtered = safePlayers.filter(p => {  // CHANGE FROM players TO safePlayers
+  const filtered = safePlayers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                          p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategoria = filterCategoria === 'all' || p.categoria === filterCategoria;
@@ -64,20 +65,60 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {  /
     return age;
   };
 
+  // Calculate total for a player
+  const calculateTotal = (player) => {
+    if (player.contrato) return null;
+    return (player.viatico || 0) + (player.complemento || 0);
+  };
+
+  // Export to Excel function
+  const handleExportToExcel = () => {
+    // Prepare data for export
+    const exportData = filtered.map(player => ({
+      'Nombre': player.name,
+      'Cedula': player.gov_id,
+      'Categoria': player.categoria,
+      'Total': player.contrato ? 'Contrato' : `$${calculateTotal(player).toLocaleString()}`
+    }));
+
+    // Create worksheet
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Jugadores');
+    
+    // Generate filename with current date
+    const date = new Date().toISOString().split('T')[0];
+    const filename = `jugadores_${date}.xlsx`;
+    
+    // Download file
+    XLSX.writeFile(workbook, filename);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gestión de Jugadores</h2>
-        <button 
-          onClick={() => setShowModal({
-            title: "Agregar Nuevo Jugador",
-            content: <PlayerForm onSubmit={handleAdd} />
-          })} 
-          className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
-        >
-          <Plus className="w-5 h-5" />
-          Agregar Jugador
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleExportToExcel}
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          >
+            <Download className="w-5 h-5" />
+            Exportar a Excel
+          </button>
+          <button 
+            onClick={() => setShowModal({
+              title: "Agregar Nuevo Jugador",
+              content: <PlayerForm onSubmit={handleAdd} />
+            })} 
+            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
+          >
+            <Plus className="w-5 h-5" />
+            Agregar Jugador
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow mb-6 p-4">
@@ -113,6 +154,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {  /
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contrato</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Viático</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Complemento</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Banco</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
             </tr>
@@ -144,6 +186,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {  /
                 </td>
                 <td className="px-6 py-4 text-sm">
                   {player.contrato ? '-' : `$${player.complemento.toLocaleString()}`}
+                </td>
+                <td className="px-6 py-4 text-sm">
+                  {player.contrato ? (
+                    <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
+                      Contrato
+                    </span>
+                  ) : (
+                    <span className="font-semibold">${calculateTotal(player).toLocaleString()}</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm">{player.bank || '-'}</td>
                 <td className="px-6 py-4">
