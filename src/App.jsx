@@ -49,7 +49,6 @@ const App = () => {
         }
 
         const isAdmin = permissions?.can_access_players || false;
-        //console.error('Nico:::',permissions);
         
         if (isAdmin) {
           setCurrentUser({ 
@@ -137,16 +136,20 @@ const App = () => {
   } else {
     // --- EMPLOYEE LOGIN (FIXED) ---
     try {
-      const empData = await database.getEmployees();
-
-      const employee = empData.find(
-        e =>
-          e.gov_id === emailOrGovId &&
-          String(e.id) === String(password)
-      );
-
+      const employee = await database.validateEmployee(emailOrGovId, password);
+      
       if (employee) {
-        await loadData();
+        // Only load inventory and employee's own distributions
+        const [myDistributions, myInventory] = await Promise.all([
+          database.getEmployeeDistributions(employee.id),
+          database.getEmployeeInventory(employee.id)
+        ]);
+
+        setDistributions(myDistributions);  // Only their distributions
+        setInventory(myInventory);
+        setEmployees([]);  // Don't load employee list
+        setPlayers([]);    // Don't load players
+
         setCurrentUser({ ...employee, isAdmin: false });
         setCurrentView('employee-view');
       } else {

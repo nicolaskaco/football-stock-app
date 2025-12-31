@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Package } from 'lucide-react';
+import logo from '../../public/logo.jpeg';
 
 export const LoginView = ({ onLogin }) => {
   const [isAdmin, setIsAdmin] = useState(true);
@@ -18,7 +19,11 @@ export const LoginView = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-600 to-gray-800 p-4">
       <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <Package className="w-16 h-16 text-black-600 mx-auto mb-4" />
+          <img
+            src={logo}
+            alt="Ropa CAP logo"
+            className="w-8 h-8 object-contain"
+          />
           <h1 className="text-3xl font-bold text-gray-800">Club Atlético Peñarol</h1>
           <p className="text-gray-600">Aplicación para administrar la Ropa</p>
         </div>
@@ -54,7 +59,7 @@ export const LoginView = ({ onLogin }) => {
               required
               disabled={loading}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              placeholder={isAdmin ? 'admin@footballclub.com' : 'Ingrese su cédula o pasaporte'}
+              placeholder={isAdmin ? 'admin@test.com' : 'Ingrese su cédula o pasaporte'}
             />
           </div>
           <div>
