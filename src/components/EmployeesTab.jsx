@@ -108,8 +108,8 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
               <p><span className="font-medium">Rol:</span> {emp.role}</p>
               <p><span className="font-medium">Id:</span> {emp.id}</p>
               <p><span className="font-medium">Cédula:</span> {emp.gov_id || emp.gov_id}</p>
-              <p><span className="font-medium">Talle superior:</span> {emp.upper_size || emp.upper_size}</p>
-              <p><span className="font-medium">Talle inferior:</span> {emp.lower_size || emp.lower_size}</p>
+              <p><span className="font-medium">Talle superior sugerido:</span> {emp.upper_size || emp.upper_size}</p>
+              <p><span className="font-medium">Talle inferior sugerido:</span> {emp.lower_size || emp.lower_size}</p>
             </div>
           </div>
         ))}
