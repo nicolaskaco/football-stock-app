@@ -1,6 +1,6 @@
 import React from 'react';
 import { Package } from 'lucide-react';
-import logo from '../../public/logo.jpeg';
+import logo from '../logo.jpeg';
 
 export const EmployeeView = ({ employee, distributions, inventory, onLogout }) => {
   const myDistributions = distributions.filter(d => d.employee_id === employee.id);

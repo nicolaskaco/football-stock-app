@@ -56,10 +56,6 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
 
     let aValue, bValue;
 
-    if (sortConfig.key === 'complemento') {
-      console.error('Sorting complemento:', a.name, a.complemento, typeof a.complemento);
-    }
-
     switch (sortConfig.key) {
       case 'name':
         aValue = a.name.toLowerCase();
@@ -77,25 +73,17 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
         aValue = categorias.indexOf(a.categoria);
         bValue = categorias.indexOf(b.categoria);
         break;
-      case 'contrato':
-        aValue = a.contrato ? 1 : 0;
-        bValue = b.contrato ? 1 : 0;
+      case 'departamento':
+        aValue = a.departamento.toLowerCase();
+        bValue = b.departamento.toLowerCase();
         break;
-      case 'viatico':
-        // Players with contract go first (treated as -1), then sort by actual viatico value
-        if (a.contrato && b.contrato) return 0;
-        if (a.contrato) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (b.contrato) return sortConfig.direction === 'asc' ? 1 : -1;
-        aValue = Number(a.viatico) || 0;
-        bValue = Number(b.viatico) || 0;
+      case 'casita':
+        aValue = a.casita ? 1 : 0;
+        bValue = b.casita ? 1 : 0;
         break;
-      case 'complemento':
-        // Players with contract go first (treated as -1), then sort by actual complemento value
-        if (a.contrato && b.contrato) return 0;
-        if (a.contrato) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (b.contrato) return sortConfig.direction === 'asc' ? 1 : -1;
-        aValue = Number(a.complemento) || 0;
-        bValue = Number(b.complemento) || 0;
+      case 'vianda':
+        aValue = Number(a.vianda) || 0;
+        bValue = Number(b.vianda) || 0;
         break;
       case 'total':
         // Players with contract go first (treated as -1), then sort by actual total value
@@ -105,9 +93,9 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
         aValue = calculateTotal(a);
         bValue = calculateTotal(b);
         break;
-      case 'bank':
-        aValue = a.bank || '';
-        bValue = b.bank || '';
+      case 'representante':
+        aValue = a.representante || '';
+        bValue = b.representante || '';
         break;
       default:
         return 0;
@@ -303,32 +291,32 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
                 </div>
               </th>
               <th 
-                onClick={() => handleSort('contrato')}
+                onClick={() => handleSort('departamento')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
-                  Contrato
-                  <SortIcon columnKey="contrato" />
+                  Departamento/País
+                  <SortIcon columnKey="departamento" />
                 </div>
               </th>
               <th 
-                onClick={() => handleSort('viatico')}
+                onClick={() => handleSort('casita')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-2">
-                  Viático
-                  <SortIcon columnKey="viatico" />
+                  Residencia
+                  <SortIcon columnKey="casita" />
                 </div>
               </th>
-              <th 
-                onClick={() => handleSort('complemento')}
+              {/*<th 
+                onClick={() => handleSort('vianda')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
-                  Complemento
-                  <SortIcon columnKey="complemento" />
+                  Vianda
+                  <SortIcon columnKey="vianda" />
                 </div>
-              </th>
+              </th>*/}
               <th 
                 onClick={() => handleSort('total')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
@@ -339,12 +327,12 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
                 </div>
               </th>
               <th 
-                onClick={() => handleSort('bank')}
+                onClick={() => handleSort('representante')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
-                  Banco
-                  <SortIcon columnKey="bank" />
+                  Representante
+                  <SortIcon columnKey="representante" />
                 </div>
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -363,23 +351,17 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
                     {player.categoria}
                   </span>
                 </td>
+                <td className="px-6 py-4 text-sm">{player.departamento || '-'}</td>
                 <td className="px-6 py-4">
-                  {player.contrato ? (
-                    <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
-                      Sí
-                    </span>
-                  ) : (
-                    <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">
-                      No
-                    </span>
-                  )}
+                  <span className={`text-xl font-bold ${player.casita ? 'text-green-600' : 'text-gray-400'}`}>
+                    {player.casita ? '✓' : '☐'}
+                  </span>
                 </td>
-                <td className="px-6 py-4 text-sm">
-                  {player.contrato ? '-' : `$${player.viatico.toLocaleString()}`}
-                </td>
-                <td className="px-6 py-4 text-sm">
-                  {player.contrato ? '-' : `$${player.complemento.toLocaleString()}`}
-                </td>
+                {/*<td className="px-6 py-4">
+                  <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+                    {player.vianda}
+                  </span>
+                </td>*/}
                 <td className="px-6 py-4 text-sm">
                   {player.contrato ? (
                     <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
@@ -389,7 +371,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
                     <span className="font-semibold">${calculateTotal(player).toLocaleString()}</span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-sm">{player.bank || '-'}</td>
+                <td className="px-6 py-4 text-sm">{player.representante || '-'}</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     <button 

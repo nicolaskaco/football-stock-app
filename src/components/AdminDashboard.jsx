@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Package } from 'lucide-react';
-import logo from '../../public/logo.jpeg';
+import logo from '../logo.jpeg';
 import { Modal } from './Modal';
 import { OverviewTab } from './OverviewTab';
 import { InventoryTab } from './InventoryTab';
