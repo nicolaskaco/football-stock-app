@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History } from 'lucide-react';
 import { PlayerForm } from '../forms/PlayerForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
+import { PlayerHistoryModal } from './PlayerHistoryModal';
 
-export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
+export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [showHistoryModal, setShowHistoryModal] = useState(null);
 
   const categorias = ['3era', '4ta', 'S16', '5ta', '6ta', '7ma'];
 
@@ -78,9 +80,12 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
         bValue = b.departamento.toLowerCase();
         break;
       case 'casita':
-        aValue = a.casita ? 1 : 0;
-        bValue = b.casita ? 1 : 0;
-        break;
+        // Special handling for boolean: return early to avoid affecting other cases
+        if (a.casita === b.casita) return 0;
+        // asc: true first, desc: false first
+        return sortConfig.direction === 'asc' 
+          ? (b.casita ? 1 : 0) - (a.casita ? 1 : 0)
+          : (a.casita ? 1 : 0) - (b.casita ? 1 : 0);
       case 'vianda':
         aValue = Number(a.vianda) || 0;
         bValue = Number(b.vianda) || 0;
@@ -133,7 +138,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
 
   const handleEdit = async (player) => {
     try {
-      await database.updatePlayer(player.id, player);
+      await database.updatePlayer(player.id, player, currentUser?.email);
       await onDataChange();
       setShowModal(null);
     } catch (error) {
@@ -375,6 +380,13 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     <button 
+                      onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
+                      className="text-purple-600 hover:text-purple-800"
+                      title="Ver historial"
+                    >
+                      <History className="w-4 h-4" />
+                    </button>
+                    <button 
                       onClick={() => setShowModal({
                         title: `Editar Jugador: ${player.name}`,
                         content: <PlayerForm player={player} onSubmit={handleEdit} />
@@ -403,6 +415,13 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange }) => {
           </div>
         )}
       </div>
+      {showHistoryModal && (
+        <PlayerHistoryModal
+          playerId={showHistoryModal.playerId}
+          playerName={showHistoryModal.playerName}
+          onClose={() => setShowHistoryModal(null)}
+        />
+      )}
     </div>
   );
 };

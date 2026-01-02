@@ -68,7 +68,7 @@ export const AdminDashboard = ({
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-2 mb-6 overflow-x-auto">
           {visibleTabs.map(tab => (
             <button 
@@ -120,6 +120,7 @@ export const AdminDashboard = ({
             players={players} 
             setShowModal={setShowModal}
             onDataChange={onDataChange}
+            currentUser={currentUser}
           />
         )}
         {activeTab === 'players' && canAccessPlayers && (
@@ -127,6 +128,7 @@ export const AdminDashboard = ({
             players={players} 
             setShowModal={setShowModal}
             onDataChange={onDataChange}
+            currentUser={currentUser}
           />
         )}
         {activeTab === 'reports' && (
