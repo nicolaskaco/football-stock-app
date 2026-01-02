@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History } from 'lucide-react';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
+import { PlayerHistoryModal } from './PlayerHistoryModal';
 
-export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange }) => {
+export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [showHistoryModal, setShowHistoryModal] = useState(null);
 
   const categorias = ['3era', '4ta', 'S16', '5ta', '6ta', '7ma'];
 
@@ -145,7 +147,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange }) 
 
   const handleEdit = async (player) => {
     try {
-      await database.updatePlayer(player.id, player);
+      await database.updatePlayer(player.id, player, currentUser?.email);
       await onDataChange();
       setShowModal(null);
     } catch (error) {
@@ -393,6 +395,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange }) 
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     <button 
+                      onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
+                      className="text-purple-600 hover:text-purple-800"
+                      title="Ver historial"
+                    >
+                      <History className="w-4 h-4" />
+                    </button>
+                    <button 
                       onClick={() => setShowModal({
                         title: `Editar Jugador: ${player.name}`,
                         content: <PlayerFormViatico player={player} onSubmit={handleEdit} />
@@ -421,6 +430,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange }) 
           </div>
         )}
       </div>
+      {showHistoryModal && (
+        <PlayerHistoryModal
+          playerId={showHistoryModal.playerId}
+          playerName={showHistoryModal.playerName}
+          onClose={() => setShowHistoryModal(null)}
+        />
+      )}
     </div>
   );
 };

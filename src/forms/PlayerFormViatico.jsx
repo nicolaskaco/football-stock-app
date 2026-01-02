@@ -111,10 +111,7 @@ export const PlayerFormViatico = ({ player, onSubmit }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Viático {formData.contrato && <span className="text-red-500">(Deshabilitado - Tiene Contrato)</span>}
           </label>
-          <input 
-            type="number" 
-            min="0"
-            max="99999"
+          <input type="text" inputMode="numeric" pattern="[0-9]*"
             disabled={formData.contrato}
             value={formData.viatico || ''} 
             onChange={(e) => setFormData({...formData, viatico: parseInt(e.target.value) || 0})} 
@@ -126,10 +123,7 @@ export const PlayerFormViatico = ({ player, onSubmit }) => {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Complemento {formData.contrato && <span className="text-red-500">(Deshabilitado - Tiene Contrato)</span>}
           </label>
-          <input 
-            type="number" 
-            min="0"
-            max="99999"
+          <input type="text" inputMode="numeric" pattern="[0-9]*"
             disabled={formData.contrato}
             value={formData.complemento} 
             onChange={(e) => setFormData({...formData, complemento: parseInt(e.target.value) || 0})} 

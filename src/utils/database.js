@@ -192,7 +192,37 @@ export const database = {
     return data[0];
   },
 
-  async updatePlayer(id, player) {
+  async updatePlayer(id, player, currentUserEmail) {
+    // First, get the old player data
+    const { data: oldPlayer, error: fetchError } = await supabase
+      .from('players')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // Track which fields changed
+    const trackedFields = ['contrato', 'viatico', 'complemento'];
+    const historyRecords = [];
+
+    trackedFields.forEach(field => {
+      const oldValue = oldPlayer[field];
+      const newValue = player[field];
+
+      // Check if value actually changed
+      if (oldValue !== newValue) {
+        historyRecords.push({
+          player_id: id,
+          field_name: field,
+          old_value: oldValue !== null ? String(oldValue) : null,
+          new_value: newValue !== null ? String(newValue) : null,
+          changed_by: currentUserEmail || 'Unknown'
+        });
+      }
+    });
+
+    // Update the player
     const { data, error } = await supabase
       .from('players')
       .update(player)
@@ -200,6 +230,16 @@ export const database = {
       .select();
     
     if (error) throw error;
+
+    // Insert history records if any changes
+    if (historyRecords.length > 0) {
+      const { error: historyError } = await supabase
+        .from('player_history')
+        .insert(historyRecords);
+      
+      if (historyError) console.error('Error saving history:', historyError);
+    }
+
     return data[0];
   },
 
@@ -210,6 +250,28 @@ export const database = {
       .eq('id', id);
     
     if (error) throw error;
+  },
+
+  // PLAYER HISTORY
+  async getPlayerHistory(playerId) {
+    const { data, error } = await supabase
+      .from('player_history')
+      .select('*')
+      .eq('player_id', playerId)
+      .order('changed_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  async addPlayerHistory(historyRecord) {
+    const { data, error } = await supabase
+      .from('player_history')
+      .insert([historyRecord])
+      .select();
+    
+    if (error) throw error;
+    return data[0];
   },
 
   // LOW STOCK CHECK
