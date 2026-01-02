@@ -7,7 +7,7 @@ export const DistributionForm = ({ employees, inventory, onSubmit }) => {
     size: '', 
     quantity: 1, 
     date: new Date().toISOString().split('T')[0], 
-    condition: 'New', 
+    condition: 'New',  
     authorized_by: '' 
   });
 
