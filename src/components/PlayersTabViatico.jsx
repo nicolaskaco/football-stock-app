@@ -202,16 +202,6 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
             <Download className="w-5 h-5" />
             Exportar a Excel
           </button>
-          <button 
-            onClick={() => setShowModal({
-              title: "Agregar Nuevo Jugador",
-              content: <PlayerFormViatico onSubmit={handleAdd} />
-            })} 
-            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
-          >
-            <Plus className="w-5 h-5" />
-            Agregar Jugador
-          </button>
         </div>
       </div>
       {/* Summary Section */}
