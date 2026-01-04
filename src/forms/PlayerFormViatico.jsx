@@ -31,7 +31,7 @@ export const PlayerFormViatico = ({ player, onSubmit }) => {
   };
 
   const categorias = ['3era', '4ta', 'S16', '5ta', '6ta', '7ma'];
-  const banks = ['Itau', 'Prex', 'Mi Dinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Other'];
+  const banks = ['Itau', 'Prex', 'MiDinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Otro'];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

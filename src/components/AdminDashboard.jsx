@@ -30,6 +30,7 @@ export const AdminDashboard = ({
   // Use the permission from currentUser instead of hardcoded emails
   const canAccessPlayers = currentUser?.canAccessPlayers || false;
   const canAccessViaticos = currentUser?.canAccessViaticos || false;
+  const canAccessWidgets = currentUser?.canAccessWidgets || false;
 
   // Rest of your code stays the same...
   const tabs = [
@@ -90,6 +91,10 @@ export const AdminDashboard = ({
             totalItems={totalItems} 
             activeDistributions={activeDistributions} 
             setActiveTab={setActiveTab} 
+            players={players}
+            distributions={distributions}
+            inventory={inventory}
+            canAccessWidgets={canAccessWidgets}
           />
         )}
         {activeTab === 'inventory' && (
