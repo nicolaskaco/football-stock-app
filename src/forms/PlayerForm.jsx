@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { DocumentUpload } from '../components/DocumentUpload';
 
 export const PlayerForm = ({ player, onSubmit }) => {
   const [formData, setFormData] = useState(player || { 
@@ -420,12 +421,28 @@ export const PlayerForm = ({ player, onSubmit }) => {
         </div>
       </div>
 
+      {/* DOCUMENTS SECTION */}
+      {player && player.id && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Documentos</h3>
+          <DocumentUpload playerId={player.id} playerName={player.name} />
+        </div>
+      )}
+
+      <button 
+        type="submit" 
+        className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+      >
+        {player ? '✓ Actualizar' : '+ Agregar'} Jugador
+      </button>
+
+      {/*}
       <button 
         type="submit" 
         className="w-full bg-black text-yellow-400 py-3 rounded-lg hover:bg-gray-800 font-medium transition-colors duration-200 mt-8"
       >
         {player ? 'Actualizar' : 'Agregar'} Jugador
-      </button>
+      </button>*/}
     </form>
   );
 };
