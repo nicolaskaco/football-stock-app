@@ -7,7 +7,7 @@ import { supabase } from './supabaseClient';
 
 const HeaderComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
-    App para manejar el Stock de la Indumentaria del Club Atlético Peñarol 2026 v5
+    App interna CAP v1
   </div>
 );
 

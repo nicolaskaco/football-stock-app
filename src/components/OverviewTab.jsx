@@ -1,6 +1,7 @@
 import React from 'react';
 import { Package, Users, TrendingDown, AlertCircle } from 'lucide-react';
 import { StatCard } from './StatCard';
+import { BirthdayWidget } from './BirthdayWidget';
 
 export const OverviewTab = ({ 
   lowStockItems, 
@@ -36,6 +37,7 @@ export const OverviewTab = ({
         value={lowStockItems.length} 
         color="red" 
       />
+      <BirthdayWidget />
     </div>
     {lowStockItems.length > 0 && (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">

@@ -56,7 +56,7 @@ export const AdminDashboard = ({
                 alt="Ropa CAP logo"
                 className="w-8 h-8 object-contain"
               />
-              <h1 className="text-xl font-bold text-gray-800">Ropa CAP</h1>
+              <h1 className="text-xl font-bold text-gray-800">App interna CAP</h1>
             </div>
             <button 
               onClick={onLogout} 

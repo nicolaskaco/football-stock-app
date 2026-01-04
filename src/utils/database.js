@@ -303,4 +303,93 @@ export const database = {
     
     return data.employee;
   },
+
+  async uploadDocument(playerId, file, documentType) {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${playerId}/${documentType}_${Date.now()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('player-documents')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      // Don't use getPublicUrl for private buckets
+      // Just save the file path
+      await supabase.from('player_documents').insert({
+        player_id: playerId,
+        document_type: documentType,
+        file_path: fileName,
+        file_url: fileName, // Store path, not URL
+        uploaded_at: new Date().toISOString()
+      });
+
+      return fileName;
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      throw error;
+    }
+  },
+
+  async getPlayerDocuments(playerId) {
+    const { data, error } = await supabase
+      .from('player_documents')
+      .select('*')
+      .eq('player_id', playerId)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getDocumentUrl(filePath) {
+    const { data, error } = await supabase.storage
+      .from('player-documents')
+      .createSignedUrl(filePath, 3600); // URL valid for 1 hour
+
+    if (error) throw error;
+    return data.signedUrl;
+  },
+
+  async deleteDocument(documentId, filePath) {
+    // Delete from storage
+    await supabase.storage
+      .from('player-documents')
+      .remove([filePath]);
+
+    // Delete from database
+    await supabase
+      .from('player_documents')
+      .delete()
+      .eq('id', documentId);
+  },
+
+  async getUpcomingBirthdays(daysAhead = 7) {
+    const { data: players, error } = await supabase
+      .from('players')
+      .select('*');
+
+    if (error) throw error;
+
+    const today = new Date();
+    const upcoming = players.filter(player => {
+      const birthDate = new Date(player.date_of_birth);
+      const thisYearBirthday = new Date(
+        today.getFullYear(),
+        birthDate.getMonth(),
+        birthDate.getDate()
+      );
+
+      const daysUntil = Math.ceil((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
+      return daysUntil >= 0 && daysUntil <= daysAhead;
+    });
+
+    return upcoming.map(player => ({
+      ...player,
+      daysUntilBirthday: Math.ceil(
+        (new Date(today.getFullYear(), new Date(player.date_of_birth).getMonth(), new Date(player.date_of_birth).getDate()) - today) / (1000 * 60 * 60 * 24)
+      )
+    }));
+  },
 };
