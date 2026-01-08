@@ -64,7 +64,7 @@ export const DirigenteForm = ({ dirigente, onSubmit }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Nacimiento *
+              Fecha de Nacimiento
             </label>
             <input 
               type="date" 

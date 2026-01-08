@@ -48,7 +48,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
 
   const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
   const banks = ['Itau', 'Prex', 'Mi Dinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Otro'];
-  const departamentos = ['Artigas', 'Canelones', 'Cerro Largo', 'Colonia', 'Durazno', 'Flores', 'Florida', 'Lavalleja', 'Maldonado', 'Montevideo', 'Paysandú', 'Río Negro', 'Rivera', 'Rocha', 'Salto', 'San José', 'Soriano', 'Tacuarembó', 'Treinta y Tres', 'Argentina', 'Brasil', 'Colombia', 'España', 'Venezuela'];
+  const departamentos = ['Montevideo', 'Canelones', 'Artigas', 'Cerro Largo', 'Colonia', 'Durazno', 'Flores', 'Florida', 'Lavalleja', 'Maldonado', 'Paysandú', 'Río Negro', 'Rivera', 'Rocha', 'Salto', 'San José', 'Soriano', 'Tacuarembó', 'Treinta y Tres', 'Argentina', 'Brasil', 'Colombia', 'España', 'Estados Unidos', 'Venezuela'];
   const posiciones = ['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero'];
 
   return (
