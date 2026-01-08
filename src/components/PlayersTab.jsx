@@ -11,7 +11,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showHistoryModal, setShowHistoryModal] = useState(null);
 
-  const categorias = ['3era', '4ta', 'S16', '5ta', '6ta', '7ma'];
+  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
 
   // Add safety check
   const safePlayers = Array.isArray(players) ? players : [];
