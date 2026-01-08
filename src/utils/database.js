@@ -176,6 +176,7 @@ export const database = {
     const { data, error } = await supabase
       .from('players')
       .select('*')
+      .eq('hide_player', false)
       .order('name', { ascending: true });
     
     if (error) throw error;
@@ -368,7 +369,8 @@ export const database = {
   async getUpcomingBirthdays(daysAhead = 7) {
     const { data: players, error } = await supabase
       .from('players')
-      .select('*');
+      .select('*')
+      .eq('hide_player', false);
 
     if (error) throw error;
 
@@ -391,6 +393,46 @@ export const database = {
         (new Date(today.getFullYear(), new Date(player.date_of_birth).getMonth(), new Date(player.date_of_birth).getDate()) - today) / (1000 * 60 * 60 * 24)
       )
     }));
+  },
+
+  async getUpcomingBirthdaysDirigentes(days = 7) {
+    try {
+      const { data, error } = await supabase
+        .from('dirigentes')
+        .select('id, name, date_of_birth')
+        .not('date_of_birth', 'is', null);
+
+      if (error) throw error;
+
+      const today = new Date();
+      const currentYear = today.getFullYear();
+      
+      const upcoming = data
+        .map(dirigente => {
+          const birthDate = new Date(dirigente.date_of_birth);
+          const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+          const nextYearBirthday = new Date(currentYear + 1, birthDate.getMonth(), birthDate.getDate());
+          
+          let daysUntil;
+          if (thisYearBirthday >= today) {
+            daysUntil = Math.ceil((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
+          } else {
+            daysUntil = Math.ceil((nextYearBirthday - today) / (1000 * 60 * 60 * 24));
+          }
+          
+          return {
+            ...dirigente,
+            daysUntilBirthday: daysUntil
+          };
+        })
+        .filter(dirigente => dirigente.daysUntilBirthday <= days)
+        .sort((a, b) => a.daysUntilBirthday - b.daysUntilBirthday);
+
+      return upcoming;
+    } catch (error) {
+      console.error('Error fetching upcoming birthdays for dirigentes:', error);
+      return [];
+    }
   },
 
   //DIRIGENTES
