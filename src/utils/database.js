@@ -392,4 +392,65 @@ export const database = {
       )
     }));
   },
+
+  //DIRIGENTES
+  async getDirigentes() {
+    try {
+      const { data, error } = await supabase
+        .from('dirigentes')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching dirigentes:', error);
+      throw error;
+    }
+  },
+
+  async addDirigente(dirigente) {
+    try {
+      const { data, error } = await supabase
+        .from('dirigentes')
+        .insert([dirigente])
+        .select();
+      
+      if (error) throw error;
+      return data[0];
+    } catch (error) {
+      console.error('Error adding dirigente:', error);
+      throw error;
+    }
+  },
+
+  async updateDirigente(id, dirigente) {
+    try {
+      const { data, error } = await supabase
+        .from('dirigentes')
+        .update(dirigente)
+        .eq('id', id)
+        .select();
+      
+      if (error) throw error;
+      return data[0];
+    } catch (error) {
+      console.error('Error updating dirigente:', error);
+      throw error;
+    }
+  },
+
+  async deleteDirigente(id) {
+    try {
+      const { error } = await supabase
+        .from('dirigentes')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting dirigente:', error);
+      throw error;
+    }
+  }
 };

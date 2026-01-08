@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginView } from './components/LoginView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { EmployeeView } from './components/EmployeeView';
+import { PlayerFormPublic } from './forms/PlayerFormPublic';
 import { database } from './utils/database';
 import { supabase } from './supabaseClient';
 
@@ -25,6 +27,7 @@ const App = () => {
   const [distributions, setDistributions] = useState([]);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dirigentes, setDirigentes] = useState([]);
 
   useEffect(() => {
     checkSession();
@@ -34,9 +37,7 @@ const App = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // User is already logged in
         const user = session.user;
-        //const isAdmin = user.user_metadata?.role === 'authenticated';
 
         const { data: permissions, error: permError } = await supabase
         .from('user_permissions')
@@ -57,7 +58,8 @@ const App = () => {
             name: 'Administrator', 
             canAccessPlayers: permissions?.can_access_players || false, 
             canAccessViaticos: permissions?.can_access_viatico || false, 
-            canAccessWidgets: permissions?.can_access_widgets || false 
+            canAccessWidgets: permissions?.can_access_widgets || false, 
+            canAccessDirigentes: permissions?.can_access_dirigentes || false 
           });
           await loadData();
           setCurrentView('dashboard');
@@ -71,17 +73,19 @@ const App = () => {
 
   const loadData = async () => {
     try {
-      const [empData, invData, distData, playersData] = await Promise.all([
+      const [empData, invData, distData, playersData, dirigentesData] = await Promise.all([
         database.getEmployees(),
         database.getInventory(),
         database.getDistributions(),
-        database.getPlayers()
+        database.getPlayers(),
+        database.getDirigentes()
       ]);
       
       setEmployees(empData || []);
       setInventory(invData || []);
       setDistributions(distData || []);
       setPlayers(playersData || []);
+      setDirigentes(dirigentesData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -90,7 +94,6 @@ const App = () => {
 
   const saveEmployees = async (data) => {
     setEmployees(data);
-    // Data is saved via individual operations in components
   };
 
   const saveInventory = async (data) => {
@@ -103,68 +106,66 @@ const App = () => {
   };
 
   const handleLogin = async (emailOrGovId, password, isAdmin) => {
-  if (isAdmin) {
-    // --- ADMIN LOGIN (unchanged) ---
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailOrGovId,
-        password,
-      });
+    if (isAdmin) {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: emailOrGovId,
+          password,
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const { data: permissions, error: permError } = await supabase
-        .from('user_permissions')
-        .select('*')
-        .eq('email', emailOrGovId)
-        .single();
+        const { data: permissions, error: permError } = await supabase
+          .from('user_permissions')
+          .select('*')
+          .eq('email', emailOrGovId)
+          .single();
 
-      if (permError) {
-        console.error('Error fetching permissions:', permError);
+        if (permError) {
+          console.error('Error fetching permissions:', permError);
+        }
+
+        setCurrentUser({
+          email: emailOrGovId,
+          isAdmin: true,
+          canAccessPlayers: permissions?.can_access_players || false,
+          canAccessViaticos: permissions?.can_access_viatico || false,
+          canAccessWidgets: permissions?.can_access_widgets || false,
+          canAccessDirigentes: permissions?.can_access_dirigentes || false
+        });
+
+        await loadData();
+        setCurrentView('dashboard');
+      } catch (error) {
+        alert('Invalid admin credentials: ' + error.message);
       }
+    } else {
+      try {
+        const employee = await database.validateEmployee(emailOrGovId, password);
+        
+        if (employee) {
+          // Only load inventory and employee's own distributions
+          const [myDistributions, myInventory] = await Promise.all([
+            database.getEmployeeDistributions(employee.id),
+            database.getEmployeeInventory(employee.id)
+          ]);
 
-      // Set the current user with permissions
-      setCurrentUser({
-        email: emailOrGovId,
-        isAdmin: true,
-        canAccessPlayers: permissions?.can_access_players || false,
-        canAccessViaticos: permissions?.can_access_viatico || false,
-        canAccessWidgets: permissions?.can_access_widgets || false
-      });
+          setDistributions(myDistributions);  // Only their distributions
+          setInventory(myInventory);
+          setEmployees([]);  // Don't load employee list
+          setPlayers([]);    // Don't load players
 
-      await loadData();
-      setCurrentView('dashboard');
-    } catch (error) {
-      alert('Invalid admin credentials: ' + error.message);
-    }
-  } else {
-    // --- EMPLOYEE LOGIN (FIXED) ---
-    try {
-      const employee = await database.validateEmployee(emailOrGovId, password);
-      
-      if (employee) {
-        // Only load inventory and employee's own distributions
-        const [myDistributions, myInventory] = await Promise.all([
-          database.getEmployeeDistributions(employee.id),
-          database.getEmployeeInventory(employee.id)
-        ]);
-
-        setDistributions(myDistributions);  // Only their distributions
-        setInventory(myInventory);
-        setEmployees([]);  // Don't load employee list
-        setPlayers([]);    // Don't load players
-
-        setCurrentUser({ ...employee, isAdmin: false });
-        setCurrentView('employee-view');
-      } else {
-        alert('Invalid credentials. Please check your Government ID and Employee ID.');
+          setCurrentUser({ ...employee, isAdmin: false });
+          setCurrentView('employee-view');
+        } else {
+          alert('Invalid credentials. Please check your Government ID and Employee ID.');
+        }
+      } catch (error) {
+        console.error(error);
+        alert('Error validating employee');
       }
-    } catch (error) {
-      console.error(error);
-      alert('Error validating employee');
     }
-  }
-};
+  };
 
   const handleLogout = async () => {
     if (currentUser?.isAdmin) {
@@ -186,32 +187,43 @@ const App = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <HeaderComponent />
-      {currentView === 'login' && (
-        <LoginView onLogin={handleLogin} />
-      )}
-      {currentView === 'dashboard' && (
-        <AdminDashboard
-          employees={employees}
-          inventory={inventory}
-          distributions={distributions}
-          players={players}
-          currentUser={currentUser}
-          onLogout={handleLogout}
-          onDataChange={loadData}
-        />
-      )}
-      {currentView === 'employee-view' && (
-        <EmployeeView
-          employee={currentUser}
-          distributions={distributions}
-          inventory={inventory}
-          onLogout={handleLogout}
-        />
-      )}
-      <FooterComponent />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        {/* Public form route - no header/footer */}
+        <Route path="/formulario" element={<PlayerFormPublic />} />
+        
+        {/* Main app routes - with header/footer */}
+        <Route path="/*" element={
+          <div className="min-h-screen bg-gray-50">
+            <HeaderComponent />
+            {currentView === 'login' && (
+              <LoginView onLogin={handleLogin} />
+            )}
+            {currentView === 'dashboard' && (
+              <AdminDashboard
+                employees={employees}
+                inventory={inventory}
+                distributions={distributions}
+                players={players}
+                dirigentes={dirigentes}
+                currentUser={currentUser}
+                onLogout={handleLogout}
+                onDataChange={loadData}
+              />
+            )}
+            {currentView === 'employee-view' && (
+              <EmployeeView
+                employee={currentUser}
+                distributions={distributions}
+                inventory={inventory}
+                onLogout={handleLogout}
+              />
+            )}
+            <FooterComponent />
+          </div>
+        } />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
