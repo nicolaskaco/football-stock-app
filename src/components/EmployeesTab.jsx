@@ -62,7 +62,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
       <div className="bg-white rounded-lg shadow mb-6 p-4">
         <input 
           type="text" 
-          placeholder="Buscar..." 
+          placeholder="Buscar por nombre o rol" 
           value={searchTerm} 
           onChange={(e) => setSearchTerm(e.target.value)} 
           className="w-full px-4 py-2 border rounded-lg" 
