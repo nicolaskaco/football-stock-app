@@ -172,7 +172,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               value={formData.celular} 
               onChange={(e) => setFormData({...formData, celular: e.target.value})} 
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder="099 123 456"
+              placeholder="099001891"
             />
           </div>
 
