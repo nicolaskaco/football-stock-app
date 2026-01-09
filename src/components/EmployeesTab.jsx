@@ -91,13 +91,13 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
                   title: "Agregar Funcionario",
                   content: <EmployeeForm employee={emp} onSubmit={handleEdit} />
                 })}
-                  className="text-blue-600"
+                  className="text-gray-600"
                 >
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={() => handleDelete(emp.id)} 
-                  className="text-red-600"
+                  className="text-yellow-600"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

@@ -5,7 +5,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
   const [formData, setFormData] = useState(player || { 
     name: '',
     gov_id: '',
-    date_of_birth: '',
+    date_of_birth: null,
     viatico: 0,
     complemento: 0,
     contrato: false,
@@ -89,7 +89,6 @@ export const PlayerForm = ({ player, onSubmit }) => {
             </label>
             <input 
               type="date" 
-              required 
               value={formData.date_of_birth} 
               onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})} 
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
