@@ -59,7 +59,8 @@ const App = () => {
             canAccessPlayers: permissions?.can_access_players || false, 
             canAccessViaticos: permissions?.can_access_viatico || false, 
             canAccessWidgets: permissions?.can_access_widgets || false, 
-            canAccessDirigentes: permissions?.can_access_dirigentes || false 
+            canAccessDirigentes: permissions?.can_access_dirigentes || false, 
+            categoria: permissions?.categoria ||[] 
           });
           await loadData();
           setCurrentView('dashboard');
@@ -131,7 +132,8 @@ const App = () => {
           canAccessPlayers: permissions?.can_access_players || false,
           canAccessViaticos: permissions?.can_access_viatico || false,
           canAccessWidgets: permissions?.can_access_widgets || false,
-          canAccessDirigentes: permissions?.can_access_dirigentes || false
+          canAccessDirigentes: permissions?.can_access_dirigentes || false,
+          categoria: permissions?.categoria || []
         });
 
         await loadData();

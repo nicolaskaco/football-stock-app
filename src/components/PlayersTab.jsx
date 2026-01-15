@@ -19,10 +19,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   // Filter players
   const filtered = safePlayers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
+                        p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategoria = filterCategoria === 'all' || p.categoria === filterCategoria;
     
-    return matchesSearch && matchesCategoria;
+    // Add permission-based categoria filter
+    const hasAccessToCategoria = !currentUser?.categoria || 
+                                  currentUser.categoria.length === 0 || 
+                                  currentUser.categoria.includes(p.categoria);
+                                  
+    return matchesSearch && matchesCategoria && hasAccessToCategoria;
   });
 
   // Calculate age
