@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { DistributionForm } from '../forms/DistributionForm';
 import { database } from '../utils/database';
 
@@ -83,20 +84,60 @@ export const DistributionsTab = ({
     }
   };
 
+  // Export to Excel function
+  const handleExportToExcel = () => {
+    const exportData = filtered.map(dist => {
+      const emp = employees.find(e => e.id === dist.employee_id);
+      const item = inventory.find(i => i.id === dist.item_id);
+      
+      return {
+        'Fecha': dist.date,
+        'Funcionario': emp?.name || 'N/A',
+        'Tipo de Ropa': item?.name || 'N/A',
+        'Talle': dist.size,
+        'Cantidad': dist.quantity,
+        'Condición': dist.condition,
+        'Autorizado por': dist.authorized_by,
+        'Estado': dist.return_date ? 'Devuelto' : 'Activo',
+        'Fecha Devolución': dist.return_date || '-'
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Distribuciones');
+    
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    const filename = `distribuciones_${date}_${time}.xlsx`;
+    
+    XLSX.writeFile(workbook, filename);
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Ropa Entregada</h2>
-        <button 
-          onClick={() => setShowModal({
-            title: "Entregar Ropa",
-            content: <DistributionForm employees={employees} inventory={inventory} onSubmit={handleAdd} />
-          })} 
-          className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-900"
-        >
-          <Plus className="w-5 h-5" />
-          Nueva entrega de Ropa
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleExportToExcel}
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+          >
+            <Download className="w-5 h-5" />
+            Exportar a Excel
+          </button>
+          <button 
+            onClick={() => setShowModal({
+              title: "Entregar Ropa",
+              content: <DistributionForm employees={employees} inventory={inventory} onSubmit={handleAdd} />
+            })} 
+            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-900"
+          >
+            <Plus className="w-5 h-5" />
+            Nueva entrega de Ropa
+          </button>
+        </div>
       </div>
       <div className="bg-white rounded-lg shadow mb-6 p-4">
         <select 

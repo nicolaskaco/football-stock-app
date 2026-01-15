@@ -7,7 +7,9 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
     role: '', 
     photo_url: '', 
     upper_size: '', 
-    lower_size: '' 
+    lower_size: '', 
+    celular: '',
+    categoria: ''
   });
 
   const handleSubmit = (e) => {
@@ -107,6 +109,24 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
           <option value="L">L</option>
           <option value="XL">XL</option>
           <option value="XXL">XXL</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Categoría
+        </label>
+        <select 
+          value={formData.categoria} 
+          onChange={(e) => setFormData({...formData, categoria: e.target.value})} 
+          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Elige la categoría en caso de aplicar</option>
+          <option value="4ta">4ta</option>
+          <option value="5ta">5ta</option>
+          <option value="S16">S16</option>
+          <option value="6ta">6ta</option>
+          <option value="7ma">7ma</option>
         </select>
       </div>
 
