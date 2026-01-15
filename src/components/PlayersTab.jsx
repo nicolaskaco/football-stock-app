@@ -11,6 +11,8 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showHistoryModal, setShowHistoryModal] = useState(null);
 
+  const canEditPlayers = currentUser?.canEditPlayers || false;
+
   const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
 
   // Add safety check
@@ -26,7 +28,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     const hasAccessToCategoria = !currentUser?.categoria || 
                                   currentUser.categoria.length === 0 || 
                                   currentUser.categoria.includes(p.categoria);
-                                  
+
     return matchesSearch && matchesCategoria && hasAccessToCategoria;
   });
 
@@ -72,10 +74,24 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         aValue = a.gov_id.toLowerCase();
         bValue = b.gov_id.toLowerCase();
         break;
-      case 'age':
-        aValue = calculateAge(a.date_of_birth);
-        bValue = calculateAge(b.date_of_birth);
-        break;
+      case 'posicion': {
+        const posicionOrder = ['arquero', 'zaguero', 'lateral', 'volante', 'extremo', 'delantero'];
+        
+        const aPos = a.posicion ? a.posicion.toLowerCase() : '';
+        const bPos = b.posicion ? b.posicion.toLowerCase() : '';
+        
+        // If either is empty, put it last
+        if (!aPos && !bPos) return 0;
+        if (!aPos) return 1;  // a goes last
+        if (!bPos) return -1; // b goes last
+        
+        aValue = posicionOrder.indexOf(aPos);
+        bValue = posicionOrder.indexOf(bPos);
+        
+        // If not found in order array, treat as if it were empty (put last)
+        if (aValue === -1) aValue = 999;
+        if (bValue === -1) bValue = 999;
+        break; }
       case 'categoria':
         aValue = categorias.indexOf(a.categoria);
         bValue = categorias.indexOf(b.categoria);
@@ -198,16 +214,19 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             <Download className="w-5 h-5" />
             Exportar a Excel
           </button>
-          <button 
-            onClick={() => setShowModal({
-              title: "Agregar Nuevo Jugador",
-              content: <PlayerForm onSubmit={handleAdd} />
-            })} 
-            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
-          >
-            <Plus className="w-5 h-5" />
-            Agregar Jugador
-          </button>
+          {canEditPlayers && (
+            <button 
+              onClick={() => setShowModal({
+                title: "Agregar Nuevo Jugador",
+                content: <PlayerForm onSubmit={handleAdd} />
+              })} 
+              className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
+            >
+              <Plus className="w-5 h-5" />
+              Agregar Jugador
+            </button>
+          )}
+          
         </div>
       </div>
       {/* Summary Section */}
@@ -283,12 +302,12 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                 </div>
               </th>
               <th 
-                onClick={() => handleSort('age')}
+                onClick={() => handleSort('posicion')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
-                  Edad
-                  <SortIcon columnKey="age" />
+                  Posición
+                  <SortIcon columnKey="posicion" />
                 </div>
               </th>
               <th 
@@ -345,9 +364,11 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                   <SortIcon columnKey="representante" />
                 </div>
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Acciones
-              </th>
+              {canEditPlayers && (
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Acciones
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -355,7 +376,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               <tr key={player.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium">{player.name}</td>
                 <td className="px-6 py-4 text-sm">{player.gov_id}</td>
-                <td className="px-6 py-4 text-sm">{calculateAge(player.date_of_birth)} años</td>
+                <td className="px-6 py-4 text-sm">{player.posicion}</td>
                 <td className="px-6 py-4">
                   <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
                     {player.categoria}
@@ -382,32 +403,34 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm">{player.representante || '-'}</td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
-                      className="text-purple-600 hover:text-purple-800"
-                      title="Ver historial"
-                    >
-                      <History className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => setShowModal({
-                        title: `Editar Jugador: ${player.name}`,
-                        content: <PlayerForm player={player} onSubmit={handleEdit} />
-                      })} 
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(player.id)} 
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+                {canEditPlayers && (
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
+                        className="text-purple-600 hover:text-purple-800"
+                        title="Ver historial"
+                      >
+                        <History className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => setShowModal({
+                          title: `Editar Jugador: ${player.name}`,
+                          content: <PlayerForm player={player} onSubmit={handleEdit} />
+                        })} 
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(player.id)} 
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

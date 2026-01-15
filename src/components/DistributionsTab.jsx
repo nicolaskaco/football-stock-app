@@ -110,7 +110,7 @@ export const DistributionsTab = ({
     const now = new Date();
     const date = now.toISOString().split('T')[0];
     const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
-    const filename = `distribuciones_${date}_${time}.xlsx`;
+    const filename = `ropa_entregada_${date}_${time}.xlsx`;
     
     XLSX.writeFile(workbook, filename);
   };

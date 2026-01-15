@@ -60,6 +60,7 @@ const App = () => {
             canAccessViaticos: permissions?.can_access_viatico || false, 
             canAccessWidgets: permissions?.can_access_widgets || false, 
             canAccessDirigentes: permissions?.can_access_dirigentes || false, 
+            canEditPlayers: permissions?.can_edit_players || false, 
             categoria: permissions?.categoria ||[] 
           });
           await loadData();
@@ -133,6 +134,7 @@ const App = () => {
           canAccessViaticos: permissions?.can_access_viatico || false,
           canAccessWidgets: permissions?.can_access_widgets || false,
           canAccessDirigentes: permissions?.can_access_dirigentes || false,
+          canEditPlayers: permissions?.can_edit_players || false, 
           categoria: permissions?.categoria || []
         });
 

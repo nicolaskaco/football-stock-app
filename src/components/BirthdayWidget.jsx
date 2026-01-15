@@ -69,7 +69,10 @@ export const BirthdayWidget = () => {
             <span className={`text-sm font-semibold ${
               person.type === 'player' ? 'text-pink-600' : 'text-blue-600'
             }`}>
-              {person.daysUntilBirthday === 0 ? '¡Hoy!' : `En ${person.daysUntilBirthday} días`}
+              {person.daysUntilBirthday === 0 
+                ? '¡Hoy!' 
+                : `En ${person.daysUntilBirthday} ${person.daysUntilBirthday === 1 ? 'día' : 'días'}`
+              }
             </span>
           </div>
         ))}

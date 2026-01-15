@@ -375,24 +375,39 @@ export const database = {
     if (error) throw error;
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day
+
     const upcoming = players.filter(player => {
-      const birthDate = new Date(player.date_of_birth);
+      if (!player.date_of_birth) return false; // Skip players without birthdate
+      
+      const [year, month, day] = player.date_of_birth.split('-');
+      const birthDate = new Date(year, month - 1, day);
       const thisYearBirthday = new Date(
         today.getFullYear(),
         birthDate.getMonth(),
         birthDate.getDate()
       );
+      thisYearBirthday.setHours(0, 0, 0, 0);
 
-      const daysUntil = Math.ceil((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
+      const daysUntil = Math.round((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
       return daysUntil >= 0 && daysUntil <= daysAhead;
     });
 
-    return upcoming.map(player => ({
-      ...player,
-      daysUntilBirthday: Math.ceil(
-        (new Date(today.getFullYear(), new Date(player.date_of_birth).getMonth(), new Date(player.date_of_birth).getDate()) - today) / (1000 * 60 * 60 * 24)
-      )
-    }));
+    return upcoming.map(player => {
+      const [year, month, day] = player.date_of_birth.split('-');
+      const birthDate = new Date(year, month - 1, day);
+      const thisYearBirthday = new Date(
+        today.getFullYear(),
+        birthDate.getMonth(),
+        birthDate.getDate()
+      );
+      thisYearBirthday.setHours(0, 0, 0, 0);
+
+      return {
+        ...player,
+        daysUntilBirthday: Math.round((thisYearBirthday - today) / (1000 * 60 * 60 * 24))
+      };
+    });
   },
 
   async getUpcomingBirthdaysDirigentes(days = 7) {
@@ -405,19 +420,24 @@ export const database = {
       if (error) throw error;
 
       const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const currentYear = today.getFullYear();
       
       const upcoming = data
+        .filter(dirigente => dirigente.date_of_birth) // Filter out null birthdates first
         .map(dirigente => {
-          const birthDate = new Date(dirigente.date_of_birth);
+          const [year, month, day] = dirigente.date_of_birth.split('-');
+          const birthDate = new Date(year, month - 1, day);
           const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
+          thisYearBirthday.setHours(0, 0, 0, 0);
           const nextYearBirthday = new Date(currentYear + 1, birthDate.getMonth(), birthDate.getDate());
+          nextYearBirthday.setHours(0, 0, 0, 0);
           
           let daysUntil;
           if (thisYearBirthday >= today) {
-            daysUntil = Math.ceil((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
+            daysUntil = Math.round((thisYearBirthday - today) / (1000 * 60 * 60 * 24));
           } else {
-            daysUntil = Math.ceil((nextYearBirthday - today) / (1000 * 60 * 60 * 24));
+            daysUntil = Math.round((nextYearBirthday - today) / (1000 * 60 * 60 * 24));
           }
           
           return {
