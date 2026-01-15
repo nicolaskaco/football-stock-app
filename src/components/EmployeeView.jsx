@@ -58,7 +58,7 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
               <p className="text-gray-600">{employee.role}</p>
               <div className="mt-2 text-sm text-gray-600">
                 <p>Talles sugeridos: Superior {employee.upper_size}, Inferior {employee.lower_size}</p>
-                <p>Total Ropa devuelta: {myDistributions.length}</p>
+                <p>Total Ropa entregada (historia): {myDistributions.length}</p>
                 <p>Ropa que posee: {activeDistributions.length} unidad(es)</p>
               </div>
             </div>
