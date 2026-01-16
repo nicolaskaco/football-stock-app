@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Download } from 'lucide-react';
+import { Plus, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DistributionForm } from '../forms/DistributionForm';
 import { database } from '../utils/database';
@@ -20,6 +20,83 @@ export const DistributionsTab = ({
     (filter === 'active' && !d.return_date) || 
     (filter === 'returned' && d.return_date)
   );
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  // Sorting function
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Render sort icon
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) {
+      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <ArrowUp className="w-4 h-4 text-blue-600" />
+      : <ArrowDown className="w-4 h-4 text-blue-600" />;
+  };
+
+  // Sort the filtered data
+  const sortedDistributions = [...filtered].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+
+    const empA = employees.find(e => e.id === a.employee_id);
+    const empB = employees.find(e => e.id === b.employee_id);
+    const itemA = inventory.find(i => i.id === a.item_id);
+    const itemB = inventory.find(i => i.id === b.item_id);
+
+    let aValue, bValue;
+
+    switch (sortConfig.key) {
+      case 'date':
+        aValue = new Date(a.date);
+        bValue = new Date(b.date);
+        break;
+      case 'employee':
+        aValue = empA?.name?.toLowerCase() || '';
+        bValue = empB?.name?.toLowerCase() || '';
+        break;
+      case 'item':
+        aValue = itemA?.name?.toLowerCase() || '';
+        bValue = itemB?.name?.toLowerCase() || '';
+        break;
+      case 'size':
+        aValue = a.size?.toLowerCase() || '';
+        bValue = b.size?.toLowerCase() || '';
+        break;
+      case 'quantity':
+        aValue = a.quantity || 0;
+        bValue = b.quantity || 0;
+        break;
+      case 'condition':
+        aValue = a.condition?.toLowerCase() || '';
+        bValue = b.condition?.toLowerCase() || '';
+        break;
+      case 'authorized':
+        aValue = a.authorized_by?.toLowerCase() || '';
+        bValue = b.authorized_by?.toLowerCase() || '';
+        break;
+      case 'status':
+        aValue = a.return_date ? 1 : 0;
+        bValue = b.return_date ? 1 : 0;
+        break;
+      default:
+        return 0;
+    }
+
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
 
   const handleAdd = async (dist) => {
     const item = inventory.find(i => i.id === dist.item_id || i.id === dist.item_id);
@@ -86,7 +163,7 @@ export const DistributionsTab = ({
 
   // Export to Excel function
   const handleExportToExcel = () => {
-    const exportData = filtered.map(dist => {
+    const exportData = sortedDistributions.map(dist => {
       const emp = employees.find(e => e.id === dist.employee_id);
       const item = inventory.find(i => i.id === dist.item_id);
       
@@ -154,19 +231,85 @@ export const DistributionsTab = ({
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Funcionario</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo de ROpa</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Talle</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Condición</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Autorizado por</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+              <th 
+                onClick={() => handleSort('date')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+              >
+                <div className="flex items-center gap-2">
+                  Fecha
+                  <SortIcon columnKey="date" />
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('employee')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+              >
+                <div className="flex items-center gap-2">
+                  Funcionario
+                  <SortIcon columnKey="employee" />
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('item')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+              >
+                <div className="flex items-center gap-2">
+                  Tipo de Ropa
+                  <SortIcon columnKey="item" />
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('size')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+              >
+                <div className="flex items-center gap-2">
+                  Talle
+                  <SortIcon columnKey="size" />
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('quantity')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+              >
+                <div className="flex items-center gap-2">
+                  Cantidad
+                  <SortIcon columnKey="quantity" />
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('condition')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+              >
+                <div className="flex items-center gap-2">
+                  Condición
+                  <SortIcon columnKey="condition" />
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('authorized')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+              >
+                <div className="flex items-center gap-2">
+                  Autorizado por
+                  <SortIcon columnKey="authorized" />
+                </div>
+              </th>
+              <th 
+                onClick={() => handleSort('status')}
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+              >
+                <div className="flex items-center gap-2">
+                  Estado
+                  <SortIcon columnKey="status" />
+                </div>
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y">
-            {filtered.map(dist => {
+            {sortedDistributions.map(dist => {
               const emp = employees.find(e => e.id === dist.employee_id);
               const item = inventory.find(i => i.id === dist.item_id);
               return (

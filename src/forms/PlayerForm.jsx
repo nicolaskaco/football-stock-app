@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DocumentUpload } from '../components/DocumentUpload';
 
-export const PlayerForm = ({ player, onSubmit }) => {
+export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
   const [formData, setFormData] = useState(player || { 
     name: '',
     gov_id: '',
@@ -66,6 +66,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               required 
               value={formData.name} 
               onChange={(e) => setFormData({...formData, name: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             />
           </div>
@@ -79,6 +80,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               required 
               value={formData.gov_id} 
               onChange={(e) => setFormData({...formData, gov_id: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             />
           </div>
@@ -91,6 +93,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               type="date" 
               value={formData.date_of_birth} 
               onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             />
           </div>
@@ -103,6 +106,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               required 
               value={formData.categoria} 
               onChange={(e) => setFormData({...formData, categoria: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Seleccione Categoría</option>
@@ -119,6 +123,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
             <select 
               value={formData.posicion} 
               onChange={(e) => setFormData({...formData, posicion: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Seleccione Posición</option>
@@ -135,6 +140,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
             <select 
               value={formData.departamento} 
               onChange={(e) => setFormData({...formData, departamento: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Seleccione Departamento</option>
@@ -158,6 +164,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               type="email" 
               value={formData.email} 
               onChange={(e) => setFormData({...formData, email: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder="email@ejemplo.com"
             />
@@ -171,6 +178,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               type="tel" 
               value={formData.celular} 
               onChange={(e) => setFormData({...formData, celular: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder="099001891"
             />
@@ -184,6 +192,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               type="text" 
               value={formData.representante} 
               onChange={(e) => setFormData({...formData, representante: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder="Nombre del Representante"
             />
@@ -197,6 +206,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               type="text" 
               value={formData.captador} 
               onChange={(e) => setFormData({...formData, captador: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder="Nombre del que lo trajo al club"
             />
@@ -213,6 +223,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               type="checkbox" 
               checked={formData.contrato} 
               onChange={(e) => setFormData({...formData, contrato: e.target.checked})} 
+              disabled={readOnly}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
             Tiene Contrato
@@ -225,7 +236,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               Viático {formData.contrato && <span className="text-red-500">(Deshabilitado)</span>}
             </label>
             <input type="text" inputMode="numeric" pattern="[0-9]*"
-              disabled={formData.contrato}
+              disabled={formData.contrato || readOnly}
               value={formData.viatico || ''} 
               onChange={(e) => setFormData({...formData, viatico: parseInt(e.target.value) || 0})} 
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" 
@@ -237,7 +248,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               Complemento {formData.contrato && <span className="text-red-500">(Deshabilitado)</span>}
             </label>
             <input type="text" inputMode="numeric" pattern="[0-9]*"
-              disabled={formData.contrato}
+              disabled={formData.contrato || readOnly}
               value={formData.complemento ?? 0}
               onChange={(e) => {
                 const value = e.target.value === '' ? 0 : Math.min(99999, Math.max(0, parseInt(e.target.value) || 0));
@@ -256,6 +267,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
             rows="3"
             value={formData.comentario_viatico} 
             onChange={(e) => setFormData({...formData, comentario_viatico: e.target.value})} 
+            disabled={readOnly}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             placeholder="Notas adicionales sobre viático..."
           />
@@ -273,6 +285,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
             <select 
               value={formData.bank} 
               onChange={(e) => setFormData({...formData, bank: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Seleccione Banco</option>
@@ -290,6 +303,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               type="text" 
               value={formData.bank_account} 
               onChange={(e) => setFormData({...formData, bank_account: e.target.value})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder="Número de cuenta"
             />
@@ -307,6 +321,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
                 type="checkbox" 
                 checked={formData.pasaporte_uy} 
                 onChange={(e) => setFormData({...formData, pasaporte_uy: e.target.checked})} 
+                disabled={readOnly}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               Pasaporte Uruguayo
@@ -319,6 +334,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
                 type="checkbox" 
                 checked={formData.pasaporte_ext} 
                 onChange={(e) => setFormData({...formData, pasaporte_ext: e.target.checked})} 
+                disabled={readOnly}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               Pasaporte Extranjero
@@ -334,6 +350,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
                 type="text" 
                 value={formData.tipo_pasaporte_ext} 
                 onChange={(e) => setFormData({...formData, tipo_pasaporte_ext: e.target.value})} 
+                disabled={readOnly}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
                 placeholder="Italia"
               />
@@ -350,6 +367,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               max="2100"
               value={formData.fecha_llegada || ''} 
               onChange={(e) => setFormData({...formData, fecha_llegada: e.target.value ? parseInt(e.target.value) : null})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder="2024"
             />
@@ -368,6 +386,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
             <input type="text" inputMode="numeric" pattern="[0-9]*"
               value={formData.numero_buzo || ''} 
               onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             />
           </div>
@@ -383,6 +402,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
               name="pantalon"
               value={formData.numero_pantalon || ''} 
               onChange={(e) => setFormData({...formData, numero_pantalon: e.target.value ? parseInt(e.target.value) : null})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             />
           </div>
@@ -402,6 +422,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
                 type="checkbox" 
                 checked={formData.casita} 
                 onChange={(e) => setFormData({...formData, casita: e.target.checked})} 
+                disabled={readOnly}
                 className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
             </div>
@@ -414,6 +435,7 @@ export const PlayerForm = ({ player, onSubmit }) => {
             <input type="text" inputMode="numeric" pattern="[0-9]*"
               value={formData.vianda || ''} 
               onChange={(e) => setFormData({...formData, vianda: parseInt(e.target.value) || 0})} 
+              disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             />
           </div>
@@ -424,16 +446,22 @@ export const PlayerForm = ({ player, onSubmit }) => {
       {player && player.id && (
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Documentos</h3>
-          <DocumentUpload playerId={player.id} playerName={player.name} />
+          <DocumentUpload playerId={player.id} playerName={player.name} readOnly={readOnly} />
         </div>
       )}
 
-      <button 
-        type="submit" 
-        className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200"
-      >
-        {player ? '✓ Actualizar' : '+ Agregar'} Jugador
-      </button>
+      {readOnly ? (
+        <div className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg text-center font-bold text-lg">
+          Modo Solo Lectura
+        </div>
+      ) : (
+        <button 
+          type="submit" 
+          className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+        >
+          {player ? '✓ Actualizar' : '+ Agregar'} Jugador
+        </button>
+      )}
 
       {/*}
       <button 

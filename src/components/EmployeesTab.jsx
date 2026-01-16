@@ -34,13 +34,16 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Delete employee?')) {
+      alert('Comunicarse con Kaco antes de borrar un record');
+      return;
+      /*
       try {
         await database.deleteEmployee(id);
         await onDataChange(); // Refresh data from database
       } catch (error) {
         console.error('Error deleting employee:', error);
         alert('Error deleting employee: ' + error.message);
-      }
+      }*/
     }
   };
 
