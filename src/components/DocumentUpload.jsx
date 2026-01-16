@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, File, Trash2 } from 'lucide-react';
 import { database } from '../utils/database';
 
-export const DocumentUpload = ({ playerId, playerName }) => {
+export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
   const [documents, setDocuments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [documentUrls, setDocumentUrls] = useState({});
@@ -55,7 +55,7 @@ export const DocumentUpload = ({ playerId, playerName }) => {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold">Documentos</h3>
+      <h3 className="font-semibold">Cédula, Pasaportes y Contrato</h3>
       
       <div className="grid grid-cols-2 gap-4">
         {documentTypes.map(type => (
@@ -67,7 +67,7 @@ export const DocumentUpload = ({ playerId, playerName }) => {
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={(e) => handleUpload(e, type.id)}
-                disabled={uploading}
+                disabled={readOnly || uploading}
                 className="text-sm"
             />
             </div>
