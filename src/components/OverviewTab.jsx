@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Users, TrendingDown, AlertCircle } from 'lucide-react';
+import { Package, Users, TrendingUp, AlertCircle } from 'lucide-react';
 import { StatCard } from './StatCard';
 import { BirthdayWidget } from './BirthdayWidget';
 import { SpendingTrendsWidget } from './SpendingTrendsWidget';
@@ -25,22 +25,16 @@ export const OverviewTab = ({
     {/* Existing Stats Cards */}
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <StatCard 
-        icon={<Package className="w-8 h-8" />} 
-        label="Total Ropa entregada" 
+        icon={<TrendingUp className="w-8 h-8" />} 
+        label="Ropa Entregada en activo" 
         value={totalItems} 
-        color="black" 
+        color="purple" 
       />
       <StatCard 
         icon={<Users className="w-8 h-8" />} 
         label="Total Funcionarios" 
         value={totalEmployees} 
         color="green" 
-      />
-      <StatCard 
-        icon={<TrendingDown className="w-8 h-8" />} 
-        label="Ropa Entregada en activo" 
-        value={activeDistributions} 
-        color="purple" 
       />
       <StatCard 
         icon={<AlertCircle className="w-8 h-8" />} 

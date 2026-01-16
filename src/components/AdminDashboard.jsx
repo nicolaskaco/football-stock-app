@@ -26,8 +26,8 @@ export const AdminDashboard = ({
 
   const lowStockItems = inventory.filter(item => item.quantity <= item.min_stock);
   const totalEmployees = employees.length;
-  const totalItems = inventory.reduce((sum, item) => sum + item.quantity, 0);
-  const activeDistributions = distributions.filter(d => !d.return_date && !d.return_date).length;
+  const activeDistributions = distributions.filter(d => !d.return_date);
+  const totalItems = activeDistributions.reduce((sum, dist) => sum + dist.quantity, 0);
 
   // Use the permission from currentUser instead of hardcoded emails
   const canAccessPlayers = currentUser?.canAccessPlayers || false;
