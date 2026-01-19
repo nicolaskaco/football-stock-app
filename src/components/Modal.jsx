@@ -7,7 +7,7 @@ export const Modal = ({ children, onClose, title = "Form" }) => (
     onClick={onClose}
   >
     <div 
-      className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" 
+      className="bg-white rounded-lg max-w-7xl w-full max-h-[90vh] overflow-y-auto" 
       onClick={(e) => e.stopPropagation()}
     >
       <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">

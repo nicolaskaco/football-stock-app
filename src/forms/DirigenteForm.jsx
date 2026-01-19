@@ -30,7 +30,7 @@ export const DirigenteForm = ({ dirigente, onSubmit }) => {
   const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Captación'];
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información del Dirigente</h3>
         
