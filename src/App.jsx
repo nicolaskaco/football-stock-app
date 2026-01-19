@@ -28,6 +28,7 @@ const App = () => {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dirigentes, setDirigentes] = useState([]);
+  const [torneos, setTorneos] = useState([]);
 
   useEffect(() => {
     checkSession();
@@ -61,7 +62,9 @@ const App = () => {
             canAccessWidgets: permissions?.can_access_widgets || false, 
             canAccessDirigentes: permissions?.can_access_dirigentes || false, 
             canEditPlayers: permissions?.can_edit_players || false, 
-            categoria: permissions?.categoria ||[] 
+            categoria: permissions?.categoria ||[], 
+            canEditTorneo: permissions?.edit_torneo || false,
+            canViewTorneo: permissions?.view_torneo || false
           });
           await loadData();
           setCurrentView('dashboard');
@@ -75,12 +78,13 @@ const App = () => {
 
   const loadData = async () => {
     try {
-      const [empData, invData, distData, playersData, dirigentesData] = await Promise.all([
+      const [empData, invData, distData, playersData, dirigentesData, torneosData] = await Promise.all([
         database.getEmployees(),
         database.getInventory(),
         database.getDistributions(),
         database.getPlayers(),
-        database.getDirigentes()
+        database.getDirigentes(),
+        database.getTorneos()
       ]);
       
       setEmployees(empData || []);
@@ -88,6 +92,7 @@ const App = () => {
       setDistributions(distData || []);
       setPlayers(playersData || []);
       setDirigentes(dirigentesData || []);
+      setTorneos(torneosData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -135,7 +140,9 @@ const App = () => {
           canAccessWidgets: permissions?.can_access_widgets || false,
           canAccessDirigentes: permissions?.can_access_dirigentes || false,
           canEditPlayers: permissions?.can_edit_players || false, 
-          categoria: permissions?.categoria || []
+          categoria: permissions?.categoria || [],
+          canEditTorneo: permissions?.edit_torneo || false,
+          canViewTorneo: permissions?.view_torneo || false
         });
 
         await loadData();
@@ -210,6 +217,7 @@ const App = () => {
                 distributions={distributions}
                 players={players}
                 dirigentes={dirigentes}
+                torneos={torneos}
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 onDataChange={loadData}

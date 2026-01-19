@@ -6,7 +6,7 @@ export const database = {
     const { data, error } = await supabase
       .from('employees')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('name', { ascending: true });
     
     if (error) throw error;
     return data;
@@ -512,6 +512,151 @@ export const database = {
       if (error) throw error;
     } catch (error) {
       console.error('Error deleting dirigente:', error);
+      throw error;
+    }
+  },
+
+  // TORNEOS
+  // Update getTorneos to include funcionarios
+  async getTorneos() {
+    const { data, error } = await supabase
+      .from('torneos')
+      .select(`
+        *,
+        torneo_dirigentes(dirigente_id, dirigentes(id, name, rol, categoria)),
+        torneo_players(player_id, players(id, name, categoria, posicion)),
+        torneo_funcionarios(employee_id, employees(id, name, role, categoria))
+      `)
+      .order('start_date', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Update addTorneo to include funcionarios
+  async addTorneo(torneo, dirigenteIds, playerIds, employeeIds = []) {
+    const { data: torneoData, error: torneoError } = await supabase
+      .from('torneos')
+      .insert([torneo])
+      .select()
+      .single();
+
+    if (torneoError) throw torneoError;
+
+    // Insert dirigentes
+    if (dirigenteIds.length > 0) {
+      const dirigenteRecords = dirigenteIds.map(id => ({
+        torneo_id: torneoData.id,
+        dirigente_id: id
+      }));
+      
+      const { error: dirError } = await supabase
+        .from('torneo_dirigentes')
+        .insert(dirigenteRecords);
+      
+      if (dirError) throw dirError;
+    }
+
+    // Insert players
+    if (playerIds.length > 0) {
+      const playerRecords = playerIds.map(id => ({
+        torneo_id: torneoData.id,
+        player_id: id
+      }));
+      
+      const { error: playerError } = await supabase
+        .from('torneo_players')
+        .insert(playerRecords);
+      
+      if (playerError) throw playerError;
+    }
+
+    // Insert funcionarios
+    if (employeeIds.length > 0) {
+      const employeeRecords = employeeIds.map(id => ({
+        torneo_id: torneoData.id,
+        employee_id: id
+      }));
+      
+      const { error: empError } = await supabase
+        .from('torneo_funcionarios')
+        .insert(employeeRecords);
+      
+      if (empError) throw empError;
+    }
+
+    return torneoData;
+  },
+
+  // Update updateTorneo to include funcionarios
+  async updateTorneo(id, torneo, dirigenteIds = [], playerIds = [], employeeIds = []) {
+    // First, update the torneo basic info
+    const { error: updateError } = await supabase
+      .from('torneos')
+      .update({
+        name: torneo.name,
+        country: torneo.country,
+        city: torneo.city,
+        categoria: torneo.categoria,
+        start_date: torneo.start_date,
+        end_date: torneo.end_date
+      })
+      .eq('id', id);
+
+    if (updateError) throw updateError;
+
+    // Delete existing relationships
+    await supabase.from('torneo_dirigentes').delete().eq('torneo_id', id);
+    await supabase.from('torneo_players').delete().eq('torneo_id', id);
+    await supabase.from('torneo_funcionarios').delete().eq('torneo_id', id);
+
+    // Insert new dirigentes relationships
+    if (dirigenteIds.length > 0) {
+      const dirigenteRecords = dirigenteIds.map(dirigente_id => ({
+        torneo_id: id,
+        dirigente_id
+      }));
+      const { error: dirError } = await supabase
+        .from('torneo_dirigentes')
+        .insert(dirigenteRecords);
+      if (dirError) throw dirError;
+    }
+
+    // Insert new players relationships
+    if (playerIds.length > 0) {
+      const playerRecords = playerIds.map(player_id => ({
+        torneo_id: id,
+        player_id
+      }));
+      const { error: playError } = await supabase
+        .from('torneo_players')
+        .insert(playerRecords);
+      if (playError) throw playError;
+    }
+
+    // Insert new funcionarios relationships
+    if (employeeIds.length > 0) {
+      const employeeRecords = employeeIds.map(employee_id => ({
+        torneo_id: id,
+        employee_id
+      }));
+      const { error: empError } = await supabase
+        .from('torneo_funcionarios')
+        .insert(employeeRecords);
+      if (empError) throw empError;
+    }
+  },
+
+  async deleteTorneo(id) {
+    try {
+      const { error } = await supabase
+        .from('torneos')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting torneo:', error);
       throw error;
     }
   }

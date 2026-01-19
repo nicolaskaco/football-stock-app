@@ -101,7 +101,7 @@ export const InventoryForm = ({ item, onSubmit }) => {
 
       <button 
         type="submit" 
-        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-medium"
+        className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200"
       >
         {item ? 'Actualizar' : 'Agregar'} Inventario
       </button>
