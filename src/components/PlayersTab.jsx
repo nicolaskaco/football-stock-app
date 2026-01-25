@@ -70,9 +70,9 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         aValue = a.name.toLowerCase();
         bValue = b.name.toLowerCase();
         break;
-      case 'gov_id':
-        aValue = a.gov_id.toLowerCase();
-        bValue = b.gov_id.toLowerCase();
+      case 'celular':
+        aValue = a.celular.toLowerCase();
+        bValue = b.celular.toLowerCase();
         break;
       case 'posicion': {
         const posicionOrder = ['arquero', 'zaguero', 'lateral', 'volante', 'extremo', 'delantero'];
@@ -293,12 +293,12 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                 </div>
               </th>
               <th 
-                onClick={() => handleSort('gov_id')}
+                onClick={() => handleSort('celular')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
-                  Cédula
-                  <SortIcon columnKey="gov_id" />
+                  Celular
+                  <SortIcon columnKey="celular" />
                 </div>
               </th>
               <th 
@@ -373,7 +373,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             {sortedPlayers.map(player => (
               <tr key={player.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium">{player.name}</td>
-                <td className="px-6 py-4 text-sm">{player.gov_id}</td>
+                <td className="px-6 py-4 text-sm">{player.celular}</td>
                 <td className="px-6 py-4 text-sm">{player.posicion}</td>
                 <td className="px-6 py-4">
                   <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
