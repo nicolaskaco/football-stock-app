@@ -179,6 +179,7 @@ export const PlayerFormPublic = () => {
               >
                 <option value="">Seleccione un departamento</option>
                 <option value="Montevideo">Montevideo</option>
+                <option value="Canelones (Ciudad de la Costa)">Canelones (Ciudad de la Costa)</option>
                 <option value="Canelones">Canelones</option>
                 <option value="Maldonado">Maldonado</option>
                 <option value="Rocha">Rocha</option>
