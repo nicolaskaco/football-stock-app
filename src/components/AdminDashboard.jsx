@@ -11,6 +11,7 @@ import { PlayersTabViatico } from './PlayersTabViatico';
 import { ReportsTab } from './ReportsTab';
 import { DirigentesTab } from './DirigentesTab';
 import { TorneosTab } from './TorneosTab';
+import { ComisionesTab } from './ComisionesTab';
 
 export const AdminDashboard = ({ 
   employees, 
@@ -19,6 +20,7 @@ export const AdminDashboard = ({
   players, 
   dirigentes, 
   torneos,
+  comisiones,
   onLogout, 
   onDataChange, 
   currentUser
@@ -37,6 +39,8 @@ export const AdminDashboard = ({
   const canAccessWidgets = currentUser?.canAccessWidgets || false;
   const canAccessDirigentes = currentUser?.canAccessDirigentes || false;
   const canViewTorneo = currentUser?.canViewTorneo || false;
+  const canViewComisiones = currentUser?.canViewComisiones || false;
+  //const canEditComision = currentUser?.canEditComision || false;
 
   // Rest of your code stays the same...
   const tabs = [
@@ -48,6 +52,7 @@ export const AdminDashboard = ({
     { id: 'distributions', label: 'Distribuciones', show: true },
     { id: 'dirigentes', label: 'Dirigentes', show: canAccessDirigentes },
     { id: 'torneos', label: 'Torneos', show: canViewTorneo },
+    { id: 'comisiones', label: 'Comisiones', show: canViewComisiones },
     { id: 'reports', label: 'Reportes', show: true }
   ];
 
@@ -157,6 +162,15 @@ export const AdminDashboard = ({
             dirigentes={dirigentes}
             players={players}
             employees={employees}
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}
+            currentUser={currentUser}
+          />
+        )}
+        {activeTab === 'comisiones' && canViewComisiones && (
+          <ComisionesTab 
+            comisiones={comisiones}
+            dirigentes={dirigentes}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}

@@ -659,5 +659,82 @@ export const database = {
       console.error('Error deleting torneo:', error);
       throw error;
     }
+  },
+
+  // Get all comisiones with their dirigentes
+  async getComisiones() {
+    const { data, error } = await supabase
+      .from('comisiones')
+      .select(`
+        *,
+        comision_dirigentes (
+          dirigente_id,
+          dirigentes (*)
+        )
+      `)
+      .order('name', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Add a new comision
+  async addComision(comision, dirigenteIds = []) {
+    const { data: newComision, error: comisionError } = await supabase
+      .from('comisiones')
+      .insert([comision])
+      .select()
+      .single();
+
+    if (comisionError) throw comisionError;
+
+    if (dirigenteIds.length > 0) {
+      const dirigenteRecords = dirigenteIds.map(dirigente_id => ({
+        comision_id: newComision.id,
+        dirigente_id
+      }));
+      const { error: dirError } = await supabase
+        .from('comision_dirigentes')
+        .insert(dirigenteRecords);
+      if (dirError) throw dirError;
+    }
+
+    return newComision;
+  },
+
+  // Update comision
+  async updateComision(id, comision, dirigenteIds = []) {
+    const { error: updateError } = await supabase
+      .from('comisiones')
+      .update({
+        name: comision.name,
+        description: comision.description
+      })
+      .eq('id', id);
+
+    if (updateError) throw updateError;
+
+    await supabase.from('comision_dirigentes').delete().eq('comision_id', id);
+
+    if (dirigenteIds.length > 0) {
+      const dirigenteRecords = dirigenteIds.map(dirigente_id => ({
+        comision_id: id,
+        dirigente_id
+      }));
+      const { error: dirError } = await supabase
+        .from('comision_dirigentes')
+        .insert(dirigenteRecords);
+      if (dirError) throw dirError;
+    }
+  },
+
+  // Delete comision
+  async deleteComision(id) {
+    const { error } = await supabase
+      .from('comisiones')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
   }
 };

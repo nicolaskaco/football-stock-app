@@ -9,7 +9,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
   const [searchTerm, setSearchTerm] = useState('');
 
   const canEditTorneo = currentUser?.canEditTorneo || false;
-  const canViewTorneo = currentUser?.canViewTorneo || false;
+  //const canViewTorneo = currentUser?.canViewTorneo || false;
 
   // Safety check
   const safeTorneos = Array.isArray(torneos) ? torneos : [];
