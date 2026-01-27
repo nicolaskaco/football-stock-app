@@ -311,70 +311,6 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
         </div>
       </div>
 
-      {/* PASSPORT INFORMATION */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Pasaporte</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <input 
-                type="checkbox" 
-                checked={formData.pasaporte_uy} 
-                onChange={(e) => setFormData({...formData, pasaporte_uy: e.target.checked})} 
-                disabled={readOnly}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              Pasaporte Uruguayo
-            </label>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-              <input 
-                type="checkbox" 
-                checked={formData.pasaporte_ext} 
-                onChange={(e) => setFormData({...formData, pasaporte_ext: e.target.checked})} 
-                disabled={readOnly}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-              />
-              Pasaporte Extranjero
-            </label>
-          </div>
-
-          {formData.pasaporte_ext && (
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                País del Pasaporte Extranjero
-              </label>
-              <input 
-                type="text" 
-                value={formData.tipo_pasaporte_ext} 
-                onChange={(e) => setFormData({...formData, tipo_pasaporte_ext: e.target.value})} 
-                disabled={readOnly}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                placeholder="Italia"
-              />
-            </div>
-          )}
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Llegada (año)
-            </label>
-            <input 
-              type="number" 
-              min="2000"
-              max="2100"
-              value={formData.fecha_llegada || ''} 
-              onChange={(e) => setFormData({...formData, fecha_llegada: e.target.value ? parseInt(e.target.value) : null})} 
-              disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder="2024"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* UNIFORM INFORMATION */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Indumentaria</h3>
@@ -437,6 +373,70 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
               onChange={(e) => setFormData({...formData, vianda: parseInt(e.target.value) || 0})} 
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* PASSPORT INFORMATION */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Pasaporte</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input 
+                type="checkbox" 
+                checked={formData.pasaporte_uy} 
+                onChange={(e) => setFormData({...formData, pasaporte_uy: e.target.checked})} 
+                disabled={readOnly}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              Pasaporte Uruguayo
+            </label>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <input 
+                type="checkbox" 
+                checked={formData.pasaporte_ext} 
+                onChange={(e) => setFormData({...formData, pasaporte_ext: e.target.checked})} 
+                disabled={readOnly}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              Pasaporte Extranjero
+            </label>
+          </div>
+
+          {formData.pasaporte_ext && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                País del Pasaporte Extranjero
+              </label>
+              <input 
+                type="text" 
+                value={formData.tipo_pasaporte_ext} 
+                onChange={(e) => setFormData({...formData, tipo_pasaporte_ext: e.target.value})} 
+                disabled={readOnly}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+                placeholder="Italia"
+              />
+            </div>
+          )}
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha de Llegada (año)
+            </label>
+            <input 
+              type="number" 
+              min="2000"
+              max="2100"
+              value={formData.fecha_llegada || ''} 
+              onChange={(e) => setFormData({...formData, fecha_llegada: e.target.value ? parseInt(e.target.value) : null})} 
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+              placeholder="2024"
             />
           </div>
         </div>
