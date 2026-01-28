@@ -56,7 +56,7 @@ export const OverviewTab = ({
     )}
 
     {/* Keep MostDistributedWidget outside - it's inventory related, not player related */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
       <MostDistributedWidget distributions={distributions} inventory={inventory} />
     </div>
 
