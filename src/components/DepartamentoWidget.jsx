@@ -21,10 +21,10 @@ export const DepartamentoWidget = ({ players }) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 8);
 
-    const total = sorted.reduce((sum, d) => sum + d.count, 0);
+    const totalPlayers = players.length; // Changed: total of ALL players
     const withPercentage = sorted.map(d => ({
       ...d,
-      percentage: total > 0 ? ((d.count / total) * 100).toFixed(1) : 0
+      percentage: totalPlayers > 0 ? ((d.count / totalPlayers) * 100).toFixed(1) : 0
     }));
 
     setTopDepartamentos(withPercentage);
