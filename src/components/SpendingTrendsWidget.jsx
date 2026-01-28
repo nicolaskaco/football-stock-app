@@ -205,7 +205,7 @@ export const SpendingTrendsWidget = ({ players }) => {
                 <div className="flex gap-1 h-8">
                   {trend.viaticos > 0 && (
                     <div 
-                      className="bg-blue-500 rounded relative group cursor-pointer"
+                      className="bg-gray-900 rounded relative group cursor-pointer"
                       style={{ width: `${(trend.viaticos / maxValue) * 100}%` }}
                     >
                       <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -215,7 +215,7 @@ export const SpendingTrendsWidget = ({ players }) => {
                   )}
                   {trend.complementos > 0 && (
                     <div 
-                      className="bg-purple-500 rounded relative group cursor-pointer"
+                      className="bg-yellow-500 rounded relative group cursor-pointer"
                       style={{ width: `${(trend.complementos / maxValue) * 100}%` }}
                     >
                       <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
@@ -235,11 +235,11 @@ export const SpendingTrendsWidget = ({ players }) => {
 
           <div className="mt-4 pt-4 border-t flex gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-500 rounded"></div>
+              <div className="w-3 h-3 bg-gray-800 rounded"></div>
               <span>Viáticos</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-purple-500 rounded"></div>
+              <div className="w-3 h-3 bg-yellow-500 rounded"></div>
               <span>Complementos</span>
             </div>
           </div>
