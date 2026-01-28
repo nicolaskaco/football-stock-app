@@ -10,6 +10,8 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [filterCategoria, setFilterCategoria] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showHistoryModal, setShowHistoryModal] = useState(null);
+  const [filterCasita, setFilterCasita] = useState(false);
+  const [filterContrato, setFilterContrato] = useState(false);
 
   const canEditPlayers = currentUser?.canEditPlayers || false;
 
@@ -23,13 +25,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                         p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategoria = filterCategoria === 'all' || p.categoria === filterCategoria;
+    const matchesCasita = !filterCasita || p.casita === true;
+    const matchesContrato = !filterContrato || p.contrato === true;
     
     // Add permission-based categoria filter
     const hasAccessToCategoria = !currentUser?.categoria || 
                                   currentUser.categoria.length === 0 || 
                                   currentUser.categoria.includes(p.categoria);
 
-    return matchesSearch && matchesCategoria && hasAccessToCategoria;
+    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && hasAccessToCategoria;
   });
 
   // Calculate age
@@ -264,13 +268,13 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       )}
             
       <div className="bg-white rounded-lg shadow mb-6 mt-6 p-4">
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex gap-4 flex-wrap items-center">
           <input 
             type="text" 
             placeholder="Buscar por nombre o cédula..." 
             value={searchTerm} 
             onChange={(e) => setSearchTerm(e.target.value)} 
-            className="flex-1 min-w-[200px] px-4 py-2 border rounded-lg" 
+            className="flex-1 min-w-[180px] px-4 py-2 border rounded-lg" 
           />
           <select 
             value={filterCategoria} 
@@ -282,6 +286,24 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
+          <label className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100">
+            <input 
+              type="checkbox" 
+              checked={filterCasita}
+              onChange={(e) => setFilterCasita(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Solo Residencia</span>
+          </label>
+          <label className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100">
+            <input 
+              type="checkbox" 
+              checked={filterContrato}
+              onChange={(e) => setFilterContrato(e.target.checked)}
+              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Solo Contrato</span>
+          </label>
         </div>
       </div>
 
