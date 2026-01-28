@@ -29,7 +29,7 @@ export const BirthdayWidget = () => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Cake className="w-6 h-6 text-pink-600" />
+        <Cake className="w-6 h-6 text-yellow-600" />
         <h3 className="text-lg font-bold">Próximos Cumpleaños</h3>
       </div>
       <div className="space-y-3">
@@ -37,14 +37,14 @@ export const BirthdayWidget = () => {
           <div 
             key={`${person.type}-${person.id}`} 
             className={`flex items-center justify-between border-l-4 pl-3 py-2 ${
-              person.type === 'player' ? 'border-pink-400 bg-pink-50' : 'border-blue-400 bg-blue-50'
+              person.type === 'player' ? 'border-yellow-400 bg-yellow-50' : 'border-cyan-400 bg-cyan-50'
             }`}
           >
             <div className="flex items-center gap-2 flex-1">
               {person.type === 'player' ? (
-                <Users className="w-4 h-4 text-pink-600" />
+                <Users className="w-4 h-4 text-yellow-600" />
               ) : (
-                <Shield className="w-4 h-4 text-blue-600" />
+                <Shield className="w-4 h-4 text-cyan-600" />
               )}
               <div>
                 <p className="font-medium">{person.name}</p>
@@ -58,8 +58,8 @@ export const BirthdayWidget = () => {
                   </p>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
                     person.type === 'player' 
-                      ? 'bg-pink-100 text-pink-700' 
-                      : 'bg-blue-100 text-blue-700'
+                      ? 'bg-yellow-100 text-yellow-700' 
+                      : 'bg-cyan-100 text-gray-700'
                   }`}>
                     {person.type === 'player' ? 'Jugador' : 'Dirigente'}
                   </span>
@@ -67,7 +67,7 @@ export const BirthdayWidget = () => {
               </div>
             </div>
             <span className={`text-sm font-semibold ${
-              person.type === 'player' ? 'text-pink-600' : 'text-blue-600'
+              person.type === 'player' ? 'text-yellow-600' : 'text-cyan-600'
             }`}>
               {person.daysUntilBirthday === 0 
                 ? '¡Hoy!' 

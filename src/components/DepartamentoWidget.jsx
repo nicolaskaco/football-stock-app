@@ -35,7 +35,7 @@ export const DepartamentoWidget = ({ players }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center gap-2 mb-4">
-        <MapPin className="w-6 h-6 text-red-600" />
+        <MapPin className="w-6 h-6 text-violet-800" />
         <h3 className="text-lg font-bold">Top Departamentos</h3>
       </div>
 
@@ -51,7 +51,7 @@ export const DepartamentoWidget = ({ players }) => {
             </div>
             <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
               <div 
-                className="bg-red-600 h-full rounded-full transition-all duration-300"
+                className="bg-violet-800 h-full rounded-full transition-all duration-300"
                 style={{ width: `${(dept.count / maxCount) * 100}%` }}
               />
             </div>
