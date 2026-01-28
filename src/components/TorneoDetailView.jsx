@@ -415,7 +415,7 @@ export const TorneoDetailView = ({ torneo }) => {
       {/* Funcionarios */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-yellow-400">
-          <Users className="w-6 h-6 text-orange-600" />
+          <Users className="w-6 h-6 text-yellow-600" />
           <h3 className="text-xl font-bold text-gray-900">
             Funcionarios ({torneo.torneo_funcionarios?.length || 0})
           </h3>
@@ -423,8 +423,8 @@ export const TorneoDetailView = ({ torneo }) => {
         {torneo.torneo_funcionarios && torneo.torneo_funcionarios.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {torneo.torneo_funcionarios.map((tf, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                <div className="w-10 h-10 bg-orange-600 text-white rounded-full flex items-center justify-center font-bold">
+              <div key={idx} className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="w-10 h-10 bg-yellow-600 text-white rounded-full flex items-center justify-center font-bold">
                   {tf.employees?.name?.charAt(0) || '?'}
                 </div>
                 <div>
@@ -433,7 +433,7 @@ export const TorneoDetailView = ({ torneo }) => {
                     <p className="text-sm text-gray-600">{tf.employees.role}</p>
                   )}
                   {tf.employees?.categoria && (
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full text-xs">
+                    <span className="inline-block mt-1 px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs">
                       {tf.employees.categoria}
                     </span>
                   )}
@@ -449,7 +449,7 @@ export const TorneoDetailView = ({ torneo }) => {
       {/* Dirigentes */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-yellow-400">
-          <Shield className="w-6 h-6 text-blue-600" />
+          <Shield className="w-6 h-6 text-zinc-600" />
           <h3 className="text-xl font-bold text-gray-900">
             Dirigentes ({torneo.torneo_dirigentes?.length || 0})
           </h3>
@@ -457,8 +457,8 @@ export const TorneoDetailView = ({ torneo }) => {
         {torneo.torneo_dirigentes && torneo.torneo_dirigentes.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {torneo.torneo_dirigentes.map((td, idx) => (
-              <div key={idx} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
+              <div key={idx} className="flex items-center gap-3 p-3 bg-amber-50 border border-zinc-200 rounded-lg">
+                <div className="w-10 h-10 bg-zinc-600 text-white rounded-full flex items-center justify-center font-bold">
                   {td.dirigentes?.name?.charAt(0) || '?'}
                 </div>
                 <div>
@@ -523,9 +523,9 @@ export const TorneoDetailView = ({ torneo }) => {
       {/* Summary Statistics */}
       <div className="bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg shadow-md">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Estadísticas</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-center">
-            <p className="text-3xl font-bold text-orange-600">
+            <p className="text-3xl font-bold text-yellow-600">
               {torneo.torneo_funcionarios?.length || 0}
             </p>
             <p className="text-sm text-gray-600">Funcionarios</p>
@@ -549,7 +549,7 @@ export const TorneoDetailView = ({ torneo }) => {
             <p className="text-sm text-gray-600">Duración</p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-orange-600">
+            <p className="text-3xl font-bold text-yellow-600">
               {torneo.categoria || '-'}
             </p>
             <p className="text-sm text-gray-600">Categoría</p>
