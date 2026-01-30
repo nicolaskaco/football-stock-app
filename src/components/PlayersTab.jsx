@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type } from 'lucide-react';
+import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
@@ -14,6 +15,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [filterContrato, setFilterContrato] = useState(false);
 
   const canEditPlayers = currentUser?.canEditPlayers || false;
+  const canEditNameVisual = currentUser?.canEditNameVisual || false;
 
   const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
 
@@ -71,8 +73,8 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
 
     switch (sortConfig.key) {
       case 'name':
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
+        aValue = (a.name_visual || a.name).toLowerCase();
+        bValue = (b.name_visual || b.name).toLowerCase();
         break;
       case 'celular':
         aValue = a.celular.toLowerCase();
@@ -182,6 +184,28 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         alert('Error eliminando jugador: ' + error.message);
       }
     }
+  };
+
+  const handleEditNameVisual = async (player) => {
+    setShowModal({
+      title: `Editar Nombre Visual: ${player.name}`,
+      content: (
+        <NameVisualEditor
+          player={player}
+          onSave={async (nameVisual) => {
+            try {
+              await database.updatePlayerNameVisual(player.id, nameVisual);
+              await onDataChange();
+              setShowModal(null);
+            } catch (error) {
+              console.error('Error updating name visual:', error);
+              alert('Error actualizando nombre visual: ' + error.message);
+            }
+          }}
+          onClose={() => setShowModal(null)}
+        />
+      )
+    });
   };
 
   // Export to Excel function
@@ -322,7 +346,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               </th>
               <th 
                 onClick={() => handleSort('celular')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
                   Celular
@@ -331,7 +355,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               </th>
               <th 
                 onClick={() => handleSort('posicion')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
                   Posición
@@ -340,7 +364,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               </th>
               <th 
                 onClick={() => handleSort('categoria')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
                   Categoría
@@ -400,10 +424,17 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
           <tbody className="divide-y">
             {sortedPlayers.map(player => (
               <tr key={player.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">{player.name}</td>
-                <td className="px-6 py-4 text-sm">{player.celular}</td>
-                <td className="px-6 py-4 text-sm">{player.posicion}</td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-4 font-medium">
+                  <div>
+                    <div className="font-semibold whitespace-nowrap">{player.name_visual || player.name}</div>
+                    {player.name_visual && player.name_visual !== player.name && (
+                      <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                    )}
+                  </div>
+                </td>
+                <td className="px-3 py-4 text-sm">{player.celular}</td>
+                <td className="px-3 py-4 text-sm">{player.posicion}</td>
+                <td className="px-3 py-4">
                   <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
                     {player.categoria}
                   </span>
@@ -438,6 +469,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                           title="Ver historial"
                         >
                           <History className="w-4 h-4" />
+                        </button>
+                      )}
+                      {canEditNameVisual && (
+                        <button 
+                          onClick={() => handleEditNameVisual(player)}
+                          className="text-indigo-600 hover:text-indigo-800"
+                          title="Editar nombre visual"
+                        >
+                          <Type className="w-4 h-4" />
                         </button>
                       )}
                       {canEditPlayers ? (

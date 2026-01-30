@@ -64,8 +64,8 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
 
     switch (sortConfig.key) {
       case 'name':
-        aValue = a.name.toLowerCase();
-        bValue = b.name.toLowerCase();
+        aValue = (a.name_visual || a.name).toLowerCase();
+        bValue = (b.name_visual || b.name).toLowerCase();
         break;
       case 'gov_id':
         aValue = a.gov_id.toLowerCase();
@@ -347,7 +347,14 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
           <tbody className="divide-y">
             {sortedPlayers.map(player => (
               <tr key={player.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">{player.name}</td>
+                <td className="px-6 py-4 font-medium">
+                  <div>
+                    <div className="font-semibold">{player.name_visual || player.name}</div>
+                    {player.name_visual && player.name_visual !== player.name && (
+                      <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                    )}
+                  </div>
+                </td>
                 <td className="px-6 py-4 text-sm">{player.gov_id}</td>
                 <td className="px-6 py-4 text-sm">{calculateAge(player.date_of_birth)} años</td>
                 <td className="px-6 py-4">

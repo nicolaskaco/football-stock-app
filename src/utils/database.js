@@ -736,5 +736,14 @@ export const database = {
       .eq('id', id);
     
     if (error) throw error;
+  },
+
+  async updatePlayerNameVisual(playerId, nameVisual) {
+    const { error } = await supabase
+      .from('players')
+      .update({ name_visual: nameVisual })
+      .eq('id', playerId);
+    
+    if (error) throw error;
   }
 };

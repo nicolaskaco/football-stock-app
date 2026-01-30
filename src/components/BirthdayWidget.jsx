@@ -46,23 +46,23 @@ export const BirthdayWidget = () => {
               ) : (
                 <Shield className="w-4 h-4 text-cyan-600" />
               )}
-              <div>
-                <p className="font-medium">{person.name}</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-sm text-gray-600">
-                    {(() => {
-                      const [year, month, day] = person.date_of_birth.split('-');
-                      const date = new Date(year, month - 1, day);
-                      return date.toLocaleDateString('es-UY', { month: 'long', day: 'numeric' });
-                    })()}
-                  </p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    person.type === 'player' 
-                      ? 'bg-yellow-100 text-yellow-700' 
-                      : 'bg-cyan-100 text-gray-700'
-                  }`}>
-                    {person.type === 'player' ? 'Jugador' : 'Dirigente'}
-                  </span>
+            <div>
+              <p className="font-medium">{person.name_visual || person.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-600">
+                  {(() => {
+                    const [year, month, day] = person.date_of_birth.split('-');
+                    const date = new Date(year, month - 1, day);
+                    return date.toLocaleDateString('es-UY', { month: 'long', day: 'numeric' });
+                  })()}
+                </p>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  person.type === 'player' 
+                    ? 'bg-yellow-100 text-yellow-700' 
+                    : 'bg-cyan-100 text-gray-700'
+                }`}>
+                  {person.type === 'player' ? 'Jugador' : 'Dirigente'}
+                </span>
                 </div>
               </div>
             </div>
