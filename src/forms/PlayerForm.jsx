@@ -70,6 +70,19 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             />
           </div>
+          {player && player.name_visual && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre Visual (para mostrar)
+              </label>
+              <div className="px-4 py-2 bg-gray-50 border rounded-lg text-gray-700">
+                {player.name_visual}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Este es el nombre que se mostrará en listados. El nombre completo siempre se guardará.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
