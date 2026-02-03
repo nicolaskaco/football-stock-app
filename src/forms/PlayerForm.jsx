@@ -179,7 +179,8 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
               onChange={(e) => setFormData({...formData, email: e.target.value})} 
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder="email@ejemplo.com"
+              placeholder={readOnly ? "" : "email@ejemplo.com"}
+
             />
           </div>
 
@@ -193,7 +194,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
               onChange={(e) => setFormData({...formData, celular: e.target.value})} 
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder="099001891"
+              placeholder={readOnly ? "" : "099001891"}
             />
           </div>
 
@@ -207,7 +208,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
               onChange={(e) => setFormData({...formData, representante: e.target.value})} 
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder="Nombre del Representante"
+              placeholder={readOnly ? "" : "Nombre del Representante"}
             />
           </div>
 
@@ -221,7 +222,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
               onChange={(e) => setFormData({...formData, captador: e.target.value})} 
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder="Nombre del que lo trajo al club"
+              placeholder={readOnly ? "" : "Nombre del que lo trajo al club"}
             />
           </div>
         </div>
@@ -282,7 +283,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
             onChange={(e) => setFormData({...formData, comentario_viatico: e.target.value})} 
             disabled={readOnly}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-            placeholder="Notas adicionales sobre viático..."
+            placeholder={readOnly ? "" : "Notas adicionales sobre viático..."}
           />
         </div>
       </div>
@@ -318,7 +319,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
               onChange={(e) => setFormData({...formData, bank_account: e.target.value})} 
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder="Número de cuenta"
+              placeholder={readOnly ? "" : "Número de cuenta"}
             />
           </div>
         </div>
@@ -432,7 +433,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
                 onChange={(e) => setFormData({...formData, tipo_pasaporte_ext: e.target.value})} 
                 disabled={readOnly}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-                placeholder="Italia"
+                placeholder={readOnly ? "" : "Italia"}
               />
             </div>
           )}
@@ -449,7 +450,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false }) => {
               onChange={(e) => setFormData({...formData, fecha_llegada: e.target.value ? parseInt(e.target.value) : null})} 
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder="2024"
+              placeholder={readOnly ? "" : "2024"}
             />
           </div>
         </div>
