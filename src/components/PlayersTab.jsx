@@ -25,7 +25,8 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   // Filter players
   const filtered = safePlayers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                        p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
+                          (p.name_visual && p.name_visual.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategoria = filterCategoria === 'all' || p.categoria === filterCategoria;
     const matchesCasita = !filterCasita || p.casita === true;
     const matchesContrato = !filterContrato || p.contrato === true;
