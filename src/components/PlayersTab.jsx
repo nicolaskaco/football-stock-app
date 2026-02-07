@@ -5,6 +5,7 @@ import { PlayerForm } from '../forms/PlayerForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { PlayerHistoryModal } from './PlayerHistoryModal';
+import { ExportConfigModal } from './ExportConfigModal';
 
 export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,6 +14,28 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [filterCasita, setFilterCasita] = useState(false);
   const [filterContrato, setFilterContrato] = useState(false);
+  const [selectedPlayers, setSelectedPlayers] = useState([]);
+  const [showExportConfig, setShowExportConfig] = useState(false);
+  const [exportFields, setExportFields] = useState({
+    name: true,
+    name_visual: false,
+    gov_id: true,
+    categoria: true,
+    posicion: false,
+    departamento: false,
+    celular: false,
+    email: false,
+    representante: false,
+    date_of_birth: false,
+    casita: false,
+    vianda: false,
+    viatico: false,
+    complemento: false,
+    total: true,
+    contrato: false,
+    bank: false,
+    bank_account: false
+  });
 
   const canEditPlayers = currentUser?.canEditPlayers || false;
   const canEditNameVisual = currentUser?.canEditNameVisual || false;
@@ -38,6 +61,26 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
 
     return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && hasAccessToCategoria;
   });
+
+  const handleSelectAll = () => {
+    if (selectedPlayers.length === sortedPlayers.length) {
+      setSelectedPlayers([]);
+    } else {
+      setSelectedPlayers(sortedPlayers.map(p => p.id));
+    }
+  };
+
+  const handleSelectPlayer = (playerId) => {
+    setSelectedPlayers(prev => 
+      prev.includes(playerId)
+        ? prev.filter(id => id !== playerId)
+        : [...prev, playerId]
+    );
+  };
+
+  const toggleExportField = (field) => {
+    setExportFields(prev => ({ ...prev, [field]: !prev[field] }));
+  };
 
   // Calculate age
   const calculateAge = (dateOfBirth) => {
@@ -211,24 +254,119 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
 
   // Export to Excel function
   const handleExportToExcel = () => {
-    const exportData = sortedPlayers.map(player => ({
-      'Nombre': player.name,
-      'Cedula': player.gov_id,
-      'Categoria': player.categoria,
-      'Total': player.contrato ? 'Contrato' : calculateTotal(player),
-    }));
+    if (selectedPlayers.length === 0) {
+      alert('Selecciona al menos un jugador para exportar');
+      return;
+    }
+
+    const fieldLabels = {
+      name: 'Nombre Completo',
+      name_visual: 'Nombre Visual',
+      gov_id: 'Cédula',
+      categoria: 'Categoría',
+      posicion: 'Posición',
+      departamento: 'Departamento',
+      celular: 'Celular',
+      email: 'Email',
+      representante: 'Representante',
+      date_of_birth: 'Fecha de Nacimiento',
+      casita: 'Residencia',
+      vianda: 'Vianda',
+      viatico: 'Viático',
+      complemento: 'Complemento',
+      total: 'Total',
+      contrato: 'Contrato',
+      bank: 'Banco',
+      bank_account: 'Cuenta Bancaria'
+    };
+
+    const playersToExport = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
+    
+    const exportData = playersToExport.map(player => {
+      const row = {};
+      
+      Object.keys(exportFields).forEach(field => {
+        if (exportFields[field]) {
+          const label = fieldLabels[field];
+          
+          switch(field) {
+            case 'name':
+              row[label] = player.name;
+              break;
+            case 'name_visual':
+              row[label] = player.name_visual || player.name || '';
+              break;
+            case 'gov_id':
+              row[label] = player.gov_id;
+              break;
+            case 'categoria':
+              row[label] = player.categoria;
+              break;
+            case 'posicion':
+              row[label] = player.posicion || '';
+              break;
+            case 'departamento':
+              row[label] = player.departamento || '';
+              break;
+            case 'celular':
+              row[label] = player.celular || '';
+              break;
+            case 'email':
+              row[label] = player.email || '';
+              break;
+            case 'representante':
+              row[label] = player.representante || '';
+              break;
+            case 'date_of_birth':
+              row[label] = player.date_of_birth || '';
+              break;
+            case 'casita':
+              row[label] = player.casita ? 'Sí' : 'No';
+              break;
+            case 'vianda':
+              row[label] = player.vianda || 0;
+              break;
+            case 'viatico':
+              row[label] = player.contrato ? 'Contrato' : (player.viatico || 0);
+              break;
+            case 'complemento':
+              row[label] = player.contrato ? 'Contrato' : (player.complemento || 0);
+              break;
+            case 'total':
+              row[label] = player.contrato ? 'Contrato' : calculateTotal(player);
+              break;
+            case 'contrato':
+              row[label] = player.contrato ? 'Sí' : 'No';
+              break;
+            case 'bank':
+              row[label] = player.bank || '';
+              break;
+            case 'bank_account':
+              row[label] = player.bank_account || '';
+              break;
+            default:
+              break;
+          }
+        }
+      });
+      
+      return row;
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Jugadores');
     
-    // Get current date and time
     const now = new Date();
-    const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const time = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `jugadores_${date}_${time}.xlsx`;
     
     XLSX.writeFile(workbook, filename);
+    
+    // Close modal and clear selections
+    setShowExportConfig(false);
+    setSelectedPlayers([]);
   };
 
   return (
@@ -237,11 +375,17 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         <h2 className="text-2xl font-bold">Gestión de Jugadores</h2>
         <div className="flex gap-2">
           <button 
-            onClick={handleExportToExcel}
+            onClick={() => {
+              if (selectedPlayers.length === 0) {
+                alert('Selecciona al menos un jugador para exportar');
+                return;
+              }
+              setShowExportConfig(true);
+            }}
             className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
           >
             <Download className="w-5 h-5" />
-            Exportar a Excel
+            Exportar a Excel {selectedPlayers.length > 0 && `(${selectedPlayers.length})`}
           </button>
           {canEditPlayers && (
             <button 
@@ -336,6 +480,14 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
+              <th className="px-3 py-3 text-center">
+                <input
+                  type="checkbox"
+                  checked={selectedPlayers.length === sortedPlayers.length && sortedPlayers.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+              </th>
               <th 
                 onClick={() => handleSort('name')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
@@ -425,6 +577,14 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
           <tbody className="divide-y">
             {sortedPlayers.map(player => (
               <tr key={player.id} className="hover:bg-gray-50">
+                <td className="px-3 py-4 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedPlayers.includes(player.id)}
+                    onChange={() => handleSelectPlayer(player.id)}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                </td>
                 <td className="px-6 py-4 font-medium">
                   <div>
                     <div className="font-semibold whitespace-nowrap">{player.name_visual || player.name}</div>
@@ -532,6 +692,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
           playerId={showHistoryModal.playerId}
           playerName={showHistoryModal.playerName}
           onClose={() => setShowHistoryModal(null)}
+        />
+      )}
+      {showExportConfig && (
+        <ExportConfigModal
+          selectedPlayers={selectedPlayers}
+          exportFields={exportFields}
+          toggleExportField={toggleExportField}
+          onClose={() => setShowExportConfig(false)}
+          onExport={handleExportToExcel}
         />
       )}
     </div>
