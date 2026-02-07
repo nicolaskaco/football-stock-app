@@ -406,7 +406,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       {sortedPlayers.length > 0 && (
         <div className="mt-6 bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-bold mb-4">Resumen</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="bg-blue-50 p-4 rounded-lg">
               <p className="text-sm text-gray-600">Total Jugadores</p>
               <p className="text-2xl font-bold text-blue-600">{sortedPlayers.length}</p>
@@ -421,6 +421,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               <p className="text-sm text-gray-600">Residencia</p>
               <p className="text-2xl font-bold text-yellow-600">
                 {sortedPlayers.filter(p => p.casita).length}
+              </p>
+            </div>
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600">Jugadores con Viandas</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {sortedPlayers.filter(p => (p.vianda || 0) > 0).length}
+                <span className="text-lg ml-1">
+                  ({sortedPlayers.reduce((sum, p) => sum + (p.vianda || 0), 0)} viandas)
+                </span>
               </p>
             </div>
             <div className="bg-purple-50 p-4 rounded-lg">
