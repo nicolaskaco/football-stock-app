@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils } from 'lucide-react';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
@@ -507,10 +507,15 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                   />
                 </td>
                 <td className="px-6 py-4 font-medium">
-                  <div>
-                    <div className="font-semibold">{player.name_visual || player.name}</div>
-                    {player.name_visual && player.name_visual !== player.name && (
-                      <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="font-semibold whitespace-nowrap">{player.name_visual || player.name}</div>
+                      {player.name_visual && player.name_visual !== player.name && (
+                        <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                      )}
+                    </div>
+                    {(player.vianda || 0) > 0 && (
+                      <Utensils className="w-4 h-4 text-amber-600 flex-shrink-0" title={`${player.vianda} vianda(s)`} />
                     )}
                   </div>
                 </td>
