@@ -19,7 +19,16 @@ export const ChangeRequestsTab = ({ currentUser }) => {
       const data = filter === 'pending' 
         ? await database.getPendingChangeRequests()
         : await database.getAllChangeRequests();
-      setRequests(data);
+      
+      // Filter by categoria if user is presidente_categoria
+      let filteredData = data;
+      if (currentUser?.role === 'presidente_categoria' && currentUser?.categoria?.length > 0) {
+        filteredData = data.filter(request => 
+          request.players?.categoria && currentUser.categoria.includes(request.players.categoria)
+        );
+      }
+      
+      setRequests(filteredData);
     } catch (error) {
       console.error('Error loading requests:', error);
     } finally {
