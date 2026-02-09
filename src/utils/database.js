@@ -745,5 +745,117 @@ export const database = {
       .eq('id', playerId);
     
     if (error) throw error;
-  }
+  },
+
+  // Create a change request
+  async createPlayerChangeRequest(playerId, requestedBy, oldValues, newValues, notes = '') {
+    const { data, error } = await supabase
+      .from('player_change_requests')
+      .insert([{
+        player_id: playerId,
+        requested_by: requestedBy,
+        old_viatico: oldValues.viatico,
+        old_complemento: oldValues.complemento,
+        old_contrato: oldValues.contrato,
+        new_viatico: newValues.viatico,
+        new_complemento: newValues.complemento,
+        new_contrato: newValues.contrato,
+        request_notes: notes,
+        status: 'pending'
+      }])
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Get pending change requests
+  async getPendingChangeRequests() {
+    const { data, error } = await supabase
+      .from('player_change_requests')
+      .select(`
+        *,
+        players (
+          name,
+          name_visual,
+          categoria
+        )
+      `)
+      .eq('status', 'pending')
+      .order('request_date', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Get all change requests (for history)
+  async getAllChangeRequests() {
+    const { data, error } = await supabase
+      .from('player_change_requests')
+      .select(`
+        *,
+        players (
+          name,
+          name_visual,
+          categoria
+        )
+      `)
+      .order('request_date', { ascending: false });
+    
+    if (error) throw error;
+    return data;
+  },
+
+  // Approve change request
+  async approveChangeRequest(requestId, reviewedBy, reviewNotes = '') {
+    // Get the request
+    const { data: request, error: fetchError } = await supabase
+      .from('player_change_requests')
+      .select('*')
+      .eq('id', requestId)
+      .single();
+    
+    if (fetchError) throw fetchError;
+    
+    // Update player with new values
+    const { error: updateError } = await supabase
+      .from('players')
+      .update({
+        viatico: request.new_viatico,
+        complemento: request.new_complemento,
+        contrato: request.new_contrato
+      })
+      .eq('id', request.player_id);
+    
+    if (updateError) throw updateError;
+    
+    // Update request status
+    const { error: statusError } = await supabase
+      .from('player_change_requests')
+      .update({
+        status: 'approved',
+        reviewed_by: reviewedBy,
+        review_date: new Date().toISOString(),
+        review_notes: reviewNotes
+      })
+      .eq('id', requestId);
+    
+    if (statusError) throw statusError;
+  },
+
+  // Reject change request
+  async rejectChangeRequest(requestId, reviewedBy, reviewNotes = '') {
+    const { error } = await supabase
+      .from('player_change_requests')
+      .update({
+        status: 'rejected',
+        reviewed_by: reviewedBy,
+        review_date: new Date().toISOString(),
+        review_notes: reviewNotes
+      })
+      .eq('id', requestId);
+    
+    if (error) throw error;
+  },
 };

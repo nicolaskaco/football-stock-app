@@ -9,7 +9,7 @@ import { supabase } from './supabaseClient';
 
 const HeaderComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
-    App interna CAP v1
+    App interna CAP v2
   </div>
 );
 
@@ -58,6 +58,7 @@ const App = () => {
             email: user.email, 
             isAdmin: true, 
             name: 'Administrator', 
+            role: permissions?.role || 'user', 
             canAccessPlayers: permissions?.can_access_players || false, 
             canAccessViaticos: permissions?.can_access_viatico || false, 
             canAccessWidgets: permissions?.can_access_widgets || false, 
@@ -68,7 +69,8 @@ const App = () => {
             canEditTorneo: permissions?.edit_torneo || false,
             canViewTorneo: permissions?.view_torneo || false,
             canViewComisiones: permissions?.can_view_comisiones || false,
-            canEditComision: permissions?.can_edit_comisiones || false
+            canEditComision: permissions?.can_edit_comisiones || false,
+            canAccessRopa: permissions?.can_access_ropa || false
           });
           await loadData();
           setCurrentView('dashboard');
@@ -141,6 +143,7 @@ const App = () => {
         setCurrentUser({
           email: emailOrGovId,
           isAdmin: true,
+          role: permissions?.role || 'user',
           canAccessPlayers: permissions?.can_access_players || false,
           canAccessViaticos: permissions?.can_access_viatico || false,
           canAccessWidgets: permissions?.can_access_widgets || false,
@@ -151,7 +154,8 @@ const App = () => {
           canEditTorneo: permissions?.edit_torneo || false,
           canViewTorneo: permissions?.view_torneo || false,
           canViewComisiones: permissions?.can_view_comisiones || false,
-          canEditComision: permissions?.can_edit_comisiones || false
+          canEditComision: permissions?.can_edit_comisiones || false,
+          canAccessRopa: permissions?.can_access_ropa || false
         });
 
         await loadData();
