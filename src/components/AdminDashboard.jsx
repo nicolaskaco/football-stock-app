@@ -12,6 +12,7 @@ import { ReportsTab } from './ReportsTab';
 import { DirigentesTab } from './DirigentesTab';
 import { TorneosTab } from './TorneosTab';
 import { ComisionesTab } from './ComisionesTab';
+import { ChangeRequestsTab } from './ChangeRequestsTab';
 
 export const AdminDashboard = ({ 
   employees, 
@@ -41,19 +42,22 @@ export const AdminDashboard = ({
   const canViewTorneo = currentUser?.canViewTorneo || false;
   const canViewComisiones = currentUser?.canViewComisiones || false;
   //const canEditComision = currentUser?.canEditComision || false;
+  const canViewChangeRequests = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria'].includes(currentUser?.role);
+  const canAccessRopa = currentUser?.canAccessRopa || false;
 
   // Rest of your code stays the same...
   const tabs = [
     { id: 'overview', label: 'Resumen', show: true },
-    { id: 'inventory', label: 'Inventario', show: true },
-    { id: 'employees', label: 'Funcionarios', show: true },
+    { id: 'inventory', label: 'Inventario', show: canAccessRopa },
+    { id: 'employees', label: 'Funcionarios', show: canAccessRopa },
     { id: 'players', label: 'Jugadores', show: canAccessPlayers },
     { id: 'players_viatico', label: 'Viáticos', show: canAccessViaticos },
-    { id: 'distributions', label: 'Distribuciones', show: true },
+    { id: 'change_requests', label: 'Solicitudes', show: canViewChangeRequests },
+    { id: 'distributions', label: 'Distribuciones', show: canAccessRopa },
     { id: 'dirigentes', label: 'Dirigentes', show: canAccessDirigentes },
     { id: 'torneos', label: 'Torneos', show: canViewTorneo },
     { id: 'comisiones', label: 'Comisiones', show: canViewComisiones },
-    { id: 'reports', label: 'Reportes', show: true }
+    { id: 'reports', label: 'Reportes', show: canAccessRopa }
   ];
 
   // Filter visible tabs
@@ -115,21 +119,21 @@ export const AdminDashboard = ({
             canAccessWidgets={canAccessWidgets}
           />
         )}
-        {activeTab === 'inventory' && (
+        {activeTab === 'inventory' && canAccessRopa && (
           <InventoryTab 
             inventory={inventory} 
             setShowModal={setShowModal}
             onDataChange={onDataChange}  // Add this
           />
         )}
-        {activeTab === 'employees' && (
+        {activeTab === 'employees' && canAccessRopa && (
           <EmployeesTab 
             employees={employees} 
             setShowModal={setShowModal}
             onDataChange={onDataChange}  // Add this
           />
         )}
-        {activeTab === 'distributions' && (
+        {activeTab === 'distributions' && canAccessRopa && (
           <DistributionsTab 
             distributions={distributions} 
             employees={employees} 
@@ -151,6 +155,11 @@ export const AdminDashboard = ({
             players={players} 
             setShowModal={setShowModal}
             onDataChange={onDataChange}
+            currentUser={currentUser}
+          />
+        )}
+        {activeTab === 'change_requests' && canViewChangeRequests && (
+          <ChangeRequestsTab 
             currentUser={currentUser}
           />
         )}
@@ -181,7 +190,7 @@ export const AdminDashboard = ({
             currentUser={currentUser}
           />
         )}
-        {activeTab === 'reports' && (
+        {activeTab === 'reports' && canAccessRopa && (
           <ReportsTab 
             distributions={distributions} 
             employees={employees} 

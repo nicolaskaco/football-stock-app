@@ -391,7 +391,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             <button 
               onClick={() => setShowModal({
                 title: "Agregar Nuevo Jugador",
-                content: <PlayerForm onSubmit={handleAdd} />
+                content: <PlayerForm onSubmit={handleAdd} currentUser={currentUser} />
               })} 
               className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
             >
@@ -654,7 +654,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                         <button 
                           onClick={() => setShowModal({
                             title: `Editar Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={handleEdit} />
+                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} />
                           })} 
                           className="text-blue-600 hover:text-blue-800"
                           title="Editar"
@@ -665,7 +665,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                         <button 
                           onClick={() => setShowModal({
                             title: `Ver Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} />
+                            content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} />
                           })} 
                           className="text-blue-600 hover:text-blue-800"
                           title="Ver detalles"

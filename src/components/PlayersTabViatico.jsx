@@ -5,12 +5,14 @@ import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { ExportConfigModal } from './ExportConfigModal';
+import { ChangeRequestModal } from '../components/ChangeRequestModal';
 
 export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showHistoryModal, setShowHistoryModal] = useState(null);
+  const [showChangeRequestModal, setShowChangeRequestModal] = useState(null);
 
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
@@ -182,14 +184,46 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     }
   };
 
-  const handleEdit = async (player) => {
+  const handleEdit = async (player, needsChangeRequest = false) => {
     try {
+      if (needsChangeRequest) {
+        // Close the PlayerFormViatico modal first
+        setShowModal(null);
+        
+        // Then show change request modal
+        setShowChangeRequestModal(player);
+        return;
+      }
+      
+      // Normal update
       await database.updatePlayer(player.id, player, currentUser?.email);
       await onDataChange();
       setShowModal(null);
     } catch (error) {
       console.error('Error updating player:', error);
       alert('Error actualizando jugador: ' + error.message);
+    }
+  };
+
+  const handleCreateChangeRequest = async (player, newValues, notes) => {
+    try {
+      await database.createPlayerChangeRequest(
+        player.id,
+        currentUser?.email,
+        {
+          viatico: player.viatico,
+          complemento: player.complemento,
+          contrato: player.contrato
+        },
+        newValues,
+        notes
+      );
+      
+      setShowChangeRequestModal(null);
+      alert('Solicitud de cambio enviada exitosamente. Será revisada por un administrador.');
+    } catch (error) {
+      console.error('Error creating change request:', error);
+      alert('Error creando solicitud: ' + error.message);
     }
   };
 
@@ -526,7 +560,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                     <button 
                       onClick={() => setShowModal({
                         title: `Editar Jugador: ${player.name}`,
-                        content: <PlayerFormViatico player={player} onSubmit={handleEdit} />
+                        content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} />
                       })} 
                       className="text-blue-600 hover:text-blue-800"
                     >
@@ -566,6 +600,18 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
           toggleExportField={toggleExportField}
           onClose={() => setShowExportConfig(false)}
           onExport={handleExportToExcel}
+        />
+      )}
+      {showChangeRequestModal && (
+        <ChangeRequestModal
+          player={showChangeRequestModal}
+          currentValues={{
+            viatico: showChangeRequestModal.viatico,
+            complemento: showChangeRequestModal.complemento,
+            contrato: showChangeRequestModal.contrato
+          }}
+          onSubmit={(newValues, notes) => handleCreateChangeRequest(showChangeRequestModal, newValues, notes)}
+          onClose={() => setShowChangeRequestModal(null)}
         />
       )}
     </div>
