@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type, Utensils } from 'lucide-react';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
 import { database } from '../utils/database';
@@ -595,10 +595,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                   />
                 </td>
                 <td className="px-6 py-4 font-medium">
-                  <div>
-                    <div className="font-semibold whitespace-nowrap">{player.name_visual || player.name}</div>
-                    {player.name_visual && player.name_visual !== player.name && (
-                      <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="font-semibold whitespace-nowrap">{player.name_visual || player.name}</div>
+                      {player.name_visual && player.name_visual !== player.name && (
+                        <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                      )}
+                    </div>
+                    {(player.vianda || 0) > 0 && (
+                      <Utensils className="w-4 h-4 text-amber-600 flex-shrink-0" title={`${player.vianda} vianda(s)`} />
                     )}
                   </div>
                 </td>
