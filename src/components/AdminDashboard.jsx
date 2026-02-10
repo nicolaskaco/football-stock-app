@@ -117,6 +117,7 @@ export const AdminDashboard = ({
             distributions={distributions}
             inventory={inventory}
             canAccessWidgets={canAccessWidgets}
+            canAccessRopa = {canAccessRopa}
           />
         )}
         {activeTab === 'inventory' && canAccessRopa && (
