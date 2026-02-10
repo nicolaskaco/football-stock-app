@@ -544,7 +544,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               </th>
               <th 
                 onClick={() => handleSort('casita')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-2">
                   Residencia
@@ -603,7 +603,11 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                       )}
                     </div>
                     {(player.vianda || 0) > 0 && (
-                      <Utensils className="w-4 h-4 text-amber-600 flex-shrink-0" title={`${player.vianda} vianda(s)`} />
+                      <div className="flex gap-0.5" title={`${player.vianda} vianda(s)`}>
+                        {[...Array(Math.min(player.vianda, 10))].map((_, i) => (
+                          <Utensils key={i} className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        ))}
+                      </div>
                     )}
                   </div>
                 </td>
@@ -615,7 +619,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm">{player.departamento || '-'}</td>
-                <td className="px-6 py-4">
+                <td className="px-3 py-4">
                   <span className={`text-xl font-bold ${player.casita ? 'text-green-600' : 'text-gray-400'}`}>
                     {player.casita ? '✓' : '☐'}
                   </span>
@@ -635,7 +639,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm">{player.representante || '-'}</td>
-                  <td className="px-6 py-4">
+                  <td className="px-3 py-4">
                     <div className="flex gap-2">
                       {canEditPlayers && (
                         <button 

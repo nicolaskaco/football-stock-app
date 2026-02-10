@@ -17,7 +17,8 @@ export const OverviewTab = ({
   players = [],
   distributions = [],
   inventory = [],
-  canAccessWidgets = false
+  canAccessWidgets = false,
+  canAccessRopa = false
 }) => (
   <div>
     <h2 className="text-2xl font-bold text-gray-800 mb-6">Vista General</h2>
@@ -56,9 +57,11 @@ export const OverviewTab = ({
     )}
 
     {/* Keep MostDistributedWidget outside - it's inventory related, not player related */}
-    <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
-      <MostDistributedWidget distributions={distributions} inventory={inventory} />
-    </div>
+    {canAccessRopa && (
+      <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
+        <MostDistributedWidget distributions={distributions} inventory={inventory} />
+      </div>
+    )}
 
     {/* Low Stock Alert */}
     {lowStockItems.length > 0 && (
