@@ -38,7 +38,8 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   // Filter players
   const filtered = safePlayers.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
+                          (p.name_visual && p.name_visual.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategoria = filterCategoria === 'all' || p.categoria === filterCategoria;
     
     return matchesSearch && matchesCategoria;
