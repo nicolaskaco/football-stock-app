@@ -524,7 +524,7 @@ export const database = {
       .select(`
         *,
         torneo_dirigentes(dirigente_id, dirigentes(id, name, rol, categoria)),
-        torneo_players(player_id, players(id, name, categoria, posicion)),
+        torneo_players(player_id, players(id, name, categoria, posicion, gov_id, date_of_birth)),
         torneo_funcionarios(employee_id, employees(id, name, role, categoria))
       `)
       .order('start_date', { ascending: false });

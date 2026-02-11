@@ -50,7 +50,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (p.name_visual && p.name_visual.toLowerCase().includes(searchTerm.toLowerCase())) ||
                           p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategoria = filterCategoria === 'all' || p.categoria === filterCategoria;
+
+    // Check if user is 3era-only user
+    const is3eraOnlyUser = currentUser?.categoria?.length === 1 && currentUser.categoria[0] === '3era';
+
+    // Modified categoria filter
+    const matchesCategoria = filterCategoria === 'all' 
+      ? (is3eraOnlyUser ? true : p.categoria !== '3era')  // Include 3era only for 3era-only users
+      : p.categoria === filterCategoria;
+
     const matchesCasita = !filterCasita || p.casita === true;
     const matchesContrato = !filterContrato || p.contrato === true;
     
@@ -369,6 +377,8 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     setSelectedPlayers([]);
   };
 
+  const is3eraOnlyUser = currentUser?.categoria?.length === 1 && currentUser.categoria[0] === '3era';
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -459,7 +469,9 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             onChange={(e) => setFilterCategoria(e.target.value)} 
             className="px-4 py-2 border rounded-lg"
           >
-            <option value="all">Todas las Categorías</option>
+            <option value="all">
+              {is3eraOnlyUser ? 'Todas las Categorías' : 'Todas las Categorías (excepto 3era)'}
+            </option>
             {categorias.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}

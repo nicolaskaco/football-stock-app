@@ -24,26 +24,29 @@ export const OverviewTab = ({
     <h2 className="text-2xl font-bold text-gray-800 mb-6">Vista General</h2>
     
     {/* Existing Stats Cards */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-      <StatCard 
-        icon={<TrendingUp className="w-8 h-8" />} 
-        label="Ropa Entregada en activo" 
-        value={totalItems} 
-        color="purple" 
-      />
-      <StatCard 
-        icon={<Users className="w-8 h-8" />} 
-        label="Total Funcionarios" 
-        value={totalEmployees} 
-        color="green" 
-      />
-      <StatCard 
-        icon={<AlertCircle className="w-8 h-8" />} 
-        label="Alerta bajo Stock" 
-        value={lowStockItems.length} 
-        color="red" 
-      />
-    </div>
+    {canAccessRopa && (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <StatCard 
+          icon={<TrendingUp className="w-8 h-8" />} 
+          label="Ropa Entregada en activo" 
+          value={totalItems} 
+          color="purple" 
+        />
+        <StatCard 
+          icon={<Users className="w-8 h-8" />} 
+          label="Total Funcionarios" 
+          value={totalEmployees} 
+          color="green" 
+        />
+        <StatCard 
+          icon={<AlertCircle className="w-8 h-8" />} 
+          label="Alerta bajo Stock" 
+          value={lowStockItems.length} 
+          color="red" 
+        />
+      </div>
+    )}
+    
 
     {/* Analytics Widgets Grid */}
     {canAccessWidgets && (

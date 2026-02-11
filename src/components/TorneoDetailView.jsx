@@ -1,7 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Calendar, MapPin, Users, Trophy, Shield, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
+import { ExportConfigModal } from './ExportConfigModal';
 
 export const TorneoDetailView = ({ torneo }) => {
+
+  const [showExportConfig, setShowExportConfig] = useState(false);
+  const [exportFields, setExportFields] = useState({
+    name: true,
+    name_visual: false,
+    gov_id: true,
+    categoria: true,
+    posicion: true,
+    date_of_birth: true
+  });
+
+  const toggleExportField = (field) => {
+    setExportFields(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+
   const formatDate = (dateString) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
@@ -339,23 +357,106 @@ export const TorneoDetailView = ({ torneo }) => {
     }, 250);
   };
 
+  const handleExportPlayersToExcel = () => {
+    if (!torneo.torneo_players || torneo.torneo_players.length === 0) {
+      alert('No hay jugadores para exportar');
+      return;
+    }
+
+    const fieldLabels = {
+      name: 'Nombre Completo',
+      name_visual: 'Nombre Visual',
+      gov_id: 'Cédula',
+      categoria: 'Categoría',
+      posicion: 'Posición',
+      date_of_birth: 'Fecha de Nacimiento'
+    };
+
+    const exportData = torneo.torneo_players
+      .map(tp => tp.players)
+      .filter(p => p)
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(player => {
+        const row = {};
+        
+        Object.keys(exportFields).forEach(field => {
+          if (exportFields[field]) {
+            const label = fieldLabels[field];
+            
+            switch(field) {
+              case 'name':
+                row[label] = player.name;
+                break;
+              case 'name_visual':
+                row[label] = player.name_visual || player.name || '';
+                break;
+              case 'gov_id':
+                row[label] = player.gov_id;
+                break;
+              case 'categoria':
+                row[label] = player.categoria;
+                break;
+              case 'posicion':
+                row[label] = player.posicion || '';
+                break;
+              case 'date_of_birth':
+                if (player.date_of_birth) {
+                  const [year, month, day] = player.date_of_birth.split('-');
+                  row[label] = `${day}/${month}/${year}`;
+                } else {
+                  row[label] = '';
+                }
+                break;
+              default:
+                break;
+            }
+          }
+        });
+        
+        return row;
+      });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Jugadores');
+
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    const filename = `${torneo.name.replace(/[^a-z0-9]/gi, '_')}_jugadores_${date}_${time}.xlsx`;
+
+    XLSX.writeFile(workbook, filename);
+    
+    setShowExportConfig(false);
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-gray-900 to-black text-yellow-400 p-6 rounded-lg shadow-lg">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-          <Trophy className="w-8 h-8" />
-          <h2 className="text-3xl font-bold">{torneo.name}</h2>
+            <Trophy className="w-8 h-8" />
+            <h2 className="text-3xl font-bold">{torneo.name}</h2>
           </div>
-          <button
-            onClick={handleExportPDF}
-            className="flex items-center gap-2 bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-500 font-semibold transition-colors"
-            title="Exportar a PDF"
-          >
-          <Download className="w-5 h-5" />
-          Exportar PDF
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowExportConfig(true)}
+              className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold transition-colors"
+              title="Exportar jugadores a Excel"
+            >
+              <Download className="w-5 h-5" />
+              Excel Jugadores ({torneo.torneo_players?.length || 0})
+            </button>
+            <button
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 bg-yellow-400 text-gray-900 px-4 py-2 rounded-lg hover:bg-yellow-500 font-semibold transition-colors"
+              title="Exportar a PDF"
+            >
+              <Download className="w-5 h-5" />
+              Exportar PDF
+            </button>
+          </div>
         </div>
         {torneo.categoria && (
             <span className="inline-block px-3 py-1 bg-yellow-400 text-gray-900 rounded-full text-sm font-semibold">
@@ -556,6 +657,15 @@ export const TorneoDetailView = ({ torneo }) => {
           </div>
         </div>
       </div>
+      {showExportConfig && (
+        <ExportConfigModal
+          selectedPlayers={torneo.torneo_players?.map(tp => tp.player_id) || []}
+          exportFields={exportFields}
+          toggleExportField={toggleExportField}
+          onClose={() => setShowExportConfig(false)}
+          onExport={handleExportPlayersToExcel}
+        />
+      )}
     </div>
   );
 };
