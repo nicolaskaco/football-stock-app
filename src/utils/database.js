@@ -818,17 +818,16 @@ export const database = {
     
     if (fetchError) throw fetchError;
     
-    // Update player with new values
-    const { error: updateError } = await supabase
-      .from('players')
-      .update({
+    // Update player with new values (this will track history)
+    await this.updatePlayer(
+      request.player_id,
+      {
         viatico: request.new_viatico,
         complemento: request.new_complemento,
         contrato: request.new_contrato
-      })
-      .eq('id', request.player_id);
-    
-    if (updateError) throw updateError;
+      },
+      reviewedBy // Use the reviewer's email for history tracking
+    );
     
     // Update request status
     const { error: statusError } = await supabase

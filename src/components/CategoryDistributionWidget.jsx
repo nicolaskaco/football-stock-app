@@ -9,8 +9,8 @@ export const CategoryDistributionWidget = ({ players }) => {
   }, [players]);
 
   const calculateCategoryDistribution = () => {
-    const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
-    const colors = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899'];
+    const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
+    const colors = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#605259'];
 
     const counts = categorias.map((cat, index) => ({
       categoria: cat,
