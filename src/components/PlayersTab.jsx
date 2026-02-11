@@ -40,7 +40,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const canEditPlayers = currentUser?.canEditPlayers || false;
   const canEditNameVisual = currentUser?.canEditNameVisual || false;
 
-  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
+  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
 
   // Add safety check
   const safePlayers = Array.isArray(players) ? players : [];

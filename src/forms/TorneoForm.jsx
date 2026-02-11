@@ -24,7 +24,7 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
 
   const [filterCategoria, setFilterCategoria] = useState('all');
 
-  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
+  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
 
   const handleSubmit = (e) => {
     e.preventDefault();

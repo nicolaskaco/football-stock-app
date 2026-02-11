@@ -127,6 +127,7 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
           <option value="S16">S16</option>
           <option value="6ta">6ta</option>
           <option value="7ma">7ma</option>
+          <option value="Sub13">Sub13</option>
         </select>
       </div>
 

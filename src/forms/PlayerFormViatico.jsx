@@ -37,7 +37,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
     onSubmit(formData, true);
   };
 
-  const categorias = ['3era', '4ta', 'S16', '5ta', '6ta', '7ma'];
+  const categorias = ['3era', '4ta', 'S16', '5ta', '6ta', '7ma', 'Sub13'];
   const banks = ['Itau', 'Prex', 'MiDinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Otro'];
 
   return (

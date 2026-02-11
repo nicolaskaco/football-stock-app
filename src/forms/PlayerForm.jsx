@@ -49,7 +49,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser }) 
     onSubmit(formData);
   };
 
-  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
+  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
   const banks = ['Itau', 'Prex', 'Mi Dinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Otro'];
   const departamentos = ['Montevideo', 'Canelones (Ciudad de la Costa)', 'Canelones', 'Artigas', 'Cerro Largo', 'Colonia', 'Durazno', 'Flores', 'Florida', 'Lavalleja', 'Maldonado', 'Paysandú', 'Río Negro', 'Rivera', 'Rocha', 'Salto', 'San José', 'Soriano', 'Tacuarembó', 'Treinta y Tres', 'Argentina', 'Brasil', 'Colombia', 'España', 'Estados Unidos', 'Venezuela'];
   const posiciones = ['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero'];
