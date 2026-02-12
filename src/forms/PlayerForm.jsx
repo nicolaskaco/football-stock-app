@@ -74,7 +74,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser }) 
             />
           </div>
           {player && player.name_visual && (
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Nombre Visual (para mostrar)
               </label>
@@ -170,11 +170,11 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser }) 
 
       {/* CONTACT INFORMATION */}
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Contacto</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Contacto y Representante</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              Email del jugador
             </label>
             <input 
               type="email" 
@@ -189,7 +189,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser }) 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Celular
+              Celular del jugador
             </label>
             <input 
               type="tel" 
