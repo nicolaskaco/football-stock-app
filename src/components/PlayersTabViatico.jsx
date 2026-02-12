@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { ExportConfigModal } from './ExportConfigModal';
 import { ChangeRequestModal } from '../components/ChangeRequestModal';
+import { AlertModal } from './AlertModal';
 
 export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,6 +14,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [showChangeRequestModal, setShowChangeRequestModal] = useState(null);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
@@ -229,7 +231,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       );
       
       setShowChangeRequestModal(null);
-      alert('Solicitud de cambio enviada exitosamente. Será revisada por un administrador.');
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Éxito',
+        message: 'Solicitud de cambio enviada exitosamente. Será revisada por un administrador',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error creating change request:', error);
       alert('Error creando solicitud: ' + error.message);
@@ -251,7 +259,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   // Export to Excel function
   const handleExportToExcel = () => {
     if (selectedPlayers.length === 0) {
-      alert('Selecciona al menos un jugador para exportar');
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Selecciona al menos un jugador para exportar',
+        type: 'warning'
+      });
       return;
     }
 
@@ -346,7 +360,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
           <button 
             onClick={() => {
               if (selectedPlayers.length === 0) {
-                alert('Selecciona al menos un jugador para exportar');
+
+                setAlertModal({
+                  isOpen: true,
+                  title: 'Error',
+                  message: 'Selecciona al menos un jugador para exportar',
+                  type: 'warning'
+                });
                 return;
               }
               setShowExportConfig(true);
@@ -632,6 +652,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
           onClose={() => setShowChangeRequestModal(null)}
         />
       )}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

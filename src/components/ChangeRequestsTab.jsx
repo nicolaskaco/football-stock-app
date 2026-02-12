@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { database } from '../utils/database';
+import { AlertModal } from './AlertModal';
 
 export const ChangeRequestsTab = ({ currentUser }) => {
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const canApprove = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
 
@@ -46,10 +48,22 @@ export const ChangeRequestsTab = ({ currentUser }) => {
     try {
       await database.approveChangeRequest(requestId, currentUser.email, notes);
       await loadRequests();
-      alert('Solicitud aprobada exitosamente');
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Éxito',
+        message: 'Solicitud aprobada exitosamente',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Error approving request:', error);
-      alert('Error aprobando solicitud: ' + error.message);
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Error aprobando solicitud: ' + error.message,
+        type: 'error'
+      });
     }
   };
 
@@ -60,10 +74,22 @@ export const ChangeRequestsTab = ({ currentUser }) => {
     try {
       await database.rejectChangeRequest(requestId, currentUser.email, notes);
       await loadRequests();
-      alert('Solicitud rechazada');
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Rechazada',
+        message: 'Solicitud rechazada',
+        type: 'info'
+      });
     } catch (error) {
       console.error('Error rejecting request:', error);
-      alert('Error rechazando solicitud: ' + error.message);
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Error rechazando solicitud: ' + error.message,
+        type: 'error'
+      });
     }
   };
 
@@ -199,6 +225,13 @@ export const ChangeRequestsTab = ({ currentUser }) => {
           ))}
         </div>
       )}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

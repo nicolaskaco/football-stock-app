@@ -4,9 +4,11 @@ import { TorneoForm } from '../forms/TorneoForm';
 import { TorneoDetailView } from '../components/TorneoDetailView';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
+import { AlertModal } from './AlertModal';
 
 export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employees = [], setShowModal, onDataChange, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const canEditTorneo = currentUser?.canEditTorneo || false;
   //const canViewTorneo = currentUser?.canViewTorneo || false;
@@ -56,13 +58,20 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar este torneo?')) {
-      try {
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Comunicarse con Kaco antes de borrar un jugador',
+        type: 'error'
+      });
+      return;
+      /*try {
         await database.deleteTorneo(id);
         await onDataChange();
       } catch (error) {
         console.error('Error deleting torneo:', error);
         alert('Error eliminando torneo: ' + error.message);
-      }
+      }*/
     }
   };
 
@@ -300,6 +309,13 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
           </div>
         )}
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };
