@@ -3,6 +3,7 @@ import { Plus, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DistributionForm } from '../forms/DistributionForm';
 import { database } from '../utils/database';
+import { AlertModal } from './AlertModal';
 
 
 export const DistributionsTab = ({ 
@@ -21,6 +22,7 @@ export const DistributionsTab = ({
     (filter === 'returned' && d.return_date)
   );
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   // Sorting function
   const handleSort = (key) => {
@@ -125,7 +127,13 @@ export const DistributionsTab = ({
         alert('Error creating distribution: ' + error.message);
       }
     } else {
-      alert('Insufficient inventory');
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'No hay inventario suficiente',
+        type: 'error'
+      });
     }
   };
 
@@ -347,6 +355,13 @@ export const DistributionsTab = ({
           </tbody>
         </table>
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

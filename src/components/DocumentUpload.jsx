@@ -2,11 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, File, Trash2 } from 'lucide-react';
 import { database } from '../utils/database';
+import { AlertModal } from './AlertModal';
 
 export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
   const [documents, setDocuments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [documentUrls, setDocumentUrls] = useState({});
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   useEffect(() => {
     loadDocuments();
@@ -32,7 +34,13 @@ export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
     try {
       await database.uploadDocument(playerId, file, docType);
       await loadDocuments();
-      alert('Documento subido exitosamente');
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Éxito',
+        message: 'Documento subido exitosamente',
+        type: 'success'
+      });
     } catch (error) {
       alert('Error subiendo documento: ' + error.message);
     }
@@ -100,6 +108,13 @@ export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
                 );
             })}
         </div>
+        <AlertModal
+          isOpen={alertModal.isOpen}
+          onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+          title={alertModal.title}
+          message={alertModal.message}
+          type={alertModal.type}
+        />
     </div>
   );
 };

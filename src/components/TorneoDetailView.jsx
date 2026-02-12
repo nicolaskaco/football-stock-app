@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, MapPin, Users, Trophy, Shield, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { ExportConfigModal } from './ExportConfigModal';
+import { AlertModal } from './AlertModal';
 
 export const TorneoDetailView = ({ torneo }) => {
 
@@ -14,6 +15,7 @@ export const TorneoDetailView = ({ torneo }) => {
     posicion: true,
     date_of_birth: true
   });
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const toggleExportField = (field) => {
     setExportFields(prev => ({ ...prev, [field]: !prev[field] }));
@@ -359,7 +361,13 @@ export const TorneoDetailView = ({ torneo }) => {
 
   const handleExportPlayersToExcel = () => {
     if (!torneo.torneo_players || torneo.torneo_players.length === 0) {
-      alert('No hay jugadores para exportar');
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'No hay jugadores para exportar',
+        type: 'warning'
+      });
       return;
     }
 
@@ -666,6 +674,13 @@ export const TorneoDetailView = ({ torneo }) => {
           onExport={handleExportPlayersToExcel}
         />
       )}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

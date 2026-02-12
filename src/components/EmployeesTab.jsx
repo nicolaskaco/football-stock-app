@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { EmployeeForm } from '../forms/EmployeeForm';
 import { database } from '../utils/database';
+import { AlertModal } from './AlertModal';
 
 export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -9,6 +10,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const handleAdd = async (emp) => {
     try {
@@ -34,7 +36,13 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
 
   const handleDelete = async (id) => {
     if (window.confirm('Delete employee?')) {
-      alert('Comunicarse con Kaco antes de borrar un record');
+
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'Comunicarse con Kaco antes de borrar un funcionario',
+        type: 'error'
+      });
       return;
       /*
       try {
@@ -118,6 +126,13 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
           </div>
         ))}
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AlertCircle, Save, X } from 'lucide-react';
+import { AlertModal } from './AlertModal';
 
 export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose }) => {
   const [newValues, setNewValues] = useState({
@@ -9,6 +10,7 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
   });
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const hasChanges = 
     newValues.viatico !== currentValues.viatico ||
@@ -17,7 +19,12 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
 
   const handleSubmit = () => {
     if (!hasChanges) {
-      alert('No hay cambios para solicitar');
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: 'No hay cambios para solicitar',
+        type: 'info'
+      });
       return;
     }
 
@@ -25,7 +32,6 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
       setError('Debes ingresar una justificación');
       return;
     }
-
     
     onSubmit(newValues, notes);
   };
@@ -151,6 +157,13 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
           </div>
         </div>
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };
