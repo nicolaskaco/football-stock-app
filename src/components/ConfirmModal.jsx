@@ -7,7 +7,7 @@ export const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confi
   const colors = {
     danger: 'bg-red-600 hover:bg-red-700',
     warning: 'bg-yellow-600 hover:bg-yellow-700',
-    primary: 'bg-black hover:bg-gray-800'
+    primary: 'bg-black hover:bg-gray-800 text-yellow-400'
   };
 
   return (
@@ -36,7 +36,7 @@ export const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confi
               onConfirm();
               onClose();
             }}
-            className={`px-6 py-2 text-white rounded-lg font-semibold ${colors[type]}`}
+            className={`px-6 py-2 rounded-lg font-semibold ${colors[type]}`}
           >
             {confirmText}
           </button>
