@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
+import { PromptModal } from './PromptModal';
+import { ConfirmModal } from './ConfirmModal';
 
 export const ChangeRequestsTab = ({ currentUser }) => {
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const [promptModal, setPromptModal] = useState({ isOpen: false });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   const canApprove = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
 
@@ -43,54 +47,72 @@ export const ChangeRequestsTab = ({ currentUser }) => {
   }, [filter]);
 
   const handleApprove = async (requestId, notes = '') => {
-    if (!window.confirm('¿Aprobar esta solicitud de cambio?')) return;
-    
-    try {
-      await database.approveChangeRequest(requestId, currentUser.email, notes);
-      await loadRequests();
+  setConfirmModal({
+    isOpen: true,
+    title: 'Aprobar Solicitud',
+    message: '¿Estás seguro que deseas aprobar esta solicitud de cambio?',
+    confirmText: 'Aprobar',
+    cancelText: 'Cancelar',
+    type: 'primary',
+    onConfirm: async () => {
+      setConfirmModal({ isOpen: false });
+      
+      try {
+        await database.approveChangeRequest(requestId, currentUser.email, notes);
+        await loadRequests();
 
-      setAlertModal({
-        isOpen: true,
-        title: 'Éxito',
-        message: 'Solicitud aprobada exitosamente',
-        type: 'success'
-      });
-    } catch (error) {
-      console.error('Error approving request:', error);
+        setAlertModal({
+          isOpen: true,
+          title: 'Éxito',
+          message: 'Solicitud aprobada exitosamente',
+          type: 'success'
+        });
+      } catch (error) {
+        console.error('Error approving request:', error);
 
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'Error aprobando solicitud: ' + error.message,
-        type: 'error'
-      });
+        setAlertModal({
+          isOpen: true,
+          title: 'Error',
+          message: 'Error aprobando solicitud: ' + error.message,
+          type: 'error'
+        });
+      }
     }
-  };
+  });
+};
 
   const handleReject = async (requestId) => {
-    const notes = window.prompt('Razón del rechazo (opcional):');
-    if (notes === null) return; // User cancelled
-    
-    try {
-      await database.rejectChangeRequest(requestId, currentUser.email, notes);
-      await loadRequests();
+    setPromptModal({
+      isOpen: true,
+      title: 'Rechazar Solicitud',
+      message: 'Razón del rechazo (opcional):',
+      placeholder: 'Escribe la razón aquí...',
+      required: false,
+      onConfirm: async (notes) => {
+        setPromptModal({ isOpen: false });
+        
+        try {
+          await database.rejectChangeRequest(requestId, currentUser.email, notes);
+          await loadRequests();
 
-      setAlertModal({
-        isOpen: true,
-        title: 'Rechazada',
-        message: 'Solicitud rechazada',
-        type: 'info'
-      });
-    } catch (error) {
-      console.error('Error rejecting request:', error);
+          setAlertModal({
+            isOpen: true,
+            title: 'Rechazada',
+            message: 'Solicitud rechazada exitosamente',
+            type: 'success'
+          });
+        } catch (error) {
+          console.error('Error rejecting request:', error);
 
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'Error rechazando solicitud: ' + error.message,
-        type: 'error'
-      });
-    }
+          setAlertModal({
+            isOpen: true,
+            title: 'Error',
+            message: 'Error rechazando solicitud: ' + error.message,
+            type: 'error'
+          });
+        }
+      }
+    });
   };
 
   const formatDate = (dateString) => {
@@ -231,6 +253,24 @@ export const ChangeRequestsTab = ({ currentUser }) => {
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
+      />
+      <PromptModal
+        isOpen={promptModal.isOpen}
+        onClose={() => setPromptModal({ ...promptModal, isOpen: false })}
+        onConfirm={promptModal.onConfirm}
+        title={promptModal.title}
+        message={promptModal.message}
+        placeholder={promptModal.placeholder}
+        required={promptModal.required}
+      />
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        type={confirmModal.type}
       />
     </div>
   );
