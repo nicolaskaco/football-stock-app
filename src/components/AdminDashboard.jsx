@@ -118,6 +118,7 @@ export const AdminDashboard = ({
             inventory={inventory}
             canAccessWidgets={canAccessWidgets}
             canAccessRopa = {canAccessRopa}
+            currentUser={currentUser}
           />
         )}
         {activeTab === 'inventory' && canAccessRopa && (
