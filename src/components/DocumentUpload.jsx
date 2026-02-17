@@ -3,12 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { Upload, File, Trash2 } from 'lucide-react';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
+import { ConfirmModal } from './ConfirmModal';
 
 export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
   const [documents, setDocuments] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [documentUrls, setDocumentUrls] = useState({});
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
   useEffect(() => {
     loadDocuments();
@@ -47,11 +49,26 @@ export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
     setUploading(false);
   };
 
-  const handleDelete = async (doc) => {
-    if (window.confirm('¿Eliminar este documento?')) {
-      await database.deleteDocument(doc.id, doc.file_path);
-      await loadDocuments();
-    }
+  const handleDelete = (doc) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Confirmar Eliminación',
+      message: '¿Estás seguro que deseas eliminar este documento?',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+      onConfirm: async () => {
+        setConfirmModal({ isOpen: false });
+        
+        try {
+          await database.deleteDocument(doc.id, doc.file_path);
+          await loadDocuments();
+        } catch (error) {
+          console.error('Error deleting document:', error);
+          // Optionally show an alert modal here
+        }
+      }
+    });
   };
 
   const documentTypes = [
@@ -100,8 +117,16 @@ export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
                     >
                         Ver
                     </a>
-                    <button onClick={() => handleDelete(doc)} className="text-red-600">
-                        <Trash2 className="w-4 h-4" />
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDelete(doc);
+                      }} 
+                      className="text-red-600"
+                      type="button"
+                    >
+                      <Trash2 className="w-4 h-4" />
                     </button>
                     </div>
                 </div>
@@ -114,6 +139,16 @@ export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
           title={alertModal.title}
           message={alertModal.message}
           type={alertModal.type}
+        />
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          onClose={() => setConfirmModal({ isOpen: false })}
+          onConfirm={confirmModal.onConfirm}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmText={confirmModal.confirmText}
+          cancelText={confirmModal.cancelText}
+          type={confirmModal.type}
         />
     </div>
   );

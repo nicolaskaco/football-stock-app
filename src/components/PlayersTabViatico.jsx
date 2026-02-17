@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils, Eye } from 'lucide-react';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
@@ -33,6 +33,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   });
 
   const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
+  const canDirectEdit = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
 
   // Add safety check
   const safePlayers = Array.isArray(players) ? players : [];
@@ -588,27 +589,45 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                 <td className="px-6 py-4 text-sm">{player.bank || '-'}</td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
+                    
+                    
+                    <button 
+                      onClick={() => setShowModal({
+                        title: `Ver Jugador: ${player.name}`,
+                        content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} />
+                      })} 
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Ver información"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+
+                    {canDirectEdit ? (
+                      <button 
+                        onClick={() => setShowModal({
+                          title: `Editar Jugador: ${player.name}`,
+                          content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} />
+                        })} 
+                        className="text-yellow-600 hover:text-yellow-800"
+                        title="Editar"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => setShowChangeRequestModal(player)}
+                        className="text-yellow-600 hover:text-yellow-800"
+                        title="Solicitar cambio"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    )}
                     <button 
                       onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
                       className="text-purple-600 hover:text-purple-800"
                       title="Ver historial"
                     >
                       <History className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => setShowModal({
-                        title: `Editar Jugador: ${player.name}`,
-                        content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} />
-                      })} 
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(player.id)} 
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </td>

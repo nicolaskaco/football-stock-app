@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AlertCircle, Save, X } from 'lucide-react';
 import { AlertModal } from './AlertModal';
 
@@ -11,6 +11,16 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+
+  useEffect(() => {
+    if (newValues.contrato) {
+      setNewValues(prev => ({
+        ...prev,
+        viatico: 0,
+        complemento: 0
+      }));
+    }
+  }, [newValues.contrato]);
 
   const hasChanges = 
     newValues.viatico !== currentValues.viatico ||
@@ -67,12 +77,14 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nuevo Viático *
+                  {newValues.contrato && <span className="text-red-500 ml-2">(Deshabilitado - Tiene Contrato)</span>}
                 </label>
                 <input
                   type="number"
                   value={newValues.viatico}
                   onChange={(e) => setNewValues({...newValues, viatico: parseInt(e.target.value) || 0})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  disabled={newValues.contrato}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -89,12 +101,14 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nuevo Complemento *
+                  {newValues.contrato && <span className="text-red-500 ml-2">(Deshabilitado - Tiene Contrato)</span>}
                 </label>
                 <input
                   type="number"
                   value={newValues.complemento}
                   onChange={(e) => setNewValues({...newValues, complemento: parseInt(e.target.value) || 0})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  disabled={newValues.contrato}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
