@@ -675,24 +675,6 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                 <td className="px-6 py-4 text-sm">{player.representante || '-'}</td>
                   <td className="px-3 py-4">
                     <div className="flex gap-2">
-                      {canEditPlayers && (
-                        <button 
-                          onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
-                          className="text-purple-600 hover:text-purple-800"
-                          title="Ver historial"
-                        >
-                          <History className="w-4 h-4" />
-                        </button>
-                      )}
-                      {canEditNameVisual && (
-                        <button 
-                          onClick={() => handleEditNameVisual(player)}
-                          className="text-indigo-600 hover:text-indigo-800"
-                          title="Editar nombre visual"
-                        >
-                          <Type className="w-4 h-4" />
-                        </button>
-                      )}
                       {canEditPlayers ? (
                         <button 
                           onClick={() => setShowModal({
@@ -716,13 +698,22 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                           <Eye className="w-4 h-4" />
                         </button>
                       )}
+                      {canEditNameVisual && (
+                        <button 
+                          onClick={() => handleEditNameVisual(player)}
+                          className="text-indigo-600 hover:text-indigo-800"
+                          title="Editar nombre visual"
+                        >
+                          <Type className="w-4 h-4" />
+                        </button>
+                      )}
                       {canEditPlayers && (
                         <button 
-                          onClick={() => handleDelete(player.id)} 
-                          className="text-red-600 hover:text-red-800"
-                          title="Eliminar"
+                          onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
+                          className="text-purple-600 hover:text-purple-800"
+                          title="Ver historial"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <History className="w-4 h-4" />
                         </button>
                       )}
                     </div>

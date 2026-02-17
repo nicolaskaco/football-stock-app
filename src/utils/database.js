@@ -818,13 +818,40 @@ export const database = {
     
     if (fetchError) throw fetchError;
     
+    // Get current player data to append to comentario_viatico
+    const { data: player, error: playerError } = await supabase
+      .from('players')
+      .select('comentario_viatico')
+      .eq('id', request.player_id)
+      .single();
+    
+    if (playerError) throw playerError;
+    
+    // Build updated comentario_viatico with the request notes
+    let updatedComentario = player.comentario_viatico || '';
+    if (request.request_notes && request.request_notes.trim()) {
+      const reviewDate = new Date().toLocaleDateString('es-UY', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      });
+      
+      // Add separator if there's existing content
+      if (updatedComentario.trim()) {
+        updatedComentario += '\n\n';
+      }
+      
+      updatedComentario += `${reviewDate}:\n${request.request_notes}`;
+    }
+    
     // Update player with new values (this will track history)
     await this.updatePlayer(
       request.player_id,
       {
         viatico: request.new_viatico,
         complemento: request.new_complemento,
-        contrato: request.new_contrato
+        contrato: request.new_contrato,
+        comentario_viatico: updatedComentario
       },
       reviewedBy // Use the reviewer's email for history tracking
     );

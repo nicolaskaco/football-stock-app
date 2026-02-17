@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
+export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false }) => {
   const [formData, setFormData] = useState(player || { 
     name: '',
     gov_id: '',
@@ -51,6 +51,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
             type="text" 
             required 
             value={formData.name} 
+            disabled={readOnly}
             onChange={(e) => setFormData({...formData, name: e.target.value})} 
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
           />
@@ -64,6 +65,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
             type="text" 
             required 
             value={formData.gov_id} 
+            disabled={readOnly}
             onChange={(e) => setFormData({...formData, gov_id: e.target.value})} 
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
           />
@@ -75,8 +77,8 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
           </label>
           <input 
             type="date" 
-            required 
             value={formData.date_of_birth} 
+            disabled={readOnly}
             onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})} 
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
           />
@@ -89,6 +91,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
           <select 
             required 
             value={formData.categoria} 
+            disabled={readOnly}
             onChange={(e) => setFormData({...formData, categoria: e.target.value})} 
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
           >
@@ -108,7 +111,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
             {isPresidenteCategoria && <span className="text-orange-500"> (Requiere aprobación)</span>}
           </label>
           <input type="text" inputMode="numeric" pattern="[0-9]*"
-            disabled={formData.contrato || isPresidenteCategoria}
+            disabled={readOnly || (formData.contrato || isPresidenteCategoria)}
             value={formData.viatico || ''} 
             onChange={(e) => setFormData({...formData, viatico: parseInt(e.target.value) || 0})} 
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" 
@@ -121,7 +124,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
             {isPresidenteCategoria && <span className="text-orange-500"> (Requiere aprobación)</span>}
           </label>
           <input type="text" inputMode="numeric" pattern="[0-9]*"
-            disabled={formData.contrato || isPresidenteCategoria}
+            disabled={readOnly || (formData.contrato || isPresidenteCategoria)}
             value={formData.complemento} 
             onChange={(e) => setFormData({...formData, complemento: parseInt(e.target.value) || 0})} 
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" 
@@ -135,7 +138,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
             type="checkbox" 
             checked={formData.contrato} 
             onChange={(e) => setFormData({...formData, contrato: e.target.checked})} 
-            disabled={isPresidenteCategoria}
+            disabled={readOnly || isPresidenteCategoria}
             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           Tiene Contrato
@@ -151,6 +154,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
           </label>
           <select 
             value={formData.bank} 
+            disabled={readOnly}
             onChange={(e) => setFormData({...formData, bank: e.target.value})} 
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
           >
@@ -169,6 +173,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
             type="text" 
             value={formData.bank_account} 
             onChange={(e) => setFormData({...formData, bank_account: e.target.value})} 
+            disabled={readOnly}
             className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
             placeholder="Número de cuenta"
           />
@@ -184,6 +189,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
             <textarea 
               rows="3"
               value={formData.comentario_viatico} 
+              disabled={readOnly}
               onChange={(e) => setFormData({...formData, comentario_viatico: e.target.value})} 
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder="Notas adicionales sobre viático..."
@@ -191,7 +197,11 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
         </div>
       </div>
 
-      {isPresidenteCategoria && player ? (
+      {readOnly ? (
+        <div className="w-full bg-gray-100 text-gray-600 py-4 rounded-lg text-center font-bold text-lg">
+          Modo Solo Lectura
+        </div>
+      ) : isPresidenteCategoria && player ? (
         <div className="space-y-3">
           <button 
             type="submit" 
@@ -217,12 +227,6 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser }) => {
         >
           {player ? 'Actualizar' : 'Agregar'} Jugador
         </button>
-      )}
-
-      {isPresidenteCategoria && player && (
-        <p className="text-sm text-orange-600 text-center mt-2">
-          Puedes actualizar todos los campos. Los cambios en viáticos, complemento y contrato requieren aprobación de un administrador.
-        </p>
       )}
     </form>
   );
