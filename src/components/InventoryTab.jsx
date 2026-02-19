@@ -17,7 +17,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
   const handleAddItem = async (item) => {
     try {
       await database.addInventoryItem(item);
-      await onDataChange();
+      await onDataChange('inventory');
       setShowModal(null);
     } catch (error) {
       console.error('Error adding item:', error);
@@ -28,7 +28,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
   const handleEditItem = async (item) => {
     try {
       await database.updateInventoryItem(item.id, item);
-      await onDataChange();
+      await onDataChange('inventory');
       setShowModal(null);
     } catch (error) {
       console.error('Error updating item:', error);
@@ -40,7 +40,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
     if (window.confirm('Borrar este item?')) {
       try {
         await database.deleteInventoryItem(id);
-        await onDataChange();
+        await onDataChange('inventory');
       } catch (error) {
         console.error('Error deleting item:', error);
         alert('Error deleting item: ' + error.message);

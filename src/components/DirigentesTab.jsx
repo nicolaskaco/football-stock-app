@@ -114,7 +114,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
   const handleAdd = async (dirigente) => {
     try {
       await database.addDirigente(dirigente);
-      await onDataChange();
+      await onDataChange('dirigentes');
       setShowModal(null);
     } catch (error) {
       console.error('Error adding dirigente:', error);
@@ -125,7 +125,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
   const handleEdit = async (dirigente) => {
     try {
       await database.updateDirigente(dirigente.id, dirigente);
-      await onDataChange();
+      await onDataChange('dirigentes');
       setShowModal(null);
     } catch (error) {
       console.error('Error updating dirigente:', error);
@@ -137,7 +137,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
     if (window.confirm('¿Eliminar este dirigente?')) {
       try {
         await database.deleteDirigente(id);
-        await onDataChange();
+        await onDataChange('dirigentes');
       } catch (error) {
         console.error('Error deleting dirigente:', error);
         alert('Error eliminando dirigente: ' + error.message);

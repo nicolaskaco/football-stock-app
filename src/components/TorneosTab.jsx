@@ -26,7 +26,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
   const handleAdd = async (torneo, dirigenteIds, playerIds, employeeIds) => {
     try {
       await database.addTorneo(torneo, dirigenteIds, playerIds, employeeIds);
-      await onDataChange();
+      await onDataChange('torneos');
       setShowModal(null);
     } catch (error) {
       console.error('Error adding torneo:', error);
@@ -48,7 +48,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
       };
       
       await database.updateTorneo(torneo.id, torneoData, dirigenteIds, playerIds, employeeIds);
-      await onDataChange();
+      await onDataChange('torneos');
       setShowModal(null);
     } catch (error) {
       console.error('Error updating torneo:', error);
