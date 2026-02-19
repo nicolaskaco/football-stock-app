@@ -213,7 +213,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       setShowModal(null);
     } catch (error) {
       console.error('Error adding player:', error);
-      alert('Error agregando jugador: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error agregando jugador: ' + error.message, type: 'error' });
     }
   };
 
@@ -224,7 +224,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       setShowModal(null);
     } catch (error) {
       console.error('Error updating player:', error);
-      alert('Error actualizando jugador: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error actualizando jugador: ' + error.message, type: 'error' });
     }
   };
 
@@ -261,7 +261,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               setShowModal(null);
             } catch (error) {
               console.error('Error updating name visual:', error);
-              alert('Error actualizando nombre visual: ' + error.message);
+              setAlertModal({ isOpen: true, title: 'Error', message: 'Error actualizando nombre visual: ' + error.message, type: 'error' });
             }
           }}
           onClose={() => setShowModal(null)}

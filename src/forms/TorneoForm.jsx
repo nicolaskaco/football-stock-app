@@ -26,9 +26,16 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
 
   const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
 
-  const handleSubmit = (e) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData, selectedDirigentes, selectedPlayers, selectedEmployees);
+    setIsSaving(true);
+    try {
+      await onSubmit(formData, selectedDirigentes, selectedPlayers, selectedEmployees);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleDirigente = (dirigenteId) => {
@@ -310,9 +317,10 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
       ) : (
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+          disabled={isSaving}
+          className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
         >
-          {torneo ? '✓ Actualizar' : '+ Agregar'} Torneo
+          {isSaving ? 'Guardando...' : `${torneo ? '✓ Actualizar' : '+ Agregar'} Torneo`}
         </button>
       )}
     </form>

@@ -30,7 +30,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
       setShowModal(null);
     } catch (error) {
       console.error('Error adding torneo:', error);
-      alert('Error agregando torneo: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error agregando torneo: ' + error.message, type: 'error' });
     }
   };
 
@@ -52,7 +52,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
       setShowModal(null);
     } catch (error) {
       console.error('Error updating torneo:', error);
-      alert('Error actualizando torneo: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error actualizando torneo: ' + error.message, type: 'error' });
     }
   };
 

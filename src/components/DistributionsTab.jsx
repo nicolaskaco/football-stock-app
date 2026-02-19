@@ -124,7 +124,7 @@ export const DistributionsTab = ({
         await onDataChange('distributions', 'inventory');
         setShowModal(null);
       } catch (error) {
-        alert('Error creating distribution: ' + error.message);
+        setAlertModal({ isOpen: true, title: 'Error', message: 'Error creando entrega: ' + error.message, type: 'error' });
       }
     } else {
 
@@ -163,7 +163,7 @@ export const DistributionsTab = ({
           
           await onDataChange('distributions', 'inventory');
         } catch (error) {
-          alert('Error returning item: ' + error.message);
+          setAlertModal({ isOpen: true, title: 'Error', message: 'Error registrando devolución: ' + error.message, type: 'error' });
         }
       }
     }

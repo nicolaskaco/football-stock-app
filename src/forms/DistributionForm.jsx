@@ -13,9 +13,16 @@ export const DistributionForm = ({ employees, inventory, onSubmit }) => {
 
   const selectedItem = inventory.find(i => i.id === formData.item_id);
 
-  const handleSubmit = (e) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setIsSaving(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -133,11 +140,12 @@ export const DistributionForm = ({ employees, inventory, onSubmit }) => {
         />
       </div>
 
-      <button 
-        type="submit" 
-        className="w-full bg-black text-yellow-400 py-3 rounded-lg hover:bg-gray-800 font-medium"
+      <button
+        type="submit"
+        disabled={isSaving}
+        className="w-full bg-black text-yellow-400 py-3 rounded-lg hover:bg-gray-800 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        Entregar Ropa
+        {isSaving ? 'Guardando...' : 'Entregar Ropa'}
       </button>
     </form>
   );

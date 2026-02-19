@@ -27,6 +27,7 @@ const App = () => {
   const [distributions, setDistributions] = useState([]);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [dirigentes, setDirigentes] = useState([]);
   const [torneos, setTorneos] = useState([]);
   const [comisiones, setComisiones] = useState([]);
@@ -91,6 +92,7 @@ const App = () => {
   const loadComisiones = async () => { const d = await database.getComisiones(); setComisiones(d || []); };
 
   const loadData = async () => {
+    setLoadError(null);
     try {
       await Promise.all([
         loadEmployees(),
@@ -103,6 +105,7 @@ const App = () => {
       ]);
     } catch (error) {
       console.error('Error loading data:', error);
+      setLoadError(error.message || 'Error al cargar los datos. Verifica tu conexión.');
     }
     setLoading(false);
   };
@@ -218,7 +221,25 @@ const App = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md p-8 bg-white rounded-lg shadow-md">
+          <div className="text-red-500 text-5xl mb-4">⚠</div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Error al cargar</h2>
+          <p className="text-gray-600 mb-6">{loadError}</p>
+          <button
+            onClick={() => { setLoading(true); loadData(); }}
+            className="px-6 py-2 bg-black text-yellow-400 rounded-lg hover:bg-gray-800 font-semibold"
+          >
+            Reintentar
+          </button>
         </div>
       </div>
     );

@@ -26,15 +26,26 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
     }
   }, [formData.contrato]);
 
-  const handleSubmit = (e) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setIsSaving(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleChangeRequest = (e) => {
+  const handleChangeRequest = async (e) => {
     e.preventDefault();
-    // Pass flag to parent that this is a change request
-    onSubmit(formData, true);
+    setIsSaving(true);
+    try {
+      await onSubmit(formData, true);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const categorias = ['3era', '4ta', 'S16', '5ta', '6ta', '7ma', 'Sub13'];
@@ -203,29 +214,32 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
         </div>
       ) : isPresidenteCategoria && player ? (
         <div className="space-y-3">
-          <button 
-            type="submit" 
-            className="w-full bg-black hover:bg-gray-800 text-yellow-400 py-3 rounded-lg font-medium"
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="w-full bg-black hover:bg-gray-800 text-yellow-400 py-3 rounded-lg font-medium disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Actualizar Información General
+            {isSaving ? 'Guardando...' : 'Actualizar Información General'}
           </button>
-          <button 
+          <button
             type="button"
             onClick={handleChangeRequest}
-            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-medium"
+            disabled={isSaving}
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-lg font-medium disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            Solicitar Cambio de Viáticos/Contrato
+            {isSaving ? 'Guardando...' : 'Solicitar Cambio de Viáticos/Contrato'}
           </button>
           <p className="text-sm text-orange-600 text-center">
             Los cambios financieros requieren aprobación de un administrador
           </p>
         </div>
       ) : (
-        <button 
-          type="submit" 
-          className="w-full bg-black hover:bg-gray-800 text-yellow-400 py-3 rounded-lg font-medium"
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="w-full bg-black hover:bg-gray-800 text-yellow-400 py-3 rounded-lg font-medium disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {player ? 'Actualizar' : 'Agregar'} Jugador
+          {isSaving ? 'Guardando...' : `${player ? 'Actualizar' : 'Agregar'} Jugador`}
         </button>
       )}
     </form>

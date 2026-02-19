@@ -4,9 +4,11 @@ import * as XLSX from 'xlsx';
 import { ComisionForm } from '../forms/ComisionForm';
 import { ComisionDetailView } from '../components/ComisionDetailView';
 import { database } from '../utils/database';
+import { AlertModal } from './AlertModal';
 
 export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, onDataChange, currentUser }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const canEditComision = currentUser?.canEditComision || false;
 
@@ -26,7 +28,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
       setShowModal(null);
     } catch (error) {
       console.error('Error adding comision:', error);
-      alert('Error agregando comisión: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error agregando comisión: ' + error.message, type: 'error' });
     }
   };
 
@@ -42,7 +44,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
       setShowModal(null);
     } catch (error) {
       console.error('Error updating comision:', error);
-      alert('Error actualizando comisión: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error actualizando comisión: ' + error.message, type: 'error' });
     }
   };
 
@@ -53,7 +55,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
         await onDataChange('comisiones');
       } catch (error) {
         console.error('Error deleting comision:', error);
-        alert('Error eliminando comisión: ' + error.message);
+        setAlertModal({ isOpen: true, title: 'Error', message: 'Error eliminando comisión: ' + error.message, type: 'error' });
       }
     }
   };
@@ -206,6 +208,13 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
           </div>
         )}
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };
