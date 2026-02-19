@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, AlertCircle, ExternalLink } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { database } from '../utils/database';
 
 export const PendingChangeRequestsWidget = ({ setActiveTab }) => {
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -12,21 +12,7 @@ export const PendingChangeRequestsWidget = ({ setActiveTab }) => {
 
   const loadPendingRequests = async () => {
     try {
-      const { data, error } = await supabase
-        .from('player_change_requests')
-        .select(`
-          *,
-          players (
-            id,
-            name,
-            name_visual
-          )
-        `)
-        .eq('status', 'pending')
-        .order('request_date', { ascending: false });
-
-      if (error) throw error;
-      
+      const data = await database.getPendingChangeRequests();
       setPendingRequests(data || []);
     } catch (error) {
       console.error('Error loading pending requests:', error);
