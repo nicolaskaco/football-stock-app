@@ -82,29 +82,43 @@ const App = () => {
     setLoading(false);
   };
 
+  const loadPlayers = async () => { const d = await database.getPlayers(); setPlayers(d || []); };
+  const loadEmployees = async () => { const d = await database.getEmployees(); setEmployees(d || []); };
+  const loadInventory = async () => { const d = await database.getInventory(); setInventory(d || []); };
+  const loadDistributions = async () => { const d = await database.getDistributions(); setDistributions(d || []); };
+  const loadDirigentes = async () => { const d = await database.getDirigentes(); setDirigentes(d || []); };
+  const loadTorneos = async () => { const d = await database.getTorneos(); setTorneos(d || []); };
+  const loadComisiones = async () => { const d = await database.getComisiones(); setComisiones(d || []); };
+
   const loadData = async () => {
     try {
-      const [empData, invData, distData, playersData, dirigentesData, torneosData, comisionesData] = await Promise.all([
-        database.getEmployees(),
-        database.getInventory(),
-        database.getDistributions(),
-        database.getPlayers(),
-        database.getDirigentes(),
-        database.getTorneos(),
-        database.getComisiones()
+      await Promise.all([
+        loadEmployees(),
+        loadInventory(),
+        loadDistributions(),
+        loadPlayers(),
+        loadDirigentes(),
+        loadTorneos(),
+        loadComisiones(),
       ]);
-      
-      setEmployees(empData || []);
-      setInventory(invData || []);
-      setDistributions(distData || []);
-      setPlayers(playersData || []);
-      setDirigentes(dirigentesData || []);
-      setTorneos(torneosData || []);
-      setComisiones(comisionesData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     }
     setLoading(false);
+  };
+
+  const entityLoaders = {
+    players: loadPlayers,
+    employees: loadEmployees,
+    inventory: loadInventory,
+    distributions: loadDistributions,
+    dirigentes: loadDirigentes,
+    torneos: loadTorneos,
+    comisiones: loadComisiones,
+  };
+
+  const handleDataChange = async (...entities) => {
+    await Promise.all(entities.map(e => entityLoaders[e]()));
   };
 
   const saveEmployees = async (data) => {
@@ -234,7 +248,7 @@ const App = () => {
                 comisiones={comisiones}
                 currentUser={currentUser}
                 onLogout={handleLogout}
-                onDataChange={loadData}
+                onDataChange={handleDataChange}
               />
             )}
             {currentView === 'employee-view' && (

@@ -209,7 +209,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const handleAdd = async (player) => {
     try {
       await database.addPlayer(player);
-      await onDataChange();
+      await onDataChange('players');
       setShowModal(null);
     } catch (error) {
       console.error('Error adding player:', error);
@@ -220,7 +220,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const handleEdit = async (player) => {
     try {
       await database.updatePlayer(player.id, player, currentUser?.email);
-      await onDataChange();
+      await onDataChange('players');
       setShowModal(null);
     } catch (error) {
       console.error('Error updating player:', error);
@@ -257,7 +257,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
           onSave={async (nameVisual) => {
             try {
               await database.updatePlayerNameVisual(player.id, nameVisual);
-              await onDataChange();
+              await onDataChange('players');
               setShowModal(null);
             } catch (error) {
               console.error('Error updating name visual:', error);

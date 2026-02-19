@@ -188,7 +188,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const handleAdd = async (player) => {
     try {
       await database.addPlayer(player);
-      await onDataChange();
+      await onDataChange('players');
       setShowModal(null);
     } catch (error) {
       console.error('Error adding player:', error);
@@ -209,7 +209,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       
       // Normal update
       await database.updatePlayer(player.id, player, currentUser?.email);
-      await onDataChange();
+      await onDataChange('players');
       setShowModal(null);
     } catch (error) {
       console.error('Error updating player:', error);
@@ -249,7 +249,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     if (window.confirm('¿Eliminar este jugador?')) {
       try {
         await database.deletePlayer(id);
-        await onDataChange();
+        await onDataChange('players');
       } catch (error) {
         console.error('Error deleting player:', error);
         alert('Error eliminando jugador: ' + error.message);

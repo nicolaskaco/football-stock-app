@@ -22,7 +22,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
   const handleAdd = async (comision, dirigenteIds) => {
     try {
       await database.addComision(comision, dirigenteIds);
-      await onDataChange();
+      await onDataChange('comisiones');
       setShowModal(null);
     } catch (error) {
       console.error('Error adding comision:', error);
@@ -38,7 +38,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
       };
       
       await database.updateComision(comision.id, comisionData, dirigenteIds);
-      await onDataChange();
+      await onDataChange('comisiones');
       setShowModal(null);
     } catch (error) {
       console.error('Error updating comision:', error);
@@ -50,7 +50,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     if (window.confirm('¿Eliminar esta comisión?')) {
       try {
         await database.deleteComision(id);
-        await onDataChange();
+        await onDataChange('comisiones');
       } catch (error) {
         console.error('Error deleting comision:', error);
         alert('Error eliminando comisión: ' + error.message);

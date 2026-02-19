@@ -15,7 +15,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
   const handleAdd = async (emp) => {
     try {
       await database.addEmployee(emp);
-      await onDataChange(); // Refresh data from database
+      await onDataChange('employees');
       setShowModal(null);
     } catch (error) {
       console.error('Error adding employee:', error);
@@ -26,7 +26,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
   const handleEdit = async (emp) => {
     try {
       await database.updateEmployee(emp.id, emp);
-      await onDataChange(); // Refresh data from database
+      await onDataChange('employees');
       setShowModal(null);
     } catch (error) {
       console.error('Error updating employee:', error);

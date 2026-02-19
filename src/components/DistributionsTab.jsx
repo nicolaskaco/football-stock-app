@@ -121,7 +121,7 @@ export const DistributionsTab = ({
           quantity: item.quantity - dist.quantity
         });
         
-        await onDataChange();
+        await onDataChange('distributions', 'inventory');
         setShowModal(null);
       } catch (error) {
         alert('Error creating distribution: ' + error.message);
@@ -161,7 +161,7 @@ export const DistributionsTab = ({
             });
           }
           
-          await onDataChange();
+          await onDataChange('distributions', 'inventory');
         } catch (error) {
           alert('Error returning item: ' + error.message);
         }
