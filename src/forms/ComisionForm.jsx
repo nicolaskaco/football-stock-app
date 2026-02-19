@@ -10,9 +10,16 @@ export const ComisionForm = ({ comision, onSubmit, dirigentes = [], readOnly = f
     comision?.comision_dirigentes?.map(cd => cd.dirigente_id) || []
   );
 
-  const handleSubmit = (e) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData, selectedDirigentes);
+    setIsSaving(true);
+    try {
+      await onSubmit(formData, selectedDirigentes);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleDirigente = (dirigenteId) => {
@@ -110,9 +117,10 @@ export const ComisionForm = ({ comision, onSubmit, dirigentes = [], readOnly = f
       ) : (
         <button
           type="submit"
-          className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+          disabled={isSaving}
+          className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
         >
-          {comision ? '✓ Actualizar' : '+ Agregar'} Comisión
+          {isSaving ? 'Guardando...' : `${comision ? '✓ Actualizar' : '+ Agregar'} Comisión`}
         </button>
       )}
     </form>

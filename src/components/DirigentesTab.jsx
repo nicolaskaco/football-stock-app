@@ -3,12 +3,14 @@ import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown }
 import { DirigenteForm } from '../forms/DirigenteForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
+import { AlertModal } from './AlertModal';
 
 export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRol, setFilterRol] = useState('all');
   const [filterCategoria, setFilterCategoria] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const roles = [
     'Presidente Formativas',
@@ -118,7 +120,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
       setShowModal(null);
     } catch (error) {
       console.error('Error adding dirigente:', error);
-      alert('Error agregando dirigente: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error agregando dirigente: ' + error.message, type: 'error' });
     }
   };
 
@@ -129,7 +131,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
       setShowModal(null);
     } catch (error) {
       console.error('Error updating dirigente:', error);
-      alert('Error actualizando dirigente: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error actualizando dirigente: ' + error.message, type: 'error' });
     }
   };
 
@@ -140,7 +142,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
         await onDataChange('dirigentes');
       } catch (error) {
         console.error('Error deleting dirigente:', error);
-        alert('Error eliminando dirigente: ' + error.message);
+        setAlertModal({ isOpen: true, title: 'Error', message: 'Error eliminando dirigente: ' + error.message, type: 'error' });
       }
     }
   };
@@ -370,6 +372,13 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
           </div>
         )}
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

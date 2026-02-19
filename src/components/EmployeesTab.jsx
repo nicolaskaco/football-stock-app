@@ -19,7 +19,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
       setShowModal(null);
     } catch (error) {
       console.error('Error adding employee:', error);
-      alert('Error adding employee: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error agregando funcionario: ' + error.message, type: 'error' });
     }
   };
 
@@ -30,7 +30,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
       setShowModal(null);
     } catch (error) {
       console.error('Error updating employee:', error);
-      alert('Error updating employee: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error actualizando funcionario: ' + error.message, type: 'error' });
     }
   };
 

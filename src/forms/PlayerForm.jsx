@@ -44,9 +44,16 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser }) 
   const isEditingPlayer = player && player.id;
   const canEditFinancialFields = ['ejecutivo', 'admin', 'presidente'].includes(currentUser?.role);
 
-  const handleSubmit = (e) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setIsSaving(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
@@ -482,11 +489,12 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser }) 
           Modo Solo Lectura
         </div>
       ) : (
-        <button 
-          type="submit" 
-          className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+        <button
+          type="submit"
+          disabled={isSaving}
+          className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
         >
-          {player ? '✓ Actualizar' : '+ Agregar'} Jugador
+          {isSaving ? 'Guardando...' : `${player ? '✓ Actualizar' : '+ Agregar'} Jugador`}
         </button>
       )}
 

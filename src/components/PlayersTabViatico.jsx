@@ -192,7 +192,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       setShowModal(null);
     } catch (error) {
       console.error('Error adding player:', error);
-      alert('Error agregando jugador: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error agregando jugador: ' + error.message, type: 'error' });
     }
   };
 
@@ -213,7 +213,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       setShowModal(null);
     } catch (error) {
       console.error('Error updating player:', error);
-      alert('Error actualizando jugador: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error actualizando jugador: ' + error.message, type: 'error' });
     }
   };
 
@@ -241,7 +241,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       });
     } catch (error) {
       console.error('Error creating change request:', error);
-      alert('Error creando solicitud: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error creando solicitud: ' + error.message, type: 'error' });
     }
   };
 
@@ -252,7 +252,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
         await onDataChange('players');
       } catch (error) {
         console.error('Error deleting player:', error);
-        alert('Error eliminando jugador: ' + error.message);
+        setAlertModal({ isOpen: true, title: 'Error', message: 'Error eliminando jugador: ' + error.message, type: 'error' });
       }
     }
   };

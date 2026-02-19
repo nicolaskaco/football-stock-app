@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { InventoryForm } from '../forms/InventoryForm';
 import { database } from '../utils/database';
+import { AlertModal } from './AlertModal';
 
 export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const categories = [...new Set(inventory.map(item => item.category))];
   const filteredInventory = inventory.filter(item => {
@@ -21,7 +23,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
       setShowModal(null);
     } catch (error) {
       console.error('Error adding item:', error);
-      alert('Error adding item: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error agregando item: ' + error.message, type: 'error' });
     }
   };
 
@@ -32,7 +34,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
       setShowModal(null);
     } catch (error) {
       console.error('Error updating item:', error);
-      alert('Error updating item: ' + error.message);
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Error actualizando item: ' + error.message, type: 'error' });
     }
   };
 
@@ -43,7 +45,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
         await onDataChange('inventory');
       } catch (error) {
         console.error('Error deleting item:', error);
-        alert('Error deleting item: ' + error.message);
+        setAlertModal({ isOpen: true, title: 'Error', message: 'Error eliminando item: ' + error.message, type: 'error' });
       }
     }
   };
@@ -134,6 +136,13 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
           </tbody>
         </table>
       </div>
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 };

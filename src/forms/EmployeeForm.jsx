@@ -12,9 +12,16 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
     categoria: ''
   });
 
-  const handleSubmit = (e) => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    setIsSaving(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -131,11 +138,12 @@ export const EmployeeForm = ({ employee, onSubmit }) => {
         </select>
       </div>
 
-      <button 
-        type="submit" 
-        className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200"
+      <button
+        type="submit"
+        disabled={isSaving}
+        className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
       >
-        {employee ? 'Actualizar' : 'Agregar'} Funcionario
+        {isSaving ? 'Guardando...' : `${employee ? 'Actualizar' : 'Agregar'} Funcionario`}
       </button>
     </form>
   );
