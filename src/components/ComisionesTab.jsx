@@ -38,7 +38,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     await database.addComision(comision, dirigenteIds);
     await onDataChange('comisiones');
     setShowModal(null);
-  }, 'Error agregando comisión');
+  }, 'Error agregando comisión', 'Comisión agregada correctamente');
 
   const handleEdit = (comision, dirigenteIds) => execute(async () => {
     const comisionData = {
@@ -48,7 +48,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     await database.updateComision(comision.id, comisionData, dirigenteIds);
     await onDataChange('comisiones');
     setShowModal(null);
-  }, 'Error actualizando comisión');
+  }, 'Error actualizando comisión', 'Comisión actualizada correctamente');
 
   const handleDelete = (id) => setConfirmDelete(id);
 
@@ -56,7 +56,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     execute(async () => {
       await database.deleteComision(confirmDelete);
       await onDataChange('comisiones');
-    }, 'Error eliminando comisión');
+    }, 'Error eliminando comisión', 'Comisión eliminada correctamente');
   };
 
   const handleExportToExcel = () => {

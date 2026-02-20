@@ -29,13 +29,13 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
     await database.addEmployee(emp);
     await onDataChange('employees');
     setShowModal(null);
-  }, 'Error agregando funcionario');
+  }, 'Error agregando funcionario', 'Funcionario agregado correctamente');
 
   const handleEdit = (emp) => execute(async () => {
     await database.updateEmployee(emp.id, emp);
     await onDataChange('employees');
     setShowModal(null);
-  }, 'Error actualizando funcionario');
+  }, 'Error actualizando funcionario', 'Funcionario actualizado correctamente');
 
   const handleDelete = (id) => setConfirmDelete(id);
 

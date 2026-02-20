@@ -43,13 +43,13 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
     await database.addInventoryItem(item);
     await onDataChange('inventory');
     setShowModal(null);
-  }, 'Error agregando artículo');
+  }, 'Error agregando artículo', 'Artículo agregado correctamente');
 
   const handleEditItem = (item) => execute(async () => {
     await database.updateInventoryItem(item.id, item);
     await onDataChange('inventory');
     setShowModal(null);
-  }, 'Error actualizando artículo');
+  }, 'Error actualizando artículo', 'Artículo actualizado correctamente');
 
   const handleDeleteItem = (id) => setConfirmDelete(id);
 
@@ -57,7 +57,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
     execute(async () => {
       await database.deleteInventoryItem(confirmDelete);
       await onDataChange('inventory');
-    }, 'Error eliminando artículo');
+    }, 'Error eliminando artículo', 'Artículo eliminado correctamente');
   };
 
   return (
