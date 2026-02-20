@@ -4,8 +4,14 @@ import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown }
 import { DirigenteForm } from '../forms/DirigenteForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
+import { AlertModal } from './AlertModal';
+import { useMutation } from '../hooks/useMutation';
 
 export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onFormDirtyChange }) => {
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { execute } = useMutation((msg) =>
+    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('dg_search') || '';
   const filterRol = searchParams.get('dg_rol') || 'all';
@@ -140,37 +146,24 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
     return 0;
   });
 
-  const handleAdd = async (dirigente) => {
-    try {
-      await database.addDirigente(dirigente);
-      await onDataChange('dirigentes');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error adding dirigente:', error);
-      alert('Error agregando dirigente: ' + error.message);
-    }
-  };
+  const handleAdd = (dirigente) => execute(async () => {
+    await database.addDirigente(dirigente);
+    await onDataChange('dirigentes');
+    setShowModal(null);
+  }, 'Error agregando dirigente');
 
-  const handleEdit = async (dirigente) => {
-    try {
-      await database.updateDirigente(dirigente.id, dirigente);
-      await onDataChange('dirigentes');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error updating dirigente:', error);
-      alert('Error actualizando dirigente: ' + error.message);
-    }
-  };
+  const handleEdit = (dirigente) => execute(async () => {
+    await database.updateDirigente(dirigente.id, dirigente);
+    await onDataChange('dirigentes');
+    setShowModal(null);
+  }, 'Error actualizando dirigente');
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar este dirigente?')) {
-      try {
+      execute(async () => {
         await database.deleteDirigente(id);
         await onDataChange('dirigentes');
-      } catch (error) {
-        console.error('Error deleting dirigente:', error);
-        alert('Error eliminando dirigente: ' + error.message);
-      }
+      }, 'Error eliminando dirigente');
     }
   };
 
@@ -400,5 +393,13 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
         )}
       </div>
     </div>
+
+    <AlertModal
+      isOpen={alertModal.isOpen}
+      onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+      title={alertModal.title}
+      message={alertModal.message}
+      type={alertModal.type}
+    />
   );
 };

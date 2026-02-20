@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useMutation } from '../hooks/useMutation';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type, Utensils } from 'lucide-react';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
@@ -49,6 +50,9 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { execute } = useMutation((msg) =>
+    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
+  );
   const defaultExportFields = {
     name: true,
     name_visual: false,
@@ -249,27 +253,17 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       : <ArrowDown className="w-4 h-4 text-blue-600" />;
   };
 
-  const handleAdd = async (player) => {
-    try {
-      await database.addPlayer(player);
-      await onDataChange('players');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error adding player:', error);
-      alert('Error agregando jugador: ' + error.message);
-    }
-  };
+  const handleAdd = (player) => execute(async () => {
+    await database.addPlayer(player);
+    await onDataChange('players');
+    setShowModal(null);
+  }, 'Error agregando jugador');
 
-  const handleEdit = async (player) => {
-    try {
-      await database.updatePlayer(player.id, player, currentUser?.email);
-      await onDataChange('players');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error updating player:', error);
-      alert('Error actualizando jugador: ' + error.message);
-    }
-  };
+  const handleEdit = (player) => execute(async () => {
+    await database.updatePlayer(player.id, player, currentUser?.email);
+    await onDataChange('players');
+    setShowModal(null);
+  }, 'Error actualizando jugador');
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar este jugador?')) {

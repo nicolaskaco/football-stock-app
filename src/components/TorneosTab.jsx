@@ -6,6 +6,7 @@ import { TorneoDetailView } from '../components/TorneoDetailView';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { AlertModal } from './AlertModal';
+import { useMutation } from '../hooks/useMutation';
 
 export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employees = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -16,6 +17,9 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     return p;
   });
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { execute } = useMutation((msg) =>
+    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
+  );
 
   const canEditTorneo = currentUser?.canEditTorneo || false;
   //const canViewTorneo = currentUser?.canViewTorneo || false;
@@ -30,38 +34,25 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     (t.country && t.country.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const handleAdd = async (torneo, dirigenteIds, playerIds, employeeIds) => {
-    try {
-      await database.addTorneo(torneo, dirigenteIds, playerIds, employeeIds);
-      await onDataChange('torneos');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error adding torneo:', error);
-      alert('Error agregando torneo: ' + error.message);
-    }
-  };
+  const handleAdd = (torneo, dirigenteIds, playerIds, employeeIds) => execute(async () => {
+    await database.addTorneo(torneo, dirigenteIds, playerIds, employeeIds);
+    await onDataChange('torneos');
+    setShowModal(null);
+  }, 'Error agregando torneo');
 
-  const handleEdit = async (torneo, dirigenteIds, playerIds, employeeIds) => {
-    try {
-      // DON'T pass the full torneo object with relationships
-      // Only pass the basic fields
-      const torneoData = {
-        name: torneo.name,
-        country: torneo.country,
-        city: torneo.city,
-        categoria: torneo.categoria,
-        start_date: torneo.start_date,
-        end_date: torneo.end_date
-      };
-      
-      await database.updateTorneo(torneo.id, torneoData, dirigenteIds, playerIds, employeeIds);
-      await onDataChange('torneos');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error updating torneo:', error);
-      alert('Error actualizando torneo: ' + error.message);
-    }
-  };
+  const handleEdit = (torneo, dirigenteIds, playerIds, employeeIds) => execute(async () => {
+    const torneoData = {
+      name: torneo.name,
+      country: torneo.country,
+      city: torneo.city,
+      categoria: torneo.categoria,
+      start_date: torneo.start_date,
+      end_date: torneo.end_date
+    };
+    await database.updateTorneo(torneo.id, torneoData, dirigenteIds, playerIds, employeeIds);
+    await onDataChange('torneos');
+    setShowModal(null);
+  }, 'Error actualizando torneo');
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar este torneo?')) {

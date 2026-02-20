@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useMutation } from '../hooks/useMutation';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { EmployeeForm } from '../forms/EmployeeForm';
 import { database } from '../utils/database';
@@ -18,28 +19,21 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { execute } = useMutation((msg) =>
+    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
+  );
 
-  const handleAdd = async (emp) => {
-    try {
-      await database.addEmployee(emp);
-      await onDataChange('employees');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error adding employee:', error);
-      alert('Error adding employee: ' + error.message);
-    }
-  };
+  const handleAdd = (emp) => execute(async () => {
+    await database.addEmployee(emp);
+    await onDataChange('employees');
+    setShowModal(null);
+  }, 'Error agregando funcionario');
 
-  const handleEdit = async (emp) => {
-    try {
-      await database.updateEmployee(emp.id, emp);
-      await onDataChange('employees');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error updating employee:', error);
-      alert('Error updating employee: ' + error.message);
-    }
-  };
+  const handleEdit = (emp) => execute(async () => {
+    await database.updateEmployee(emp.id, emp);
+    await onDataChange('employees');
+    setShowModal(null);
+  }, 'Error actualizando funcionario');
 
   const handleDelete = async (id) => {
     if (window.confirm('Delete employee?')) {
