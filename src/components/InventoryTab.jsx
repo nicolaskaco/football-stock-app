@@ -1,11 +1,28 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { InventoryForm } from '../forms/InventoryForm';
 import { database } from '../utils/database';
 
 export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('i_search') || '';
+  const filterCategory = searchParams.get('i_cat') || 'all';
+
+  const setParam = (key, value, defaultValue) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (value === null || value === undefined || value === defaultValue || value === '') {
+        p.delete(key);
+      } else {
+        p.set(key, String(value));
+      }
+      return p;
+    });
+  };
+
+  const setSearchTerm = (v) => setParam('i_search', v, '');
+  const setFilterCategory = (v) => setParam('i_cat', v, 'all');
 
   const categories = [...new Set(inventory.map(item => item.category))];
   const filteredInventory = inventory.filter(item => {

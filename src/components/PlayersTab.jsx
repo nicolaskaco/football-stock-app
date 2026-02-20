@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type, Utensils } from 'lucide-react';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
@@ -9,12 +10,42 @@ import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
 
 export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategoria, setFilterCategoria] = useState('all');
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('p_search') || '';
+  const filterCategoria = searchParams.get('p_cat') || 'all';
+  const sortConfig = {
+    key: searchParams.get('p_sort') || null,
+    direction: searchParams.get('p_dir') || 'asc',
+  };
+  const filterCasita = searchParams.get('p_casita') === 'true';
+  const filterContrato = searchParams.get('p_contrato') === 'true';
+
+  const setParam = (key, value, defaultValue) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (value === null || value === undefined || value === defaultValue || value === '') {
+        p.delete(key);
+      } else {
+        p.set(key, String(value));
+      }
+      return p;
+    });
+  };
+
+  const setSearchTerm = (v) => setParam('p_search', v, '');
+  const setFilterCategoria = (v) => setParam('p_cat', v, 'all');
+  const setSortConfig = ({ key, direction }) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      key ? p.set('p_sort', key) : p.delete('p_sort');
+      direction && direction !== 'asc' ? p.set('p_dir', direction) : p.delete('p_dir');
+      return p;
+    });
+  };
+  const setFilterCasita = (v) => setParam('p_casita', v, false);
+  const setFilterContrato = (v) => setParam('p_contrato', v, false);
+
   const [showHistoryModal, setShowHistoryModal] = useState(null);
-  const [filterCasita, setFilterCasita] = useState(false);
-  const [filterContrato, setFilterContrato] = useState(false);
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });

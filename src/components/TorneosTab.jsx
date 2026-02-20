@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Trophy, Download, Eye, Info } from 'lucide-react';
 import { TorneoForm } from '../forms/TorneoForm';
 import { TorneoDetailView } from '../components/TorneoDetailView';
@@ -7,7 +8,13 @@ import * as XLSX from 'xlsx';
 import { AlertModal } from './AlertModal';
 
 export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employees = [], setShowModal, onDataChange, currentUser }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('t_search') || '';
+  const setSearchTerm = (v) => setSearchParams(prev => {
+    const p = new URLSearchParams(prev);
+    v ? p.set('t_search', v) : p.delete('t_search');
+    return p;
+  });
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   const canEditTorneo = currentUser?.canEditTorneo || false;

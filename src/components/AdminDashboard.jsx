@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Package } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
@@ -26,7 +27,13 @@ export const AdminDashboard = ({
   onDataChange, 
   currentUser
 }) => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'overview';
+  const setActiveTab = (tab) => setSearchParams(prev => {
+    const p = new URLSearchParams(prev);
+    p.set('tab', tab);
+    return p;
+  });
   const [showModal, setShowModal] = useState(null);
 
   const lowStockItems = inventory.filter(item => item.quantity <= item.min_stock);

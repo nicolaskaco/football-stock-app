@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils, Eye } from 'lucide-react';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
@@ -9,9 +10,37 @@ import { ChangeRequestModal } from '../components/ChangeRequestModal';
 import { AlertModal } from './AlertModal';
 
 export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategoria, setFilterCategoria] = useState('all');
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('v_search') || '';
+  const filterCategoria = searchParams.get('v_cat') || 'all';
+  const sortConfig = {
+    key: searchParams.get('v_sort') || null,
+    direction: searchParams.get('v_dir') || 'asc',
+  };
+
+  const setParam = (key, value, defaultValue) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (value === null || value === undefined || value === defaultValue || value === '') {
+        p.delete(key);
+      } else {
+        p.set(key, String(value));
+      }
+      return p;
+    });
+  };
+
+  const setSearchTerm = (v) => setParam('v_search', v, '');
+  const setFilterCategoria = (v) => setParam('v_cat', v, 'all');
+  const setSortConfig = ({ key, direction }) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      key ? p.set('v_sort', key) : p.delete('v_sort');
+      direction && direction !== 'asc' ? p.set('v_dir', direction) : p.delete('v_dir');
+      return p;
+    });
+  };
+
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [showChangeRequestModal, setShowChangeRequestModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });

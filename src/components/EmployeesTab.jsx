@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { EmployeeForm } from '../forms/EmployeeForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
 
 export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('e_search') || '';
+  const setSearchTerm = (v) => setSearchParams(prev => {
+    const p = new URLSearchParams(prev);
+    v ? p.set('e_search', v) : p.delete('e_search');
+    return p;
+  });
   const filtered = employees.filter(e => 
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
