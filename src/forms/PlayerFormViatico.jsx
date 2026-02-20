@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false }) => {
-  const [formData, setFormData] = useState(player || { 
+export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false, onDirtyChange }) => {
+  const [formData, setFormData] = useState(player || {
     name: '',
     gov_id: '',
     date_of_birth: '',
@@ -13,7 +13,12 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
     comentario_viatico: '',
     categoria: '',
   });
+  const initialData = useRef(JSON.stringify(player || {}));
   const isPresidenteCategoria = currentUser?.role === 'presidente_categoria';
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
+  }, [formData]);
 
   // When contrato is checked, clear viatico and complemento
   useEffect(() => {

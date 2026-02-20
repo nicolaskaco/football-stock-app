@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], employees = [], readOnly = false }) => {
+export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], employees = [], readOnly = false, onDirtyChange }) => {
   const [formData, setFormData] = useState(torneo || {
     name: '',
     country: '',
@@ -9,6 +9,11 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
     start_date: '',
     end_date: ''
   });
+  const initialData = useRef(JSON.stringify(torneo || {}));
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
+  }, [formData]);
 
   const [selectedDirigentes, setSelectedDirigentes] = useState(
     torneo?.torneo_dirigentes?.map(td => td.dirigente_id) || []

@@ -7,14 +7,15 @@ import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
 
 
-export const DistributionsTab = ({ 
-  distributions, 
-  employees, 
-  inventory, 
-  saveDistributions, 
-  saveInventory, 
-  setShowModal, 
-  onDataChange 
+export const DistributionsTab = ({
+  distributions,
+  employees,
+  inventory,
+  saveDistributions,
+  saveInventory,
+  setShowModal,
+  onDataChange,
+  onFormDirtyChange
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const filter = searchParams.get('ds_filter') || 'all';
@@ -243,7 +244,7 @@ export const DistributionsTab = ({
           <button 
             onClick={() => setShowModal({
               title: "Entregar Ropa",
-              content: <DistributionForm employees={employees} inventory={inventory} onSubmit={handleAdd} />
+              content: <DistributionForm employees={employees} inventory={inventory} onSubmit={handleAdd} onDirtyChange={onFormDirtyChange} />
             })} 
             className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-900"
           >

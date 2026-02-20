@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export const DistributionForm = ({ employees, inventory, onSubmit }) => {
-  const [formData, setFormData] = useState({ 
-    employee_id: '', 
-    item_id: '', 
-    size: '', 
-    quantity: 1, 
-    date: new Date().toISOString().split('T')[0], 
-    condition: 'Nuevo', 
-    authorized_by: '' 
-  });
+export const DistributionForm = ({ employees, inventory, onSubmit, onDirtyChange }) => {
+  const defaultValues = {
+    employee_id: '',
+    item_id: '',
+    size: '',
+    quantity: 1,
+    date: new Date().toISOString().split('T')[0],
+    condition: 'Nuevo',
+    authorized_by: ''
+  };
+  const [formData, setFormData] = useState(defaultValues);
+  const initialData = useRef(JSON.stringify(defaultValues));
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
+  }, [formData]);
 
   const selectedItem = inventory.find(i => i.id === formData.item_id);
 

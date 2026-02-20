@@ -9,7 +9,7 @@ import { ExportConfigModal } from './ExportConfigModal';
 import { ChangeRequestModal } from '../components/ChangeRequestModal';
 import { AlertModal } from './AlertModal';
 
-export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser }) => {
+export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('v_search') || '';
   const filterCategoria = searchParams.get('v_cat') || 'all';
@@ -635,7 +635,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                       <button 
                         onClick={() => setShowModal({
                           title: `Editar Jugador: ${player.name}`,
-                          content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} />
+                          content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} />
                         })} 
                         className="text-yellow-600 hover:text-yellow-800"
                         title="Editar"

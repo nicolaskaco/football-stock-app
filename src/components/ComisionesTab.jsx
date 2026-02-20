@@ -6,7 +6,7 @@ import { ComisionForm } from '../forms/ComisionForm';
 import { ComisionDetailView } from '../components/ComisionDetailView';
 import { database } from '../utils/database';
 
-export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, onDataChange, currentUser }) => {
+export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('c_search') || '';
   const setSearchTerm = (v) => setSearchParams(prev => {
@@ -100,7 +100,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
             <button
               onClick={() => setShowModal({
                 title: "Agregar Nueva Comisión",
-                content: <ComisionForm onSubmit={handleAdd} dirigentes={dirigentes} />
+                content: <ComisionForm onSubmit={handleAdd} dirigentes={dirigentes} onDirtyChange={onFormDirtyChange} />
               })}
               className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
             >
@@ -183,7 +183,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
                         <button
                           onClick={() => setShowModal({
                             title: `Editar Comisión: ${comision.name}`,
-                            content: <ComisionForm comision={comision} onSubmit={(c, d) => handleEdit({ ...c, id: comision.id }, d)} dirigentes={dirigentes} />
+                            content: <ComisionForm comision={comision} onSubmit={(c, d) => handleEdit({ ...c, id: comision.id }, d)} dirigentes={dirigentes} onDirtyChange={onFormDirtyChange} />
                           })}
                           className="text-blue-600 hover:text-blue-800"
                           title="Editar"
