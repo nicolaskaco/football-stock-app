@@ -6,6 +6,7 @@ import { DistributionForm } from '../forms/DistributionForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
+import { PromptModal } from './PromptModal';
 
 
 export const DistributionsTab = ({
@@ -56,6 +57,7 @@ export const DistributionsTab = ({
   const { execute } = useMutation((msg) =>
     setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
   );
+  const [returnPrompt, setReturnPrompt] = useState(null);
 
   // Sorting function
   const handleSort = (key) => {
@@ -158,27 +160,27 @@ export const DistributionsTab = ({
     }, 'Error creando distribución');
   };
 
-  const handleReturn = async (distId) => {
-    const dist = distributions.find(d => d.id === distId);
-    if (dist) {
-      const return_date = prompt(
-        'Return date (YYYY-MM-DD):',
-        new Date().toISOString().split('T')[0]
-      );
-      if (return_date) {
-        execute(async () => {
-          await database.updateDistribution(dist.id, { ...dist, return_date });
-          const item = inventory.find(i => i.id === dist.item_id);
-          if (item) {
-            await database.updateInventoryItem(item.id, {
-              ...item,
-              quantity: item.quantity + dist.quantity
-            });
-          }
-          await onDataChange('distributions', 'inventory');
-        }, 'Error devolviendo artículo');
-      }
+  const handleReturn = (distId) => {
+    if (distributions.find(d => d.id === distId)) {
+      setReturnPrompt(distId);
     }
+  };
+
+  const handleConfirmReturn = (return_date) => {
+    const dist = distributions.find(d => d.id === returnPrompt);
+    if (!dist) return;
+    setReturnPrompt(null);
+    execute(async () => {
+      await database.updateDistribution(dist.id, { ...dist, return_date });
+      const item = inventory.find(i => i.id === dist.item_id);
+      if (item) {
+        await database.updateInventoryItem(item.id, {
+          ...item,
+          quantity: item.quantity + dist.quantity
+        });
+      }
+      await onDataChange('distributions', 'inventory');
+    }, 'Error devolviendo artículo');
   };
 
   // Export to Excel function
@@ -373,6 +375,15 @@ export const DistributionsTab = ({
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
+      />
+      <PromptModal
+        isOpen={returnPrompt !== null}
+        onClose={() => setReturnPrompt(null)}
+        onConfirm={handleConfirmReturn}
+        title="Registrar Devolución"
+        message="Ingresá la fecha de devolución en formato YYYY-MM-DD:"
+        placeholder={new Date().toISOString().split('T')[0]}
+        required={true}
       />
     </div>
   );

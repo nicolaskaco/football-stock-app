@@ -7,6 +7,7 @@ import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
+import { ConfirmModal } from './ConfirmModal';
 
 export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employees = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +21,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
   const { execute } = useMutation((msg) =>
     setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
   );
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const canEditTorneo = currentUser?.canEditTorneo || false;
   //const canViewTorneo = currentUser?.canViewTorneo || false;
@@ -54,23 +56,15 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     setShowModal(null);
   }, 'Error actualizando torneo');
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Eliminar este torneo?')) {
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'Comunicarse con Kaco antes de borrar un jugador',
-        type: 'error'
-      });
-      return;
-      /*try {
-        await database.deleteTorneo(id);
-        await onDataChange();
-      } catch (error) {
-        console.error('Error deleting torneo:', error);
-        alert('Error eliminando torneo: ' + error.message);
-      }*/
-    }
+  const handleDelete = (id) => setConfirmDelete(id);
+
+  const handleConfirmDelete = () => {
+    setAlertModal({
+      isOpen: true,
+      title: 'Aviso',
+      message: 'Comunicarse con Kaco antes de borrar un torneo',
+      type: 'error'
+    });
   };
 
   const handleExportToExcel = () => {
@@ -313,6 +307,15 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
+      />
+      <ConfirmModal
+        isOpen={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Torneo"
+        message="¿Estás seguro de que quieres eliminar este torneo?"
+        confirmText="Continuar"
+        type="warning"
       />
     </div>
   );

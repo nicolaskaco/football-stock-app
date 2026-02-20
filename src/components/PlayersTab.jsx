@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
+import { ConfirmModal } from './ConfirmModal';
 
 export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,6 +54,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const { execute } = useMutation((msg) =>
     setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
   );
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const defaultExportFields = {
     name: true,
     name_visual: false,
@@ -265,24 +267,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     setShowModal(null);
   }, 'Error actualizando jugador');
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Eliminar este jugador?')) {
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'Comunicarse con Kaco antes de borrar un jugador',
-        type: 'error'
-      });
-      return;
-      /*
-      try {
-        await database.deletePlayer(id);
-        await onDataChange();
-      } catch (error) {
-        console.error('Error deleting player:', error);
-        alert('Error eliminando jugador: ' + error.message);
-      }*/
-    }
+  const handleDelete = (id) => setConfirmDelete(id);
+
+  const handleConfirmDelete = () => {
+    setAlertModal({
+      isOpen: true,
+      title: 'Aviso',
+      message: 'Comunicarse con Kaco antes de borrar un jugador',
+      type: 'error'
+    });
   };
 
   const handleEditNameVisual = async (player) => {
@@ -789,6 +782,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
+      />
+      <ConfirmModal
+        isOpen={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Jugador"
+        message="¿Estás seguro de que quieres eliminar este jugador?"
+        confirmText="Continuar"
+        type="warning"
       />
     </div>
   );

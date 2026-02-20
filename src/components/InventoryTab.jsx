@@ -5,12 +5,14 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { InventoryForm } from '../forms/InventoryForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
+import { ConfirmModal } from './ConfirmModal';
 
 export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirtyChange }) => {
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
   const { execute } = useMutation((msg) =>
     setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
   );
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('i_search') || '';
   const filterCategory = searchParams.get('i_cat') || 'all';
@@ -49,13 +51,13 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
     setShowModal(null);
   }, 'Error actualizando artículo');
 
-  const handleDeleteItem = async (id) => {
-    if (window.confirm('Borrar este item?')) {
-      execute(async () => {
-        await database.deleteInventoryItem(id);
-        await onDataChange('inventory');
-      }, 'Error eliminando artículo');
-    }
+  const handleDeleteItem = (id) => setConfirmDelete(id);
+
+  const handleConfirmDelete = () => {
+    execute(async () => {
+      await database.deleteInventoryItem(confirmDelete);
+      await onDataChange('inventory');
+    }, 'Error eliminando artículo');
   };
 
   return (
@@ -153,6 +155,15 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
       title={alertModal.title}
       message={alertModal.message}
       type={alertModal.type}
+    />
+    <ConfirmModal
+      isOpen={confirmDelete !== null}
+      onClose={() => setConfirmDelete(null)}
+      onConfirm={handleConfirmDelete}
+      title="Eliminar Item"
+      message="¿Estás seguro de que quieres borrar este item? Esta acción no se puede deshacer."
+      confirmText="Eliminar"
+      type="danger"
     />
     </>
   );

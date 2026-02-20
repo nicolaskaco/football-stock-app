@@ -6,12 +6,14 @@ import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
+import { ConfirmModal } from './ConfirmModal';
 
 export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onFormDirtyChange }) => {
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
   const { execute } = useMutation((msg) =>
     setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
   );
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('dg_search') || '';
   const filterRol = searchParams.get('dg_rol') || 'all';
@@ -158,13 +160,13 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
     setShowModal(null);
   }, 'Error actualizando dirigente');
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Eliminar este dirigente?')) {
-      execute(async () => {
-        await database.deleteDirigente(id);
-        await onDataChange('dirigentes');
-      }, 'Error eliminando dirigente');
-    }
+  const handleDelete = (id) => setConfirmDelete(id);
+
+  const handleConfirmDelete = () => {
+    execute(async () => {
+      await database.deleteDirigente(confirmDelete);
+      await onDataChange('dirigentes');
+    }, 'Error eliminando dirigente');
   };
 
   // Export to Excel function
@@ -401,6 +403,15 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
       title={alertModal.title}
       message={alertModal.message}
       type={alertModal.type}
+    />
+    <ConfirmModal
+      isOpen={confirmDelete !== null}
+      onClose={() => setConfirmDelete(null)}
+      onConfirm={handleConfirmDelete}
+      title="Eliminar Dirigente"
+      message="¿Estás seguro de que quieres eliminar este dirigente? Esta acción no se puede deshacer."
+      confirmText="Eliminar"
+      type="danger"
     />
     </>
   );
