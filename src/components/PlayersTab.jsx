@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type, Utensils } from 'lucide-react';
@@ -35,6 +35,11 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   };
 
   const setSearchTerm = (v) => setParam('p_search', v, '');
+  const [inputValue, setInputValue] = useState(searchTerm);
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
   const setFilterCategoria = (v) => setParam('p_cat', v, 'all');
   const setSortConfig = ({ key, direction }) => {
     setSearchParams(prev => {
@@ -512,8 +517,8 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
           <input 
             type="text" 
             placeholder="Buscar por nombre o cédula..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             className="flex-1 min-w-[180px] px-4 py-2 border rounded-lg" 
           />
           <select 

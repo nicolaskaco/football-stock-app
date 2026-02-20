@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils, Eye } from 'lucide-react';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
@@ -33,6 +33,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   };
 
   const setSearchTerm = (v) => setParam('v_search', v, '');
+  const [inputValue, setInputValue] = useState(searchTerm);
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
   const setFilterCategoria = (v) => setParam('v_cat', v, 'all');
   const setSortConfig = ({ key, direction }) => {
     setSearchParams(prev => {
@@ -418,8 +423,8 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
           <input 
             type="text" 
             placeholder="Buscar por nombre o cédula..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             className="flex-1 min-w-[200px] px-4 py-2 border rounded-lg" 
           />
           <select 

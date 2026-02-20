@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Trophy, Download, Eye, Info } from 'lucide-react';
 import { TorneoForm } from '../forms/TorneoForm';
@@ -17,6 +17,11 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     v ? p.set('t_search', v) : p.delete('t_search');
     return p;
   });
+  const [inputValue, setInputValue] = useState(searchTerm);
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
   const { execute } = useMutation((msg) =>
     setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
@@ -158,8 +163,8 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
         <input
           type="text"
           placeholder="Buscar por nombre, ciudad o país..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           className="w-full px-4 py-2 border rounded-lg"
         />
       </div>

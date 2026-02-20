@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
@@ -30,6 +30,11 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
   };
 
   const setSearchTerm = (v) => setParam('i_search', v, '');
+  const [inputValue, setInputValue] = useState(searchTerm);
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
   const setFilterCategory = (v) => setParam('i_cat', v, 'all');
 
   const categories = [...new Set(inventory.map(item => item.category))];
@@ -81,8 +86,8 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
           <input 
             type="text" 
             placeholder="Buscar..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             className="flex-1 px-4 py-2 border rounded-lg" 
           />
           <select 

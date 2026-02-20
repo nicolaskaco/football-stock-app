@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Shield, Info, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -22,6 +22,11 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     v ? p.set('c_search', v) : p.delete('c_search');
     return p;
   });
+  const [inputValue, setInputValue] = useState(searchTerm);
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
 
   const canEditComision = currentUser?.canEditComision || false;
 
@@ -110,8 +115,8 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
         <input
           type="text"
           placeholder="Buscar por nombre o dirigente..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           className="w-full px-4 py-2 border rounded-lg"
         />
       </div>
