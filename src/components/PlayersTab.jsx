@@ -49,7 +49,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
-  const [exportFields, setExportFields] = useState({
+  const defaultExportFields = {
     name: true,
     name_visual: false,
     gov_id: true,
@@ -68,6 +68,14 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     contrato: false,
     bank: false,
     bank_account: false
+  };
+  const [exportFields, setExportFields] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cap_export_fields');
+      return saved ? { ...defaultExportFields, ...JSON.parse(saved) } : defaultExportFields;
+    } catch {
+      return defaultExportFields;
+    }
   });
 
   const canEditPlayers = currentUser?.canEditPlayers || false;
@@ -120,7 +128,11 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   };
 
   const toggleExportField = (field) => {
-    setExportFields(prev => ({ ...prev, [field]: !prev[field] }));
+    setExportFields(prev => {
+      const updated = { ...prev, [field]: !prev[field] };
+      localStorage.setItem('cap_export_fields', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   // Calculate age
