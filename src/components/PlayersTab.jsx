@@ -259,13 +259,13 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     await database.addPlayer(player);
     await onDataChange('players');
     setShowModal(null);
-  }, 'Error agregando jugador');
+  }, 'Error agregando jugador', 'Jugador agregado correctamente');
 
   const handleEdit = (player) => execute(async () => {
     await database.updatePlayer(player.id, player, currentUser?.email);
     await onDataChange('players');
     setShowModal(null);
-  }, 'Error actualizando jugador');
+  }, 'Error actualizando jugador', 'Jugador actualizado correctamente');
 
   const handleDelete = (id) => setConfirmDelete(id);
 

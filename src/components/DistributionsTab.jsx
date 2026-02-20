@@ -157,7 +157,7 @@ export const DistributionsTab = ({
       });
       await onDataChange('distributions', 'inventory');
       setShowModal(null);
-    }, 'Error creando distribución');
+    }, 'Error creando distribución', 'Entrega registrada correctamente');
   };
 
   const handleReturn = (distId) => {
@@ -180,7 +180,7 @@ export const DistributionsTab = ({
         });
       }
       await onDataChange('distributions', 'inventory');
-    }, 'Error devolviendo artículo');
+    }, 'Error devolviendo artículo', 'Devolución registrada correctamente');
   };
 
   // Export to Excel function

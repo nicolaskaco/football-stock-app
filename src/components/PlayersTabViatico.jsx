@@ -224,7 +224,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     await database.addPlayer(player);
     await onDataChange('players');
     setShowModal(null);
-  }, 'Error agregando jugador');
+  }, 'Error agregando jugador', 'Jugador agregado correctamente');
 
   const handleEdit = async (player, needsChangeRequest = false) => {
     if (needsChangeRequest) {
@@ -236,7 +236,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       await database.updatePlayer(player.id, player, currentUser?.email);
       await onDataChange('players');
       setShowModal(null);
-    }, 'Error actualizando jugador');
+    }, 'Error actualizando jugador', 'Jugador actualizado correctamente');
   };
 
   const handleCreateChangeRequest = (player, newValues, notes) => execute(async () => {
@@ -252,13 +252,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       notes
     );
     setShowChangeRequestModal(null);
-    setAlertModal({
-      isOpen: true,
-      title: 'Éxito',
-      message: 'Solicitud de cambio enviada exitosamente. Será revisada por un administrador',
-      type: 'success'
-    });
-  }, 'Error creando solicitud');
+  }, 'Error creando solicitud', 'Solicitud enviada. Será revisada por un administrador');
 
   const handleDelete = (id) => setConfirmDelete(id);
 
@@ -266,7 +260,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     execute(async () => {
       await database.deletePlayer(confirmDelete);
       await onDataChange('players');
-    }, 'Error eliminando jugador');
+    }, 'Error eliminando jugador', 'Jugador eliminado correctamente');
   };
 
   // Export to Excel function

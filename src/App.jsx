@@ -6,6 +6,8 @@ import { EmployeeView } from './components/EmployeeView';
 import { PlayerFormPublic } from './forms/PlayerFormPublic';
 import { database } from './utils/database';
 import { supabase } from './supabaseClient';
+import { ToastProvider } from './context/ToastContext';
+import { Toast } from './components/Toast';
 
 const HeaderComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
@@ -225,6 +227,8 @@ const App = () => {
   }
 
   return (
+    <ToastProvider>
+      <Toast />
     <BrowserRouter>
       <Routes>
         {/* Public form route - no header/footer */}
@@ -264,6 +268,7 @@ const App = () => {
         } />
       </Routes>
     </BrowserRouter>
+    </ToastProvider>
   );
 };
 

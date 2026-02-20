@@ -40,7 +40,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     await database.addTorneo(torneo, dirigenteIds, playerIds, employeeIds);
     await onDataChange('torneos');
     setShowModal(null);
-  }, 'Error agregando torneo');
+  }, 'Error agregando torneo', 'Torneo agregado correctamente');
 
   const handleEdit = (torneo, dirigenteIds, playerIds, employeeIds) => execute(async () => {
     const torneoData = {
@@ -54,7 +54,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     await database.updateTorneo(torneo.id, torneoData, dirigenteIds, playerIds, employeeIds);
     await onDataChange('torneos');
     setShowModal(null);
-  }, 'Error actualizando torneo');
+  }, 'Error actualizando torneo', 'Torneo actualizado correctamente');
 
   const handleDelete = (id) => setConfirmDelete(id);
 

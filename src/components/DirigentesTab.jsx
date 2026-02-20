@@ -152,13 +152,13 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
     await database.addDirigente(dirigente);
     await onDataChange('dirigentes');
     setShowModal(null);
-  }, 'Error agregando dirigente');
+  }, 'Error agregando dirigente', 'Dirigente agregado correctamente');
 
   const handleEdit = (dirigente) => execute(async () => {
     await database.updateDirigente(dirigente.id, dirigente);
     await onDataChange('dirigentes');
     setShowModal(null);
-  }, 'Error actualizando dirigente');
+  }, 'Error actualizando dirigente', 'Dirigente actualizado correctamente');
 
   const handleDelete = (id) => setConfirmDelete(id);
 
@@ -166,7 +166,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
     execute(async () => {
       await database.deleteDirigente(confirmDelete);
       await onDataChange('dirigentes');
-    }, 'Error eliminando dirigente');
+    }, 'Error eliminando dirigente', 'Dirigente eliminado correctamente');
   };
 
   // Export to Excel function
