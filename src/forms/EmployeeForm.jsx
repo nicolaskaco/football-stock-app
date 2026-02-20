@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export const EmployeeForm = ({ employee, onSubmit }) => {
-  const [formData, setFormData] = useState(employee || { 
-    name: '', 
-    gov_id: '', 
-    role: '', 
-    photo_url: '', 
-    upper_size: '', 
-    lower_size: '', 
+export const EmployeeForm = ({ employee, onSubmit, onDirtyChange }) => {
+  const [formData, setFormData] = useState(employee || {
+    name: '',
+    gov_id: '',
+    role: '',
+    photo_url: '',
+    upper_size: '',
+    lower_size: '',
     celular: '',
     categoria: ''
   });
+  const initialData = useRef(JSON.stringify(employee || {}));
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
+  }, [formData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

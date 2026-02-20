@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export const DirigenteForm = ({ dirigente, onSubmit }) => {
-  const [formData, setFormData] = useState(dirigente || { 
+export const DirigenteForm = ({ dirigente, onSubmit, onDirtyChange }) => {
+  const [formData, setFormData] = useState(dirigente || {
     name: '',
     date_of_birth: null,
     rol: '',
@@ -10,6 +10,11 @@ export const DirigenteForm = ({ dirigente, onSubmit }) => {
     cedula: '',
     matricula_auto: ''
   });
+  const initialData = useRef(JSON.stringify(dirigente || {}));
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
+  }, [formData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

@@ -7,7 +7,7 @@ import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { AlertModal } from './AlertModal';
 
-export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employees = [], setShowModal, onDataChange, currentUser }) => {
+export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employees = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('t_search') || '';
   const setSearchTerm = (v) => setSearchParams(prev => {
@@ -129,7 +129,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
             <button
               onClick={() => setShowModal({
                 title: "Agregar Nuevo Torneo",
-                content: <TorneoForm onSubmit={handleAdd} dirigentes={dirigentes} players={players} employees={employees} />
+                content: <TorneoForm onSubmit={handleAdd} dirigentes={dirigentes} players={players} employees={employees} onDirtyChange={onFormDirtyChange} />
               })}
               className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
             >
@@ -286,7 +286,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
                         <button
                           onClick={() => setShowModal({
                             title: `Editar Torneo: ${torneo.name}`,
-                            content: <TorneoForm torneo={torneo} onSubmit={(t, d, p, e) => handleEdit({ ...t, id: torneo.id }, d, p, e)} dirigentes={dirigentes} players={players} employees={employees} />
+                            content: <TorneoForm torneo={torneo} onSubmit={(t, d, p, e) => handleEdit({ ...t, id: torneo.id }, d, p, e)} dirigentes={dirigentes} players={players} employees={employees} onDirtyChange={onFormDirtyChange} />
                           })}
                           className="text-blue-600 hover:text-blue-800"
                           title="Editar"

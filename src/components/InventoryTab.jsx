@@ -4,7 +4,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { InventoryForm } from '../forms/InventoryForm';
 import { database } from '../utils/database';
 
-export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
+export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('i_search') || '';
   const filterCategory = searchParams.get('i_cat') || 'all';
@@ -72,7 +72,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
         <button 
           onClick={() => setShowModal({
             title: "Agregar Ropa",
-            content: <InventoryForm onSubmit={handleAddItem} />
+            content: <InventoryForm onSubmit={handleAddItem} onDirtyChange={onFormDirtyChange} />
           })} 
           className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
         >
@@ -132,7 +132,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange }) => {
                     <button 
                       onClick={() => setShowModal({
                         title: "Actualizar Stock Ropa",
-                        content: <InventoryForm item={item} onSubmit={handleEditItem} />
+                        content: <InventoryForm item={item} onSubmit={handleEditItem} onDirtyChange={onFormDirtyChange} />
                       })}
                       className="text-blue-600"
                     >

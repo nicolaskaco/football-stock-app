@@ -5,7 +5,7 @@ import { DirigenteForm } from '../forms/DirigenteForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 
-export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) => {
+export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('dg_search') || '';
   const filterRol = searchParams.get('dg_rol') || 'all';
@@ -213,7 +213,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
           <button 
             onClick={() => setShowModal({
               title: "Agregar Nuevo Dirigente",
-              content: <DirigenteForm onSubmit={handleAdd} />
+              content: <DirigenteForm onSubmit={handleAdd} onDirtyChange={onFormDirtyChange} />
             })} 
             className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
           >
@@ -373,7 +373,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) =
                     <button 
                       onClick={() => setShowModal({
                         title: `Editar Dirigente: ${dirigente.name}`,
-                        content: <DirigenteForm dirigente={dirigente} onSubmit={handleEdit} />
+                        content: <DirigenteForm dirigente={dirigente} onSubmit={handleEdit} onDirtyChange={onFormDirtyChange} />
                       })} 
                       className="text-blue-600 hover:text-blue-800"
                     >

@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DocumentUpload } from '../components/DocumentUpload';
 
-export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser }) => {
-  const [formData, setFormData] = useState(player || { 
+export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange }) => {
+  const [formData, setFormData] = useState(player || {
     name: '',
     gov_id: '',
     date_of_birth: null,
@@ -29,6 +29,11 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser }) 
     captador: '',
     celular: ''
   });
+  const initialData = useRef(JSON.stringify(player || {}));
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
+  }, [formData]);
 
   // When contrato is checked, clear viatico and complemento
   useEffect(() => {

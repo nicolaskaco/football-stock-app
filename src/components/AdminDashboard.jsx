@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Package } from 'lucide-react';
 import logo from '../logo.jpeg';
@@ -35,6 +35,11 @@ export const AdminDashboard = ({
     return p;
   });
   const [showModal, setShowModal] = useState(null);
+  const [modalIsDirty, setModalIsDirty] = useState(false);
+
+  useEffect(() => {
+    if (!showModal) setModalIsDirty(false);
+  }, [showModal]);
 
   const lowStockItems = inventory.filter(item => item.quantity <= item.min_stock);
   const totalEmployees = employees.length;
@@ -129,58 +134,64 @@ export const AdminDashboard = ({
           />
         )}
         {activeTab === 'inventory' && canAccessRopa && (
-          <InventoryTab 
-            inventory={inventory} 
+          <InventoryTab
+            inventory={inventory}
             setShowModal={setShowModal}
-            onDataChange={onDataChange}  // Add this
+            onDataChange={onDataChange}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'employees' && canAccessRopa && (
-          <EmployeesTab 
-            employees={employees} 
+          <EmployeesTab
+            employees={employees}
             setShowModal={setShowModal}
-            onDataChange={onDataChange}  // Add this
+            onDataChange={onDataChange}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'distributions' && canAccessRopa && (
-          <DistributionsTab 
-            distributions={distributions} 
-            employees={employees} 
-            inventory={inventory} 
+          <DistributionsTab
+            distributions={distributions}
+            employees={employees}
+            inventory={inventory}
             setShowModal={setShowModal}
-            onDataChange={onDataChange}  // Add this
+            onDataChange={onDataChange}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'players_viatico' && canAccessViaticos && (
-          <PlayersTabViatico 
-            players={players} 
+          <PlayersTabViatico
+            players={players}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'players' && canAccessPlayers && (
-          <PlayersTab 
-            players={players} 
+          <PlayersTab
+            players={players}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'change_requests' && canViewChangeRequests && (
-          <ChangeRequestsTab 
+          <ChangeRequestsTab
             currentUser={currentUser}
           />
         )}
         {activeTab === 'dirigentes' && canAccessDirigentes && (
-          <DirigentesTab 
-            dirigentes={dirigentes} 
+          <DirigentesTab
+            dirigentes={dirigentes}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'torneos' && canViewTorneo && (
-          <TorneosTab 
+          <TorneosTab
             torneos={torneos}
             dirigentes={dirigentes}
             players={players}
@@ -188,15 +199,17 @@ export const AdminDashboard = ({
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'comisiones' && canViewComisiones && (
-          <ComisionesTab 
+          <ComisionesTab
             comisiones={comisiones}
             dirigentes={dirigentes}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'reports' && canAccessRopa && (
@@ -217,9 +230,10 @@ export const AdminDashboard = ({
       </div>
 
       {showModal && (
-        <Modal 
+        <Modal
           onClose={() => setShowModal(null)}
           title={showModal.title}
+          isDirty={modalIsDirty}
         >
           {showModal.content}
         </Modal>

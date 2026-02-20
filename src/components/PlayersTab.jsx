@@ -9,7 +9,7 @@ import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
 
-export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser }) => {
+export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('p_search') || '';
   const filterCategoria = searchParams.get('p_cat') || 'all';
@@ -454,7 +454,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             <button 
               onClick={() => setShowModal({
                 title: "Agregar Nuevo Jugador",
-                content: <PlayerForm onSubmit={handleAdd} currentUser={currentUser} />
+                content: <PlayerForm onSubmit={handleAdd} currentUser={currentUser} onDirtyChange={onFormDirtyChange} />
               })} 
               className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
             >
@@ -710,7 +710,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                         <button 
                           onClick={() => setShowModal({
                             title: `Editar Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} />
+                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} />
                           })} 
                           className="text-blue-600 hover:text-blue-800"
                           title="Editar"

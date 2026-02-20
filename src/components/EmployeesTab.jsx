@@ -5,7 +5,7 @@ import { EmployeeForm } from '../forms/EmployeeForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
 
-export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
+export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('e_search') || '';
   const setSearchTerm = (v) => setSearchParams(prev => {
@@ -69,7 +69,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
         <button 
           onClick={() => setShowModal({
             title: "Agregar Funcionario",
-            content: <EmployeeForm onSubmit={handleAdd} />
+            content: <EmployeeForm onSubmit={handleAdd} onDirtyChange={onFormDirtyChange} />
           })} 
           className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
         >
@@ -107,7 +107,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange }) => {
                 <button 
                   onClick={() => setShowModal({
                   title: "Agregar Funcionario",
-                  content: <EmployeeForm employee={emp} onSubmit={handleEdit} />
+                  content: <EmployeeForm employee={emp} onSubmit={handleEdit} onDirtyChange={onFormDirtyChange} />
                 })}
                   className="text-gray-600"
                 >

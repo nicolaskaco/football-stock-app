@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-export const InventoryForm = ({ item, onSubmit }) => {
-  const [formData, setFormData] = useState(item || { 
-    name: '', 
-    category: '', 
-    size: '', 
-    quantity: 0, 
-    min_stock: 0 
+export const InventoryForm = ({ item, onSubmit, onDirtyChange }) => {
+  const [formData, setFormData] = useState(item || {
+    name: '',
+    category: '',
+    size: '',
+    quantity: 0,
+    min_stock: 0
   });
+  const initialData = useRef(JSON.stringify(item || {}));
+
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
+  }, [formData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
