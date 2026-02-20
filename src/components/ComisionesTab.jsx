@@ -5,8 +5,11 @@ import * as XLSX from 'xlsx';
 import { ComisionForm } from '../forms/ComisionForm';
 import { ComisionDetailView } from '../components/ComisionDetailView';
 import { database } from '../utils/database';
+import { AlertModal } from './AlertModal';
+import { useMutation } from '../hooks/useMutation';
 
 export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('c_search') || '';
   const setSearchTerm = (v) => setSearchParams(prev => {
@@ -26,42 +29,28 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     )
   );
 
-  const handleAdd = async (comision, dirigenteIds) => {
-    try {
-      await database.addComision(comision, dirigenteIds);
-      await onDataChange('comisiones');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error adding comision:', error);
-      alert('Error agregando comisión: ' + error.message);
-    }
-  };
+  const handleAdd = (comision, dirigenteIds) => execute(async () => {
+    await database.addComision(comision, dirigenteIds);
+    await onDataChange('comisiones');
+    setShowModal(null);
+  }, 'Error agregando comisión');
 
-  const handleEdit = async (comision, dirigenteIds) => {
-    try {
-      const comisionData = {
-        name: comision.name,
-        description: comision.description
-      };
-      
-      await database.updateComision(comision.id, comisionData, dirigenteIds);
-      await onDataChange('comisiones');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error updating comision:', error);
-      alert('Error actualizando comisión: ' + error.message);
-    }
-  };
+  const handleEdit = (comision, dirigenteIds) => execute(async () => {
+    const comisionData = {
+      name: comision.name,
+      description: comision.description
+    };
+    await database.updateComision(comision.id, comisionData, dirigenteIds);
+    await onDataChange('comisiones');
+    setShowModal(null);
+  }, 'Error actualizando comisión');
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar esta comisión?')) {
-      try {
+      execute(async () => {
         await database.deleteComision(id);
         await onDataChange('comisiones');
-      } catch (error) {
-        console.error('Error deleting comision:', error);
-        alert('Error eliminando comisión: ' + error.message);
-      }
+      }, 'Error eliminando comisión');
     }
   };
 
@@ -85,6 +74,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
   };
 
   return (
+    <>
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gestión de Comisiones</h2>
@@ -214,5 +204,14 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
         )}
       </div>
     </div>
+
+    <AlertModal
+      isOpen={alertModal.isOpen}
+      onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+      title={alertModal.title}
+      message={alertModal.message}
+      type={alertModal.type}
+    />
+    </>
   );
 };

@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { DistributionForm } from '../forms/DistributionForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
+import { useMutation } from '../hooks/useMutation';
 
 
 export const DistributionsTab = ({
@@ -52,6 +53,9 @@ export const DistributionsTab = ({
     (filter === 'returned' && d.return_date)
   );
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { execute } = useMutation((msg) =>
+    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
+  );
 
   // Sorting function
   const handleSort = (key) => {
@@ -129,59 +133,41 @@ export const DistributionsTab = ({
     return 0;
   });
 
-  const handleAdd = async (dist) => {
-    const item = inventory.find(i => i.id === dist.item_id || i.id === dist.item_id);
-    if (item && item.quantity >= dist.quantity) {
-      try {
-        // Add distribution
-        await database.addDistribution({
-          employee_id: dist.employee_id,
-          item_id: dist.item_id,
-          size: dist.size,
-          quantity: dist.quantity,
-          date: dist.date,
-          condition: dist.condition,
-          authorized_by: dist.authorized_by
-        });
-        
-        // Update inventory
-        await database.updateInventoryItem(item.id, {
-          ...item,
-          quantity: item.quantity - dist.quantity
-        });
-        
-        await onDataChange('distributions', 'inventory');
-        setShowModal(null);
-      } catch (error) {
-        alert('Error creating distribution: ' + error.message);
-      }
-    } else {
-
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'No hay inventario suficiente',
-        type: 'error'
-      });
+  const handleAdd = (dist) => {
+    const item = inventory.find(i => i.id === dist.item_id);
+    if (!item || item.quantity < dist.quantity) {
+      setAlertModal({ isOpen: true, title: 'Error', message: 'No hay inventario suficiente', type: 'error' });
+      return;
     }
+    execute(async () => {
+      await database.addDistribution({
+        employee_id: dist.employee_id,
+        item_id: dist.item_id,
+        size: dist.size,
+        quantity: dist.quantity,
+        date: dist.date,
+        condition: dist.condition,
+        authorized_by: dist.authorized_by
+      });
+      await database.updateInventoryItem(item.id, {
+        ...item,
+        quantity: item.quantity - dist.quantity
+      });
+      await onDataChange('distributions', 'inventory');
+      setShowModal(null);
+    }, 'Error creando distribución');
   };
 
   const handleReturn = async (distId) => {
     const dist = distributions.find(d => d.id === distId);
     if (dist) {
       const return_date = prompt(
-        'Return date (YYYY-MM-DD):', 
+        'Return date (YYYY-MM-DD):',
         new Date().toISOString().split('T')[0]
       );
       if (return_date) {
-        try {
-          // Update distribution
-          await database.updateDistribution(dist.id, {
-            ...dist,
-            return_date: return_date
-          });
-          
-          // Return to inventory
+        execute(async () => {
+          await database.updateDistribution(dist.id, { ...dist, return_date });
           const item = inventory.find(i => i.id === dist.item_id);
           if (item) {
             await database.updateInventoryItem(item.id, {
@@ -189,11 +175,8 @@ export const DistributionsTab = ({
               quantity: item.quantity + dist.quantity
             });
           }
-          
           await onDataChange('distributions', 'inventory');
-        } catch (error) {
-          alert('Error returning item: ' + error.message);
-        }
+        }, 'Error devolviendo artículo');
       }
     }
   };

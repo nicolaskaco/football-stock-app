@@ -8,6 +8,7 @@ import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { ExportConfigModal } from './ExportConfigModal';
 import { ChangeRequestModal } from '../components/ChangeRequestModal';
 import { AlertModal } from './AlertModal';
+import { useMutation } from '../hooks/useMutation';
 
 export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -44,6 +45,9 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [showChangeRequestModal, setShowChangeRequestModal] = useState(null);
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { execute } = useMutation((msg) =>
+    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
+  );
 
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
@@ -214,75 +218,52 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       : <ArrowDown className="w-4 h-4 text-blue-600" />;
   };
 
-  const handleAdd = async (player) => {
-    try {
-      await database.addPlayer(player);
-      await onDataChange('players');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error adding player:', error);
-      alert('Error agregando jugador: ' + error.message);
-    }
-  };
+  const handleAdd = (player) => execute(async () => {
+    await database.addPlayer(player);
+    await onDataChange('players');
+    setShowModal(null);
+  }, 'Error agregando jugador');
 
   const handleEdit = async (player, needsChangeRequest = false) => {
-    try {
-      if (needsChangeRequest) {
-        // Close the PlayerFormViatico modal first
-        setShowModal(null);
-        
-        // Then show change request modal
-        setShowChangeRequestModal(player);
-        return;
-      }
-      
-      // Normal update
+    if (needsChangeRequest) {
+      setShowModal(null);
+      setShowChangeRequestModal(player);
+      return;
+    }
+    execute(async () => {
       await database.updatePlayer(player.id, player, currentUser?.email);
       await onDataChange('players');
       setShowModal(null);
-    } catch (error) {
-      console.error('Error updating player:', error);
-      alert('Error actualizando jugador: ' + error.message);
-    }
+    }, 'Error actualizando jugador');
   };
 
-  const handleCreateChangeRequest = async (player, newValues, notes) => {
-    try {
-      await database.createPlayerChangeRequest(
-        player.id,
-        currentUser?.email,
-        {
-          viatico: player.viatico,
-          complemento: player.complemento,
-          contrato: player.contrato
-        },
-        newValues,
-        notes
-      );
-      
-      setShowChangeRequestModal(null);
-
-      setAlertModal({
-        isOpen: true,
-        title: 'Éxito',
-        message: 'Solicitud de cambio enviada exitosamente. Será revisada por un administrador',
-        type: 'success'
-      });
-    } catch (error) {
-      console.error('Error creating change request:', error);
-      alert('Error creando solicitud: ' + error.message);
-    }
-  };
+  const handleCreateChangeRequest = (player, newValues, notes) => execute(async () => {
+    await database.createPlayerChangeRequest(
+      player.id,
+      currentUser?.email,
+      {
+        viatico: player.viatico,
+        complemento: player.complemento,
+        contrato: player.contrato
+      },
+      newValues,
+      notes
+    );
+    setShowChangeRequestModal(null);
+    setAlertModal({
+      isOpen: true,
+      title: 'Éxito',
+      message: 'Solicitud de cambio enviada exitosamente. Será revisada por un administrador',
+      type: 'success'
+    });
+  }, 'Error creando solicitud');
 
   const handleDelete = async (id) => {
     if (window.confirm('¿Eliminar este jugador?')) {
-      try {
+      execute(async () => {
         await database.deletePlayer(id);
         await onDataChange('players');
-      } catch (error) {
-        console.error('Error deleting player:', error);
-        alert('Error eliminando jugador: ' + error.message);
-      }
+      }, 'Error eliminando jugador');
     }
   };
 

@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useMutation } from '../hooks/useMutation';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { InventoryForm } from '../forms/InventoryForm';
 import { database } from '../utils/database';
+import { AlertModal } from './AlertModal';
 
 export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirtyChange }) => {
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { execute } = useMutation((msg) =>
+    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('i_search') || '';
   const filterCategory = searchParams.get('i_cat') || 'all';
@@ -31,41 +37,29 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
     return matchesSearch && matchesCategory;
   });
 
-  const handleAddItem = async (item) => {
-    try {
-      await database.addInventoryItem(item);
-      await onDataChange('inventory');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error adding item:', error);
-      alert('Error adding item: ' + error.message);
-    }
-  };
+  const handleAddItem = (item) => execute(async () => {
+    await database.addInventoryItem(item);
+    await onDataChange('inventory');
+    setShowModal(null);
+  }, 'Error agregando artículo');
 
-  const handleEditItem = async (item) => {
-    try {
-      await database.updateInventoryItem(item.id, item);
-      await onDataChange('inventory');
-      setShowModal(null);
-    } catch (error) {
-      console.error('Error updating item:', error);
-      alert('Error updating item: ' + error.message);
-    }
-  };
+  const handleEditItem = (item) => execute(async () => {
+    await database.updateInventoryItem(item.id, item);
+    await onDataChange('inventory');
+    setShowModal(null);
+  }, 'Error actualizando artículo');
 
   const handleDeleteItem = async (id) => {
     if (window.confirm('Borrar este item?')) {
-      try {
+      execute(async () => {
         await database.deleteInventoryItem(id);
         await onDataChange('inventory');
-      } catch (error) {
-        console.error('Error deleting item:', error);
-        alert('Error deleting item: ' + error.message);
-      }
+      }, 'Error eliminando artículo');
     }
   };
 
   return (
+    <>
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Administrar Inventario</h2>
@@ -152,5 +146,14 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
         </table>
       </div>
     </div>
+
+    <AlertModal
+      isOpen={alertModal.isOpen}
+      onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+      title={alertModal.title}
+      message={alertModal.message}
+      type={alertModal.type}
+    />
+    </>
   );
 };
