@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { DirigenteForm } from '../forms/DirigenteForm';
@@ -36,6 +36,11 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
   };
 
   const setSearchTerm = (v) => setParam('dg_search', v, '');
+  const [inputValue, setInputValue] = useState(searchTerm);
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
   const setFilterRol = (v) => setParam('dg_rol', v, 'all');
   const setFilterCategoria = (v) => setParam('dg_cat', v, 'all');
   const setSortConfig = ({ key, direction }) => {
@@ -249,8 +254,8 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
           <input 
             type="text" 
             placeholder="Buscar por nombre o cédula..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             className="flex-1 min-w-[200px] px-4 py-2 border rounded-lg" 
           />
           <select 

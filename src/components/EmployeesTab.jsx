@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
@@ -15,6 +15,11 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
     v ? p.set('e_search', v) : p.delete('e_search');
     return p;
   });
+  const [inputValue, setInputValue] = useState(searchTerm);
+  useEffect(() => {
+    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
   const filtered = employees.filter(e => 
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -67,8 +72,8 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
         <input 
           type="text" 
           placeholder="Buscar por nombre o rol" 
-          value={searchTerm} 
-          onChange={(e) => setSearchTerm(e.target.value)} 
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           className="w-full px-4 py-2 border rounded-lg" 
         />
       </div>
