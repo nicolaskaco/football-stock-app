@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DistributionForm } from '../forms/DistributionForm';
@@ -15,13 +16,40 @@ export const DistributionsTab = ({
   setShowModal, 
   onDataChange 
 }) => {
-  const [filter, setFilter] = useState('all');
-  const filtered = distributions.filter(d => 
-    filter === 'all' || 
-    (filter === 'active' && !d.return_date) || 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = searchParams.get('ds_filter') || 'all';
+  const sortConfig = {
+    key: searchParams.get('ds_sort') || null,
+    direction: searchParams.get('ds_dir') || 'asc',
+  };
+
+  const setParam = (key, value, defaultValue) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (value === null || value === undefined || value === defaultValue || value === '') {
+        p.delete(key);
+      } else {
+        p.set(key, String(value));
+      }
+      return p;
+    });
+  };
+
+  const setFilter = (v) => setParam('ds_filter', v, 'all');
+  const setSortConfig = ({ key, direction }) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      key ? p.set('ds_sort', key) : p.delete('ds_sort');
+      direction && direction !== 'asc' ? p.set('ds_dir', direction) : p.delete('ds_dir');
+      return p;
+    });
+  };
+
+  const filtered = distributions.filter(d =>
+    filter === 'all' ||
+    (filter === 'active' && !d.return_date) ||
     (filter === 'returned' && d.return_date)
   );
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
 
   // Sorting function

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Shield, Info, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { ComisionForm } from '../forms/ComisionForm';
@@ -6,7 +7,13 @@ import { ComisionDetailView } from '../components/ComisionDetailView';
 import { database } from '../utils/database';
 
 export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, onDataChange, currentUser }) => {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('c_search') || '';
+  const setSearchTerm = (v) => setSearchParams(prev => {
+    const p = new URLSearchParams(prev);
+    v ? p.set('c_search', v) : p.delete('c_search');
+    return p;
+  });
 
   const canEditComision = currentUser?.canEditComision || false;
 

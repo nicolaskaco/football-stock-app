@@ -1,14 +1,43 @@
 import React, { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { DirigenteForm } from '../forms/DirigenteForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 
 export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRol, setFilterRol] = useState('all');
-  const [filterCategoria, setFilterCategoria] = useState('all');
-  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const searchTerm = searchParams.get('dg_search') || '';
+  const filterRol = searchParams.get('dg_rol') || 'all';
+  const filterCategoria = searchParams.get('dg_cat') || 'all';
+  const sortConfig = {
+    key: searchParams.get('dg_sort') || 'name',
+    direction: searchParams.get('dg_dir') || 'asc',
+  };
+
+  const setParam = (key, value, defaultValue) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (value === null || value === undefined || value === defaultValue || value === '') {
+        p.delete(key);
+      } else {
+        p.set(key, String(value));
+      }
+      return p;
+    });
+  };
+
+  const setSearchTerm = (v) => setParam('dg_search', v, '');
+  const setFilterRol = (v) => setParam('dg_rol', v, 'all');
+  const setFilterCategoria = (v) => setParam('dg_cat', v, 'all');
+  const setSortConfig = ({ key, direction }) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      key && key !== 'name' ? p.set('dg_sort', key) : p.delete('dg_sort');
+      direction && direction !== 'asc' ? p.set('dg_dir', direction) : p.delete('dg_dir');
+      return p;
+    });
+  };
 
   const roles = [
     'Presidente Formativas',
