@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { EmployeeForm } from '../forms/EmployeeForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
+import { ConfirmModal } from './ConfirmModal';
 
 export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,6 +23,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
   const { execute } = useMutation((msg) =>
     setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
   );
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const handleAdd = (emp) => execute(async () => {
     await database.addEmployee(emp);
@@ -35,25 +37,15 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
     setShowModal(null);
   }, 'Error actualizando funcionario');
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Delete employee?')) {
+  const handleDelete = (id) => setConfirmDelete(id);
 
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'Comunicarse con Kaco antes de borrar un funcionario',
-        type: 'error'
-      });
-      return;
-      /*
-      try {
-        await database.deleteEmployee(id);
-        await onDataChange(); // Refresh data from database
-      } catch (error) {
-        console.error('Error deleting employee:', error);
-        alert('Error deleting employee: ' + error.message);
-      }*/
-    }
+  const handleConfirmDelete = () => {
+    setAlertModal({
+      isOpen: true,
+      title: 'Aviso',
+      message: 'Comunicarse con Kaco antes de borrar un funcionario',
+      type: 'error'
+    });
   };
 
   return (
@@ -133,6 +125,15 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
+      />
+      <ConfirmModal
+        isOpen={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Funcionario"
+        message="¿Estás seguro de que quieres eliminar este funcionario?"
+        confirmText="Continuar"
+        type="warning"
       />
     </div>
   );

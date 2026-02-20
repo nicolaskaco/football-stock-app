@@ -9,6 +9,7 @@ import { ExportConfigModal } from './ExportConfigModal';
 import { ChangeRequestModal } from '../components/ChangeRequestModal';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
+import { ConfirmModal } from './ConfirmModal';
 
 export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,6 +49,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const { execute } = useMutation((msg) =>
     setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
   );
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
@@ -258,13 +260,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     });
   }, 'Error creando solicitud');
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Eliminar este jugador?')) {
-      execute(async () => {
-        await database.deletePlayer(id);
-        await onDataChange('players');
-      }, 'Error eliminando jugador');
-    }
+  const handleDelete = (id) => setConfirmDelete(id);
+
+  const handleConfirmDelete = () => {
+    execute(async () => {
+      await database.deletePlayer(confirmDelete);
+      await onDataChange('players');
+    }, 'Error eliminando jugador');
   };
 
   // Export to Excel function
@@ -687,6 +689,15 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
+      />
+      <ConfirmModal
+        isOpen={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Jugador"
+        message="¿Estás seguro de que quieres eliminar este jugador? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        type="danger"
       />
     </div>
   );

@@ -7,9 +7,14 @@ import { ComisionDetailView } from '../components/ComisionDetailView';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
+import { ConfirmModal } from './ConfirmModal';
 
 export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { execute } = useMutation((msg) =>
+    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
+  );
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('c_search') || '';
   const setSearchTerm = (v) => setSearchParams(prev => {
@@ -45,13 +50,13 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     setShowModal(null);
   }, 'Error actualizando comisión');
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Eliminar esta comisión?')) {
-      execute(async () => {
-        await database.deleteComision(id);
-        await onDataChange('comisiones');
-      }, 'Error eliminando comisión');
-    }
+  const handleDelete = (id) => setConfirmDelete(id);
+
+  const handleConfirmDelete = () => {
+    execute(async () => {
+      await database.deleteComision(confirmDelete);
+      await onDataChange('comisiones');
+    }, 'Error eliminando comisión');
   };
 
   const handleExportToExcel = () => {
@@ -211,6 +216,15 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
       title={alertModal.title}
       message={alertModal.message}
       type={alertModal.type}
+    />
+    <ConfirmModal
+      isOpen={confirmDelete !== null}
+      onClose={() => setConfirmDelete(null)}
+      onConfirm={handleConfirmDelete}
+      title="Eliminar Comisión"
+      message="¿Estás seguro de que quieres eliminar esta comisión? Esta acción no se puede deshacer."
+      confirmText="Eliminar"
+      type="danger"
     />
     </>
   );
