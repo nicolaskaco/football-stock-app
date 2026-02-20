@@ -192,6 +192,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
   };
 
   return (
+    <>
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gestión de Dirigentes</h2>
@@ -401,5 +402,6 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
       message={alertModal.message}
       type={alertModal.type}
     />
+    </>
   );
 };

@@ -74,6 +74,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
   };
 
   return (
+    <>
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gestión de Comisiones</h2>
@@ -211,5 +212,6 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
       message={alertModal.message}
       type={alertModal.type}
     />
+    </>
   );
 };

@@ -59,6 +59,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
   };
 
   return (
+    <>
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Administrar Inventario</h2>
@@ -153,5 +154,6 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
       message={alertModal.message}
       type={alertModal.type}
     />
+    </>
   );
 };
