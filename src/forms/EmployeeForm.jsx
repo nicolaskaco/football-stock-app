@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { CATEGORIAS, TALLAS_ROPA } from '../utils/constants';
 
 export const EmployeeForm = ({ employee, onSubmit, onDirtyChange }) => {
   const [formData, setFormData] = useState(employee || {
@@ -90,11 +91,9 @@ export const EmployeeForm = ({ employee, onSubmit, onDirtyChange }) => {
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Elige talle superior</option>
-          <option value="S">S</option>
-          <option value="M">M</option>
-          <option value="L">L</option>
-          <option value="XL">XL</option>
-          <option value="XXL">XXL</option>
+          {TALLAS_ROPA.map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
         </select>
       </div>
 
@@ -102,18 +101,16 @@ export const EmployeeForm = ({ employee, onSubmit, onDirtyChange }) => {
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Talle parte inferior
         </label>
-        <select 
-          required 
-          value={formData.lower_size} 
-          onChange={(e) => setFormData({...formData, lower_size: e.target.value})} 
+        <select
+          required
+          value={formData.lower_size}
+          onChange={(e) => setFormData({...formData, lower_size: e.target.value})}
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Elige talle inferior</option>
-          <option value="S">S</option>
-          <option value="M">M</option>
-          <option value="L">L</option>
-          <option value="XL">XL</option>
-          <option value="XXL">XXL</option>
+          {TALLAS_ROPA.map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
         </select>
       </div>
 
@@ -127,12 +124,9 @@ export const EmployeeForm = ({ employee, onSubmit, onDirtyChange }) => {
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Elige la categoría en caso de aplicar</option>
-          <option value="4ta">4ta</option>
-          <option value="5ta">5ta</option>
-          <option value="S16">S16</option>
-          <option value="6ta">6ta</option>
-          <option value="7ma">7ma</option>
-          <option value="Sub13">Sub13</option>
+          {CATEGORIAS.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
         </select>
       </div>
 
