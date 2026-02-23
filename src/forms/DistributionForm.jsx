@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { todayISO } from '../utils/dateUtils';
 
 export const DistributionForm = ({ employees, inventory, onSubmit, onDirtyChange }) => {
   const defaultValues = {
@@ -6,7 +7,7 @@ export const DistributionForm = ({ employees, inventory, onSubmit, onDirtyChange
     item_id: '',
     size: '',
     quantity: 1,
-    date: new Date().toISOString().split('T')[0],
+    date: todayISO(),
     condition: 'Nuevo',
     authorized_by: ''
   };

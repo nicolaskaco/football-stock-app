@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Shield, Info, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { todayISO } from '../utils/dateUtils';
 import { ComisionForm } from '../forms/ComisionForm';
 import { ComisionDetailView } from '../components/ComisionDetailView';
 import { database } from '../utils/database';
@@ -76,7 +77,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Comisiones');
 
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
+    const date = todayISO();
     const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `comisiones_${date}_${time}.xlsx`;
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { database } from '../utils/database';
 import { CHANGE_REQUEST_STATUS } from '../utils/constants';
+import { formatDateTime } from '../utils/dateUtils';
 import { AlertModal } from './AlertModal';
 import { PromptModal } from './PromptModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -116,15 +117,6 @@ export const ChangeRequestsTab = ({ currentUser }) => {
     });
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-UY', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   const filteredRequests = filter === 'all' 
     ? requests 
@@ -168,7 +160,7 @@ export const ChangeRequestsTab = ({ currentUser }) => {
                     Categoría: {request.players?.categoria}
                   </p>
                   <p className="text-xs text-gray-500 mt-1">
-                    Solicitado por: {request.requested_by} el {formatDate(request.request_date)}
+                    Solicitado por: {request.requested_by} el {formatDateTime(request.request_date)}
                   </p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -218,7 +210,7 @@ export const ChangeRequestsTab = ({ currentUser }) => {
               {request.status !== 'pending' && (
                 <div className="bg-blue-50 p-3 rounded mb-4">
                   <p className="text-xs text-gray-500 mb-1">
-                    Revisado por: {request.reviewed_by} el {formatDate(request.review_date)}
+                    Revisado por: {request.reviewed_by} el {formatDateTime(request.review_date)}
                   </p>
                   {request.review_notes && (
                     <p className="text-sm mt-1">{request.review_notes}</p>

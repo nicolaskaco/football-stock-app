@@ -1,5 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { CHANGE_REQUEST_STATUS } from './constants';
+import { parseDOB, formatDate } from './dateUtils';
 
 export const database = {
   // EMPLOYEES
@@ -381,8 +382,7 @@ export const database = {
     const upcoming = players.filter(player => {
       if (!player.date_of_birth) return false; // Skip players without birthdate
       
-      const [year, month, day] = player.date_of_birth.split('-');
-      const birthDate = new Date(year, month - 1, day);
+      const birthDate = parseDOB(player.date_of_birth);
       const thisYearBirthday = new Date(
         today.getFullYear(),
         birthDate.getMonth(),
@@ -395,8 +395,7 @@ export const database = {
     });
 
     return upcoming.map(player => {
-      const [year, month, day] = player.date_of_birth.split('-');
-      const birthDate = new Date(year, month - 1, day);
+      const birthDate = parseDOB(player.date_of_birth);
       const thisYearBirthday = new Date(
         today.getFullYear(),
         birthDate.getMonth(),
@@ -427,8 +426,7 @@ export const database = {
       const upcoming = data
         .filter(dirigente => dirigente.date_of_birth) // Filter out null birthdates first
         .map(dirigente => {
-          const [year, month, day] = dirigente.date_of_birth.split('-');
-          const birthDate = new Date(year, month - 1, day);
+          const birthDate = parseDOB(dirigente.date_of_birth);
           const thisYearBirthday = new Date(currentYear, birthDate.getMonth(), birthDate.getDate());
           thisYearBirthday.setHours(0, 0, 0, 0);
           const nextYearBirthday = new Date(currentYear + 1, birthDate.getMonth(), birthDate.getDate());
@@ -831,11 +829,7 @@ export const database = {
     // Build updated comentario_viatico with the request notes
     let updatedComentario = player.comentario_viatico || '';
     if (request.request_notes && request.request_notes.trim()) {
-      const reviewDate = new Date().toLocaleDateString('es-UY', { 
-        day: '2-digit', 
-        month: '2-digit', 
-        year: 'numeric' 
-      });
+      const reviewDate = formatDate(new Date().toISOString());
       
       // Add separator if there's existing content
       if (updatedComentario.trim()) {

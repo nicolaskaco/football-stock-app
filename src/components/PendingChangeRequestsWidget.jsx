@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, AlertCircle, ExternalLink } from 'lucide-react';
 import { database } from '../utils/database';
+import { formatDate } from '../utils/dateUtils';
 
 export const PendingChangeRequestsWidget = ({ setActiveTab }) => {
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -22,15 +23,6 @@ export const PendingChangeRequestsWidget = ({ setActiveTab }) => {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-UY', { 
-      day: '2-digit', 
-      month: '2-digit', 
-      year: 'numeric' 
-    });
-  };
 
   if (loading) {
     return (

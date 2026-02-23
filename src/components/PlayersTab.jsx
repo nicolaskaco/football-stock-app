@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
+import { todayISO } from '../utils/dateUtils';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type, Utensils } from 'lucide-react';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
@@ -418,7 +419,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Jugadores');
     
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
+    const date = todayISO();
     const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `jugadores_${date}_${time}.xlsx`;
     
