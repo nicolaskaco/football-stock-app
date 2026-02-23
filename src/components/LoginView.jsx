@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Package } from 'lucide-react';
 import logo from '../logo.jpeg';
+import { useToast } from '../context/ToastContext';
 
 export const LoginView = ({ onLogin }) => {
+  const { showToast } = useToast();
   const [isAdmin, setIsAdmin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -11,8 +13,13 @@ export const LoginView = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await onLogin(email, password, isAdmin);
-    setLoading(false);
+    try {
+      await onLogin(email, password, isAdmin);
+    } catch (error) {
+      showToast(error.message, 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -88,7 +95,7 @@ export const LoginView = ({ onLogin }) => {
         {isAdmin && (
           <div className="mt-4 text-center">
             <button
-              onClick={() => alert('Contact your administrator to reset your password')}
+              onClick={() => showToast('Contacte al administrador para restablecer su contraseña.', 'info')}
               className="text-sm text-yellow-600 hover:text-yellow-700"
             >
               Olvidó contraseña?

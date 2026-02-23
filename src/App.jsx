@@ -177,12 +177,12 @@ const App = () => {
         await loadData();
         setCurrentView('dashboard');
       } catch (error) {
-        alert('Invalid admin credentials: ' + error.message);
+        throw new Error('Credenciales inválidas: ' + error.message);
       }
     } else {
       try {
         const employee = await database.validateEmployee(emailOrGovId, password);
-        
+
         if (employee) {
           // Only load inventory and employee's own distributions
           const [myDistributions, myInventory] = await Promise.all([
@@ -198,11 +198,10 @@ const App = () => {
           setCurrentUser({ ...employee, isAdmin: false });
           setCurrentView('employee-view');
         } else {
-          alert('Invalid credentials. Please check your Government ID and Employee ID.');
+          throw new Error('Credenciales inválidas. Verifique su cédula y número de funcionario.');
         }
       } catch (error) {
-        console.error(error);
-        alert('Error validating employee');
+        throw error;
       }
     }
   };
