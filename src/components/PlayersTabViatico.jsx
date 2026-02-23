@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS } from '../utils/constants';
+import { todayISO } from '../utils/dateUtils';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils, Eye } from 'lucide-react';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
@@ -353,7 +354,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Jugadores');
     
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
+    const date = todayISO();
     const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `jugadores_viatico_${date}_${time}.xlsx`;
     

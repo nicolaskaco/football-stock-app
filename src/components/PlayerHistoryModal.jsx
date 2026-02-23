@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Clock, TrendingUp } from 'lucide-react';
 import { database } from '../utils/database';
+import { formatDateTime } from '../utils/dateUtils';
 
 export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
   const [history, setHistory] = useState([]);
@@ -36,16 +37,6 @@ export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
     return value;
   };
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleString('es-UY', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={onClose}>
@@ -86,7 +77,7 @@ export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
                       </span>
                     </div>
                     <span className="text-sm text-gray-500">
-                      {formatDate(record.changed_at)}
+                      {formatDateTime(record.changed_at)}
                     </span>
                   </div>
                   

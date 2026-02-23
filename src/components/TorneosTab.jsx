@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Trophy, Download, Eye, Info } from 'lucide-react';
+import { formatDate, todayISO } from '../utils/dateUtils';
 import { TorneoForm } from '../forms/TorneoForm';
 import { TorneoDetailView } from '../components/TorneoDetailView';
 import { database } from '../utils/database';
@@ -90,18 +91,13 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Torneos');
 
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
+    const date = todayISO();
     const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `torneos_${date}_${time}.xlsx`;
 
     XLSX.writeFile(workbook, filename);
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
-  };
 
   return (
     <div>

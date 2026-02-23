@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { todayISO } from '../utils/dateUtils';
 import { DistributionForm } from '../forms/DistributionForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
@@ -207,7 +208,7 @@ export const DistributionsTab = ({
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Distribuciones');
     
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
+    const date = todayISO();
     const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `ropa_entregada_${date}_${time}.xlsx`;
     
@@ -382,7 +383,7 @@ export const DistributionsTab = ({
         onConfirm={handleConfirmReturn}
         title="Registrar Devolución"
         message="Ingresá la fecha de devolución en formato YYYY-MM-DD:"
-        placeholder={new Date().toISOString().split('T')[0]}
+        placeholder={todayISO()}
         required={true}
       />
     </div>

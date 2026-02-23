@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { todayISO } from '../utils/dateUtils';
 import { DirigenteForm } from '../forms/DirigenteForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
@@ -191,7 +192,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Dirigentes');
     
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
+    const date = todayISO();
     const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `dirigentes_${date}_${time}.xlsx`;
     

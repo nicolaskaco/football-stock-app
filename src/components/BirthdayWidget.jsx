@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Cake, Users, Shield } from 'lucide-react';
 import { database } from '../utils/database';
+import { formatBirthday } from '../utils/dateUtils';
 
 export const BirthdayWidget = () => {
   const [birthdays, setBirthdays] = useState([]);
@@ -50,11 +51,7 @@ export const BirthdayWidget = () => {
               <p className="font-medium">{person.name_visual || person.name}</p>
               <div className="flex items-center gap-2">
                 <p className="text-sm text-gray-600">
-                  {(() => {
-                    const [year, month, day] = person.date_of_birth.split('-');
-                    const date = new Date(year, month - 1, day);
-                    return date.toLocaleDateString('es-UY', { month: 'long', day: 'numeric' });
-                  })()}
+                  {formatBirthday(person.date_of_birth)}
                 </p>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${
                   person.type === 'player' 

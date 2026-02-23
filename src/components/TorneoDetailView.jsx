@@ -3,6 +3,7 @@ import { Calendar, MapPin, Users, Trophy, Shield, Download } from 'lucide-react'
 import * as XLSX from 'xlsx';
 import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
+import { formatDate, formatDateLong, todayISO } from '../utils/dateUtils';
 
 export const TorneoDetailView = ({ torneo }) => {
 
@@ -22,15 +23,6 @@ export const TorneoDetailView = ({ torneo }) => {
   };
 
 
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-UY', { 
-      day: '2-digit', 
-      month: 'long', 
-      year: 'numeric' 
-    });
-  };
 
   const getDuration = (startDate, endDate) => {
     if (!startDate || !endDate) return '-';
@@ -260,14 +252,14 @@ export const TorneoDetailView = ({ torneo }) => {
                   <div class="info-icon">📅</div>
                   <div>
                     <div class="info-label">Fecha Inicio</div>
-                    <div class="info-value">${formatDate(torneo.start_date)}</div>
+                    <div class="info-value">${formatDateLong(torneo.start_date)}</div>
                   </div>
                 </div>
                 <div class="info-item">
                   <div class="info-icon">📅</div>
                   <div>
                     <div class="info-label">Fecha Fin</div>
-                    <div class="info-value">${formatDate(torneo.end_date)}</div>
+                    <div class="info-value">${formatDateLong(torneo.end_date)}</div>
                   </div>
                 </div>
                 <div class="info-item" style="grid-column: span 2;">
@@ -408,12 +400,7 @@ export const TorneoDetailView = ({ torneo }) => {
                 row[label] = player.posicion || '';
                 break;
               case 'date_of_birth':
-                if (player.date_of_birth) {
-                  const [year, month, day] = player.date_of_birth.split('-');
-                  row[label] = `${day}/${month}/${year}`;
-                } else {
-                  row[label] = '';
-                }
+                row[label] = player.date_of_birth ? formatDate(player.date_of_birth) : '';
                 break;
               default:
                 break;
@@ -429,7 +416,7 @@ export const TorneoDetailView = ({ torneo }) => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Jugadores');
 
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
+    const date = todayISO();
     const time = now.toTimeString().split(' ')[0].replace(/:/g, '-');
     const filename = `${torneo.name.replace(/[^a-z0-9]/gi, '_')}_jugadores_${date}_${time}.xlsx`;
 
@@ -499,7 +486,7 @@ export const TorneoDetailView = ({ torneo }) => {
             <Calendar className="w-5 h-5 text-green-600 mt-1" />
             <div>
               <p className="text-sm text-gray-600">Fecha Inicio</p>
-              <p className="text-lg font-semibold">{formatDate(torneo.start_date)}</p>
+              <p className="text-lg font-semibold">{formatDateLong(torneo.start_date)}</p>
             </div>
           </div>
 
@@ -507,7 +494,7 @@ export const TorneoDetailView = ({ torneo }) => {
             <Calendar className="w-5 h-5 text-red-600 mt-1" />
             <div>
               <p className="text-sm text-gray-600">Fecha Fin</p>
-              <p className="text-lg font-semibold">{formatDate(torneo.end_date)}</p>
+              <p className="text-lg font-semibold">{formatDateLong(torneo.end_date)}</p>
             </div>
           </div>
 

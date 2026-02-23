@@ -1,18 +1,13 @@
 import React from 'react';
 import { Package } from 'lucide-react';
 import logo from '../logo.jpeg';
+import { formatDate } from '../utils/dateUtils';
 
 export const EmployeeView = ({ employee, distributions, inventory, onLogout }) => {
   const myDistributions = distributions.filter(d => d.employee_id === employee.id);
   const activeDistributions = myDistributions.filter(d => !d.return_date);
   const returnedDistributions = myDistributions.filter(d => d.return_date);
 
-  // Format date from YYYY-MM-DD to DD/MM/YYYY
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
