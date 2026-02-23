@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
+import { CATEGORIAS, DEPARTAMENTOS } from '../utils/constants';
 
 export const PlayerFormPublic = () => {
   const [formData, setFormData] = useState({
@@ -142,13 +143,9 @@ export const PlayerFormPublic = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Seleccione una categoría</option>
-                <option value="3era">3era</option>
-                <option value="4ta">4ta</option>
-                <option value="5ta">5ta</option>
-                <option value="S16">S16</option>
-                <option value="6ta">6ta</option>
-                <option value="7ma">7ma</option>
-                <option value="Sub13">Sub13</option>
+                {CATEGORIAS.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
               </select>
             </div>
 
@@ -179,31 +176,9 @@ export const PlayerFormPublic = () => {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">Seleccione un departamento</option>
-                <option value="Montevideo">Montevideo</option>
-                <option value="Canelones (Ciudad de la Costa)">Canelones (Ciudad de la Costa)</option>
-                <option value="Canelones">Canelones</option>
-                <option value="Maldonado">Maldonado</option>
-                <option value="Rocha">Rocha</option>
-                <option value="Treinta y Tres">Treinta y Tres</option>
-                <option value="Cerro Largo">Cerro Largo</option>
-                <option value="Rivera">Rivera</option>
-                <option value="Artigas">Artigas</option>
-                <option value="Salto">Salto</option>
-                <option value="Paysandú">Paysandú</option>
-                <option value="Río Negro">Río Negro</option>
-                <option value="Soriano">Soriano</option>
-                <option value="Colonia">Colonia</option>
-                <option value="San José">San José</option>
-                <option value="Flores">Flores</option>
-                <option value="Florida">Florida</option>
-                <option value="Durazno">Durazno</option>
-                <option value="Tacuarembó">Tacuarembó</option>
-                <option value="Lavalleja">Lavalleja</option>
-                <option value="Argentina">Argentina</option>
-                <option value="Brasil">Brasil</option>
-                <option value="Colombia">Colombia</option>
-                <option value="España">España</option>
-                <option value="Venezuela">Venezuela</option>
+                {DEPARTAMENTOS.map(dep => (
+                  <option key={dep} value={dep}>{dep}</option>
+                ))}
               </select>
             </div>
 

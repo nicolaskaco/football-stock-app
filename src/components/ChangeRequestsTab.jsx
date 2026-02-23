@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { database } from '../utils/database';
+import { CHANGE_REQUEST_STATUS } from '../utils/constants';
 import { AlertModal } from './AlertModal';
 import { PromptModal } from './PromptModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -138,9 +139,9 @@ export const ChangeRequestsTab = ({ currentUser }) => {
           onChange={(e) => setFilter(e.target.value)}
           className="px-4 py-2 border rounded-lg"
         >
-          <option value="pending">Pendientes</option>
-          <option value="approved">Aprobadas</option>
-          <option value="rejected">Rechazadas</option>
+          <option value={CHANGE_REQUEST_STATUS.PENDING}>Pendientes</option>
+          <option value={CHANGE_REQUEST_STATUS.APPROVED}>Aprobadas</option>
+          <option value={CHANGE_REQUEST_STATUS.REJECTED}>Rechazadas</option>
           <option value="all">Todas</option>
         </select>
       </div>
@@ -171,12 +172,12 @@ export const ChangeRequestsTab = ({ currentUser }) => {
                   </p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  request.status === 'approved' ? 'bg-green-100 text-green-800' :
+                  request.status === CHANGE_REQUEST_STATUS.PENDING ? 'bg-yellow-100 text-yellow-800' :
+                  request.status === CHANGE_REQUEST_STATUS.APPROVED ? 'bg-green-100 text-green-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {request.status === 'pending' ? 'Pendiente' :
-                   request.status === 'approved' ? 'Aprobada' : 'Rechazada'}
+                  {request.status === CHANGE_REQUEST_STATUS.PENDING ? 'Pendiente' :
+                   request.status === CHANGE_REQUEST_STATUS.APPROVED ? 'Aprobada' : 'Rechazada'}
                 </span>
               </div>
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { CATEGORIAS, BANCOS } from '../utils/constants';
 
 export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false, onDirtyChange }) => {
   const [formData, setFormData] = useState(player || {
@@ -42,8 +43,8 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
     onSubmit(formData, true);
   };
 
-  const categorias = ['3era', '4ta', 'S16', '5ta', '6ta', '7ma', 'Sub13'];
-  const banks = ['Itau', 'Prex', 'MiDinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Otro'];
+  const categorias = CATEGORIAS;
+  const banks = BANCOS;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

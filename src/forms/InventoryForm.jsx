@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { CATEGORIAS_INVENTARIO, TALLAS_ROPA } from '../utils/constants';
 
 export const InventoryForm = ({ item, onSubmit, onDirtyChange }) => {
   const [formData, setFormData] = useState(item || {
@@ -46,12 +47,9 @@ export const InventoryForm = ({ item, onSubmit, onDirtyChange }) => {
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Seleccione Categoría</option>
-          <option value="Remeras">Remeras</option>
-          <option value="Shorts">Shorts</option>
-          <option value="Pantalones">Pantalones</option>
-          <option value="Camperas de invierno">Camperas de invierno</option>
-          <option value="Ropa de entrenamiento">Ropa de entrenamiento</option>
-          <option value="Otro">Otro</option>
+          {CATEGORIAS_INVENTARIO.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
         </select>
       </div>
 
@@ -66,11 +64,9 @@ export const InventoryForm = ({ item, onSubmit, onDirtyChange }) => {
           className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Seleccione Talle</option>
-          <option value="S">S</option>
-          <option value="M">M</option>
-          <option value="L">L</option>
-          <option value="XL">XL</option>
-          <option value="XXL">XXL</option>
+          {TALLAS_ROPA.map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
         </select>
       </div>
 

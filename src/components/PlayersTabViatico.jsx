@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { CATEGORIAS } from '../utils/constants';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils, Eye } from 'lucide-react';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
@@ -72,7 +73,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     bank_account: true
   });
 
-  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
+  const categorias = CATEGORIAS;
   const canDirectEdit = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
 
   // Add safety check

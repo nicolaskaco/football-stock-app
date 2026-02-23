@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DocumentUpload } from '../components/DocumentUpload';
+import { CATEGORIAS, BANCOS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
 
 export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange }) => {
   const [formData, setFormData] = useState(player || {
@@ -54,10 +55,10 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     onSubmit(formData);
   };
 
-  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
-  const banks = ['Itau', 'Prex', 'Mi Dinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Otro'];
-  const departamentos = ['Montevideo', 'Canelones (Ciudad de la Costa)', 'Canelones', 'Artigas', 'Cerro Largo', 'Colonia', 'Durazno', 'Flores', 'Florida', 'Lavalleja', 'Maldonado', 'Paysandú', 'Río Negro', 'Rivera', 'Rocha', 'Salto', 'San José', 'Soriano', 'Tacuarembó', 'Treinta y Tres', 'Argentina', 'Brasil', 'Colombia', 'España', 'Estados Unidos', 'Venezuela'];
-  const posiciones = ['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero'];
+  const categorias = CATEGORIAS;
+  const banks = BANCOS;
+  const departamentos = DEPARTAMENTOS;
+  const posiciones = POSICIONES_JUGADOR;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">

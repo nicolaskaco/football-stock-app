@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { CHANGE_REQUEST_STATUS } from './constants';
 
 export const database = {
   // EMPLOYEES
@@ -761,7 +762,7 @@ export const database = {
         new_complemento: newValues.complemento,
         new_contrato: newValues.contrato,
         request_notes: notes,
-        status: 'pending'
+        status: CHANGE_REQUEST_STATUS.PENDING
       }])
       .select()
       .single();
@@ -782,7 +783,7 @@ export const database = {
           categoria
         )
       `)
-      .eq('status', 'pending')
+      .eq('status', CHANGE_REQUEST_STATUS.PENDING)
       .order('request_date', { ascending: false });
     
     if (error) throw error;
@@ -860,7 +861,7 @@ export const database = {
     const { error: statusError } = await supabase
       .from('player_change_requests')
       .update({
-        status: 'approved',
+        status: CHANGE_REQUEST_STATUS.APPROVED,
         reviewed_by: reviewedBy,
         review_date: new Date().toISOString(),
         review_notes: reviewNotes
@@ -875,7 +876,7 @@ export const database = {
     const { error } = await supabase
       .from('player_change_requests')
       .update({
-        status: 'rejected',
+        status: CHANGE_REQUEST_STATUS.REJECTED,
         reviewed_by: reviewedBy,
         review_date: new Date().toISOString(),
         review_notes: reviewNotes

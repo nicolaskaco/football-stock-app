@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
+import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type, Utensils } from 'lucide-react';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
@@ -92,7 +93,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const canEditPlayers = currentUser?.canEditPlayers || false;
   const canEditNameVisual = currentUser?.canEditNameVisual || false;
 
-  const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
+  const categorias = CATEGORIAS;
 
   // Add safety check
   const safePlayers = Array.isArray(players) ? players : [];
@@ -189,7 +190,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         bValue = b.celular.toLowerCase();
         break;
       case 'posicion': {
-        const posicionOrder = ['arquero', 'zaguero', 'lateral', 'volante', 'extremo', 'delantero'];
+        const posicionOrder = POSICIONES_JUGADOR.map(p => p.toLowerCase());
         
         const aPos = a.posicion ? a.posicion.toLowerCase() : '';
         const bPos = b.posicion ? b.posicion.toLowerCase() : '';
