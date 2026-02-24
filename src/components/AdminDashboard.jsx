@@ -141,6 +141,8 @@ export const AdminDashboard = ({
             jornadas={jornadas}
             canViewPartidos={canViewPartidos}
             setShowModal={setShowModal}
+            onDataChange={onDataChange}
+            onFormDirtyChange={setModalIsDirty}
           />
         )}
         {activeTab === 'inventory' && canAccessRopa && (
