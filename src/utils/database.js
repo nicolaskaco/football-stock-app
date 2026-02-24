@@ -973,12 +973,15 @@ export const database = {
     const categorias = ['4ta', '5ta', 'S16', '6ta', '7ma'];
     const opuesto = escenarioBase === 'Local' ? 'Visitante' : 'Local';
 
-    const partidos = categorias.map(categoria => ({
-      jornada_id: jornada.id,
-      categoria,
-      escenario: CATEGORIAS_INVERTIDAS.includes(categoria) ? opuesto : escenarioBase,
-      cesped: 'Natural',
-    }));
+    const partidos = categorias.map(categoria => {
+      const escenario = CATEGORIAS_INVERTIDAS.includes(categoria) ? opuesto : escenarioBase;
+      return {
+        jornada_id: jornada.id,
+        categoria,
+        escenario,
+        cesped: escenario === 'Local' ? 'Sintético' : 'Natural',
+      };
+    });
 
     const { error: partidosError } = await supabase
       .from('partidos')
