@@ -55,9 +55,25 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
       ? 'bg-emerald-100 text-emerald-800'
       : 'bg-orange-100 text-orange-800';
 
+  // Peñarol siempre a la izquierda
+  const getCapRivalGoles = (p) => {
+    const cap   = p.escenario === 'Local' ? p.goles_local    : p.goles_visitante;
+    const rival = p.escenario === 'Local' ? p.goles_visitante : p.goles_local;
+    return { cap, rival };
+  };
+
   const resultadoText = (p) => {
     if (p.goles_local == null && p.goles_visitante == null) return null;
-    return `${p.goles_local ?? '—'} - ${p.goles_visitante ?? '—'}`;
+    const { cap, rival } = getCapRivalGoles(p);
+    return `${cap ?? '—'} - ${rival ?? '—'}`;
+  };
+
+  const resultadoBadgeClass = (p) => {
+    if (p.goles_local == null || p.goles_visitante == null) return 'bg-gray-900 text-yellow-400';
+    const { cap, rival } = getCapRivalGoles(p);
+    if (cap > rival)  return 'bg-green-500 text-white';
+    if (cap < rival)  return 'bg-red-500 text-white';
+    return 'bg-gray-400 text-white';
   };
 
   return (
@@ -101,7 +117,7 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
                   {partido.cesped}
                 </span>
                 {resultado && (
-                  <span className="ml-2 px-3 py-0.5 bg-gray-900 text-yellow-400 rounded-full text-sm font-bold">
+                  <span className={`ml-2 px-3 py-0.5 rounded-full text-sm font-bold ${resultadoBadgeClass(partido)}`}>
                     {resultado}
                   </span>
                 )}
