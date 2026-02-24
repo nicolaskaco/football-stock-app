@@ -991,6 +991,16 @@ export const database = {
     return jornada;
   },
 
+  async updateJornada(id, jornadaData) {
+    // jornadaData: { rival_id, fecha, fase, numero_jornada }
+    // No tocamos el escenario de los partidos existentes
+    const { error } = await supabase
+      .from('jornadas')
+      .update(jornadaData)
+      .eq('id', id);
+    if (error) throw error;
+  },
+
   async deleteJornada(id) {
     // partidos y partido_players se eliminan en cascada por FK ON DELETE CASCADE
     const { error } = await supabase
