@@ -234,7 +234,7 @@ Bucket: `player-documents` (private)
 | [ComisionesTab.jsx](src/components/ComisionesTab.jsx) | Committee list and management |
 | [ComisionDetailView.jsx](src/components/ComisionDetailView.jsx) | Committee detail with member list |
 | [RivalesTab.jsx](src/components/RivalesTab.jsx) | Rival team CRUD + Excel bulk import |
-| [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions |
+| [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions; list view shows escenario + result badge per category |
 | [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, and comment |
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
@@ -369,6 +369,17 @@ Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
 - 🔴 Red — Peñarol lost
 - ⚫ Gray — draw
 - No badge — match not yet played
+
+#### Lista view (PartidosTab)
+
+The default list view shows a table with columns: Jornada · Fase · Fecha · Rival · one column per category (4ta · 5ta · S16 · 6ta · 7ma).
+
+Each category cell displays:
+- **Escenario badge** — Local (green) or Visitante (blue)
+- **Result circle** — only shown when a result has been recorded:
+  - 🟢 **G** (green) — Ganamos
+  - 🔴 **P** (red) — Perdimos
+  - ⚫ **E** (gray) — Empate
 
 #### Calendar view
 
