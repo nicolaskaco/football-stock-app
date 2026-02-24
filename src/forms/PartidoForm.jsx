@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CATEGORIAS_PARTIDO } from '../utils/constants';
+import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CATEGORIAS_PARTIDO, CATEGORIAS } from '../utils/constants';
 
 const MAX_TITULARES = 11;
 const MAX_SUPLENTES = 10;
@@ -119,7 +119,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
           Mostrar jugadores de:
         </p>
         <div className="flex flex-wrap gap-2">
-          {CATEGORIAS_PARTIDO.map((cat) => (
+          {CATEGORIAS.filter((c) => c !== 'Sub13').map((cat) => (
             <button
               key={cat}
               type="button"
