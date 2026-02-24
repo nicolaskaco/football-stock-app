@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { ConfirmModal } from './ConfirmModal';
 
 export const Modal = ({ children, onClose, title = "Form", isDirty = false }) => {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const scrollRef = useRef(null);
+
+  // Reset scroll to top whenever the modal content changes
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [title, children]);
 
   const handleCloseAttempt = () => {
     isDirty ? setShowCloseConfirm(true) : onClose();
@@ -16,6 +22,7 @@ export const Modal = ({ children, onClose, title = "Form", isDirty = false }) =>
         onClick={handleCloseAttempt}
       >
         <div
+          ref={scrollRef}
           className="bg-white rounded-lg max-w-7xl w-full max-h-[90vh] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
