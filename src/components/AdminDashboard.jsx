@@ -126,18 +126,21 @@ export const AdminDashboard = ({
         </div>
 
         {activeTab === 'overview' && (
-          <OverviewTab 
-            lowStockItems={lowStockItems} 
-            totalEmployees={totalEmployees} 
-            totalItems={totalItems} 
-            activeDistributions={activeDistributions} 
-            setActiveTab={setActiveTab} 
+          <OverviewTab
+            lowStockItems={lowStockItems}
+            totalEmployees={totalEmployees}
+            totalItems={totalItems}
+            activeDistributions={activeDistributions}
+            setActiveTab={setActiveTab}
             players={players}
             distributions={distributions}
             inventory={inventory}
             canAccessWidgets={canAccessWidgets}
-            canAccessRopa = {canAccessRopa}
+            canAccessRopa={canAccessRopa}
             currentUser={currentUser}
+            jornadas={jornadas}
+            canViewPartidos={canViewPartidos}
+            setShowModal={setShowModal}
           />
         )}
         {activeTab === 'inventory' && canAccessRopa && (
