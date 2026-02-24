@@ -79,12 +79,11 @@ export const RivalesTab = ({ rivales = [], setShowModal, onDataChange, currentUs
         const duplicates = [];
 
         rows.forEach((row, i) => {
+          if (i === 0) return; // Siempre ignorar la primera fila (encabezado)
           const cell = row[0];
           if (!cell) return;
           const name = String(cell).trim();
           if (!name) return;
-          // Skip header row: first row that matches generic labels
-          if (i === 0 && /^(nombre|name|rival|club|equipo)$/i.test(name)) return;
           if (existing.has(name.toLowerCase())) {
             duplicates.push(name);
           } else {
