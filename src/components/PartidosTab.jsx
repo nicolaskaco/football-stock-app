@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Eye, Trash2, Calendar, Pencil } from 'lucide-react';
+import { Plus, Eye, Trash2, Calendar, Pencil, List } from 'lucide-react';
 import { JornadaForm } from '../forms/JornadaForm';
 import { PartidoDetailView } from './PartidoDetailView';
+import { CalendarioView } from './CalendarioView';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
@@ -11,6 +12,7 @@ import { CATEGORIAS_PARTIDO } from '../utils/constants';
 export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const { execute } = useMutation();
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [view, setView] = useState('lista'); // 'lista' | 'calendario'
 
   const canEdit = currentUser?.canEditPartidos || false;
 
@@ -89,6 +91,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Partidos</h2>
@@ -96,15 +99,35 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
             {jornadas.length} jornada{jornadas.length !== 1 ? 's' : ''} registrada{jornadas.length !== 1 ? 's' : ''}
           </p>
         </div>
-        {canEdit && (
-          <button
-            onClick={openNewJornada}
-            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800 font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Nueva Jornada
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Vista toggle */}
+          <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm font-medium">
+            <button
+              onClick={() => setView('lista')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 transition ${view === 'lista' ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            >
+              <List className="w-3.5 h-3.5" />
+              Lista
+            </button>
+            <button
+              onClick={() => setView('calendario')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border-l border-gray-300 transition ${view === 'calendario' ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              Calendario
+            </button>
+          </div>
+
+          {canEdit && (
+            <button
+              onClick={openNewJornada}
+              className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800 font-medium"
+            >
+              <Plus className="w-4 h-4" />
+              Nueva Jornada
+            </button>
+          )}
+        </div>
       </div>
 
       {jornadas.length === 0 ? (
@@ -115,6 +138,8 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
             <p className="text-gray-400 text-sm mt-2">Usá el botón "Nueva Jornada" para comenzar.</p>
           )}
         </div>
+      ) : view === 'calendario' ? (
+        <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} />
       ) : (
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="w-full">

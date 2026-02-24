@@ -8,20 +8,41 @@ import { CategoryDistributionWidget } from './CategoryDistributionWidget';
 import { AgeDistributionWidget } from './AgeDistributionWidget';
 import { DepartamentoWidget } from './DepartamentoWidget';
 import { PendingChangeRequestsWidget } from './PendingChangeRequestsWidget';
+import { CalendarioView } from './CalendarioView';
+import { PartidoDetailView } from './PartidoDetailView';
+import { formatDate } from '../utils/dateUtils';
 
-export const OverviewTab = ({ 
-  lowStockItems, 
-  totalEmployees, 
-  totalItems, 
-  activeDistributions, 
+export const OverviewTab = ({
+  lowStockItems,
+  totalEmployees,
+  totalItems,
+  activeDistributions,
   setActiveTab,
   players = [],
   distributions = [],
   inventory = [],
   canAccessWidgets = false,
   canAccessRopa = false,
-  currentUser
+  currentUser,
+  jornadas = [],
+  canViewPartidos = false,
+  setShowModal,
 }) => {
+  const openDetail = (jornada) => {
+    setShowModal({
+      title: `${jornada.rivales?.name || 'Rival'} — ${formatDate(jornada.fecha)}`,
+      content: (
+        <PartidoDetailView
+          jornada={jornada}
+          players={players}
+          canEdit={false}
+          setShowModal={setShowModal}
+          onDataChange={() => {}}
+          onFormDirtyChange={() => {}}
+        />
+      ),
+    });
+  };
   // Check if user can see change requests
   const canViewChangeRequests = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
 
@@ -33,6 +54,22 @@ export const OverviewTab = ({
       {canViewChangeRequests && (
         <div className="mb-8">
           <PendingChangeRequestsWidget setActiveTab={setActiveTab} />
+        </div>
+      )}
+
+      {/* Calendario de Partidos */}
+      {canViewPartidos && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">Calendario de Partidos</h3>
+            <button
+              onClick={() => setActiveTab('partidos')}
+              className="text-sm text-yellow-600 hover:text-yellow-700 font-medium"
+            >
+              Ver todos →
+            </button>
+          </div>
+          <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} />
         </div>
       )}
 
