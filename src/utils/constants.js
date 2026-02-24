@@ -91,6 +91,9 @@ export const POSICIONES_PARTIDO = [
   'Extremo Izquierdo',
 ];
 
+/** Números de jornada del campeonato */
+export const NUMEROS_JORNADA = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','Semifinal','Final'];
+
 /** Estados de solicitudes de cambio financiero */
 export const CHANGE_REQUEST_STATUS = {
   PENDING: 'pending',

@@ -100,6 +100,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jornada</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fase</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rival</th>
@@ -114,6 +115,13 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
             <tbody className="divide-y divide-gray-200">
               {jornadas.map((jornada) => (
                 <tr key={jornada.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    {jornada.numero_jornada ? (
+                      <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">
+                        {jornada.numero_jornada}
+                      </span>
+                    ) : '—'}
+                  </td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">
                       {jornada.fase}

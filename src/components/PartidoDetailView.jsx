@@ -70,6 +70,11 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
           <span className="px-2 py-0.5 bg-yellow-400 text-gray-900 rounded-full text-xs font-semibold">
             {jornada.fase}
           </span>
+          {jornada.numero_jornada && (
+            <span className="px-2 py-0.5 bg-yellow-200 text-gray-900 rounded-full text-xs font-semibold">
+              Jornada {jornada.numero_jornada}
+            </span>
+          )}
         </div>
       </div>
 
