@@ -157,6 +157,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `rival_id` | uuid FK → rivales | ON DELETE RESTRICT |
 | `fecha` | date | Match date |
 | `fase` | text | `'Apertura'` \| `'Clausura'` |
+| `numero_jornada` | text | nullable — `'1'`–`'15'`, `'Semifinal'`, `'Final'` |
 | `created_at` | timestamptz | |
 
 #### `partidos`
@@ -169,6 +170,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `cesped` | text | `'Natural'` \| `'Sintético'` (default: Local→Sintético, Visitante→Natural) |
 | `goles_local` | integer | nullable — filled after the match |
 | `goles_visitante` | integer | nullable — filled after the match |
+| `comentario` | text | nullable — freetext match notes |
 | `created_at` | timestamptz | |
 
 #### `partido_players`
@@ -219,7 +221,7 @@ Bucket: `player-documents` (private)
 | Component | Description |
 |-----------|-------------|
 | [AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell + permission gating |
-| [OverviewTab.jsx](src/components/OverviewTab.jsx) | Dashboard with stat cards and optional widgets |
+| [OverviewTab.jsx](src/components/OverviewTab.jsx) | Dashboard with stat cards, optional widgets, and CalendarioView for `can_view_partidos` users |
 | [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal |
 | [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow |
 | [ChangeRequestsTab.jsx](src/components/ChangeRequestsTab.jsx) | Approval/rejection UI for financial change requests |
@@ -232,8 +234,9 @@ Bucket: `player-documents` (private)
 | [ComisionesTab.jsx](src/components/ComisionesTab.jsx) | Committee list and management |
 | [ComisionDetailView.jsx](src/components/ComisionDetailView.jsx) | Committee detail with member list |
 | [RivalesTab.jsx](src/components/RivalesTab.jsx) | Rival team CRUD + Excel bulk import |
-| [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list with Nueva Jornada action |
-| [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup + result |
+| [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions |
+| [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, and comment |
+| [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
 | [EmployeeView.jsx](src/components/EmployeeView.jsx) | Staff self-service: view own clothing distributions |
 | [LoginView.jsx](src/components/LoginView.jsx) | Dual-mode login (admin / funcionario) |
@@ -262,8 +265,8 @@ Bucket: `player-documents` (private)
 | [TorneoForm.jsx](src/forms/TorneoForm.jsx) | Tournament add/edit (multi-select players/dirigentes/staff) |
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
 | [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit (name only) |
-| [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Batch jornada creation: rival, fecha, fase, escenario base → 5 partidos |
-| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado |
+| [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
+| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario |
 
 #### Modals & Utilities
 | Component | Description |
@@ -326,13 +329,18 @@ Manages the internal youth football championship (Apertura / Clausura, round-rob
 
 **Categories participating:** `4ta`, `5ta`, `S16`, `6ta`, `7ma`
 
-#### Jornada creation (batch)
+#### Jornada management
 
-A "Jornada" groups 5 matches (one per category) played on the same date against the same rival. When creating a jornada the user selects:
+A "Jornada" groups 5 matches (one per category) played on the same date against the same rival.
+
+**Creating a jornada** — user selects:
 - Rival (from the `rivales` catalog)
 - Fecha
 - Fase (Apertura / Clausura)
+- Número de jornada (`1`–`15`, `Semifinal`, `Final`)
 - Escenario base (Local / Visitante)
+
+**Editing a jornada** — same fields except escenario (the 5 existing partidos are not recreated).
 
 The escenario is automatically derived per category:
 
@@ -349,13 +357,33 @@ Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
 - **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown
 - **Suplentes**: up to 10 slots, player dropdown only
 - **Category filter**: defaults to the partido's own category; can be expanded to include other categories (e.g. 3era, 5ta playing up in 4ta). Players from other categories are labeled with their category in parentheses.
-- **Resultado**: `goles_local` / `goles_visitante` — filled after the match is played
-- Duplicate player prevention: a player already selected as titular cannot be chosen as suplente and vice versa
+- **Resultado**: always displayed as Peñarol (left) vs. Rival (right), regardless of escenario. Inputs bind to `goles_local`/`goles_visitante` correctly based on escenario.
+- **Comentario**: optional freetext field for match notes.
+- Duplicate player prevention: a player already selected as titular cannot be chosen as suplente and vice versa.
+- After saving, the modal returns automatically to the jornada detail view with refreshed data.
+
+#### Result display
+
+`PartidoDetailView` shows a color-coded badge per partido:
+- 🟢 Green — Peñarol won
+- 🔴 Red — Peñarol lost
+- ⚫ Gray — draw
+- No badge — match not yet played
+
+#### Calendar view
+
+`PartidosTab` has a **Lista / Calendario** toggle. The calendar (`CalendarioView`) also appears on the home page (OverviewTab) for users with `can_view_partidos`.
+
+- Default view: current month
+- Toggle to week view
+- Each day cell shows: rival name + 5 colored dots (one per category in order: 4ta · 5ta · S16 · 6ta · 7ma)
+  - 🟢 Green = win, 🔴 Red = loss, ⚫ Gray = draw, ⬜ Light gray = no result
+- Clicking a jornada opens `PartidoDetailView` (edit capability respects `can_edit_partidos`)
 
 #### Rivals management
 
 - Separate "Rivales" tab (CRUD)
-- Supports **Excel bulk import**: upload a `.xlsx` file with rival names in column A; a preview panel shows new vs. already-existing rivals before confirming
+- Supports **Excel bulk import**: upload a `.xlsx` file with rival names in column A (row 1 is always skipped as header); a preview panel shows new vs. already-existing rivals before confirming
 
 ---
 
@@ -364,7 +392,7 @@ Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
 - Format: Excel (`.xlsx`) via the `xlsx` library
 - Available in: PlayersTab, PlayersTabViatico, DistributionsTab, ReportsTab, TorneoDetailView
 - `ExportConfigModal` lets the user select which fields to include before downloading
-- RivalesTab supports Excel **import** (column A = rival names)
+- RivalesTab supports Excel **import** (column A = rival names; row 1 always skipped as header)
 
 ---
 
@@ -378,6 +406,7 @@ All shared enums are centralized here — never defined inline in components:
 |--------|--------|
 | `CATEGORIAS` | `['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13']` |
 | `CATEGORIAS_PARTIDO` | `['4ta', '5ta', 'S16', '6ta', '7ma']` |
+| `NUMEROS_JORNADA` | `['1'…'15', 'Semifinal', 'Final']` |
 | `CATEGORIAS_ESCENARIO_INVERTIDO` | `['6ta', '7ma']` |
 | `FASES_CAMPEONATO` | `['Apertura', 'Clausura']` |
 | `ESCENARIOS` | `['Local', 'Visitante']` |
@@ -460,6 +489,7 @@ football-stock-app/
     │   ├── RivalesTab.jsx
     │   ├── PartidosTab.jsx
     │   ├── PartidoDetailView.jsx
+    │   ├── CalendarioView.jsx
     │   ├── ReportsTab.jsx
     │   ├── BirthdayWidget.jsx
     │   ├── SpendingTrendsWidget.jsx
