@@ -169,14 +169,19 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
           Resultado <span className="text-gray-400 font-normal">(completar luego del partido)</span>
         </label>
         <div className="flex items-center gap-3">
+          {/* Peñarol siempre a la izquierda — el campo real depende del escenario */}
           <div className="flex-1">
             <p className="text-xs text-gray-500 mb-1 text-center">Peñarol</p>
             <input
               type="number"
               min="0"
               placeholder="—"
-              value={formData.goles_local}
-              onChange={(e) => setFormData({ ...formData, goles_local: e.target.value })}
+              value={formData.escenario === 'Local' ? formData.goles_local : formData.goles_visitante}
+              onChange={(e) =>
+                formData.escenario === 'Local'
+                  ? setFormData({ ...formData, goles_local: e.target.value })
+                  : setFormData({ ...formData, goles_visitante: e.target.value })
+              }
               className="w-full px-3 py-2 border rounded-lg text-center text-xl font-bold focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -187,8 +192,12 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
               type="number"
               min="0"
               placeholder="—"
-              value={formData.goles_visitante}
-              onChange={(e) => setFormData({ ...formData, goles_visitante: e.target.value })}
+              value={formData.escenario === 'Local' ? formData.goles_visitante : formData.goles_local}
+              onChange={(e) =>
+                formData.escenario === 'Local'
+                  ? setFormData({ ...formData, goles_visitante: e.target.value })
+                  : setFormData({ ...formData, goles_local: e.target.value })
+              }
               className="w-full px-3 py-2 border rounded-lg text-center text-xl font-bold focus:ring-2 focus:ring-blue-500"
             />
           </div>
