@@ -57,7 +57,10 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
 
   const resultadoText = (p) => {
     if (p.goles_local == null && p.goles_visitante == null) return null;
-    return `${p.goles_local ?? '—'} - ${p.goles_visitante ?? '—'}`;
+    // Siempre mostrar Peñarol primero, rival después
+    const capGoles = p.escenario === 'Local' ? p.goles_local : p.goles_visitante;
+    const rivalGoles = p.escenario === 'Local' ? p.goles_visitante : p.goles_local;
+    return `${capGoles ?? '—'} - ${rivalGoles ?? '—'}`;
   };
 
   return (
