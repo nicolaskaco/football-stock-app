@@ -43,6 +43,7 @@ export const OverviewTab = ({
           setShowModal={setShowModal}
           onDataChange={onDataChange}
           onFormDirtyChange={onFormDirtyChange}
+          reopenDetail={openDetail}
         />
       ),
     });

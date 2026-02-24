@@ -6,14 +6,20 @@ import { useMutation } from '../hooks/useMutation';
 import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 
-export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal, onDataChange, onFormDirtyChange }) => {
+export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null }) => {
   const { execute } = useMutation();
 
   const handleEditPartido = (partido, partidoData, titulares, suplentes) => execute(async () => {
     await database.updatePartido(partido.id, partidoData, titulares, suplentes);
     await onDataChange('jornadas');
-    // Reload detail view with fresh data is handled by onDataChange → re-render
-    setShowModal(null);
+    if (reopenDetail) {
+      // Volver al detalle de la jornada con datos frescos desde la BD
+      const allJornadas = await database.getJornadas();
+      const fresh = allJornadas.find((j) => j.id === jornada.id) || jornada;
+      reopenDetail(fresh);
+    } else {
+      setShowModal(null);
+    }
   }, 'Error al guardar el partido', 'Partido guardado correctamente');
 
   const openEditPartido = (partido) => {
