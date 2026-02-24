@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CATEGORIAS_PARTIDO, CATEGORIAS_ESCENARIO_INVERTIDO, FASES_CAMPEONATO, ESCENARIOS } from '../utils/constants';
+import { CATEGORIAS_PARTIDO, CATEGORIAS_ESCENARIO_INVERTIDO, FASES_CAMPEONATO, ESCENARIOS, NUMEROS_JORNADA } from '../utils/constants';
 import { todayISO } from '../utils/dateUtils';
 
 export const JornadaForm = ({ rivales = [], onSubmit }) => {
@@ -7,6 +7,7 @@ export const JornadaForm = ({ rivales = [], onSubmit }) => {
     rival_id: '',
     fecha: todayISO(),
     fase: '',
+    numero_jornada: '',
   });
   const [escenarioBase, setEscenarioBase] = useState('');
 
@@ -30,7 +31,7 @@ export const JornadaForm = ({ rivales = [], onSubmit }) => {
       ? 'bg-blue-100 text-blue-800'
       : 'bg-gray-100 text-gray-500';
 
-  const isValid = formData.rival_id && formData.fecha && formData.fase && escenarioBase;
+  const isValid = formData.rival_id && formData.fecha && formData.fase && formData.numero_jornada && escenarioBase;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -78,6 +79,27 @@ export const JornadaForm = ({ rivales = [], onSubmit }) => {
               }`}
             >
               {fase}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Número de jornada */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Jornada *</label>
+        <div className="flex flex-wrap gap-2">
+          {NUMEROS_JORNADA.map((n) => (
+            <button
+              key={n}
+              type="button"
+              onClick={() => setFormData({ ...formData, numero_jornada: n })}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition ${
+                formData.numero_jornada === n
+                  ? 'bg-black text-yellow-400 border-black'
+                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              {n}
             </button>
           ))}
         </div>
