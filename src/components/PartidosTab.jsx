@@ -72,6 +72,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
           setShowModal={setShowModal}
           onDataChange={onDataChange}
           onFormDirtyChange={onFormDirtyChange}
+          reopenDetail={openDetail}
         />
       ),
     });
