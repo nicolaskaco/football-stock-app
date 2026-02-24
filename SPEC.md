@@ -10,7 +10,7 @@ Internal management system for Club Atlético Peñarol (CAP) formative divisions
 |-------|-------|
 | App name | App interna CAP v2 |
 | Organization | Club Atlético Peñarol |
-| Purpose | Manage players, staff, inventory, tournaments, and board members for formative divisions |
+| Purpose | Manage players, staff, inventory, tournaments, board members, and campeonato juvenil matches for formative divisions |
 | Language | Spanish (Uruguayan locale — `es-UY`) |
 | Deployment | Vercel |
 | Version | 0.0.0 |
@@ -25,7 +25,7 @@ Internal management system for Club Atlético Peñarol (CAP) formative divisions
 | Routing | React Router v7 |
 | Backend/DB | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
 | Icons | lucide-react |
-| Excel export | xlsx |
+| Excel export/import | xlsx |
 
 ---
 
@@ -46,7 +46,7 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 ### Data Flow
 
 - All Supabase interactions go through `src/utils/database.js`
-- Global state (employees, inventory, distributions, players, dirigentes, torneos, comisiones) is held in `App.jsx` and passed down as props
+- Global state (employees, inventory, distributions, players, dirigentes, torneos, comisiones, rivales, jornadas) is held in `App.jsx` and passed down as props
 - No Redux or React Context — pure prop drilling
 - On login, `loadData()` fetches all entities in parallel via `Promise.all`
 
@@ -58,6 +58,8 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 | [src/supabaseClient.js](src/supabaseClient.js) | Supabase client initialization |
 | [src/main.jsx](src/main.jsx) | React entry point |
 | [src/utils/database.js](src/utils/database.js) | All Supabase data access methods |
+| [src/utils/constants.js](src/utils/constants.js) | Centralized enums and constant lists |
+| [src/utils/dateUtils.js](src/utils/dateUtils.js) | Centralized date formatting helpers |
 | [src/utils/storage.js](src/utils/storage.js) | Storage utilities |
 | [src/PasswordReset.jsx](src/PasswordReset.jsx) | Password reset page |
 
@@ -104,6 +106,8 @@ Stored as `user_permissions.role`:
 | `edit_torneo` | Edit tournament records |
 | `can_view_comisiones` | Comisiones tab |
 | `can_edit_comisiones` | Edit committee records |
+| `can_view_partidos` | Rivales + Partidos tabs |
+| `can_edit_partidos` | Create/edit jornadas, partidos, rivales |
 | `categoria[]` | Array — restricts access to specific player categories |
 
 The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`.
@@ -131,7 +135,51 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `torneo_funcionarios` | M2M: torneos ↔ employees |
 | `comisiones` | Committees |
 | `comision_dirigentes` | M2M: comisiones ↔ dirigentes |
+| `rivales` | Rival teams catalog for the campeonato juvenil |
+| `jornadas` | A matchday grouping 5 category matches vs. the same rival |
+| `partidos` | Individual match per category (child of jornada) |
+| `partido_players` | Players convoked per partido (titulares + suplentes) |
 | `user_permissions` | Role and permission flags per user email |
+
+### Campeonato Juvenil Tables Detail
+
+#### `rivales`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `name` | text | Rival team name |
+| `created_at` | timestamptz | |
+
+#### `jornadas`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `rival_id` | uuid FK → rivales | ON DELETE RESTRICT |
+| `fecha` | date | Match date |
+| `fase` | text | `'Apertura'` \| `'Clausura'` |
+| `created_at` | timestamptz | |
+
+#### `partidos`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `jornada_id` | uuid FK → jornadas | ON DELETE CASCADE |
+| `categoria` | text | One of `CATEGORIAS_PARTIDO` |
+| `escenario` | text | `'Local'` \| `'Visitante'` |
+| `cesped` | text | `'Natural'` \| `'Sintético'` (default: Local→Sintético, Visitante→Natural) |
+| `goles_local` | integer | nullable — filled after the match |
+| `goles_visitante` | integer | nullable — filled after the match |
+| `created_at` | timestamptz | |
+
+#### `partido_players`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `partido_id` | uuid FK → partidos | ON DELETE CASCADE |
+| `player_id` | uuid FK → players | ON DELETE CASCADE |
+| `tipo` | text | `'titular'` \| `'suplente'` |
+| `posicion` | text | nullable — only for titulares |
+| `orden` | integer | 1–11 for titulares, 1–10 for suplentes |
 
 ### Audit-Tracked Player Fields
 
@@ -161,6 +209,8 @@ Bucket: `player-documents` (private)
 | `dirigentes` | Dirigentes | `can_access_dirigentes` |
 | `torneos` | Torneos | `view_torneo` |
 | `comisiones` | Comisiones | `can_view_comisiones` |
+| `rivales` | Rivales | `can_view_partidos` |
+| `partidos` | Partidos | `can_view_partidos` |
 | `reports` | Reportes | `can_access_ropa` |
 
 ### Components
@@ -181,6 +231,9 @@ Bucket: `player-documents` (private)
 | [TorneoDetailView.jsx](src/components/TorneoDetailView.jsx) | Detailed tournament view with participants |
 | [ComisionesTab.jsx](src/components/ComisionesTab.jsx) | Committee list and management |
 | [ComisionDetailView.jsx](src/components/ComisionDetailView.jsx) | Committee detail with member list |
+| [RivalesTab.jsx](src/components/RivalesTab.jsx) | Rival team CRUD + Excel bulk import |
+| [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list with Nueva Jornada action |
+| [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup + result |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
 | [EmployeeView.jsx](src/components/EmployeeView.jsx) | Staff self-service: view own clothing distributions |
 | [LoginView.jsx](src/components/LoginView.jsx) | Dual-mode login (admin / funcionario) |
@@ -208,6 +261,9 @@ Bucket: `player-documents` (private)
 | [DirigenteForm.jsx](src/forms/DirigenteForm.jsx) | Board member add/edit |
 | [TorneoForm.jsx](src/forms/TorneoForm.jsx) | Tournament add/edit (multi-select players/dirigentes/staff) |
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
+| [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit (name only) |
+| [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Batch jornada creation: rival, fecha, fase, escenario base → 5 partidos |
+| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado |
 
 #### Modals & Utilities
 | Component | Description |
@@ -222,6 +278,7 @@ Bucket: `player-documents` (private)
 | [DocumentUpload.jsx](src/components/DocumentUpload.jsx) | Supabase Storage document upload/download |
 | [NameVisualEditor.jsx](src/components/NameVisualEditor.jsx) | Visual name editing (dual-name system) |
 | [StatCard.jsx](src/components/StatCard.jsx) | Reusable stat summary card |
+| [Toast.jsx](src/components/Toast.jsx) | Toast notification display |
 
 ---
 
@@ -263,17 +320,90 @@ Applies when `currentUser.role === 'presidente_categoria'` attempts to edit `via
 
 `database.checkLowStock()` queries inventory items where `quantity <= min_stock`. Called after every inventory save.
 
+### Campeonato Juvenil — Partidos Module
+
+Manages the internal youth football championship (Apertura / Clausura, round-robin format).
+
+**Categories participating:** `4ta`, `5ta`, `S16`, `6ta`, `7ma`
+
+#### Jornada creation (batch)
+
+A "Jornada" groups 5 matches (one per category) played on the same date against the same rival. When creating a jornada the user selects:
+- Rival (from the `rivales` catalog)
+- Fecha
+- Fase (Apertura / Clausura)
+- Escenario base (Local / Visitante)
+
+The escenario is automatically derived per category:
+
+| Escenario base | 4ta | 5ta | S16 | 6ta | 7ma |
+|----------------|-----|-----|-----|-----|-----|
+| Local | Local | Local | Local | Visitante | Visitante |
+| Visitante | Visitante | Visitante | Visitante | Local | Local |
+
+Default césped: `Sintético` for Local matches, `Natural` for Visitante.
+
+#### Individual partido editing
+
+Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
+- **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown
+- **Suplentes**: up to 10 slots, player dropdown only
+- **Category filter**: defaults to the partido's own category; can be expanded to include other categories (e.g. 3era, 5ta playing up in 4ta). Players from other categories are labeled with their category in parentheses.
+- **Resultado**: `goles_local` / `goles_visitante` — filled after the match is played
+- Duplicate player prevention: a player already selected as titular cannot be chosen as suplente and vice versa
+
+#### Rivals management
+
+- Separate "Rivales" tab (CRUD)
+- Supports **Excel bulk import**: upload a `.xlsx` file with rival names in column A; a preview panel shows new vs. already-existing rivals before confirming
+
 ---
 
 ## 7. Data Export
 
 - Format: Excel (`.xlsx`) via the `xlsx` library
-- Available in: PlayersTab, PlayersTabViatico, DistributionsTab, ReportsTab
+- Available in: PlayersTab, PlayersTabViatico, DistributionsTab, ReportsTab, TorneoDetailView
 - `ExportConfigModal` lets the user select which fields to include before downloading
+- RivalesTab supports Excel **import** (column A = rival names)
 
 ---
 
-## 8. Deployment
+## 8. Utilities
+
+### Constants (`src/utils/constants.js`)
+
+All shared enums are centralized here — never defined inline in components:
+
+| Export | Values |
+|--------|--------|
+| `CATEGORIAS` | `['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13']` |
+| `CATEGORIAS_PARTIDO` | `['4ta', '5ta', 'S16', '6ta', '7ma']` |
+| `CATEGORIAS_ESCENARIO_INVERTIDO` | `['6ta', '7ma']` |
+| `FASES_CAMPEONATO` | `['Apertura', 'Clausura']` |
+| `ESCENARIOS` | `['Local', 'Visitante']` |
+| `CESPED_TIPOS` | `['Natural', 'Sintético']` |
+| `POSICIONES_JUGADOR` | `['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero']` |
+| `POSICIONES_PARTIDO` | 10 specific match positions |
+| `DEPARTAMENTOS` | All 19 Uruguayan departments + foreign countries |
+| `BANCOS` | Itau, Prex, Mi Dinero, BROU, Santander, Scotia, HSBC, Otro |
+| `TALLAS_ROPA` | `['S', 'M', 'L', 'XL', 'XXL']` |
+| `CATEGORIAS_INVENTARIO` | Clothing categories |
+| `CHANGE_REQUEST_STATUS` | `{ PENDING, APPROVED, REJECTED }` |
+
+### Date Utilities (`src/utils/dateUtils.js`)
+
+| Export | Description |
+|--------|-------------|
+| `formatDate(str)` | `DD/MM/YYYY` |
+| `formatDateLong(str)` | Full month name (es-UY) |
+| `formatDateTime(str)` | `DD/MM/YYYY HH:MM` |
+| `formatBirthday(str)` | `DD/MM` (no year, timezone-safe) |
+| `todayISO()` | `YYYY-MM-DD` for date inputs |
+| `parseDOB(str)` | Date from `YYYY-MM-DD` without timezone drift |
+
+---
+
+## 9. Deployment
 
 | Setting | Value |
 |---------|-------|
@@ -287,7 +417,7 @@ Applies when `currentUser.role === 'presidente_categoria'` attempts to edit `via
 
 ---
 
-## 9. Project File Structure
+## 10. Project File Structure
 
 ```
 football-stock-app/
@@ -327,6 +457,9 @@ football-stock-app/
     │   ├── TorneoDetailView.jsx
     │   ├── ComisionesTab.jsx
     │   ├── ComisionDetailView.jsx
+    │   ├── RivalesTab.jsx
+    │   ├── PartidosTab.jsx
+    │   ├── PartidoDetailView.jsx
     │   ├── ReportsTab.jsx
     │   ├── BirthdayWidget.jsx
     │   ├── SpendingTrendsWidget.jsx
@@ -344,7 +477,8 @@ football-stock-app/
     │   ├── ExportConfigModal.jsx
     │   ├── DocumentUpload.jsx
     │   ├── NameVisualEditor.jsx
-    │   └── StatCard.jsx
+    │   ├── StatCard.jsx
+    │   └── Toast.jsx
     ├── forms/                     # Data entry forms
     │   ├── PlayerForm.jsx
     │   ├── PlayerFormViatico.jsx
@@ -354,8 +488,16 @@ football-stock-app/
     │   ├── DistributionForm.jsx
     │   ├── DirigenteForm.jsx
     │   ├── TorneoForm.jsx
-    │   └── ComisionForm.jsx
+    │   ├── ComisionForm.jsx
+    │   ├── RivalForm.jsx
+    │   ├── JornadaForm.jsx
+    │   └── PartidoForm.jsx
+    ├── context/
+    │   └── ToastContext.jsx       # Toast notification context + provider
+    ├── hooks/
+    │   └── useMutation.jsx        # Async mutation helper with toast feedback
     └── utils/
-        ├── database.js            # All Supabase data access methods
+        ├── constants.js           # All shared enums and constant lists
+        ├── dateUtils.js           # Date formatting helpers
         └── storage.js
 ```
