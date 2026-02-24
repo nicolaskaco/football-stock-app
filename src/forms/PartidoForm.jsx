@@ -16,6 +16,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
     cesped: partido?.cesped || 'Natural',
     goles_local: partido?.goles_local ?? '',
     goles_visitante: partido?.goles_visitante ?? '',
+    comentario: partido?.comentario || '',
   });
 
   // Construir slots iniciales desde partido_players existentes
@@ -202,6 +203,18 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
             />
           </div>
         </div>
+      </div>
+
+      {/* Comentario */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Comentario del partido</label>
+        <textarea
+          rows={3}
+          placeholder="Observaciones, tácticas, lesiones…"
+          value={formData.comentario}
+          onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
+          className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+        />
       </div>
 
       {/* Titulares */}

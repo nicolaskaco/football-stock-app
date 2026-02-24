@@ -179,6 +179,14 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
                 )}
               </div>
             </div>
+
+            {/* Comentario */}
+            {partido.comentario && (
+              <div className="px-4 pb-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Comentario</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{partido.comentario}</p>
+              </div>
+            )}
           </div>
         );
       })}
