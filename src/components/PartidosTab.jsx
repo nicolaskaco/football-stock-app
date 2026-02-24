@@ -78,17 +78,27 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
     });
   };
 
-  // Get the escenario for a given categoria within a jornada
-  const getEscenarioForCategoria = (jornada, categoria) => {
-    const partido = (jornada.partidos || []).find((p) => p.categoria === categoria);
-    return partido?.escenario || '—';
-  };
+  // Get partido for a given categoria within a jornada
+  const getPartidoForCategoria = (jornada, categoria) =>
+    (jornada.partidos || []).find((p) => p.categoria === categoria) || null;
 
   const escenarioBadge = (esc) => {
     if (esc === 'Local') return 'bg-green-100 text-green-800';
     if (esc === 'Visitante') return 'bg-blue-100 text-blue-800';
     return 'bg-gray-100 text-gray-500';
   };
+
+  const getResultado = (partido) => {
+    if (!partido || partido.goles_local == null || partido.goles_visitante == null) return null;
+    const capGoles = partido.escenario === 'Local' ? partido.goles_local : partido.goles_visitante;
+    const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+    if (capGoles > rivalGoles) return 'win';
+    if (capGoles < rivalGoles) return 'loss';
+    return 'draw';
+  };
+
+  const RESULT_DOT = { win: 'bg-green-500', loss: 'bg-red-500', draw: 'bg-gray-400' };
+  const RESULT_LABEL = { win: 'G', loss: 'P', draw: 'E' };
 
   return (
     <div className="space-y-6">
@@ -176,12 +186,26 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
                   <td className="px-6 py-4 text-sm text-gray-700">{formatDate(jornada.fecha)}</td>
                   <td className="px-6 py-4 font-medium text-gray-900">{jornada.rivales?.name || '—'}</td>
                   {CATEGORIAS_PARTIDO.map((cat) => {
-                    const esc = getEscenarioForCategoria(jornada, cat);
+                    const partido = getPartidoForCategoria(jornada, cat);
+                    const esc = partido?.escenario || '—';
+                    const resultado = getResultado(partido);
                     return (
                       <td key={cat} className="px-3 py-4 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${escenarioBadge(esc)}`}>
-                          {esc}
-                        </span>
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${escenarioBadge(esc)}`}>
+                            {esc}
+                          </span>
+                          {resultado ? (
+                            <span
+                              className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold ${RESULT_DOT[resultado]}`}
+                              title={resultado === 'win' ? 'Ganamos' : resultado === 'loss' ? 'Perdimos' : 'Empate'}
+                            >
+                              {RESULT_LABEL[resultado]}
+                            </span>
+                          ) : (
+                            <span className="w-5 h-5" />
+                          )}
+                        </div>
                       </td>
                     );
                   })}
