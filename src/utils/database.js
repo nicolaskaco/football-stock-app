@@ -903,6 +903,16 @@ export const database = {
     return data;
   },
 
+  async addRivalesBulk(names) {
+    const rows = names.map((name) => ({ name }));
+    const { data, error } = await supabase
+      .from('rivales')
+      .insert(rows)
+      .select();
+    if (error) throw error;
+    return data;
+  },
+
   async updateRival(id, rival) {
     const { data, error } = await supabase
       .from('rivales')
