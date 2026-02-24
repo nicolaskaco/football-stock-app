@@ -57,6 +57,22 @@ export const OverviewTab = ({
         </div>
       )}
 
+      {/* Calendario de Partidos */}
+      {canViewPartidos && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-800">Calendario de Partidos</h3>
+            <button
+              onClick={() => setActiveTab('partidos')}
+              className="text-sm text-yellow-600 hover:text-yellow-700 font-medium"
+            >
+              Ver todos →
+            </button>
+          </div>
+          <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} />
+        </div>
+      )}
+
       {/* Existing Stats Cards */}
       {canAccessRopa && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -96,22 +112,6 @@ export const OverviewTab = ({
       {canAccessRopa && (
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
           <MostDistributedWidget distributions={distributions} inventory={inventory} />
-        </div>
-      )}
-
-      {/* Calendario de Partidos */}
-      {canViewPartidos && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Calendario de Partidos</h3>
-            <button
-              onClick={() => setActiveTab('partidos')}
-              className="text-sm text-yellow-600 hover:text-yellow-700 font-medium"
-            >
-              Ver todos →
-            </button>
-          </div>
-          <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} />
         </div>
       )}
 
