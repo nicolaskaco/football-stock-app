@@ -27,7 +27,11 @@ export const OverviewTab = ({
   jornadas = [],
   canViewPartidos = false,
   setShowModal,
+  onDataChange,
+  onFormDirtyChange,
 }) => {
+  const canEditPartidos = currentUser?.canEditPartidos || false;
+
   const openDetail = (jornada) => {
     setShowModal({
       title: `${jornada.rivales?.name || 'Rival'} — ${formatDate(jornada.fecha)}`,
@@ -35,10 +39,10 @@ export const OverviewTab = ({
         <PartidoDetailView
           jornada={jornada}
           players={players}
-          canEdit={false}
+          canEdit={canEditPartidos}
           setShowModal={setShowModal}
-          onDataChange={() => {}}
-          onFormDirtyChange={() => {}}
+          onDataChange={onDataChange}
+          onFormDirtyChange={onFormDirtyChange}
         />
       ),
     });
