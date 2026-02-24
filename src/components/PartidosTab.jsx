@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Eye, Trash2, Calendar } from 'lucide-react';
+import { Plus, Eye, Trash2, Calendar, Pencil } from 'lucide-react';
 import { JornadaForm } from '../forms/JornadaForm';
 import { PartidoDetailView } from './PartidoDetailView';
 import { database } from '../utils/database';
@@ -19,6 +19,26 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
     await onDataChange('jornadas');
     setShowModal(null);
   }, 'Error al crear la jornada', 'Jornada creada correctamente');
+
+  const openEditJornada = (jornada) => {
+    onFormDirtyChange(false);
+    const handleEditJornada = (formData) => execute(async () => {
+      await database.updateJornada(jornada.id, formData);
+      await onDataChange('jornadas');
+      setShowModal(null);
+    }, 'Error al guardar la jornada', 'Jornada actualizada correctamente');
+
+    setShowModal({
+      title: 'Editar Jornada',
+      content: (
+        <JornadaForm
+          rivales={rivales}
+          jornada={jornada}
+          onSubmit={handleEditJornada}
+        />
+      ),
+    });
+  };
 
   const handleDelete = (id) => execute(async () => {
     await database.deleteJornada(id);
@@ -148,6 +168,15 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
                       >
                         <Eye className="w-4 h-4" />
                       </button>
+                      {canEdit && (
+                        <button
+                          onClick={() => openEditJornada(jornada)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                          title="Editar jornada"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      )}
                       {canEdit && (
                         <button
                           onClick={() => setConfirmDelete(jornada)}
