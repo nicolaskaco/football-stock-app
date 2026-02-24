@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, X } from 'lucide-react';
-import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS } from '../utils/constants';
+import { X } from 'lucide-react';
+import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CATEGORIAS_PARTIDO } from '../utils/constants';
 
 const MAX_TITULARES = 11;
 const MAX_SUPLENTES = 10;
@@ -45,8 +45,27 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
   const [titulares, setTitulares] = useState(buildInitialTitulares);
   const [suplentes, setSuplentes] = useState(buildInitialSuplentes);
 
-  // Jugadores de la categoría de este partido
-  const jugadoresCategoria = players.filter((p) => p.categoria === categoria);
+  // Filtro de categorías: por defecto solo la del partido
+  const [categoriasActivas, setCategoriasActivas] = useState([categoria]);
+
+  const toggleCategoria = (cat) => {
+    setCategoriasActivas((prev) =>
+      prev.includes(cat)
+        ? prev.length === 1 ? prev : prev.filter((c) => c !== cat) // al menos una activa
+        : [...prev, cat]
+    );
+  };
+
+  // Jugadores filtrados según las categorías activas
+  const jugadoresCategoria = players
+    .filter((p) => categoriasActivas.includes(p.categoria))
+    .sort((a, b) => {
+      // Primero los de la categoría propia, luego el resto por categoría
+      const aPropia = a.categoria === categoria ? 0 : 1;
+      const bPropia = b.categoria === categoria ? 0 : 1;
+      if (aPropia !== bPropia) return aPropia - bPropia;
+      return (a.name_visual || a.name).localeCompare(b.name_visual || b.name);
+    });
 
   // IDs ya usados en titulares o suplentes (para evitar duplicados)
   const usedIds = new Set([
@@ -92,6 +111,32 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
           formData.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
         }`}>{formData.escenario || '—'}</span>
+      </div>
+
+      {/* Filtro de categorías de jugadores */}
+      <div>
+        <p className="text-xs font-medium text-gray-500 mb-2">
+          Mostrar jugadores de:
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIAS_PARTIDO.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => toggleCategoria(cat)}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${
+                categoriasActivas.includes(cat)
+                  ? cat === categoria
+                    ? 'bg-black text-yellow-400 border-black'
+                    : 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-500 border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              {cat}
+              {cat === categoria && <span className="ml-1 opacity-60">(esta)</span>}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Escenario y Césped */}
@@ -173,7 +218,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
                     value={p.id}
                     disabled={usedIds.has(p.id) && t.player_id !== p.id}
                   >
-                    {p.name_visual || p.name}
+                    {p.name_visual || p.name}{p.categoria !== categoria ? ` (${p.categoria})` : ''}
                   </option>
                 ))}
               </select>
@@ -225,7 +270,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
                     value={p.id}
                     disabled={usedIds.has(p.id) && s.player_id !== p.id}
                   >
-                    {p.name_visual || p.name}
+                    {p.name_visual || p.name}{p.categoria !== categoria ? ` (${p.categoria})` : ''}
                   </option>
                 ))}
               </select>
