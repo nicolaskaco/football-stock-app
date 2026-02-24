@@ -55,6 +55,42 @@ export const CATEGORIAS_INVENTARIO = [
   'Otro',
 ];
 
+// ============================================================
+// Constantes del módulo Partidos / Campeonato
+// ============================================================
+
+/** Categorías que participan en el campeonato juvenil */
+export const CATEGORIAS_PARTIDO = ['4ta', '5ta', 'S16', '6ta', '7ma'];
+
+/**
+ * Categorías "mayores" que invierten el escenario respecto al valor base.
+ * Si la jornada se crea como Local → estas categorías juegan Visitante.
+ */
+export const CATEGORIAS_ESCENARIO_INVERTIDO = ['6ta', '7ma'];
+
+/** Fases del campeonato */
+export const FASES_CAMPEONATO = ['Apertura', 'Clausura'];
+
+/** Escenarios posibles */
+export const ESCENARIOS = ['Local', 'Visitante'];
+
+/** Tipos de césped */
+export const CESPED_TIPOS = ['Natural', 'Sintético'];
+
+/** Posiciones específicas para la planilla de partidos */
+export const POSICIONES_PARTIDO = [
+  'Arquero',
+  'Lateral derecho',
+  'Zaguero derecho',
+  'Zaguero izquierdo',
+  'Lateral izquierdo',
+  'Volante defensivo',
+  'Volante ofensivo',
+  'Extremo derecho',
+  'Delantero Centro',
+  'Extremo Izquierdo',
+];
+
 /** Estados de solicitudes de cambio financiero */
 export const CHANGE_REQUEST_STATUS = {
   PENDING: 'pending',

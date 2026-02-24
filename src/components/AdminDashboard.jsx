@@ -14,17 +14,21 @@ import { DirigentesTab } from './DirigentesTab';
 import { TorneosTab } from './TorneosTab';
 import { ComisionesTab } from './ComisionesTab';
 import { ChangeRequestsTab } from './ChangeRequestsTab';
+import { RivalesTab } from './RivalesTab';
+import { PartidosTab } from './PartidosTab';
 
-export const AdminDashboard = ({ 
-  employees, 
-  inventory, 
-  distributions, 
-  players, 
-  dirigentes, 
+export const AdminDashboard = ({
+  employees,
+  inventory,
+  distributions,
+  players,
+  dirigentes,
   torneos,
   comisiones,
-  onLogout, 
-  onDataChange, 
+  rivales,
+  jornadas,
+  onLogout,
+  onDataChange,
   currentUser
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -56,6 +60,7 @@ export const AdminDashboard = ({
   //const canEditComision = currentUser?.canEditComision || false;
   const canViewChangeRequests = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria'].includes(currentUser?.role);
   const canAccessRopa = currentUser?.canAccessRopa || false;
+  const canViewPartidos = currentUser?.canViewPartidos || false;
 
   // Rest of your code stays the same...
   const tabs = [
@@ -69,6 +74,8 @@ export const AdminDashboard = ({
     { id: 'dirigentes', label: 'Dirigentes', show: canAccessDirigentes },
     { id: 'torneos', label: 'Torneos', show: canViewTorneo },
     { id: 'comisiones', label: 'Comisiones', show: canViewComisiones },
+    { id: 'rivales', label: 'Rivales', show: canViewPartidos },
+    { id: 'partidos', label: 'Partidos', show: canViewPartidos },
     { id: 'reports', label: 'Reportes', show: canAccessRopa }
   ];
 
@@ -206,6 +213,26 @@ export const AdminDashboard = ({
           <ComisionesTab
             comisiones={comisiones}
             dirigentes={dirigentes}
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}
+            currentUser={currentUser}
+            onFormDirtyChange={setModalIsDirty}
+          />
+        )}
+        {activeTab === 'rivales' && canViewPartidos && (
+          <RivalesTab
+            rivales={rivales}
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}
+            currentUser={currentUser}
+            onFormDirtyChange={setModalIsDirty}
+          />
+        )}
+        {activeTab === 'partidos' && canViewPartidos && (
+          <PartidosTab
+            jornadas={jornadas}
+            rivales={rivales}
+            players={players}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
