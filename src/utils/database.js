@@ -879,4 +879,164 @@ export const database = {
     
     if (error) throw error;
   },
+
+  // ============================================================
+  // RIVALES
+  // ============================================================
+
+  async getRivales() {
+    const { data, error } = await supabase
+      .from('rivales')
+      .select('*')
+      .order('name', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async addRival(rival) {
+    const { data, error } = await supabase
+      .from('rivales')
+      .insert([rival])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateRival(id, rival) {
+    const { data, error } = await supabase
+      .from('rivales')
+      .update(rival)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteRival(id) {
+    const { error } = await supabase
+      .from('rivales')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  // ============================================================
+  // JORNADAS + PARTIDOS
+  // ============================================================
+
+  async getJornadas() {
+    const { data, error } = await supabase
+      .from('jornadas')
+      .select(`
+        *,
+        rivales(id, name),
+        partidos(
+          *,
+          partido_players(
+            id, tipo, posicion, orden,
+            players(id, name, name_visual, categoria)
+          )
+        )
+      `)
+      .order('fecha', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Crea una jornada y sus 5 partidos (uno por categoría) en batch.
+   * @param {object} jornadaData  - { rival_id, fecha, fase }
+   * @param {string} escenarioBase - 'Local' | 'Visitante'
+   * Regla: 4ta/5ta/S16 → escenarioBase; 6ta/7ma → opuesto
+   */
+  async addJornada(jornadaData, escenarioBase) {
+    const { data: jornada, error: jornadaError } = await supabase
+      .from('jornadas')
+      .insert([jornadaData])
+      .select()
+      .single();
+    if (jornadaError) throw jornadaError;
+
+    const CATEGORIAS_INVERTIDAS = ['6ta', '7ma'];
+    const categorias = ['4ta', '5ta', 'S16', '6ta', '7ma'];
+    const opuesto = escenarioBase === 'Local' ? 'Visitante' : 'Local';
+
+    const partidos = categorias.map(categoria => ({
+      jornada_id: jornada.id,
+      categoria,
+      escenario: CATEGORIAS_INVERTIDAS.includes(categoria) ? opuesto : escenarioBase,
+      cesped: 'Natural',
+    }));
+
+    const { error: partidosError } = await supabase
+      .from('partidos')
+      .insert(partidos);
+    if (partidosError) throw partidosError;
+
+    return jornada;
+  },
+
+  async deleteJornada(id) {
+    // partidos y partido_players se eliminan en cascada por FK ON DELETE CASCADE
+    const { error } = await supabase
+      .from('jornadas')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  /**
+   * Actualiza los datos de un partido individual y su planilla de jugadores.
+   * @param {string} id - partido id
+   * @param {object} partidoData - { escenario, cesped, goles_local, goles_visitante }
+   * @param {Array}  titulares   - [{ player_id, posicion, orden }]  (max 11)
+   * @param {Array}  suplentes   - [{ player_id, orden }]            (max 10)
+   */
+  async updatePartido(id, partidoData, titulares = [], suplentes = []) {
+    // 1. Actualizar datos del partido
+    const { error: updateError } = await supabase
+      .from('partidos')
+      .update(partidoData)
+      .eq('id', id);
+    if (updateError) throw updateError;
+
+    // 2. Eliminar planilla existente (delete-then-reinsert)
+    const { error: deleteError } = await supabase
+      .from('partido_players')
+      .delete()
+      .eq('partido_id', id);
+    if (deleteError) throw deleteError;
+
+    // 3. Insertar titulares
+    if (titulares.length > 0) {
+      const titularRecords = titulares.map(t => ({
+        partido_id: id,
+        player_id: t.player_id,
+        tipo: 'titular',
+        posicion: t.posicion,
+        orden: t.orden,
+      }));
+      const { error: titError } = await supabase
+        .from('partido_players')
+        .insert(titularRecords);
+      if (titError) throw titError;
+    }
+
+    // 4. Insertar suplentes
+    if (suplentes.length > 0) {
+      const suplenteRecords = suplentes.map(s => ({
+        partido_id: id,
+        player_id: s.player_id,
+        tipo: 'suplente',
+        posicion: null,
+        orden: s.orden,
+      }));
+      const { error: supError } = await supabase
+        .from('partido_players')
+        .insert(suplenteRecords);
+      if (supError) throw supError;
+    }
+  },
 };

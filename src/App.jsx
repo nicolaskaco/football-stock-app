@@ -32,6 +32,8 @@ const App = () => {
   const [dirigentes, setDirigentes] = useState([]);
   const [torneos, setTorneos] = useState([]);
   const [comisiones, setComisiones] = useState([]);
+  const [rivales, setRivales] = useState([]);
+  const [jornadas, setJornadas] = useState([]);
 
   useEffect(() => {
     checkSession();
@@ -72,7 +74,9 @@ const App = () => {
             canViewTorneo: permissions?.view_torneo || false,
             canViewComisiones: permissions?.can_view_comisiones || false,
             canEditComision: permissions?.can_edit_comisiones || false,
-            canAccessRopa: permissions?.can_access_ropa || false
+            canAccessRopa: permissions?.can_access_ropa || false,
+            canViewPartidos: permissions?.can_view_partidos || false,
+            canEditPartidos: permissions?.can_edit_partidos || false,
           });
           await loadData();
           setCurrentView('dashboard');
@@ -91,6 +95,8 @@ const App = () => {
   const loadDirigentes = async () => { const d = await database.getDirigentes(); setDirigentes(d || []); };
   const loadTorneos = async () => { const d = await database.getTorneos(); setTorneos(d || []); };
   const loadComisiones = async () => { const d = await database.getComisiones(); setComisiones(d || []); };
+  const loadRivales = async () => { const d = await database.getRivales(); setRivales(d || []); };
+  const loadJornadas = async () => { const d = await database.getJornadas(); setJornadas(d || []); };
 
   const loadData = async () => {
     try {
@@ -102,6 +108,8 @@ const App = () => {
         loadDirigentes(),
         loadTorneos(),
         loadComisiones(),
+        loadRivales(),
+        loadJornadas(),
       ]);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -117,6 +125,8 @@ const App = () => {
     dirigentes: loadDirigentes,
     torneos: loadTorneos,
     comisiones: loadComisiones,
+    rivales: loadRivales,
+    jornadas: loadJornadas,
   };
 
   const handleDataChange = async (...entities) => {
@@ -171,7 +181,9 @@ const App = () => {
           canViewTorneo: permissions?.view_torneo || false,
           canViewComisiones: permissions?.can_view_comisiones || false,
           canEditComision: permissions?.can_edit_comisiones || false,
-          canAccessRopa: permissions?.can_access_ropa || false
+          canAccessRopa: permissions?.can_access_ropa || false,
+          canViewPartidos: permissions?.can_view_partidos || false,
+          canEditPartidos: permissions?.can_edit_partidos || false,
         });
 
         await loadData();
@@ -249,6 +261,8 @@ const App = () => {
                 dirigentes={dirigentes}
                 torneos={torneos}
                 comisiones={comisiones}
+                rivales={rivales}
+                jornadas={jornadas}
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 onDataChange={handleDataChange}
