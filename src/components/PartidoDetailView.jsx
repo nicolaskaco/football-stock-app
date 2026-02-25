@@ -9,8 +9,8 @@ import { CATEGORIAS_PARTIDO } from '../utils/constants';
 export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null }) => {
   const { execute } = useMutation();
 
-  const handleEditPartido = (partido, partidoData, titulares, suplentes) => execute(async () => {
-    await database.updatePartido(partido.id, partidoData, titulares, suplentes);
+  const handleEditPartido = (partido, partidoData, titulares, suplentes, eventos) => execute(async () => {
+    await database.updatePartido(partido.id, partidoData, titulares, suplentes, eventos);
     await onDataChange('jornadas');
     if (reopenDetail) {
       // Volver al detalle de la jornada con datos frescos desde la BD
@@ -38,8 +38,8 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
         <PartidoForm
           partido={partidoWithPlayers}
           players={players}
-          onSubmit={(data, titulares, suplentes) =>
-            handleEditPartido(partido, data, titulares, suplentes)
+          onSubmit={(data, titulares, suplentes, eventos) =>
+            handleEditPartido(partido, data, titulares, suplentes, eventos)
           }
         />
       ),
@@ -73,6 +73,13 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
     const { cap, rival } = getCapRivalGoles(p);
     return `${cap ?? '—'} - ${rival ?? '—'}`;
   };
+
+  const golesCount = (partido, playerId) =>
+    (partido.partido_eventos || []).filter((e) => e.player_id === playerId && e.tipo === 'gol').length;
+  const tieneAmarilla = (partido, playerId) =>
+    (partido.partido_eventos || []).some((e) => e.player_id === playerId && e.tipo === 'amarilla');
+  const tieneRoja = (partido, playerId) =>
+    (partido.partido_eventos || []).some((e) => e.player_id === playerId && e.tipo === 'roja');
 
   const resultadoBadgeClass = (p) => {
     if (p.goles_local == null || p.goles_visitante == null) return 'bg-gray-900 text-yellow-400';
@@ -149,17 +156,26 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
                   <p className="text-sm text-gray-400 italic">Sin convocatoria cargada</p>
                 ) : (
                   <div className="space-y-1">
-                    {titulares.map((pp, i) => (
-                      <div key={pp.id} className="flex items-center gap-2 text-sm">
-                        <span className="w-5 text-right text-gray-400 shrink-0 text-xs">{pp.orden || i + 1}</span>
-                        <span className="font-medium text-gray-800">
-                          {pp.players?.name_visual || pp.players?.name || '—'}
-                        </span>
-                        {pp.posicion && (
-                          <span className="text-xs text-gray-500">({pp.posicion})</span>
-                        )}
-                      </div>
-                    ))}
+                    {titulares.map((pp, i) => {
+                      const pid = pp.player_id;
+                      const goles = golesCount(partido, pid);
+                      return (
+                        <div key={pp.id} className="flex items-center gap-2 text-sm">
+                          <span className="w-5 text-right text-gray-400 shrink-0 text-xs">{pp.orden || i + 1}</span>
+                          <span className="font-medium text-gray-800">
+                            {pp.players?.name_visual || pp.players?.name || '—'}
+                          </span>
+                          {pp.posicion && (
+                            <span className="text-xs text-gray-500">({pp.posicion})</span>
+                          )}
+                          {goles > 0 && (
+                            <span className="text-xs font-semibold text-green-700">⚽×{goles}</span>
+                          )}
+                          {tieneAmarilla(partido, pid) && <span title="Amarilla">🟨</span>}
+                          {tieneRoja(partido, pid) && <span title="Roja">🟥</span>}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -173,14 +189,23 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
                   <p className="text-sm text-gray-400 italic">Sin suplentes cargados</p>
                 ) : (
                   <div className="space-y-1">
-                    {suplentes.map((pp, i) => (
-                      <div key={pp.id} className="flex items-center gap-2 text-sm">
-                        <span className="w-5 text-right text-gray-400 shrink-0 text-xs">{pp.orden || i + 1}</span>
-                        <span className="font-medium text-gray-800">
-                          {pp.players?.name_visual || pp.players?.name || '—'}
-                        </span>
-                      </div>
-                    ))}
+                    {suplentes.map((pp, i) => {
+                      const pid = pp.player_id;
+                      const goles = golesCount(partido, pid);
+                      return (
+                        <div key={pp.id} className="flex items-center gap-2 text-sm">
+                          <span className="w-5 text-right text-gray-400 shrink-0 text-xs">{pp.orden || i + 1}</span>
+                          <span className="font-medium text-gray-800">
+                            {pp.players?.name_visual || pp.players?.name || '—'}
+                          </span>
+                          {goles > 0 && (
+                            <span className="text-xs font-semibold text-green-700">⚽×{goles}</span>
+                          )}
+                          {tieneAmarilla(partido, pid) && <span title="Amarilla">🟨</span>}
+                          {tieneRoja(partido, pid) && <span title="Roja">🟥</span>}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
