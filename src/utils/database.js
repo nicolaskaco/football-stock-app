@@ -947,7 +947,8 @@ export const database = {
           partido_players(
             id, tipo, posicion, orden,
             players(id, name, name_visual, categoria)
-          )
+          ),
+          partido_eventos(id, tipo, player_id, minuto)
         )
       `)
       .order('fecha', { ascending: false });
@@ -1011,13 +1012,14 @@ export const database = {
   },
 
   /**
-   * Actualiza los datos de un partido individual y su planilla de jugadores.
+   * Actualiza los datos de un partido individual, su planilla de jugadores y sus eventos.
    * @param {string} id - partido id
    * @param {object} partidoData - { escenario, cesped, goles_local, goles_visitante }
    * @param {Array}  titulares   - [{ player_id, posicion, orden }]  (max 11)
    * @param {Array}  suplentes   - [{ player_id, orden }]            (max 10)
+   * @param {Array}  eventos     - [{ player_id, tipo }] tipo: 'gol' | 'amarilla' | 'roja'
    */
-  async updatePartido(id, partidoData, titulares = [], suplentes = []) {
+  async updatePartido(id, partidoData, titulares = [], suplentes = [], eventos = []) {
     // 1. Actualizar datos del partido
     const { error: updateError } = await supabase
       .from('partidos')
@@ -1060,6 +1062,26 @@ export const database = {
         .from('partido_players')
         .insert(suplenteRecords);
       if (supError) throw supError;
+    }
+
+    // 5. Eliminar eventos existentes y reinsertar
+    const { error: delEvError } = await supabase
+      .from('partido_eventos')
+      .delete()
+      .eq('partido_id', id);
+    if (delEvError) throw delEvError;
+
+    if (eventos.length > 0) {
+      const evRecords = eventos.map(e => ({
+        partido_id: id,
+        player_id: e.player_id,
+        tipo: e.tipo,
+        minuto: e.minuto ?? null,
+      }));
+      const { error: evError } = await supabase
+        .from('partido_eventos')
+        .insert(evRecords);
+      if (evError) throw evError;
     }
   },
 };

@@ -46,6 +46,25 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
   const [titulares, setTitulares] = useState(buildInitialTitulares);
   const [suplentes, setSuplentes] = useState(buildInitialSuplentes);
 
+  // Eventos: mapa player_id → { goles, amarilla, roja }
+  const buildInitialEventos = () => {
+    const map = {};
+    (partido?.partido_eventos || []).forEach((e) => {
+      if (!map[e.player_id]) map[e.player_id] = { goles: 0, amarilla: false, roja: false };
+      if (e.tipo === 'gol')      map[e.player_id].goles++;
+      if (e.tipo === 'amarilla') map[e.player_id].amarilla = true;
+      if (e.tipo === 'roja')     map[e.player_id].roja = true;
+    });
+    return map;
+  };
+  const [eventosState, setEventosState] = useState(buildInitialEventos);
+
+  const updateEvento = (player_id, field, value) =>
+    setEventosState((prev) => ({
+      ...prev,
+      [player_id]: { goles: 0, amarilla: false, roja: false, ...prev[player_id], [field]: value },
+    }));
+
   // Filtro de categorías: por defecto solo la del partido
   const [categoriasActivas, setCategoriasActivas] = useState([categoria]);
 
@@ -97,11 +116,30 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
       goles_visitante: formData.goles_visitante === '' ? null : Number(formData.goles_visitante),
     };
 
-    onSubmit(data, titularesData, suplentesData);
+    const eventosData = [];
+    Object.entries(eventosState).forEach(([player_id, stats]) => {
+      for (let i = 0; i < (stats.goles || 0); i++)
+        eventosData.push({ player_id, tipo: 'gol' });
+      if (stats.amarilla) eventosData.push({ player_id, tipo: 'amarilla' });
+      if (stats.roja)     eventosData.push({ player_id, tipo: 'roja' });
+    });
+
+    onSubmit(data, titularesData, suplentesData, eventosData);
   };
 
   const titularesCount = titulares.filter((t) => t.player_id).length;
   const suplentesCount = suplentes.filter((s) => s.player_id).length;
+
+  // Lista de convocados con player_id para la sección de eventos
+  const convocados = [
+    ...titulares.filter((t) => t.player_id).map((t) => ({ player_id: t.player_id, tipo: 'T' })),
+    ...suplentes.filter((s) => s.player_id).map((s) => ({ player_id: s.player_id, tipo: 'S' })),
+  ];
+
+  const getPlayerName = (player_id) => {
+    const p = players.find((pl) => pl.id === player_id);
+    return p?.name_visual || p?.name || '—';
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -308,6 +346,75 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Goles y Tarjetas */}
+      <div>
+        <h3 className="font-semibold text-gray-800 mb-3">Goles y Tarjetas</h3>
+        {convocados.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4 bg-gray-50 rounded-lg">
+            Cargá la convocatoria primero
+          </p>
+        ) : (
+          <div className="rounded-lg border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Jugador</th>
+                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Goles</th>
+                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">🟨</th>
+                  <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">🟥</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {convocados.map(({ player_id, tipo }) => {
+                  const ev = eventosState[player_id] || { goles: 0, amarilla: false, roja: false };
+                  return (
+                    <tr key={player_id} className="hover:bg-gray-50">
+                      <td className="px-3 py-2">
+                        <span className="font-medium text-gray-800">{getPlayerName(player_id)}</span>
+                        <span className={`ml-2 text-xs px-1.5 py-0.5 rounded font-semibold ${tipo === 'T' ? 'bg-black text-yellow-400' : 'bg-gray-100 text-gray-600'}`}>
+                          {tipo}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateEvento(player_id, 'goles', Math.max(0, ev.goles - 1))}
+                            className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center"
+                          >−</button>
+                          <span className="w-4 text-center font-semibold text-gray-800">{ev.goles}</span>
+                          <button
+                            type="button"
+                            onClick={() => updateEvento(player_id, 'goles', ev.goles + 1)}
+                            className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center"
+                          >+</button>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={ev.amarilla}
+                          onChange={(e) => updateEvento(player_id, 'amarilla', e.target.checked)}
+                          className="w-4 h-4 accent-yellow-400 cursor-pointer"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={ev.roja}
+                          onChange={(e) => updateEvento(player_id, 'roja', e.target.checked)}
+                          className="w-4 h-4 accent-red-500 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <button
