@@ -75,7 +75,7 @@ const TopGoleadores = ({ stats }) => {
   if (top.length === 0) return null;
 
   const podiumOrder = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : [top[0]];
-  const heights = top.length === 3 ? ['h-20', 'h-28', 'h-16'] : ['h-24', 'h-20'];
+  const heights = top.length === 3 ? ['h-20', 'h-28', 'h-16'] : top.length === 2 ? ['h-20', 'h-28'] : ['h-28'];
   const medals = top.length === 1 ? ['🥇'] : ['🥈', '🥇', '🥉'];
 
   return (
