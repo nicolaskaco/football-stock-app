@@ -22,7 +22,7 @@ export const OverviewTab = ({
   distributions = [],
   inventory = [],
   canAccessWidgets = false,
-  canAccessRopa = false,
+  canSeeRopaWidgets = false,
   currentUser,
   jornadas = [],
   canViewPartidos = false,
@@ -79,7 +79,7 @@ export const OverviewTab = ({
       )}
 
       {/* Existing Stats Cards */}
-      {canAccessRopa && (
+      {canSeeRopaWidgets && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <StatCard 
             icon={<TrendingUp className="w-8 h-8" />} 
@@ -114,7 +114,7 @@ export const OverviewTab = ({
       )}
 
       {/* Keep MostDistributedWidget outside - it's inventory related, not player related */}
-      {canAccessRopa && (
+      {canSeeRopaWidgets && (
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
           <MostDistributedWidget distributions={distributions} inventory={inventory} />
         </div>

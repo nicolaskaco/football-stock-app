@@ -75,6 +75,7 @@ const App = () => {
             canViewComisiones: permissions?.can_view_comisiones || false,
             canEditComision: permissions?.can_edit_comisiones || false,
             canAccessRopa: permissions?.can_access_ropa || false,
+            canSeeRopaWidgets: permissions?.can_see_ropa_widgets || false,
             canViewPartidos: permissions?.can_view_partidos || false,
             canEditPartidos: permissions?.can_edit_partidos || false,
           });
@@ -182,6 +183,7 @@ const App = () => {
           canViewComisiones: permissions?.can_view_comisiones || false,
           canEditComision: permissions?.can_edit_comisiones || false,
           canAccessRopa: permissions?.can_access_ropa || false,
+          canSeeRopaWidgets: permissions?.can_see_ropa_widgets || false,
           canViewPartidos: permissions?.can_view_partidos || false,
           canEditPartidos: permissions?.can_edit_partidos || false,
         });
