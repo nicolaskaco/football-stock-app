@@ -404,9 +404,9 @@ const RivalesTable = ({ data, faseFiltro }) => {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className={`${thClass} text-center w-10`} onClick={() => handleSort('numero_jornada')}># <SortIcon col="numero_jornada" /></th>
+                {showFase && <th className={`${thClass} text-center`} onClick={() => handleSort('fase')}>Fase <SortIcon col="fase" /></th>}
                 <th className={thClass} onClick={() => handleSort('rival')}>Rival <SortIcon col="rival" /></th>
                 <th className={thClass} onClick={() => handleSort('fecha')}>Fecha <SortIcon col="fecha" /></th>
-                {showFase && <th className={`${thClass} text-center`} onClick={() => handleSort('fase')}>Fase <SortIcon col="fase" /></th>}
                 <th className={`${thClass} text-center`} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('escenario')}>Esc <SortIcon col="escenario" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('resultado')}>Resultado <SortIcon col="resultado" /></th>
@@ -417,9 +417,9 @@ const RivalesTable = ({ data, faseFiltro }) => {
               {sorted.map((row) => (
                 <tr key={row.partido_id} className="hover:bg-gray-50">
                   <td className="px-2 py-2 text-center text-xs text-gray-400 w-10">{row.numero_jornada ?? '—'}</td>
+                  {showFase && <td className="px-3 py-2 text-center text-xs text-gray-500">{row.fase || '—'}</td>}
                   <td className="px-3 py-2 font-medium text-gray-900">{row.rival}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">{formatDate(row.fecha)}</td>
-                  {showFase && <td className="px-3 py-2 text-center text-xs text-gray-500">{row.fase || '—'}</td>}
                   <td className="px-3 py-2 text-center text-xs text-gray-600">{row.categoria}</td>
                   <td className="px-3 py-2 text-center">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
