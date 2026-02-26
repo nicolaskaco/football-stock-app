@@ -17,6 +17,7 @@ import { ChangeRequestsTab } from './ChangeRequestsTab';
 import { RivalesTab } from './RivalesTab';
 import { PartidosTab } from './PartidosTab';
 import { ConfiguracionTab } from './ConfiguracionTab';
+import { EstadisticasTab } from './EstadisticasTab';
 
 export const AdminDashboard = ({
   employees,
@@ -82,6 +83,7 @@ export const AdminDashboard = ({
     { id: 'rivales',        label: 'Rivales',         show: canViewPartidos && tabEnabled('rivales_tab_enabled') },
     { id: 'partidos',       label: 'Partidos',        show: canViewPartidos },
     { id: 'reports',        label: 'Reportes',        show: canAccessRopa && tabEnabled('reportes_tab_enabled') },
+    { id: 'estadisticas',   label: 'Estadísticas',   show: canViewPartidos && tabEnabled('estadisticas_tab_enabled') },
     { id: 'configuracion',  label: 'Configuración',  show: isAdmin },
   ];
 
@@ -255,6 +257,12 @@ export const AdminDashboard = ({
             distributions={distributions}
             employees={employees}
             inventory={inventory}
+          />
+        )}
+        {activeTab === 'estadisticas' && canViewPartidos && (
+          <EstadisticasTab
+            jornadas={jornadas}
+            players={players}
           />
         )}
         {activeTab === 'configuracion' && isAdmin && (
