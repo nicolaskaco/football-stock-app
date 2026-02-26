@@ -22,14 +22,22 @@ const buildStats = (jornadas, players, categoriaFiltro) => {
       if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
 
       (partido.partido_players || []).forEach((pp) => {
-        if (!map[pp.player_id]) return;
+        if (!pp.player_id) return;
+        if (!map[pp.player_id]) {
+          // Player not in players prop (e.g. filtered out) — build from nested join data
+          map[pp.player_id] = {
+            name_visual: pp.players?.name_visual || pp.players?.name || '?',
+            categoria: pp.players?.categoria || '—',
+            pj: 0, titular: 0, suplente: 0, goles: 0, amarillas: 0, rojas: 0,
+          };
+        }
         map[pp.player_id].pj++;
         if (pp.tipo === 'titular')  map[pp.player_id].titular++;
         if (pp.tipo === 'suplente') map[pp.player_id].suplente++;
       });
 
       (partido.partido_eventos || []).forEach((e) => {
-        if (!map[e.player_id]) return;
+        if (!e.player_id || !map[e.player_id]) return;
         if (e.tipo === 'gol')      map[e.player_id].goles++;
         if (e.tipo === 'amarilla') map[e.player_id].amarillas++;
         if (e.tipo === 'roja')     map[e.player_id].rojas++;
