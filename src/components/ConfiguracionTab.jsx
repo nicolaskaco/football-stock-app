@@ -28,7 +28,7 @@ const SettingToggle = ({ label, description, enabled, onToggle, loading }) => (
 export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
   const { execute, loading } = useMutation();
 
-  const rivalesEnabled = appSettings.rivales_tab_enabled === 'true';
+  const s = (key) => appSettings[key] === 'true';
 
   const handleToggle = (key, currentValue) =>
     execute(
@@ -40,6 +40,29 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
       'Configuración actualizada'
     );
 
+  const TABS = [
+    {
+      key: 'inventario_tab_enabled',
+      label: 'Tab Inventario',
+      description: 'Gestión del stock de ropa e indumentaria.',
+    },
+    {
+      key: 'distribuciones_tab_enabled',
+      label: 'Tab Distribuciones',
+      description: 'Registro de entregas de ropa a funcionarios.',
+    },
+    {
+      key: 'reportes_tab_enabled',
+      label: 'Tab Reportes',
+      description: 'Exportación de datos a Excel.',
+    },
+    {
+      key: 'rivales_tab_enabled',
+      label: 'Tab Rivales',
+      description: 'Catálogo de rivales para el campeonato juvenil.',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -50,13 +73,16 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
       </div>
 
       <div className="bg-white rounded-lg shadow divide-y divide-gray-100 px-6">
-        <SettingToggle
-          label="Tab Rivales"
-          description="Cuando está activo, todos los usuarios con acceso a Partidos pueden ver y gestionar el catálogo de rivales."
-          enabled={rivalesEnabled}
-          onToggle={() => handleToggle('rivales_tab_enabled', rivalesEnabled)}
-          loading={loading}
-        />
+        {TABS.map(({ key, label, description }) => (
+          <SettingToggle
+            key={key}
+            label={label}
+            description={description}
+            enabled={s(key)}
+            onToggle={() => handleToggle(key, s(key))}
+            loading={loading}
+          />
+        ))}
       </div>
     </div>
   );

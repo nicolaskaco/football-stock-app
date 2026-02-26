@@ -65,24 +65,24 @@ export const AdminDashboard = ({
   const canSeeRopaWidgets = currentUser?.canSeeRopaWidgets || false;
   const canViewPartidos = currentUser?.canViewPartidos || false;
   const isAdmin = currentUser?.role === 'admin';
-  const rivalesTabEnabled = appSettings.rivales_tab_enabled === 'true';
+  const tabEnabled = (key) => appSettings[key] === 'true';
 
   // Rest of your code stays the same...
   const tabs = [
-    { id: 'overview', label: 'Resumen', show: true },
-    { id: 'inventory', label: 'Inventario', show: canAccessRopa },
-    { id: 'employees', label: 'Funcionarios', show: canAccessRopa },
-    { id: 'players', label: 'Jugadores', show: canAccessPlayers },
-    { id: 'players_viatico', label: 'Viáticos', show: canAccessViaticos },
-    { id: 'change_requests', label: 'Solicitudes', show: canViewChangeRequests },
-    { id: 'distributions', label: 'Distribuciones', show: canAccessRopa },
-    { id: 'dirigentes', label: 'Dirigentes', show: canAccessDirigentes },
-    { id: 'torneos', label: 'Torneos', show: canViewTorneo },
-    { id: 'comisiones', label: 'Comisiones', show: canViewComisiones },
-    { id: 'rivales', label: 'Rivales', show: canViewPartidos && rivalesTabEnabled },
-    { id: 'partidos', label: 'Partidos', show: canViewPartidos },
-    { id: 'reports', label: 'Reportes', show: canAccessRopa },
-    { id: 'configuracion', label: 'Configuración', show: isAdmin },
+    { id: 'overview',       label: 'Resumen',        show: true },
+    { id: 'inventory',      label: 'Inventario',     show: canAccessRopa && tabEnabled('inventario_tab_enabled') },
+    { id: 'employees',      label: 'Funcionarios',   show: canAccessRopa },
+    { id: 'players',        label: 'Jugadores',      show: canAccessPlayers },
+    { id: 'players_viatico',label: 'Viáticos',       show: canAccessViaticos },
+    { id: 'change_requests',label: 'Solicitudes',    show: canViewChangeRequests },
+    { id: 'distributions',  label: 'Distribuciones', show: canAccessRopa && tabEnabled('distribuciones_tab_enabled') },
+    { id: 'dirigentes',     label: 'Dirigentes',     show: canAccessDirigentes },
+    { id: 'torneos',        label: 'Torneos',         show: canViewTorneo },
+    { id: 'comisiones',     label: 'Comisiones',     show: canViewComisiones },
+    { id: 'rivales',        label: 'Rivales',         show: canViewPartidos && tabEnabled('rivales_tab_enabled') },
+    { id: 'partidos',       label: 'Partidos',        show: canViewPartidos },
+    { id: 'reports',        label: 'Reportes',        show: canAccessRopa && tabEnabled('reportes_tab_enabled') },
+    { id: 'configuracion',  label: 'Configuración',  show: isAdmin },
   ];
 
   // Filter visible tabs
