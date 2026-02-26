@@ -57,6 +57,11 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
       description: 'Exportación de datos a Excel.',
     },
     {
+      key: 'estadisticas_tab_enabled',
+      label: 'Tab Estadísticas',
+      description: 'Estadísticas de jugadores: goles, tarjetas, partidos.',
+    },
+    {
       key: 'rivales_tab_enabled',
       label: 'Tab Rivales',
       description: 'Catálogo de rivales para el campeonato juvenil.',
