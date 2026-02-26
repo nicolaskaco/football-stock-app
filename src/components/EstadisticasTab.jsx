@@ -151,6 +151,52 @@ const Filters = ({ search, onSearch, categoriaFiltro, onCategoriaFiltro }) => (
   </div>
 );
 
+const GeneralTable = ({ data }) => {
+  const { handleSort, sortFn, SortIcon } = useTableSort('pj');
+  const sorted = sortFn(data);
+
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      {sorted.length === 0 ? (
+        <p className="text-center text-gray-500 py-12">No hay datos para mostrar.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className={thClass} onClick={() => handleSort('name_visual')}>Jugador <SortIcon col="name_visual" /></th>
+                <th className={thClass} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('pj')}>PJ <SortIcon col="pj" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('titular')}>T <SortIcon col="titular" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('suplente')}>S <SortIcon col="suplente" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('goles')}>Goles <SortIcon col="goles" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('amarillas')}>🟨 <SortIcon col="amarillas" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('rojas')}>🟥 <SortIcon col="rojas" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('golesRatio')}>G/PJ <SortIcon col="golesRatio" /></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sorted.map((s) => (
+                <tr key={s.id} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 font-medium text-gray-900">{s.name_visual}</td>
+                  <td className="px-3 py-2 text-gray-500 text-xs">{s.categoria}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{s.pj}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{s.titular}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{s.suplente}</td>
+                  <td className="px-3 py-2 text-center font-semibold text-green-700">{s.goles > 0 ? s.goles : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{s.amarillas > 0 ? s.amarillas : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{s.rojas > 0 ? s.rojas : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.goles > 0 ? s.golesRatio : <span className="text-gray-300">—</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const GoleadoresTable = ({ data }) => {
   const { handleSort, sortFn, SortIcon } = useTableSort('goles');
   const sorted = sortFn(data);
@@ -238,7 +284,7 @@ const TarjetasTable = ({ data }) => {
 };
 
 export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
-  const [subTab, setSubTab] = useState('goleadores');
+  const [subTab, setSubTab] = useState('general');
   const [categoriaFiltro, setCategoriaFiltro] = useState(null);
   const [search, setSearch] = useState('');
 
@@ -271,8 +317,9 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
 
       {/* Sub-tabs */}
       <div className="flex gap-2">
+        {subTabBtn('general',    'General')}
         {subTabBtn('goleadores', 'Goleadores')}
-        {subTabBtn('tarjetas', 'Tarjetas')}
+        {subTabBtn('tarjetas',   'Tarjetas')}
       </div>
 
       {subTab === 'goleadores' && <TopGoleadores stats={allStats} />}
@@ -284,7 +331,8 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
         onCategoriaFiltro={setCategoriaFiltro}
       />
 
-      {subTab === 'goleadores' && <GoleadoresTable data={filtered} />}
+      {subTab === 'general'    && <GeneralTable   data={filtered} />}
+      {subTab === 'goleadores' && <GoleadoresTable data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'   && <TarjetasTable   data={filtered} />}
     </div>
   );
