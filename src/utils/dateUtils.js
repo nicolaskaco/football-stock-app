@@ -12,11 +12,9 @@ const LOCALE = 'es-UY';
  */
 export function formatDate(isoString) {
   if (!isoString) return '-';
-  return new Date(isoString).toLocaleDateString(LOCALE, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  const [year, month, day] = isoString.split('T')[0].split('-');
+  return new Date(Number(year), Number(month) - 1, Number(day))
+    .toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 /**
@@ -25,11 +23,9 @@ export function formatDate(isoString) {
  */
 export function formatDateLong(isoString) {
   if (!isoString) return '-';
-  return new Date(isoString).toLocaleDateString(LOCALE, {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+  const [year, month, day] = isoString.split('T')[0].split('-');
+  return new Date(Number(year), Number(month) - 1, Number(day))
+    .toLocaleDateString(LOCALE, { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
 /**
