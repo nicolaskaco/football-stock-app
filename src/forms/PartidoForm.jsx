@@ -65,15 +65,8 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
       [player_id]: { goles: 0, amarilla: false, roja: false, ...prev[player_id], [field]: value },
     }));
 
-  // Filtro de categorías: incluir las de jugadores ya guardados en el lineup
-  const buildInitialCategoriasActivas = () => {
-    const cats = new Set([categoria]);
-    (partido?.partido_players || []).forEach((pp) => {
-      if (pp.players?.categoria) cats.add(pp.players.categoria);
-    });
-    return [...cats];
-  };
-  const [categoriasActivas, setCategoriasActivas] = useState(buildInitialCategoriasActivas);
+  // Filtro de categorías: por defecto solo la del partido
+  const [categoriasActivas, setCategoriasActivas] = useState([categoria]);
 
   const toggleCategoria = (cat) => {
     setCategoriasActivas((prev) =>
@@ -93,6 +86,14 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
       if (aPropia !== bPropia) return aPropia - bPropia;
       return (a.name_visual || a.name).localeCompare(b.name_visual || b.name);
     });
+
+  // Para slots pre-cargados con jugadores de otra categoría, inyectar solo ese jugador
+  const getOptionsForSlot = (currentPlayerId) => {
+    if (!currentPlayerId) return jugadoresCategoria;
+    if (jugadoresCategoria.some((p) => p.id === currentPlayerId)) return jugadoresCategoria;
+    const savedPlayer = players.find((p) => p.id === currentPlayerId);
+    return savedPlayer ? [...jugadoresCategoria, savedPlayer] : jugadoresCategoria;
+  };
 
   // IDs ya usados en titulares o suplentes (para evitar duplicados)
   const usedIds = new Set([
@@ -279,7 +280,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
                 className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Jugador —</option>
-                {jugadoresCategoria.map((p) => (
+                {getOptionsForSlot(t.player_id).map((p) => (
                   <option
                     key={p.id}
                     value={p.id}
@@ -331,7 +332,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
                 className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Jugador —</option>
-                {jugadoresCategoria.map((p) => (
+                {getOptionsForSlot(s.player_id).map((p) => (
                   <option
                     key={p.id}
                     value={p.id}
