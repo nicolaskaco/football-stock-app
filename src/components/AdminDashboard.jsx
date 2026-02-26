@@ -79,7 +79,7 @@ export const AdminDashboard = ({
     { id: 'dirigentes', label: 'Dirigentes', show: canAccessDirigentes },
     { id: 'torneos', label: 'Torneos', show: canViewTorneo },
     { id: 'comisiones', label: 'Comisiones', show: canViewComisiones },
-    { id: 'rivales', label: 'Rivales', show: canViewPartidos && (rivalesTabEnabled || isAdmin) },
+    { id: 'rivales', label: 'Rivales', show: canViewPartidos && rivalesTabEnabled },
     { id: 'partidos', label: 'Partidos', show: canViewPartidos },
     { id: 'reports', label: 'Reportes', show: canAccessRopa },
     { id: 'configuracion', label: 'Configuración', show: isAdmin },
