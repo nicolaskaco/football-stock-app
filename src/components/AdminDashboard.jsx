@@ -60,6 +60,7 @@ export const AdminDashboard = ({
   //const canEditComision = currentUser?.canEditComision || false;
   const canViewChangeRequests = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria'].includes(currentUser?.role);
   const canAccessRopa = currentUser?.canAccessRopa || false;
+  const canSeeRopaWidgets = currentUser?.canSeeRopaWidgets || false;
   const canViewPartidos = currentUser?.canViewPartidos || false;
 
   // Rest of your code stays the same...
@@ -136,7 +137,7 @@ export const AdminDashboard = ({
             distributions={distributions}
             inventory={inventory}
             canAccessWidgets={canAccessWidgets}
-            canAccessRopa={canAccessRopa}
+            canSeeRopaWidgets={canSeeRopaWidgets}
             currentUser={currentUser}
             jornadas={jornadas}
             canViewPartidos={canViewPartidos}
