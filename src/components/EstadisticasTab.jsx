@@ -7,7 +7,7 @@ const buildStats = (jornadas, players, categoriaFiltro) => {
   players.forEach((p) => {
     map[p.id] = {
       name_visual: p.name_visual || p.name,
-      categoria: p.categoria,
+      categoriasSet: new Set(),
       pj: 0,
       titular: 0,
       suplente: 0,
@@ -27,10 +27,11 @@ const buildStats = (jornadas, players, categoriaFiltro) => {
           // Player not in players prop (e.g. filtered out) — build from nested join data
           map[pp.player_id] = {
             name_visual: pp.players?.name_visual || pp.players?.name || '?',
-            categoria: pp.players?.categoria || '—',
+            categoriasSet: new Set(),
             pj: 0, titular: 0, suplente: 0, goles: 0, amarillas: 0, rojas: 0,
           };
         }
+        map[pp.player_id].categoriasSet.add(partido.categoria);
         map[pp.player_id].pj++;
         if (pp.tipo === 'titular')  map[pp.player_id].titular++;
         if (pp.tipo === 'suplente') map[pp.player_id].suplente++;
@@ -46,12 +47,19 @@ const buildStats = (jornadas, players, categoriaFiltro) => {
   });
 
   return Object.entries(map)
-    .map(([id, s]) => ({
-      id,
-      ...s,
-      golesRatio:     s.pj > 0 ? (s.goles / s.pj).toFixed(2)     : '0.00',
-      amarillasRatio: s.pj > 0 ? (s.amarillas / s.pj).toFixed(2) : '0.00',
-    }))
+    .map(([id, s]) => {
+      const { categoriasSet, ...rest } = s;
+      const categoria = CATEGORIAS_PARTIDO
+        .filter((c) => categoriasSet.has(c))
+        .join('/') || '—';
+      return {
+        id,
+        ...rest,
+        categoria,
+        golesRatio:     s.pj > 0 ? (s.goles / s.pj).toFixed(2)     : '0.00',
+        amarillasRatio: s.pj > 0 ? (s.amarillas / s.pj).toFixed(2) : '0.00',
+      };
+    })
     .filter((s) => s.pj > 0 || s.goles > 0 || s.amarillas > 0 || s.rojas > 0);
 };
 
