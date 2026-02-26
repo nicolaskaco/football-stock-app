@@ -100,6 +100,13 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
   const RESULT_DOT = { win: 'bg-green-500', loss: 'bg-red-500', draw: 'bg-gray-400' };
   const RESULT_LABEL = { win: 'G', loss: 'P', draw: 'E' };
 
+  const FASES_ORDER = ['Apertura', 'Clausura'];
+  const sortedJornadas = [...jornadas].sort((a, b) => {
+    const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
+    if (faseDiff !== 0) return faseDiff;
+    return (a.numero_jornada ?? 999) - (b.numero_jornada ?? 999);
+  });
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -150,7 +157,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
           )}
         </div>
       ) : view === 'calendario' ? (
-        <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} />
+        <CalendarioView jornadas={sortedJornadas} onJornadaClick={openDetail} />
       ) : (
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="w-full">
@@ -169,7 +176,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {jornadas.map((jornada) => (
+              {sortedJornadas.map((jornada) => (
                 <tr key={jornada.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     {jornada.numero_jornada ? (
