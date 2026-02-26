@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
-import { CATEGORIAS_PARTIDO } from '../utils/constants';
+import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
+import { formatDate } from '../utils/dateUtils';
+
+// ─── Player stats helpers ────────────────────────────────────────────────────
 
 const buildStats = (jornadas, players, categoriaFiltro) => {
   const map = {};
@@ -24,7 +27,6 @@ const buildStats = (jornadas, players, categoriaFiltro) => {
       (partido.partido_players || []).forEach((pp) => {
         if (!pp.player_id) return;
         if (!map[pp.player_id]) {
-          // Player not in players prop (e.g. filtered out) — build from nested join data
           map[pp.player_id] = {
             name_visual: pp.players?.name_visual || pp.players?.name || '?',
             categoriasSet: new Set(),
@@ -63,40 +65,78 @@ const buildStats = (jornadas, players, categoriaFiltro) => {
     .filter((s) => s.pj > 0 || s.goles > 0 || s.amarillas > 0 || s.rojas > 0);
 };
 
+// ─── Rivales stats helpers ───────────────────────────────────────────────────
+
+const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
+  const rows = [];
+  jornadas.forEach((jornada) => {
+    if (faseFiltro && jornada.fase !== faseFiltro) return;
+    (jornada.partidos || []).forEach((partido) => {
+      if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
+
+      const capGoles   = partido.escenario === 'Local' ? partido.goles_local    : partido.goles_visitante;
+      const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+
+      let resultado = null;
+      if (capGoles != null && rivalGoles != null) {
+        resultado = capGoles > rivalGoles ? 'G' : capGoles < rivalGoles ? 'P' : 'E';
+      }
+
+      // Agrupar goles por jugador
+      const golesMap = {};
+      (partido.partido_eventos || [])
+        .filter((e) => e.tipo === 'gol')
+        .forEach((e) => {
+          const pp = (partido.partido_players || []).find((p) => p.player_id === e.player_id);
+          const name = pp?.players?.name_visual || pp?.players?.name || '?';
+          golesMap[e.player_id] = { name, count: (golesMap[e.player_id]?.count || 0) + 1 };
+        });
+
+      rows.push({
+        rival: jornada.rivales?.name || '—',
+        rival_id: jornada.rival_id,
+        fecha: jornada.fecha,
+        fase: jornada.fase,
+        categoria: partido.categoria,
+        escenario: partido.escenario,
+        capGoles,
+        rivalGoles,
+        resultado,
+        goleadores: Object.values(golesMap),
+        partido_id: partido.id,
+      });
+    });
+  });
+  return rows;
+};
+
+const buildRivalesAgregado = (rows) => {
+  const map = {};
+  rows.forEach((row) => {
+    const key = `${row.rival_id}_${row.categoria}`;
+    if (!map[key]) {
+      map[key] = { rival: row.rival, categoria: row.categoria, pj: 0, g: 0, e: 0, p: 0, gf: 0, ga: 0 };
+    }
+    const entry = map[key];
+    entry.pj++;
+    if (row.resultado === 'G') entry.g++;
+    else if (row.resultado === 'E') entry.e++;
+    else if (row.resultado === 'P') entry.p++;
+    if (row.capGoles != null)   entry.gf += row.capGoles;
+    if (row.rivalGoles != null) entry.ga += row.rivalGoles;
+  });
+  return Object.values(map).map((e) => ({ ...e, dif: e.gf - e.ga }));
+};
+
+// ─── Shared UI helpers ───────────────────────────────────────────────────────
+
 const SORT_DEFAULTS = {
   pj: 'desc', titular: 'desc', suplente: 'desc',
   goles: 'desc', amarillas: 'desc', rojas: 'desc',
   golesRatio: 'desc', amarillasRatio: 'desc',
   name_visual: 'asc', categoria: 'asc',
-};
-
-const TopGoleadores = ({ stats }) => {
-  const top = [...stats].sort((a, b) => b.goles - a.goles).filter((s) => s.goles > 0).slice(0, 3);
-  if (top.length === 0) return null;
-
-  const podiumOrder = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : [top[0]];
-  const heights = top.length === 3 ? ['h-20', 'h-28', 'h-16'] : top.length === 2 ? ['h-20', 'h-28'] : ['h-28'];
-  const medals = top.length === 1 ? ['🥇'] : ['🥈', '🥇', '🥉'];
-
-  return (
-    <div className="bg-white rounded-lg shadow p-6 mb-2">
-      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Top Goleadores</h3>
-      <div className="flex items-end justify-center gap-4">
-        {podiumOrder.map((player, i) => (
-          <div key={player.id} className="flex flex-col items-center gap-2">
-            <span className="text-2xl">{medals[i]}</span>
-            <div className="text-center">
-              <p className="font-bold text-gray-900 text-sm">{player.name_visual}</p>
-              <p className="text-xs text-gray-500">{player.categoria}</p>
-            </div>
-            <div className={`w-20 ${heights[i]} bg-gradient-to-t from-gray-900 to-gray-700 rounded-t-lg flex items-center justify-center`}>
-              <span className="text-yellow-400 font-bold text-xl">⚽ {player.goles}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  rival: 'asc', fecha: 'desc',
+  g: 'desc', e: 'desc', p: 'desc', gf: 'desc', ga: 'asc', dif: 'desc',
 };
 
 const useTableSort = (initialKey, initialDir = 'desc') => {
@@ -130,6 +170,8 @@ const useTableSort = (initialKey, initialDir = 'desc') => {
 
 const thClass = 'px-3 py-2 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap';
 
+// ─── Player filter ───────────────────────────────────────────────────────────
+
 const Filters = ({ search, onSearch, categoriaFiltro, onCategoriaFiltro }) => (
   <div className="flex flex-col sm:flex-row gap-3">
     <input
@@ -158,6 +200,77 @@ const Filters = ({ search, onSearch, categoriaFiltro, onCategoriaFiltro }) => (
     </div>
   </div>
 );
+
+// ─── Rivales filter ──────────────────────────────────────────────────────────
+
+const ResultadosFilters = ({ faseFiltro, onFaseFiltro, categoriaFiltro, onCategoriaFiltro }) => {
+  const btnClass = (active) =>
+    `px-3 py-1.5 rounded-lg text-sm font-medium ${active ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex gap-2 flex-wrap">
+        <span className="text-xs text-gray-500 self-center mr-1">Fase:</span>
+        <button onClick={() => onFaseFiltro(null)} className={btnClass(!faseFiltro)}>Todas</button>
+        {FASES_CAMPEONATO.map((f) => (
+          <button key={f} onClick={() => onFaseFiltro(f === faseFiltro ? null : f)} className={btnClass(faseFiltro === f)}>{f}</button>
+        ))}
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        <span className="text-xs text-gray-500 self-center mr-1">Cat:</span>
+        <button onClick={() => onCategoriaFiltro(null)} className={btnClass(!categoriaFiltro)}>Todas</button>
+        {CATEGORIAS_PARTIDO.map((cat) => (
+          <button key={cat} onClick={() => onCategoriaFiltro(cat === categoriaFiltro ? null : cat)} className={btnClass(categoriaFiltro === cat)}>{cat}</button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ─── Result badge helper ─────────────────────────────────────────────────────
+
+const ResultadoBadge = ({ resultado, capGoles, rivalGoles }) => {
+  if (capGoles == null || rivalGoles == null) {
+    return <span className="text-gray-400 text-xs">Sin resultado</span>;
+  }
+  const text = `${capGoles} - ${rivalGoles}`;
+  const cls =
+    resultado === 'G' ? 'bg-green-100 text-green-800' :
+    resultado === 'P' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-700';
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${cls}`}>{text}</span>;
+};
+
+// ─── Player tables ───────────────────────────────────────────────────────────
+
+const TopGoleadores = ({ stats }) => {
+  const top = [...stats].sort((a, b) => b.goles - a.goles).filter((s) => s.goles > 0).slice(0, 3);
+  if (top.length === 0) return null;
+
+  const podiumOrder = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : [top[0]];
+  const heights = top.length === 3 ? ['h-20', 'h-28', 'h-16'] : top.length === 2 ? ['h-20', 'h-28'] : ['h-28'];
+  const medals = top.length === 1 ? ['🥇'] : ['🥈', '🥇', '🥉'];
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6 mb-2">
+      <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Top Goleadores</h3>
+      <div className="flex items-end justify-center gap-4">
+        {podiumOrder.map((player, i) => (
+          <div key={player.id} className="flex flex-col items-center gap-2">
+            <span className="text-2xl">{medals[i]}</span>
+            <div className="text-center">
+              <p className="font-bold text-gray-900 text-sm">{player.name_visual}</p>
+              <p className="text-xs text-gray-500">{player.categoria}</p>
+            </div>
+            <div className={`w-20 ${heights[i]} bg-gradient-to-t from-gray-900 to-gray-700 rounded-t-lg flex items-center justify-center`}>
+              <span className="text-yellow-400 font-bold text-xl">⚽ {player.goles}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const GeneralTable = ({ data }) => {
   const { handleSort, sortFn, SortIcon } = useTableSort('pj');
@@ -291,10 +404,125 @@ const TarjetasTable = ({ data }) => {
   );
 };
 
+// ─── Rivales tables ──────────────────────────────────────────────────────────
+
+const RivalesTable = ({ data }) => {
+  const { handleSort, sortFn, SortIcon } = useTableSort('rival', 'asc');
+  const sorted = sortFn(data);
+
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      {sorted.length === 0 ? (
+        <p className="text-center text-gray-500 py-12">No hay datos para mostrar.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className={thClass} onClick={() => handleSort('rival')}>Rival <SortIcon col="rival" /></th>
+                <th className={thClass} onClick={() => handleSort('fecha')}>Fecha <SortIcon col="fecha" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('escenario')}>Esc <SortIcon col="escenario" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('resultado')}>Resultado <SortIcon col="resultado" /></th>
+                <th className={thClass}>Goles CAP</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sorted.map((row) => (
+                <tr key={row.partido_id} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 font-medium text-gray-900">{row.rival}</td>
+                  <td className="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">{formatDate(row.fecha)}</td>
+                  <td className="px-3 py-2 text-center text-xs text-gray-600">{row.categoria}</td>
+                  <td className="px-3 py-2 text-center">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                      {row.escenario}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-center">
+                    <ResultadoBadge resultado={row.resultado} capGoles={row.capGoles} rivalGoles={row.rivalGoles} />
+                  </td>
+                  <td className="px-3 py-2 text-sm text-gray-700">
+                    {row.goleadores.length === 0
+                      ? <span className="text-gray-300">—</span>
+                      : row.goleadores.map((g) => (
+                          <span key={g.name} className="mr-2 whitespace-nowrap">
+                            {g.name}{g.count > 1 && <span className="text-green-700 font-semibold"> ⚽×{g.count}</span>}
+                            {g.count === 1 && <span className="text-green-700"> ⚽</span>}
+                          </span>
+                        ))
+                    }
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const RivalesCategoriaTable = ({ data }) => {
+  const { handleSort, sortFn, SortIcon } = useTableSort('rival', 'asc');
+  const sorted = sortFn(data);
+
+  const difClass = (dif) =>
+    dif > 0 ? 'text-green-700 font-semibold' : dif < 0 ? 'text-red-600 font-semibold' : 'text-gray-500';
+
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      {sorted.length === 0 ? (
+        <p className="text-center text-gray-500 py-12">No hay datos para mostrar.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className={thClass} onClick={() => handleSort('rival')}>Rival <SortIcon col="rival" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('pj')}>PJ <SortIcon col="pj" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('g')}>G <SortIcon col="g" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('e')}>E <SortIcon col="e" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('p')}>P <SortIcon col="p" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('gf')}>GF <SortIcon col="gf" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('ga')}>GA <SortIcon col="ga" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('dif')}>Dif <SortIcon col="dif" /></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sorted.map((row, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 font-medium text-gray-900">{row.rival}</td>
+                  <td className="px-3 py-2 text-center text-xs text-gray-600">{row.categoria}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{row.pj}</td>
+                  <td className="px-3 py-2 text-center font-semibold text-green-700">{row.g}</td>
+                  <td className="px-3 py-2 text-center text-gray-500">{row.e}</td>
+                  <td className="px-3 py-2 text-center font-semibold text-red-600">{row.p}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{row.gf}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{row.ga}</td>
+                  <td className={`px-3 py-2 text-center ${difClass(row.dif)}`}>{row.dif > 0 ? `+${row.dif}` : row.dif}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Main component ──────────────────────────────────────────────────────────
+
 export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
   const [subTab, setSubTab] = useState('general');
+
+  // Jugadores filters
   const [categoriaFiltro, setCategoriaFiltro] = useState(null);
   const [search, setSearch] = useState('');
+
+  // Rivales filters
+  const [faseFiltro, setFaseFiltro] = useState(null);
+  const [categoriaFiltroRivales, setCategoriaFiltroRivales] = useState(null);
 
   const allStats = useMemo(
     () => buildStats(jornadas, players, categoriaFiltro),
@@ -305,6 +533,16 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
     const q = search.trim().toLowerCase();
     return allStats.filter((s) => !q || s.name_visual.toLowerCase().includes(q));
   }, [allStats, search]);
+
+  const partidoRows = useMemo(
+    () => buildPartidoRows(jornadas, categoriaFiltroRivales, faseFiltro),
+    [jornadas, categoriaFiltroRivales, faseFiltro]
+  );
+
+  const rivalesAgregado = useMemo(() => buildRivalesAgregado(partidoRows), [partidoRows]);
+
+  const isJugadoresTab = ['general', 'goleadores', 'tarjetas'].includes(subTab);
+  const isRivalesTab   = ['rivales', 'rivales_cat'].includes(subTab);
 
   const subTabBtn = (id, label) => (
     <button
@@ -320,28 +558,45 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Estadísticas</h2>
-        <p className="text-sm text-gray-500 mt-1">Rendimiento de jugadores por partidos.</p>
+        <p className="text-sm text-gray-500 mt-1">Rendimiento de jugadores y resultados frente a rivales.</p>
       </div>
 
       {/* Sub-tabs */}
-      <div className="flex gap-2">
-        {subTabBtn('general',    'General')}
-        {subTabBtn('goleadores', 'Goleadores')}
-        {subTabBtn('tarjetas',   'Tarjetas')}
+      <div className="flex gap-2 flex-wrap">
+        {subTabBtn('general',     'General')}
+        {subTabBtn('goleadores',  'Goleadores')}
+        {subTabBtn('tarjetas',    'Tarjetas')}
+        {subTabBtn('rivales',     'Por Rival')}
+        {subTabBtn('rivales_cat', 'Por Rival y Cat')}
       </div>
 
+      {/* Top goleadores podium */}
       {subTab === 'goleadores' && <TopGoleadores stats={allStats} />}
 
-      <Filters
-        search={search}
-        onSearch={setSearch}
-        categoriaFiltro={categoriaFiltro}
-        onCategoriaFiltro={setCategoriaFiltro}
-      />
+      {/* Filters */}
+      {isJugadoresTab && (
+        <Filters
+          search={search}
+          onSearch={setSearch}
+          categoriaFiltro={categoriaFiltro}
+          onCategoriaFiltro={setCategoriaFiltro}
+        />
+      )}
+      {isRivalesTab && (
+        <ResultadosFilters
+          faseFiltro={faseFiltro}
+          onFaseFiltro={setFaseFiltro}
+          categoriaFiltro={categoriaFiltroRivales}
+          onCategoriaFiltro={setCategoriaFiltroRivales}
+        />
+      )}
 
-      {subTab === 'general'    && <GeneralTable   data={filtered} />}
-      {subTab === 'goleadores' && <GoleadoresTable data={filtered.filter((s) => s.goles > 0)} />}
-      {subTab === 'tarjetas'   && <TarjetasTable   data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
+      {/* Tables */}
+      {subTab === 'general'      && <GeneralTable          data={filtered} />}
+      {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
+      {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
+      {subTab === 'rivales'      && <RivalesTable           data={partidoRows} />}
+      {subTab === 'rivales_cat'  && <RivalesCategoriaTable  data={rivalesAgregado} />}
     </div>
   );
 };
