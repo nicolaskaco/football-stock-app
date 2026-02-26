@@ -34,6 +34,7 @@ const App = () => {
   const [comisiones, setComisiones] = useState([]);
   const [rivales, setRivales] = useState([]);
   const [jornadas, setJornadas] = useState([]);
+  const [appSettings, setAppSettings] = useState({});
 
   useEffect(() => {
     checkSession();
@@ -98,6 +99,7 @@ const App = () => {
   const loadComisiones = async () => { const d = await database.getComisiones(); setComisiones(d || []); };
   const loadRivales = async () => { const d = await database.getRivales(); setRivales(d || []); };
   const loadJornadas = async () => { const d = await database.getJornadas(); setJornadas(d || []); };
+  const loadAppSettings = async () => { const d = await database.getAppSettings(); setAppSettings(d || {}); };
 
   const loadData = async () => {
     try {
@@ -111,6 +113,7 @@ const App = () => {
         loadComisiones(),
         loadRivales(),
         loadJornadas(),
+        loadAppSettings(),
       ]);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -128,6 +131,7 @@ const App = () => {
     comisiones: loadComisiones,
     rivales: loadRivales,
     jornadas: loadJornadas,
+    appSettings: loadAppSettings,
   };
 
   const handleDataChange = async (...entities) => {
@@ -265,6 +269,7 @@ const App = () => {
                 comisiones={comisiones}
                 rivales={rivales}
                 jornadas={jornadas}
+                appSettings={appSettings}
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 onDataChange={handleDataChange}

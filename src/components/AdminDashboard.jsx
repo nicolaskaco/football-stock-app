@@ -16,6 +16,7 @@ import { ComisionesTab } from './ComisionesTab';
 import { ChangeRequestsTab } from './ChangeRequestsTab';
 import { RivalesTab } from './RivalesTab';
 import { PartidosTab } from './PartidosTab';
+import { ConfiguracionTab } from './ConfiguracionTab';
 
 export const AdminDashboard = ({
   employees,
@@ -27,6 +28,7 @@ export const AdminDashboard = ({
   comisiones,
   rivales,
   jornadas,
+  appSettings = {},
   onLogout,
   onDataChange,
   currentUser
@@ -62,6 +64,8 @@ export const AdminDashboard = ({
   const canAccessRopa = currentUser?.canAccessRopa || false;
   const canSeeRopaWidgets = currentUser?.canSeeRopaWidgets || false;
   const canViewPartidos = currentUser?.canViewPartidos || false;
+  const isAdmin = currentUser?.role === 'admin';
+  const rivalesTabEnabled = appSettings.rivales_tab_enabled === 'true';
 
   // Rest of your code stays the same...
   const tabs = [
@@ -75,9 +79,10 @@ export const AdminDashboard = ({
     { id: 'dirigentes', label: 'Dirigentes', show: canAccessDirigentes },
     { id: 'torneos', label: 'Torneos', show: canViewTorneo },
     { id: 'comisiones', label: 'Comisiones', show: canViewComisiones },
-    { id: 'rivales', label: 'Rivales', show: canViewPartidos },
+    { id: 'rivales', label: 'Rivales', show: canViewPartidos && (rivalesTabEnabled || isAdmin) },
     { id: 'partidos', label: 'Partidos', show: canViewPartidos },
-    { id: 'reports', label: 'Reportes', show: canAccessRopa }
+    { id: 'reports', label: 'Reportes', show: canAccessRopa },
+    { id: 'configuracion', label: 'Configuración', show: isAdmin },
   ];
 
   // Filter visible tabs
@@ -246,10 +251,16 @@ export const AdminDashboard = ({
           />
         )}
         {activeTab === 'reports' && canAccessRopa && (
-          <ReportsTab 
-            distributions={distributions} 
-            employees={employees} 
-            inventory={inventory} 
+          <ReportsTab
+            distributions={distributions}
+            employees={employees}
+            inventory={inventory}
+          />
+        )}
+        {activeTab === 'configuracion' && isAdmin && (
+          <ConfiguracionTab
+            appSettings={appSettings}
+            onDataChange={onDataChange}
           />
         )}
         {/* Show access denied message if trying to access restricted tab */}
