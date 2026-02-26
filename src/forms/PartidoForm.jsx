@@ -65,8 +65,15 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
       [player_id]: { goles: 0, amarilla: false, roja: false, ...prev[player_id], [field]: value },
     }));
 
-  // Filtro de categorías: por defecto solo la del partido
-  const [categoriasActivas, setCategoriasActivas] = useState([categoria]);
+  // Filtro de categorías: incluir las de jugadores ya guardados en el lineup
+  const buildInitialCategoriasActivas = () => {
+    const cats = new Set([categoria]);
+    (partido?.partido_players || []).forEach((pp) => {
+      if (pp.players?.categoria) cats.add(pp.players.categoria);
+    });
+    return [...cats];
+  };
+  const [categoriasActivas, setCategoriasActivas] = useState(buildInitialCategoriasActivas);
 
   const toggleCategoria = (cat) => {
     setCategoriasActivas((prev) =>
