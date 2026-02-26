@@ -97,6 +97,7 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
         rival_id: jornada.rival_id,
         fecha: jornada.fecha,
         fase: jornada.fase,
+        numero_jornada: jornada.numero_jornada || null,
         categoria: partido.categoria,
         escenario: partido.escenario,
         capGoles,
@@ -403,6 +404,7 @@ const RivalesTable = ({ data }) => {
               <tr>
                 <th className={thClass} onClick={() => handleSort('rival')}>Rival <SortIcon col="rival" /></th>
                 <th className={thClass} onClick={() => handleSort('fecha')}>Fecha <SortIcon col="fecha" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('numero_jornada')}>Jornada <SortIcon col="numero_jornada" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('escenario')}>Esc <SortIcon col="escenario" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('resultado')}>Resultado <SortIcon col="resultado" /></th>
@@ -414,6 +416,7 @@ const RivalesTable = ({ data }) => {
                 <tr key={row.partido_id} className="hover:bg-gray-50">
                   <td className="px-3 py-2 font-medium text-gray-900">{row.rival}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">{formatDate(row.fecha)}</td>
+                  <td className="px-3 py-2 text-center text-xs text-gray-500">{row.numero_jornada ?? '—'}</td>
                   <td className="px-3 py-2 text-center text-xs text-gray-600">{row.categoria}</td>
                   <td className="px-3 py-2 text-center">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
