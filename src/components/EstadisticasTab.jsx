@@ -333,7 +333,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
 
       {subTab === 'general'    && <GeneralTable   data={filtered} />}
       {subTab === 'goleadores' && <GoleadoresTable data={filtered.filter((s) => s.goles > 0)} />}
-      {subTab === 'tarjetas'   && <TarjetasTable   data={filtered} />}
+      {subTab === 'tarjetas'   && <TarjetasTable   data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
     </div>
   );
 };
