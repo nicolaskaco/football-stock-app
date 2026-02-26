@@ -148,7 +148,7 @@ const useTableSort = (initialKey, initialDir = 'desc') => {
       ? <span className="text-gray-300 ml-1">↕</span>
       : <span className="text-yellow-400 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
 
-  return { handleSort, sortFn, SortIcon };
+  return { handleSort, sortFn, SortIcon, sortKey, sortDir };
 };
 
 const thClass = 'px-3 py-2 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap';
@@ -389,10 +389,35 @@ const TarjetasTable = ({ data }) => {
 
 // ─── Rivales tables ──────────────────────────────────────────────────────────
 
+const catIdx = (cat) => {
+  const i = CATEGORIAS_PARTIDO.indexOf(cat);
+  return i === -1 ? 99 : i;
+};
+
 const RivalesTable = ({ data, faseFiltro }) => {
-  const { handleSort, sortFn, SortIcon } = useTableSort('rival', 'asc');
-  const sorted = sortFn(data);
+  const { handleSort, SortIcon, sortKey, sortDir } = useTableSort('fecha', 'desc');
   const showFase = !faseFiltro;
+
+  const sorted = useMemo(() => {
+    return [...data].sort((a, b) => {
+      let primary = 0;
+      if (sortKey === 'categoria') {
+        primary = sortDir === 'asc'
+          ? catIdx(a.categoria) - catIdx(b.categoria)
+          : catIdx(b.categoria) - catIdx(a.categoria);
+      } else {
+        const av = a[sortKey];
+        const bv = b[sortKey];
+        if (typeof av === 'string') {
+          primary = sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+        } else {
+          primary = sortDir === 'asc' ? Number(av) - Number(bv) : Number(bv) - Number(av);
+        }
+      }
+      if (primary !== 0) return primary;
+      return catIdx(a.categoria) - catIdx(b.categoria);
+    });
+  }, [data, sortKey, sortDir]);
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
