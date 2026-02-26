@@ -76,7 +76,7 @@ const TopGoleadores = ({ stats }) => {
 
   const podiumOrder = top.length === 3 ? [top[1], top[0], top[2]] : top.length === 2 ? [top[1], top[0]] : [top[0]];
   const heights = top.length === 3 ? ['h-20', 'h-28', 'h-16'] : ['h-24', 'h-20'];
-  const medals = ['🥈', '🥇', '🥉'];
+  const medals = top.length === 1 ? ['🥇'] : ['🥈', '🥇', '🥉'];
 
   return (
     <div className="bg-white rounded-lg shadow p-6 mb-2">
