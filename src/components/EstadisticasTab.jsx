@@ -110,24 +110,6 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
   return rows;
 };
 
-const buildRivalesAgregado = (rows) => {
-  const map = {};
-  rows.forEach((row) => {
-    const key = `${row.rival_id}_${row.categoria}`;
-    if (!map[key]) {
-      map[key] = { rival: row.rival, categoria: row.categoria, pj: 0, g: 0, e: 0, p: 0, gf: 0, ga: 0 };
-    }
-    const entry = map[key];
-    entry.pj++;
-    if (row.resultado === 'G') entry.g++;
-    else if (row.resultado === 'E') entry.e++;
-    else if (row.resultado === 'P') entry.p++;
-    if (row.capGoles != null)   entry.gf += row.capGoles;
-    if (row.rivalGoles != null) entry.ga += row.rivalGoles;
-  });
-  return Object.values(map).map((e) => ({ ...e, dif: e.gf - e.ga }));
-};
-
 // ─── Shared UI helpers ───────────────────────────────────────────────────────
 
 const SORT_DEFAULTS = {
@@ -462,55 +444,6 @@ const RivalesTable = ({ data }) => {
   );
 };
 
-const RivalesCategoriaTable = ({ data }) => {
-  const { handleSort, sortFn, SortIcon } = useTableSort('rival', 'asc');
-  const sorted = sortFn(data);
-
-  const difClass = (dif) =>
-    dif > 0 ? 'text-green-700 font-semibold' : dif < 0 ? 'text-red-600 font-semibold' : 'text-gray-500';
-
-  return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      {sorted.length === 0 ? (
-        <p className="text-center text-gray-500 py-12">No hay datos para mostrar.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className={thClass} onClick={() => handleSort('rival')}>Rival <SortIcon col="rival" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('pj')}>PJ <SortIcon col="pj" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('g')}>G <SortIcon col="g" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('e')}>E <SortIcon col="e" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('p')}>P <SortIcon col="p" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('gf')}>GF <SortIcon col="gf" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('ga')}>GA <SortIcon col="ga" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('dif')}>Dif <SortIcon col="dif" /></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sorted.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 font-medium text-gray-900">{row.rival}</td>
-                  <td className="px-3 py-2 text-center text-xs text-gray-600">{row.categoria}</td>
-                  <td className="px-3 py-2 text-center text-gray-700">{row.pj}</td>
-                  <td className="px-3 py-2 text-center font-semibold text-green-700">{row.g}</td>
-                  <td className="px-3 py-2 text-center text-gray-500">{row.e}</td>
-                  <td className="px-3 py-2 text-center font-semibold text-red-600">{row.p}</td>
-                  <td className="px-3 py-2 text-center text-gray-700">{row.gf}</td>
-                  <td className="px-3 py-2 text-center text-gray-700">{row.ga}</td>
-                  <td className={`px-3 py-2 text-center ${difClass(row.dif)}`}>{row.dif > 0 ? `+${row.dif}` : row.dif}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-};
-
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
@@ -539,10 +472,8 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
     [jornadas, categoriaFiltroRivales, faseFiltro]
   );
 
-  const rivalesAgregado = useMemo(() => buildRivalesAgregado(partidoRows), [partidoRows]);
-
   const isJugadoresTab = ['general', 'goleadores', 'tarjetas'].includes(subTab);
-  const isRivalesTab   = ['rivales', 'rivales_cat'].includes(subTab);
+  const isRivalesTab   = subTab === 'rivales';
 
   const subTabBtn = (id, label) => (
     <button
@@ -566,8 +497,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
         {subTabBtn('general',     'General')}
         {subTabBtn('goleadores',  'Goleadores')}
         {subTabBtn('tarjetas',    'Tarjetas')}
-        {subTabBtn('rivales',     'Por Rival')}
-        {subTabBtn('rivales_cat', 'Por Rival y Cat')}
+        {subTabBtn('rivales', 'Por Rival')}
       </div>
 
       {/* Top goleadores podium */}
@@ -595,8 +525,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {subTab === 'general'      && <GeneralTable          data={filtered} />}
       {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
-      {subTab === 'rivales'      && <RivalesTable           data={partidoRows} />}
-      {subTab === 'rivales_cat'  && <RivalesCategoriaTable  data={rivalesAgregado} />}
+      {subTab === 'rivales' && <RivalesTable data={partidoRows} />}
     </div>
   );
 };
