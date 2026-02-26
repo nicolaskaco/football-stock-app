@@ -118,7 +118,7 @@ const SORT_DEFAULTS = {
   goles: 'desc', amarillas: 'desc', rojas: 'desc',
   golesRatio: 'desc', amarillasRatio: 'desc',
   name_visual: 'asc', categoria: 'asc',
-  rival: 'asc', fecha: 'desc',
+  rival: 'asc', fecha: 'desc', fase: 'asc',
   g: 'desc', e: 'desc', p: 'desc', gf: 'desc', ga: 'asc', dif: 'desc',
 };
 
@@ -389,9 +389,10 @@ const TarjetasTable = ({ data }) => {
 
 // ─── Rivales tables ──────────────────────────────────────────────────────────
 
-const RivalesTable = ({ data }) => {
+const RivalesTable = ({ data, faseFiltro }) => {
   const { handleSort, sortFn, SortIcon } = useTableSort('rival', 'asc');
   const sorted = sortFn(data);
+  const showFase = !faseFiltro;
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -405,6 +406,7 @@ const RivalesTable = ({ data }) => {
                 <th className={`${thClass} text-center w-10`} onClick={() => handleSort('numero_jornada')}># <SortIcon col="numero_jornada" /></th>
                 <th className={thClass} onClick={() => handleSort('rival')}>Rival <SortIcon col="rival" /></th>
                 <th className={thClass} onClick={() => handleSort('fecha')}>Fecha <SortIcon col="fecha" /></th>
+                {showFase && <th className={`${thClass} text-center`} onClick={() => handleSort('fase')}>Fase <SortIcon col="fase" /></th>}
                 <th className={`${thClass} text-center`} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('escenario')}>Esc <SortIcon col="escenario" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('resultado')}>Resultado <SortIcon col="resultado" /></th>
@@ -417,6 +419,7 @@ const RivalesTable = ({ data }) => {
                   <td className="px-2 py-2 text-center text-xs text-gray-400 w-10">{row.numero_jornada ?? '—'}</td>
                   <td className="px-3 py-2 font-medium text-gray-900">{row.rival}</td>
                   <td className="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">{formatDate(row.fecha)}</td>
+                  {showFase && <td className="px-3 py-2 text-center text-xs text-gray-500">{row.fase || '—'}</td>}
                   <td className="px-3 py-2 text-center text-xs text-gray-600">{row.categoria}</td>
                   <td className="px-3 py-2 text-center">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
@@ -528,7 +531,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {subTab === 'general'      && <GeneralTable          data={filtered} />}
       {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
-      {subTab === 'rivales' && <RivalesTable data={partidoRows} />}
+      {subTab === 'rivales' && <RivalesTable data={partidoRows} faseFiltro={faseFiltro} />}
     </div>
   );
 };
