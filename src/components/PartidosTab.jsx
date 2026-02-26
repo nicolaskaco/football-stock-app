@@ -7,12 +7,13 @@ import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
 import { formatDate } from '../utils/dateUtils';
-import { CATEGORIAS_PARTIDO } from '../utils/constants';
+import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 
 export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const { execute } = useMutation();
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [view, setView] = useState('lista'); // 'lista' | 'calendario'
+  const [faseFiltro, setFaseFiltro] = useState(null);
 
   const canEdit = currentUser?.canEditPartidos || false;
 
@@ -101,11 +102,13 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
   const RESULT_LABEL = { win: 'G', loss: 'P', draw: 'E' };
 
   const FASES_ORDER = ['Apertura', 'Clausura'];
-  const sortedJornadas = [...jornadas].sort((a, b) => {
-    const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
-    if (faseDiff !== 0) return faseDiff;
-    return (a.numero_jornada ?? 999) - (b.numero_jornada ?? 999);
-  });
+  const sortedJornadas = [...jornadas]
+    .filter((j) => !faseFiltro || j.fase === faseFiltro)
+    .sort((a, b) => {
+      const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
+      if (faseDiff !== 0) return faseDiff;
+      return (a.numero_jornada ?? 999) - (b.numero_jornada ?? 999);
+    });
 
   return (
     <div className="space-y-6">
@@ -148,11 +151,32 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
         </div>
       </div>
 
-      {jornadas.length === 0 ? (
+      {/* Fase filter */}
+      <div className="flex gap-2 flex-wrap">
+        <button
+          onClick={() => setFaseFiltro(null)}
+          className={`px-3 py-1.5 rounded-lg text-sm font-medium ${!faseFiltro ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`}
+        >
+          Todas
+        </button>
+        {FASES_CAMPEONATO.map((f) => (
+          <button
+            key={f}
+            onClick={() => setFaseFiltro(f === faseFiltro ? null : f)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium ${faseFiltro === f ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`}
+          >
+            {f}
+          </button>
+        ))}
+      </div>
+
+      {sortedJornadas.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-lg shadow">
           <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg">No hay jornadas registradas aún.</p>
-          {canEdit && (
+          <p className="text-gray-500 text-lg">
+            {jornadas.length === 0 ? 'No hay jornadas registradas aún.' : 'No hay jornadas para esta fase.'}
+          </p>
+          {canEdit && jornadas.length === 0 && (
             <p className="text-gray-400 text-sm mt-2">Usá el botón "Nueva Jornada" para comenzar.</p>
           )}
         </div>
