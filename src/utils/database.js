@@ -966,7 +966,7 @@ export const database = {
         partidos(
           *,
           partido_players(
-            id, tipo, posicion, orden,
+            id, player_id, tipo, posicion, orden,
             players(id, name, name_visual, categoria)
           ),
           partido_eventos(id, tipo, player_id, minuto)
