@@ -933,6 +933,27 @@ export const database = {
   },
 
   // ============================================================
+  // APP SETTINGS
+  // ============================================================
+
+  async getAppSettings() {
+    const { data, error } = await supabase.from('app_settings').select('*');
+    if (error) throw error;
+    // Convert array of { key, value } rows to a plain object
+    return (data || []).reduce((acc, row) => {
+      acc[row.key] = row.value;
+      return acc;
+    }, {});
+  },
+
+  async updateAppSetting(key, value) {
+    const { error } = await supabase
+      .from('app_settings')
+      .upsert({ key, value: String(value) }, { onConflict: 'key' });
+    if (error) throw error;
+  },
+
+  // ============================================================
   // JORNADAS + PARTIDOS
   // ============================================================
 
