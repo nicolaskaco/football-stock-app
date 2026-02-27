@@ -241,10 +241,10 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información Financiera</h3>
         
-        {isEditingPlayer && !canEditFinancialFields && (
+        {!canEditFinancialFields && (
           <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
-              ℹ️ Para modificar valores de viáticos y contratos, utiliza la pestaña <strong>"Viáticos"</strong>
+              ℹ️ Los campos de viáticos y contratos son de solo lectura. Para modificarlos, utilizá la pestaña <strong>"Viáticos"</strong>.
             </p>
           </div>
         )}
@@ -255,21 +255,21 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               type="checkbox" 
               checked={formData.contrato} 
               onChange={(e) => setFormData({...formData, contrato: e.target.checked})} 
-              disabled={readOnly || (isEditingPlayer && !canEditFinancialFields)}
+              disabled={readOnly || !canEditFinancialFields}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
             Tiene Contrato
-            {isEditingPlayer && !canEditFinancialFields && <span className="text-blue-600 text-xs">(Editar en pestaña Viáticos)</span>}
+            {!canEditFinancialFields && <span className="text-blue-600 text-xs">(Solo lectura)</span>}
           </label>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Viático {(formData.contrato || (isEditingPlayer && !canEditFinancialFields)) && <span className="text-red-500">(Deshabilitado)</span>}
+              Viático {(formData.contrato || !canEditFinancialFields) && <span className="text-red-500">(Deshabilitado)</span>}
             </label>
             <input type="text" inputMode="numeric" pattern="[0-9]*"
-              disabled={formData.contrato || readOnly || (isEditingPlayer && !canEditFinancialFields)}
+              disabled={formData.contrato || readOnly || !canEditFinancialFields}
               value={formData.viatico || ''} 
               onChange={(e) => setFormData({...formData, viatico: parseInt(e.target.value) || 0})} 
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" 
@@ -278,10 +278,10 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Complemento {(formData.contrato || (isEditingPlayer && !canEditFinancialFields)) && <span className="text-red-500">(Deshabilitado)</span>}
+              Complemento {(formData.contrato || !canEditFinancialFields) && <span className="text-red-500">(Deshabilitado)</span>}
             </label>
             <input type="text" inputMode="numeric" pattern="[0-9]*"
-              disabled={formData.contrato || readOnly || (isEditingPlayer && !canEditFinancialFields)}
+              disabled={formData.contrato || readOnly || !canEditFinancialFields}
               value={formData.complemento ?? 0}
               onChange={(e) => {
                 const value = e.target.value === '' ? 0 : Math.min(99999, Math.max(0, parseInt(e.target.value) || 0));
