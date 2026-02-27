@@ -453,7 +453,7 @@ All shared enums are centralized here — never defined inline in components:
 | Production build | `npm run build` → `vite build` |
 | Preview | `npm run preview` → `vite preview` |
 
-> **Note:** Supabase URL and anon key are currently hardcoded in `src/supabaseClient.js`. These should be moved to environment variables (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) before sharing the repository publicly.
+> **Environment variables:** Supabase credentials are loaded from `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` via `import.meta.env`. Set these in `.env.local` for local development (see `.env.example` for the required keys) and in the Vercel project dashboard (Settings → Environment Variables) for production.
 
 ---
 
@@ -468,6 +468,7 @@ football-stock-app/
 ├── eslint.config.js
 ├── vercel.json
 ├── package.json
+├── .env.example                   # Required env var keys (committed, no values)
 ├── SPEC.md                        ← this file
 ├── Summary App.md                 ← legacy feature summary
 ├── public/
