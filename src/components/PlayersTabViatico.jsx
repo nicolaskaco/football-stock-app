@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS } from '../utils/constants';
-import { todayISO } from '../utils/dateUtils';
+import { todayISO, parseDOB } from '../utils/dateUtils';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils, Eye } from 'lucide-react';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
@@ -125,7 +125,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   // Calculate age
   const calculateAge = (dateOfBirth) => {
     const today = new Date();
-    const birthDate = new Date(dateOfBirth);
+    const birthDate = parseDOB(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
