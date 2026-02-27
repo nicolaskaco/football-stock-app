@@ -185,7 +185,19 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 
 ### Audit-Tracked Player Fields
 
-Changes to `contrato`, `viatico`, and `complemento` are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call.
+Changes to `contrato`, `viatico`, `complemento`, `vianda`, and `casita` are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call.
+
+### Row-Level Security (RLS) — `players` table
+
+Three policies work together on the `players` table:
+
+| Policy | Applies to | Effect |
+|--------|-----------|--------|
+| `admin_all` | Users with `role = 'admin'` | Full read/write access to all players |
+| `Allow players access based on categoria` | All other authenticated users | Access restricted to players whose `categoria` matches the user's `user_permissions.categoria` array (NULL / `{}` = all categories) |
+| `Allow players via partido access` | All authenticated users | Any player who appears in `partido_players` is visible regardless of their own category — allows all users to see full match lineups and scorers |
+
+> **Important:** Supabase evaluates RLS policies with OR logic — a row is returned if *any* policy allows it. The `admin_all` policy is intentionally scoped to `role = 'admin'` so it does not bypass the categoria restriction for other roles.
 
 ### Storage
 
@@ -244,13 +256,15 @@ Bucket: `player-documents` (private)
 #### Dashboard Widgets (OverviewTab — requires `can_access_widgets`)
 | Widget | Description |
 |--------|-------------|
-| [BirthdayWidget.jsx](src/components/BirthdayWidget.jsx) | Upcoming birthdays for players and dirigentes (7-day window) |
+| [BirthdayWidget.jsx](src/components/BirthdayWidget.jsx) | Upcoming birthdays for players and dirigentes (7-day window); scoped to `currentUser.categoria` so `presidente_categoria` users only see their categories |
 | [SpendingTrendsWidget.jsx](src/components/SpendingTrendsWidget.jsx) | Viatico + complemento spend over time |
 | [CategoryDistributionWidget.jsx](src/components/CategoryDistributionWidget.jsx) | Player count by category |
 | [AgeDistributionWidget.jsx](src/components/AgeDistributionWidget.jsx) | Player age breakdown |
 | [DepartamentoWidget.jsx](src/components/DepartamentoWidget.jsx) | Geographic distribution of players |
 | [MostDistributedWidget.jsx](src/components/MostDistributedWidget.jsx) | Top distributed clothing items |
-| [PendingChangeRequestsWidget.jsx](src/components/PendingChangeRequestsWidget.jsx) | Count of pending financial change requests (admin home) |
+| [PendingChangeRequestsWidget.jsx](src/components/PendingChangeRequestsWidget.jsx) | Count of pending financial change requests with SLA age badge (admin home) |
+
+> All player-based analytics widgets (`SpendingTrends`, `CategoryDistribution`, `AgeDistribution`, `Departamento`) receive a `visiblePlayers` array derived in `OverviewTab` — filtered by `currentUser.categoria` when the user has category restrictions. This prevents cross-category players (visible via the partido RLS policy) from leaking into home page statistics.
 
 #### Forms
 | Form | Description |
@@ -276,12 +290,13 @@ Bucket: `player-documents` (private)
 | [AlertModal.jsx](src/components/AlertModal.jsx) | Informational alerts |
 | [PromptModal.jsx](src/components/PromptModal.jsx) | Text input prompt dialog |
 | [ChangeRequestModal.jsx](src/components/ChangeRequestModal.jsx) | Financial change request submission form |
-| [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes |
+| [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes; includes per-field filter buttons when history spans multiple fields |
 | [ExportConfigModal.jsx](src/components/ExportConfigModal.jsx) | Excel export field selector |
 | [DocumentUpload.jsx](src/components/DocumentUpload.jsx) | Supabase Storage document upload/download |
 | [NameVisualEditor.jsx](src/components/NameVisualEditor.jsx) | Visual name editing (dual-name system) |
 | [StatCard.jsx](src/components/StatCard.jsx) | Reusable stat summary card |
 | [Toast.jsx](src/components/Toast.jsx) | Toast notification display |
+| [ui/FilterButtonGroup.jsx](src/components/ui/FilterButtonGroup.jsx) | Generic toggle-button filter bar; props: `options: string[]`, `value`, `onChange`, `label?`, `allLabel?` |
 
 ---
 
@@ -303,6 +318,12 @@ Applies when `currentUser.role === 'presidente_categoria'` attempts to edit `via
 2. A reviewer (admin / ejecutivo / presidente) sees it in the "Solicitudes" tab and via the `PendingChangeRequestsWidget`
 3. **Approve**: player's financial fields are updated, request notes appended to `comentario_viatico`, history record created
 4. **Reject**: request marked `rejected`, player unchanged
+
+#### Change Request UX features (ChangeRequestsTab)
+
+- **SLA age badge**: each pending card shows a colored age pill — green (< 3 days), yellow (3–6 days), red (≥ 7 days) — calculated via `daysSince()` from `dateUtils.js`
+- **Diff highlighting**: fields that changed are shown with red strikethrough (old) → green (new); fields that did not change are shown in muted gray with "(sin cambio)"
+- **Bulk actions**: reviewers can select multiple pending requests via checkboxes and approve or reject them all at once. Bulk reject prompts for shared review notes via `PromptModal`. A sticky bottom bar appears while any requests are selected.
 
 ### Player Document Management
 
@@ -440,6 +461,7 @@ All shared enums are centralized here — never defined inline in components:
 | `formatBirthday(str)` | `DD/MM` (no year, timezone-safe) |
 | `todayISO()` | `YYYY-MM-DD` for date inputs |
 | `parseDOB(str)` | Date from `YYYY-MM-DD` without timezone drift |
+| `daysSince(str)` | Number of full days elapsed since a date (returns 0 for future/null); used for SLA age badges |
 
 ---
 
@@ -483,6 +505,8 @@ football-stock-app/
     ├── index.css
     ├── logo.jpeg
     ├── components/                # UI components (tabs, widgets, modals)
+    │   ├── ui/
+    │   │   └── FilterButtonGroup.jsx  # Shared toggle-button filter bar
     │   ├── AdminDashboard.jsx
     │   ├── LoginView.jsx
     │   ├── EmployeeView.jsx
