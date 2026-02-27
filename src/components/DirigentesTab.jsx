@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { todayISO } from '../utils/dateUtils';
+import { todayISO, calculateAge } from '../utils/dateUtils';
 import { DirigenteForm } from '../forms/DirigenteForm';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
@@ -79,18 +79,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
     return matchesSearch && matchesRol && matchesCategoria;
   });
 
-  // Calculate age
-  const calculateAge = (dateOfBirth) => {
-    if (!dateOfBirth) return '-';
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
+  // calculateAge imported from dateUtils (timezone-safe, null-safe)
 
   const handleSort = (key) => {
     let direction = 'asc';

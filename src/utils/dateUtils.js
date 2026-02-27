@@ -81,3 +81,20 @@ export function daysSince(dateStr) {
   if (!dateStr) return 0;
   return Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000));
 }
+
+/**
+ * 'YYYY-MM-DD' date-of-birth → integer age in full years.
+ * Returns '-' for null/undefined input.
+ * Uses parseDOB to avoid timezone drift (safe for all UTC offsets).
+ */
+export function calculateAge(isoDate) {
+  if (!isoDate) return '-';
+  const today = new Date();
+  const birthDate = parseDOB(isoDate);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
