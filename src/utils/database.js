@@ -206,7 +206,7 @@ export const database = {
     if (fetchError) throw fetchError;
 
     // Track which fields changed
-    const trackedFields = ['contrato', 'viatico', 'complemento'];
+    const trackedFields = ['contrato', 'viatico', 'complemento', 'vianda', 'casita'];
     const historyRecords = [];
 
     trackedFields.forEach(field => {
