@@ -25,15 +25,18 @@ export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
     const names = {
       contrato: 'Contrato',
       viatico: 'Viático',
-      complemento: 'Complemento'
+      complemento: 'Complemento',
+      vianda: 'Vianda',
+      casita: 'Residencia'
     };
     return names[fieldName] || fieldName;
   };
 
   const formatValue = (fieldName, value) => {
     if (value === null) return 'N/A';
-    if (fieldName === 'contrato') return value === 'true' ? 'Sí' : 'No';
+    if (fieldName === 'contrato' || fieldName === 'casita') return value === 'true' ? 'Sí' : 'No';
     if (fieldName === 'viatico' || fieldName === 'complemento') return `$${parseInt(value).toLocaleString()}`;
+    if (fieldName === 'vianda') return value;
     return value;
   };
 
