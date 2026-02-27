@@ -181,32 +181,51 @@ export const ChangeRequestsTab = ({ currentUser }) => {
                 </div>
               </div>
 
+              {(() => {
+                const viaticoCambiado     = request.old_viatico    !== request.new_viatico;
+                const complementoCambiado = request.old_complemento !== request.new_complemento;
+                const contratoCambiado    = request.old_contrato    !== request.new_contrato;
+                return (
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Viático</p>
-                  <p className="text-sm">
-                    <span className="text-red-600 line-through">${request.old_viatico || 0}</span>
-                    {' → '}
-                    <span className="text-green-600 font-semibold">${request.new_viatico || 0}</span>
-                  </p>
+                  {viaticoCambiado ? (
+                    <p className="text-sm">
+                      <span className="text-red-600 line-through">${request.old_viatico || 0}</span>
+                      {' → '}
+                      <span className="text-green-600 font-semibold">${request.new_viatico || 0}</span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400">${request.old_viatico || 0} <span className="italic">(sin cambio)</span></p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Complemento</p>
-                  <p className="text-sm">
-                    <span className="text-red-600 line-through">${request.old_complemento || 0}</span>
-                    {' → '}
-                    <span className="text-green-600 font-semibold">${request.new_complemento || 0}</span>
-                  </p>
+                  {complementoCambiado ? (
+                    <p className="text-sm">
+                      <span className="text-red-600 line-through">${request.old_complemento || 0}</span>
+                      {' → '}
+                      <span className="text-green-600 font-semibold">${request.new_complemento || 0}</span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-400">${request.old_complemento || 0} <span className="italic">(sin cambio)</span></p>
+                  )}
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Contrato</p>
+                  {contratoCambiado ? (
                   <p className="text-sm">
                     <span className="text-red-600 line-through">{request.old_contrato ? 'Sí' : 'No'}</span>
                     {' → '}
                     <span className="text-green-600 font-semibold">{request.new_contrato ? 'Sí' : 'No'}</span>
                   </p>
+                  ) : (
+                    <p className="text-xs text-gray-400">{request.old_contrato ? 'Sí' : 'No'} <span className="italic">(sin cambio)</span></p>
+                  )}
                 </div>
               </div>
+                );
+              })()}
 
               {request.request_notes && (
                 <div className="bg-gray-50 p-3 rounded mb-4">
