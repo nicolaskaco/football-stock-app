@@ -71,3 +71,13 @@ export function parseDOB(isoDate) {
   const [year, month, day] = isoDate.split('-');
   return new Date(Number(year), Number(month) - 1, Number(day));
 }
+
+/**
+ * ISO timestamp → number of full days elapsed since that date.
+ * Returns 0 if the date is today or in the future.
+ * Use for SLA/age indicators on pending items.
+ */
+export function daysSince(dateStr) {
+  if (!dateStr) return 0;
+  return Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000));
+}
