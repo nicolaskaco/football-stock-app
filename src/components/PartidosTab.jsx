@@ -8,6 +8,7 @@ import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
 import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
+import { FilterButtonGroup } from './ui/FilterButtonGroup';
 
 export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const { execute } = useMutation();
@@ -152,23 +153,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
       </div>
 
       {/* Fase filter */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => setFaseFiltro(null)}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium ${!faseFiltro ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`}
-        >
-          Todas
-        </button>
-        {FASES_CAMPEONATO.map((f) => (
-          <button
-            key={f}
-            onClick={() => setFaseFiltro(f === faseFiltro ? null : f)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium ${faseFiltro === f ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      <FilterButtonGroup options={FASES_CAMPEONATO} value={faseFiltro} onChange={setFaseFiltro} />
 
       {sortedJornadas.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-lg shadow">

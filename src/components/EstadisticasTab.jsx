@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
+import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
+import { FilterButtonGroup } from './ui/FilterButtonGroup';
 
 // ─── Player stats helpers ────────────────────────────────────────────────────
 
@@ -111,48 +113,6 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
   return rows;
 };
 
-// ─── Shared UI helpers ───────────────────────────────────────────────────────
-
-const SORT_DEFAULTS = {
-  pj: 'desc', titular: 'desc', suplente: 'desc',
-  goles: 'desc', amarillas: 'desc', rojas: 'desc',
-  golesRatio: 'desc', amarillasRatio: 'desc',
-  name_visual: 'asc', categoria: 'asc',
-  rival: 'asc', fecha: 'desc', fase: 'asc',
-  g: 'desc', e: 'desc', p: 'desc', gf: 'desc', ga: 'asc', dif: 'desc',
-};
-
-const useTableSort = (initialKey, initialDir = 'desc') => {
-  const [sortKey, setSortKey] = useState(initialKey);
-  const [sortDir, setSortDir] = useState(initialDir);
-
-  const handleSort = (key) => {
-    if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortKey(key);
-      setSortDir(SORT_DEFAULTS[key] || 'desc');
-    }
-  };
-
-  const sortFn = (data) =>
-    [...data].sort((a, b) => {
-      const av = a[sortKey];
-      const bv = b[sortKey];
-      if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-      return sortDir === 'asc' ? Number(av) - Number(bv) : Number(bv) - Number(av);
-    });
-
-  const SortIcon = ({ col }) =>
-    sortKey !== col
-      ? <span className="text-gray-300 ml-1">↕</span>
-      : <span className="text-yellow-400 ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>;
-
-  return { handleSort, sortFn, SortIcon, sortKey, sortDir };
-};
-
-const thClass = 'px-3 py-2 text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none whitespace-nowrap';
-
 // ─── Player filter ───────────────────────────────────────────────────────────
 
 const Filters = ({ search, onSearch, categoriaFiltro, onCategoriaFiltro }) => (
@@ -164,51 +124,18 @@ const Filters = ({ search, onSearch, categoriaFiltro, onCategoriaFiltro }) => (
       onChange={(e) => onSearch(e.target.value)}
       className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-56"
     />
-    <div className="flex gap-2 flex-wrap">
-      <button
-        onClick={() => onCategoriaFiltro(null)}
-        className={`px-3 py-1.5 rounded-lg text-sm font-medium ${!categoriaFiltro ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`}
-      >
-        Todas
-      </button>
-      {CATEGORIAS_PARTIDO.map((cat) => (
-        <button
-          key={cat}
-          onClick={() => onCategoriaFiltro(cat === categoriaFiltro ? null : cat)}
-          className={`px-3 py-1.5 rounded-lg text-sm font-medium ${categoriaFiltro === cat ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`}
-        >
-          {cat}
-        </button>
-      ))}
-    </div>
+    <FilterButtonGroup options={CATEGORIAS_PARTIDO} value={categoriaFiltro} onChange={onCategoriaFiltro} />
   </div>
 );
 
 // ─── Rivales filter ──────────────────────────────────────────────────────────
 
-const ResultadosFilters = ({ faseFiltro, onFaseFiltro, categoriaFiltro, onCategoriaFiltro }) => {
-  const btnClass = (active) =>
-    `px-3 py-1.5 rounded-lg text-sm font-medium ${active ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`;
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex gap-2 flex-wrap">
-        <span className="text-xs text-gray-500 self-center mr-1">Fase:</span>
-        <button onClick={() => onFaseFiltro(null)} className={btnClass(!faseFiltro)}>Todas</button>
-        {FASES_CAMPEONATO.map((f) => (
-          <button key={f} onClick={() => onFaseFiltro(f === faseFiltro ? null : f)} className={btnClass(faseFiltro === f)}>{f}</button>
-        ))}
-      </div>
-      <div className="flex gap-2 flex-wrap">
-        <span className="text-xs text-gray-500 self-center mr-1">Cat:</span>
-        <button onClick={() => onCategoriaFiltro(null)} className={btnClass(!categoriaFiltro)}>Todas</button>
-        {CATEGORIAS_PARTIDO.map((cat) => (
-          <button key={cat} onClick={() => onCategoriaFiltro(cat === categoriaFiltro ? null : cat)} className={btnClass(categoriaFiltro === cat)}>{cat}</button>
-        ))}
-      </div>
-    </div>
-  );
-};
+const ResultadosFilters = ({ faseFiltro, onFaseFiltro, categoriaFiltro, onCategoriaFiltro }) => (
+  <div className="flex flex-col gap-3">
+    <FilterButtonGroup options={FASES_CAMPEONATO} value={faseFiltro} onChange={onFaseFiltro} label="Fase:" />
+    <FilterButtonGroup options={CATEGORIAS_PARTIDO} value={categoriaFiltro} onChange={onCategoriaFiltro} label="Cat:" />
+  </div>
+);
 
 // ─── Result badge helper ─────────────────────────────────────────────────────
 
