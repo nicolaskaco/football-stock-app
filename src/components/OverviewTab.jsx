@@ -32,6 +32,13 @@ export const OverviewTab = ({
 }) => {
   const canEditPartidos = currentUser?.canEditPartidos || false;
 
+  // Scope analytics widgets to the user's accessible categories.
+  // Cross-category players can appear in the global list (via partido RLS),
+  // so we filter them out here to avoid leaking data in home page widgets.
+  const visiblePlayers = currentUser?.categoria?.length > 0
+    ? players.filter(p => currentUser.categoria.includes(p.categoria))
+    : players;
+
   const openDetail = (jornada) => {
     setShowModal({
       title: `${jornada.rivales?.name || 'Rival'} — ${formatDate(jornada.fecha)}`,
@@ -106,10 +113,10 @@ export const OverviewTab = ({
       {canAccessWidgets && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <BirthdayWidget currentUser={currentUser} />
-          <SpendingTrendsWidget players={players} />
-          <CategoryDistributionWidget players={players} />
-          <AgeDistributionWidget players={players} />
-          <DepartamentoWidget players={players} />
+          <SpendingTrendsWidget players={visiblePlayers} />
+          <CategoryDistributionWidget players={visiblePlayers} />
+          <AgeDistributionWidget players={visiblePlayers} />
+          <DepartamentoWidget players={visiblePlayers} />
         </div>
       )}
 
