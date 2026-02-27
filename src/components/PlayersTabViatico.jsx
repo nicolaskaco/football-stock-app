@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS } from '../utils/constants';
 import { todayISO, parseDOB } from '../utils/dateUtils';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Utensils, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye } from 'lucide-react';
+import { ViandaIcons } from './ui/ViandaIcons';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
@@ -565,13 +566,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                         <div className="text-xs text-gray-500 mt-1">({player.name})</div>
                       )}
                     </div>
-                    {(player.vianda || 0) > 0 && (
-                      <div className="flex gap-0.5" title={`${player.vianda} vianda(s)`}>
-                        {[...Array(Math.min(player.vianda, 10))].map((_, i) => (
-                          <Utensils key={i} className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                        ))}
-                      </div>
-                    )}
+                    <ViandaIcons count={player.vianda} />
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm">{player.gov_id}</td>
