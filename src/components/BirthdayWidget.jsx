@@ -3,12 +3,13 @@ import { Cake, Users, Shield } from 'lucide-react';
 import { database } from '../utils/database';
 import { formatBirthday } from '../utils/dateUtils';
 
-export const BirthdayWidget = () => {
+export const BirthdayWidget = ({ currentUser }) => {
   const [birthdays, setBirthdays] = useState([]);
 
   const loadBirthdays = async () => {
+    const categorias = currentUser?.categoria?.length > 0 ? currentUser.categoria : null;
     const [upcomingPlayers, upcomingDirigentes] = await Promise.all([
-      database.getUpcomingBirthdays(7),
+      database.getUpcomingBirthdays(7, categorias),
       database.getUpcomingBirthdaysDirigentes(7)
     ]);
 
