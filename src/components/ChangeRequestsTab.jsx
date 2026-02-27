@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
 import { database } from '../utils/database';
 import { CHANGE_REQUEST_STATUS } from '../utils/constants';
-import { formatDateTime } from '../utils/dateUtils';
+import { formatDateTime, daysSince } from '../utils/dateUtils';
 import { AlertModal } from './AlertModal';
 import { PromptModal } from './PromptModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -163,14 +163,22 @@ export const ChangeRequestsTab = ({ currentUser }) => {
                     Solicitado por: {request.requested_by} el {formatDateTime(request.request_date)}
                   </p>
                 </div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  request.status === CHANGE_REQUEST_STATUS.PENDING ? 'bg-yellow-100 text-yellow-800' :
-                  request.status === CHANGE_REQUEST_STATUS.APPROVED ? 'bg-green-100 text-green-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {request.status === CHANGE_REQUEST_STATUS.PENDING ? 'Pendiente' :
-                   request.status === CHANGE_REQUEST_STATUS.APPROVED ? 'Aprobada' : 'Rechazada'}
-                </span>
+                <div className="flex items-center gap-2">
+                  {request.status === CHANGE_REQUEST_STATUS.PENDING && (() => {
+                    const days = daysSince(request.request_date);
+                    const label = days === 0 ? 'Hoy' : `Hace ${days} día${days !== 1 ? 's' : ''}`;
+                    const color = days >= 7 ? 'bg-red-100 text-red-700' : days >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700';
+                    return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>{label}</span>;
+                  })()}
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    request.status === CHANGE_REQUEST_STATUS.PENDING ? 'bg-yellow-100 text-yellow-800' :
+                    request.status === CHANGE_REQUEST_STATUS.APPROVED ? 'bg-green-100 text-green-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {request.status === CHANGE_REQUEST_STATUS.PENDING ? 'Pendiente' :
+                     request.status === CHANGE_REQUEST_STATUS.APPROVED ? 'Aprobada' : 'Rechazada'}
+                  </span>
+                </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-4">

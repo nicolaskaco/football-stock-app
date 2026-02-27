@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ClipboardList, AlertCircle, ExternalLink } from 'lucide-react';
 import { database } from '../utils/database';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, daysSince } from '../utils/dateUtils';
 
 export const PendingChangeRequestsWidget = ({ setActiveTab }) => {
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -79,9 +79,12 @@ export const PendingChangeRequestsWidget = ({ setActiveTab }) => {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                    Pendiente
-                  </span>
+                  {(() => {
+                    const days = daysSince(request.request_date);
+                    const label = days === 0 ? 'Hoy' : `Hace ${days} día${days !== 1 ? 's' : ''}`;
+                    const color = days >= 7 ? 'bg-red-100 text-red-700' : days >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700';
+                    return <span className={`text-xs font-medium px-2 py-1 rounded-full whitespace-nowrap ${color}`}>{label}</span>;
+                  })()}
                 </div>
               </div>
             ))}
