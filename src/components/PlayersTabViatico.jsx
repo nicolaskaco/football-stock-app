@@ -95,7 +95,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       ? (is3eraOnlyUser ? true : p.categoria !== '3era')  // Include 3era only for 3era-only users
       : p.categoria === filterCategoria;
     
-    return matchesSearch && matchesCategoria;
+    const hasAccessToCategoria = !currentUser?.categoria ||
+                                  currentUser.categoria.length === 0 ||
+                                  currentUser.categoria.includes(p.categoria);
+
+    return matchesSearch && matchesCategoria && hasAccessToCategoria;
   });
 
   const handleSelectAll = () => {
