@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
-import { todayISO } from '../utils/dateUtils';
+import { todayISO, calculateAge } from '../utils/dateUtils';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { NameVisualEditor } from '../components/NameVisualEditor';
@@ -149,17 +149,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     });
   };
 
-  // Calculate age
-  const calculateAge = (dateOfBirth) => {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
+  // calculateAge imported from dateUtils
 
   // Calculate total for a player
   const calculateTotal = (player) => {
