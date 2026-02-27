@@ -11,6 +11,7 @@ export const ChangeRequestsTab = ({ currentUser }) => {
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState(new Set());
   const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
   const [promptModal, setPromptModal] = useState({ isOpen: false });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
@@ -24,18 +25,17 @@ export const ChangeRequestsTab = ({ currentUser }) => {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const data = filter === 'pending' 
+      const data = filter === 'pending'
         ? await database.getPendingChangeRequests()
         : await database.getAllChangeRequests();
-      
-      // Filter by categoria if user is presidente_categoria
+
       let filteredData = data;
       if (currentUser?.role === 'presidente_categoria' && currentUser?.categoria?.length > 0) {
-        filteredData = data.filter(request => 
+        filteredData = data.filter(request =>
           request.players?.categoria && currentUser.categoria.includes(request.players.categoria)
         );
       }
-      
+
       setRequests(filteredData);
     } catch (error) {
       console.error('Error loading requests:', error);
@@ -45,43 +45,48 @@ export const ChangeRequestsTab = ({ currentUser }) => {
   };
 
   useEffect(() => {
+    setSelectedIds(new Set());
     loadRequests();
   }, [filter]);
 
-  const handleApprove = async (requestId, notes = '') => {
-  setConfirmModal({
-    isOpen: true,
-    title: 'Aprobar Solicitud',
-    message: '¿Estás seguro que deseas aprobar esta solicitud de cambio?',
-    confirmText: 'Aprobar',
-    cancelText: 'Cancelar',
-    type: 'primary',
-    onConfirm: async () => {
-      setConfirmModal({ isOpen: false });
-      
-      try {
-        await database.approveChangeRequest(requestId, currentUser.email, notes);
-        await loadRequests();
+  // ── Selection helpers ──────────────────────────────────────────
+  const pendingInView = filteredRequests => filteredRequests.filter(r => r.status === CHANGE_REQUEST_STATUS.PENDING);
 
-        setAlertModal({
-          isOpen: true,
-          title: 'Éxito',
-          message: 'Solicitud aprobada exitosamente',
-          type: 'success'
-        });
-      } catch (error) {
-        console.error('Error approving request:', error);
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
 
-        setAlertModal({
-          isOpen: true,
-          title: 'Error',
-          message: 'Error aprobando solicitud: ' + error.message,
-          type: 'error'
-        });
+  const toggleSelectAll = (pending) => {
+    const allSelected = pending.length > 0 && pending.every(r => selectedIds.has(r.id));
+    setSelectedIds(allSelected ? new Set() : new Set(pending.map(r => r.id)));
+  };
+
+  // ── Individual actions ─────────────────────────────────────────
+  const handleApprove = async (requestId) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Aprobar Solicitud',
+      message: '¿Estás seguro que deseas aprobar esta solicitud de cambio?',
+      confirmText: 'Aprobar',
+      cancelText: 'Cancelar',
+      type: 'primary',
+      onConfirm: async () => {
+        setConfirmModal({ isOpen: false });
+        try {
+          await database.approveChangeRequest(requestId, currentUser.email, '');
+          await loadRequests();
+          setAlertModal({ isOpen: true, title: 'Éxito', message: 'Solicitud aprobada exitosamente', type: 'success' });
+        } catch (error) {
+          console.error('Error approving request:', error);
+          setAlertModal({ isOpen: true, title: 'Error', message: 'Error aprobando solicitud: ' + error.message, type: 'error' });
+        }
       }
-    }
-  });
-};
+    });
+  };
 
   const handleReject = async (requestId) => {
     setPromptModal({
@@ -92,40 +97,95 @@ export const ChangeRequestsTab = ({ currentUser }) => {
       required: false,
       onConfirm: async (notes) => {
         setPromptModal({ isOpen: false });
-        
         try {
           await database.rejectChangeRequest(requestId, currentUser.email, notes);
           await loadRequests();
-
-          setAlertModal({
-            isOpen: true,
-            title: 'Rechazada',
-            message: 'Solicitud rechazada exitosamente',
-            type: 'success'
-          });
+          setAlertModal({ isOpen: true, title: 'Rechazada', message: 'Solicitud rechazada exitosamente', type: 'success' });
         } catch (error) {
           console.error('Error rejecting request:', error);
-
-          setAlertModal({
-            isOpen: true,
-            title: 'Error',
-            message: 'Error rechazando solicitud: ' + error.message,
-            type: 'error'
-          });
+          setAlertModal({ isOpen: true, title: 'Error', message: 'Error rechazando solicitud: ' + error.message, type: 'error' });
         }
       }
     });
   };
 
+  // ── Bulk actions ───────────────────────────────────────────────
+  const handleBulkApprove = () => {
+    const count = selectedIds.size;
+    setConfirmModal({
+      isOpen: true,
+      title: 'Aprobar Solicitudes',
+      message: `¿Aprobar las ${count} solicitud${count !== 1 ? 'es' : ''} seleccionada${count !== 1 ? 's' : ''}?`,
+      confirmText: 'Aprobar todas',
+      cancelText: 'Cancelar',
+      type: 'primary',
+      onConfirm: async () => {
+        setConfirmModal({ isOpen: false });
+        try {
+          for (const id of selectedIds) {
+            await database.approveChangeRequest(id, currentUser.email, '');
+          }
+          setSelectedIds(new Set());
+          await loadRequests();
+          setAlertModal({ isOpen: true, title: 'Éxito', message: `${count} solicitud${count !== 1 ? 'es aprobadas' : ' aprobada'} exitosamente`, type: 'success' });
+        } catch (error) {
+          console.error('Error bulk approving:', error);
+          setAlertModal({ isOpen: true, title: 'Error', message: 'Error aprobando solicitudes: ' + error.message, type: 'error' });
+        }
+      }
+    });
+  };
 
-  const filteredRequests = filter === 'all' 
-    ? requests 
+  const handleBulkReject = () => {
+    const count = selectedIds.size;
+    setPromptModal({
+      isOpen: true,
+      title: 'Rechazar Solicitudes',
+      message: `Razón del rechazo para las ${count} solicitud${count !== 1 ? 'es' : ''} seleccionada${count !== 1 ? 's' : ''} (opcional):`,
+      placeholder: 'Escribe la razón aquí...',
+      required: false,
+      onConfirm: async (notes) => {
+        setPromptModal({ isOpen: false });
+        try {
+          for (const id of selectedIds) {
+            await database.rejectChangeRequest(id, currentUser.email, notes);
+          }
+          setSelectedIds(new Set());
+          await loadRequests();
+          setAlertModal({ isOpen: true, title: 'Rechazadas', message: `${count} solicitud${count !== 1 ? 'es rechazadas' : ' rechazada'} exitosamente`, type: 'success' });
+        } catch (error) {
+          console.error('Error bulk rejecting:', error);
+          setAlertModal({ isOpen: true, title: 'Error', message: 'Error rechazando solicitudes: ' + error.message, type: 'error' });
+        }
+      }
+    });
+  };
+
+  // ── Derived state ──────────────────────────────────────────────
+  const filteredRequests = filter === 'all'
+    ? requests
     : requests.filter(r => r.status === filter);
 
+  const pendingVisible = pendingInView(filteredRequests);
+  const allPendingSelected = pendingVisible.length > 0 && pendingVisible.every(r => selectedIds.has(r.id));
+
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Solicitudes de Cambio</h2>
+    <div className="pb-20">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
+        <div className="flex items-center gap-4">
+          <h2 className="text-2xl font-bold">Solicitudes de Cambio</h2>
+          {canApprove && pendingVisible.length > 0 && (
+            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={allPendingSelected}
+                onChange={() => toggleSelectAll(pendingVisible)}
+                className="w-4 h-4 rounded"
+              />
+              Seleccionar todas pendientes
+            </label>
+          )}
+        </div>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -152,16 +212,26 @@ export const ChangeRequestsTab = ({ currentUser }) => {
           {filteredRequests.map(request => (
             <div key={request.id} className="bg-white rounded-lg shadow-md p-6">
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-bold">
-                    {request.players?.name_visual || request.players?.name}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Categoría: {request.players?.categoria}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Solicitado por: {request.requested_by} el {formatDateTime(request.request_date)}
-                  </p>
+                <div className="flex items-start gap-3">
+                  {canApprove && request.status === CHANGE_REQUEST_STATUS.PENDING && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(request.id)}
+                      onChange={() => toggleSelect(request.id)}
+                      className="mt-1.5 w-4 h-4 rounded cursor-pointer flex-shrink-0"
+                    />
+                  )}
+                  <div>
+                    <h3 className="text-lg font-bold">
+                      {request.players?.name_visual || request.players?.name}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Categoría: {request.players?.categoria}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Solicitado por: {request.requested_by} el {formatDateTime(request.request_date)}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {request.status === CHANGE_REQUEST_STATUS.PENDING && (() => {
@@ -186,44 +256,44 @@ export const ChangeRequestsTab = ({ currentUser }) => {
                 const complementoCambiado = request.old_complemento !== request.new_complemento;
                 const contratoCambiado    = request.old_contrato    !== request.new_contrato;
                 return (
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Viático</p>
-                  {viaticoCambiado ? (
-                    <p className="text-sm">
-                      <span className="text-red-600 line-through">${request.old_viatico || 0}</span>
-                      {' → '}
-                      <span className="text-green-600 font-semibold">${request.new_viatico || 0}</span>
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-600">${request.old_viatico || 0} <span className="italic">(sin cambio)</span></p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Complemento</p>
-                  {complementoCambiado ? (
-                    <p className="text-sm">
-                      <span className="text-red-600 line-through">${request.old_complemento || 0}</span>
-                      {' → '}
-                      <span className="text-green-600 font-semibold">${request.new_complemento || 0}</span>
-                    </p>
-                  ) : (
-                    <p className="text-xs text-gray-600">${request.old_complemento || 0} <span className="italic">(sin cambio)</span></p>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Contrato</p>
-                  {contratoCambiado ? (
-                  <p className="text-sm">
-                    <span className="text-red-600 line-through">{request.old_contrato ? 'Sí' : 'No'}</span>
-                    {' → '}
-                    <span className="text-green-600 font-semibold">{request.new_contrato ? 'Sí' : 'No'}</span>
-                  </p>
-                  ) : (
-                    <p className="text-xs text-gray-600">{request.old_contrato ? 'Sí' : 'No'} <span className="italic">(sin cambio)</span></p>
-                  )}
-                </div>
-              </div>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Viático</p>
+                      {viaticoCambiado ? (
+                        <p className="text-sm">
+                          <span className="text-red-600 line-through">${request.old_viatico || 0}</span>
+                          {' → '}
+                          <span className="text-green-600 font-semibold">${request.new_viatico || 0}</span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-600">${request.old_viatico || 0} <span className="italic">(sin cambio)</span></p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Complemento</p>
+                      {complementoCambiado ? (
+                        <p className="text-sm">
+                          <span className="text-red-600 line-through">${request.old_complemento || 0}</span>
+                          {' → '}
+                          <span className="text-green-600 font-semibold">${request.new_complemento || 0}</span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-600">${request.old_complemento || 0} <span className="italic">(sin cambio)</span></p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 mb-1">Contrato</p>
+                      {contratoCambiado ? (
+                        <p className="text-sm">
+                          <span className="text-red-600 line-through">{request.old_contrato ? 'Sí' : 'No'}</span>
+                          {' → '}
+                          <span className="text-green-600 font-semibold">{request.new_contrato ? 'Sí' : 'No'}</span>
+                        </p>
+                      ) : (
+                        <p className="text-xs text-gray-600">{request.old_contrato ? 'Sí' : 'No'} <span className="italic">(sin cambio)</span></p>
+                      )}
+                    </div>
+                  </div>
                 );
               })()}
 
@@ -267,6 +337,36 @@ export const ChangeRequestsTab = ({ currentUser }) => {
           ))}
         </div>
       )}
+
+      {/* Sticky bulk action bar */}
+      {canApprove && selectedIds.size > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg px-6 py-3 flex items-center gap-3 z-40">
+          <span className="text-sm text-gray-700 font-medium">
+            {selectedIds.size} solicitud{selectedIds.size !== 1 ? 'es' : ''} seleccionada{selectedIds.size !== 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={handleBulkApprove}
+            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
+          >
+            <CheckCircle className="w-4 h-4" />
+            Aprobar todas
+          </button>
+          <button
+            onClick={handleBulkReject}
+            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
+          >
+            <XCircle className="w-4 h-4" />
+            Rechazar todas
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-sm text-gray-500 hover:text-gray-700 ml-auto"
+          >
+            Cancelar selección
+          </button>
+        </div>
+      )}
+
       <AlertModal
         isOpen={alertModal.isOpen}
         onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
