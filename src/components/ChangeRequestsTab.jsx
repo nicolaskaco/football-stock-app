@@ -196,7 +196,7 @@ export const ChangeRequestsTab = ({ currentUser }) => {
                       <span className="text-green-600 font-semibold">${request.new_viatico || 0}</span>
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-400">${request.old_viatico || 0} <span className="italic">(sin cambio)</span></p>
+                    <p className="text-xs text-gray-600">${request.old_viatico || 0} <span className="italic">(sin cambio)</span></p>
                   )}
                 </div>
                 <div>
@@ -208,7 +208,7 @@ export const ChangeRequestsTab = ({ currentUser }) => {
                       <span className="text-green-600 font-semibold">${request.new_complemento || 0}</span>
                     </p>
                   ) : (
-                    <p className="text-xs text-gray-400">${request.old_complemento || 0} <span className="italic">(sin cambio)</span></p>
+                    <p className="text-xs text-gray-600">${request.old_complemento || 0} <span className="italic">(sin cambio)</span></p>
                   )}
                 </div>
                 <div>
@@ -220,7 +220,7 @@ export const ChangeRequestsTab = ({ currentUser }) => {
                     <span className="text-green-600 font-semibold">{request.new_contrato ? 'Sí' : 'No'}</span>
                   </p>
                   ) : (
-                    <p className="text-xs text-gray-400">{request.old_contrato ? 'Sí' : 'No'} <span className="italic">(sin cambio)</span></p>
+                    <p className="text-xs text-gray-600">{request.old_contrato ? 'Sí' : 'No'} <span className="italic">(sin cambio)</span></p>
                   )}
                 </div>
               </div>
