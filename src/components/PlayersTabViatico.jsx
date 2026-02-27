@@ -566,7 +566,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                       )}
                     </div>
                     {(player.vianda || 0) > 0 && (
-                      <Utensils className="w-4 h-4 text-amber-600 flex-shrink-0" title={`${player.vianda} vianda(s)`} />
+                      <div className="flex gap-0.5" title={`${player.vianda} vianda(s)`}>
+                        {[...Array(Math.min(player.vianda, 10))].map((_, i) => (
+                          <Utensils key={i} className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        ))}
+                      </div>
                     )}
                   </div>
                 </td>
