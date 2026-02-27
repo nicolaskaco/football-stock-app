@@ -368,11 +368,17 @@ export const database = {
       .eq('id', documentId);
   },
 
-  async getUpcomingBirthdays(daysAhead = 7) {
-    const { data: players, error } = await supabase
+  async getUpcomingBirthdays(daysAhead = 7, categorias = null) {
+    let query = supabase
       .from('players')
       .select('*')
       .eq('hide_player', false);
+
+    if (categorias && categorias.length > 0) {
+      query = query.in('categoria', categorias);
+    }
+
+    const { data: players, error } = await query;
 
     if (error) throw error;
 
