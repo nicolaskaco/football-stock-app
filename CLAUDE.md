@@ -30,7 +30,7 @@ All source files are `.jsx` — no TypeScript in use (despite `@types/react` bei
 | Path | Purpose |
 |---|---|
 | [src/App.jsx](src/App.jsx) | Root: ALL global state (`useState` hooks), session management, routing between login/dashboard/employee-view |
-| [src/supabaseClient.js](src/supabaseClient.js) | Supabase client init — credentials currently hardcoded, should move to `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` |
+| [src/supabaseClient.js](src/supabaseClient.js) | Supabase client init — reads `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from `import.meta.env`; set in `.env.local` locally and in Vercel dashboard for production |
 | [src/utils/database.js](src/utils/database.js) | Sole data access layer — all Supabase CRUD operations (~887 lines) |
 | [src/utils/storage.js](src/utils/storage.js) | Legacy localStorage wrapper — largely unused, kept for reference |
 | [src/components/](src/components/) | Tab-level views, dashboard widgets, modals, shared UI |
