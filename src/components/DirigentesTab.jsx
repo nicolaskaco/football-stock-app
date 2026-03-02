@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download } from 'lucide-react';
+import { SortIcon } from './ui/SortIcon';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { DirigenteForm } from '../forms/DirigenteForm';
 import { database } from '../utils/database';
@@ -89,14 +90,6 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
     setSortConfig({ key, direction });
   };
 
-  const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) {
-      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
-    }
-    return sortConfig.direction === 'asc' 
-      ? <ArrowUp className="w-4 h-4 text-blue-600" />
-      : <ArrowDown className="w-4 h-4 text-blue-600" />;
-  };
 
   const sortedDirigentes = [...filtered].sort((a, b) => {
     if (!sortConfig.key) return 0;
@@ -281,7 +274,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
               >
                 <div className="flex items-center gap-2">
                   Nombre
-                  <SortIcon columnKey="name" />
+                  <SortIcon sortConfig={sortConfig} columnKey="name" />
                 </div>
               </th>
               <th 
@@ -290,7 +283,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
               >
                 <div className="flex items-center gap-2">
                   Cédula
-                  <SortIcon columnKey="cedula" />
+                  <SortIcon sortConfig={sortConfig} columnKey="cedula" />
                 </div>
               </th>
               <th 
@@ -299,7 +292,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
               >
                 <div className="flex items-center gap-2">
                   Edad
-                  <SortIcon columnKey="age" />
+                  <SortIcon sortConfig={sortConfig} columnKey="age" />
                 </div>
               </th>
               <th 
@@ -308,7 +301,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
               >
                 <div className="flex items-center gap-2">
                   Rol
-                  <SortIcon columnKey="rol" />
+                  <SortIcon sortConfig={sortConfig} columnKey="rol" />
                 </div>
               </th>
               <th 
@@ -317,7 +310,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
               >
                 <div className="flex items-center gap-2">
                   Categoría
-                  <SortIcon columnKey="categoria" />
+                  <SortIcon sortConfig={sortConfig} columnKey="categoria" />
                 </div>
               </th>
               <th 
@@ -326,7 +319,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
               >
                 <div className="flex items-center gap-2">
                   Celular
-                  <SortIcon columnKey="celular" />
+                  <SortIcon sortConfig={sortConfig} columnKey="celular" />
                 </div>
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
