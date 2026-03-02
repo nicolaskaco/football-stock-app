@@ -3,8 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, History, Eye } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
+import { SortIcon } from './ui/SortIcon';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
@@ -208,14 +209,6 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   });
 
   // Render sort icon
-  const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) {
-      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
-    }
-    return sortConfig.direction === 'asc' 
-      ? <ArrowUp className="w-4 h-4 text-blue-600" />
-      : <ArrowDown className="w-4 h-4 text-blue-600" />;
-  };
 
   const handleAdd = (player) => execute(async () => {
     await database.addPlayer(player);
@@ -452,7 +445,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-2">
                   Nombre
-                  <SortIcon columnKey="name" />
+                  <SortIcon sortConfig={sortConfig} columnKey="name" />
                 </div>
               </th>
               <th 
@@ -461,7 +454,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-1">
                   Cédula
-                  <SortIcon columnKey="gov_id" />
+                  <SortIcon sortConfig={sortConfig} columnKey="gov_id" />
                 </div>
               </th>
               <th 
@@ -470,7 +463,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-1">
                   Edad
-                  <SortIcon columnKey="age" />
+                  <SortIcon sortConfig={sortConfig} columnKey="age" />
                 </div>
               </th>
               <th 
@@ -479,7 +472,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-1">
                   Categoría
-                  <SortIcon columnKey="categoria" />
+                  <SortIcon sortConfig={sortConfig} columnKey="categoria" />
                 </div>
               </th>
               <th 
@@ -488,7 +481,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-1">
                   Contrato
-                  <SortIcon columnKey="contrato" />
+                  <SortIcon sortConfig={sortConfig} columnKey="contrato" />
                 </div>
               </th>
               <th 
@@ -497,7 +490,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-2">
                   Viático
-                  <SortIcon columnKey="viatico" />
+                  <SortIcon sortConfig={sortConfig} columnKey="viatico" />
                 </div>
               </th>
               <th 
@@ -506,7 +499,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-1">
                   Complemento
-                  <SortIcon columnKey="complemento" />
+                  <SortIcon sortConfig={sortConfig} columnKey="complemento" />
                 </div>
               </th>
               <th 
@@ -515,7 +508,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-1">
                   Total
-                  <SortIcon columnKey="total" />
+                  <SortIcon sortConfig={sortConfig} columnKey="total" />
                 </div>
               </th>
               <th 
@@ -524,7 +517,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               >
                 <div className="flex items-center gap-1">
                   Banco
-                  <SortIcon columnKey="bank" />
+                  <SortIcon sortConfig={sortConfig} columnKey="bank" />
                 </div>
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">

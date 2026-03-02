@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, Download, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
+import { SortIcon } from './ui/SortIcon';
 import * as XLSX from 'xlsx';
 import { todayISO } from '../utils/dateUtils';
 import { DistributionForm } from '../forms/DistributionForm';
@@ -70,14 +71,6 @@ export const DistributionsTab = ({
   };
 
   // Render sort icon
-  const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) {
-      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
-    }
-    return sortConfig.direction === 'asc' 
-      ? <ArrowUp className="w-4 h-4 text-blue-600" />
-      : <ArrowDown className="w-4 h-4 text-blue-600" />;
-  };
 
   // Sort the filtered data
   const sortedDistributions = [...filtered].sort((a, b) => {
@@ -260,7 +253,7 @@ export const DistributionsTab = ({
               >
                 <div className="flex items-center gap-2">
                   Fecha
-                  <SortIcon columnKey="date" />
+                  <SortIcon sortConfig={sortConfig} columnKey="date" />
                 </div>
               </th>
               <th 
@@ -269,7 +262,7 @@ export const DistributionsTab = ({
               >
                 <div className="flex items-center gap-2">
                   Funcionario
-                  <SortIcon columnKey="employee" />
+                  <SortIcon sortConfig={sortConfig} columnKey="employee" />
                 </div>
               </th>
               <th 
@@ -278,7 +271,7 @@ export const DistributionsTab = ({
               >
                 <div className="flex items-center gap-2">
                   Tipo de Ropa
-                  <SortIcon columnKey="item" />
+                  <SortIcon sortConfig={sortConfig} columnKey="item" />
                 </div>
               </th>
               <th 
@@ -287,7 +280,7 @@ export const DistributionsTab = ({
               >
                 <div className="flex items-center gap-2">
                   Talle
-                  <SortIcon columnKey="size" />
+                  <SortIcon sortConfig={sortConfig} columnKey="size" />
                 </div>
               </th>
               <th 
@@ -296,7 +289,7 @@ export const DistributionsTab = ({
               >
                 <div className="flex items-center gap-2">
                   Cantidad
-                  <SortIcon columnKey="quantity" />
+                  <SortIcon sortConfig={sortConfig} columnKey="quantity" />
                 </div>
               </th>
               <th 
@@ -305,7 +298,7 @@ export const DistributionsTab = ({
               >
                 <div className="flex items-center gap-2">
                   Condición
-                  <SortIcon columnKey="condition" />
+                  <SortIcon sortConfig={sortConfig} columnKey="condition" />
                 </div>
               </th>
               <th 
@@ -314,7 +307,7 @@ export const DistributionsTab = ({
               >
                 <div className="flex items-center gap-2">
                   Autorizado por
-                  <SortIcon columnKey="authorized" />
+                  <SortIcon sortConfig={sortConfig} columnKey="authorized" />
                 </div>
               </th>
               <th 
@@ -323,7 +316,7 @@ export const DistributionsTab = ({
               >
                 <div className="flex items-center gap-2">
                   Estado
-                  <SortIcon columnKey="status" />
+                  <SortIcon sortConfig={sortConfig} columnKey="status" />
                 </div>
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">

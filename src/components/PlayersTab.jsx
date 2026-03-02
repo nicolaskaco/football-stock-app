@@ -4,8 +4,9 @@ import { useMutation } from '../hooks/useMutation';
 import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
-import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
+import { SortIcon } from './ui/SortIcon';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
 import { database } from '../utils/database';
@@ -239,14 +240,6 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   });
 
   // Render sort icon
-  const SortIcon = ({ columnKey }) => {
-    if (sortConfig.key !== columnKey) {
-      return <ArrowUpDown className="w-4 h-4 text-gray-400" />;
-    }
-    return sortConfig.direction === 'asc' 
-      ? <ArrowUp className="w-4 h-4 text-blue-600" />
-      : <ArrowDown className="w-4 h-4 text-blue-600" />;
-  };
 
   const handleAdd = (player) => execute(async () => {
     await database.addPlayer(player);
@@ -560,7 +553,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-2">
                   Nombre
-                  <SortIcon columnKey="name" />
+                  <SortIcon sortConfig={sortConfig} columnKey="name" />
                 </div>
               </th>
               <th 
@@ -569,7 +562,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-1">
                   Celular
-                  <SortIcon columnKey="celular" />
+                  <SortIcon sortConfig={sortConfig} columnKey="celular" />
                 </div>
               </th>
               <th 
@@ -578,7 +571,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-1">
                   Posición
-                  <SortIcon columnKey="posicion" />
+                  <SortIcon sortConfig={sortConfig} columnKey="posicion" />
                 </div>
               </th>
               <th 
@@ -587,7 +580,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-1">
                   Categoría
-                  <SortIcon columnKey="categoria" />
+                  <SortIcon sortConfig={sortConfig} columnKey="categoria" />
                 </div>
               </th>
               <th 
@@ -596,7 +589,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-1">
                   Departamento/País
-                  <SortIcon columnKey="departamento" />
+                  <SortIcon sortConfig={sortConfig} columnKey="departamento" />
                 </div>
               </th>
               <th 
@@ -605,7 +598,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-2">
                   Residencia
-                  <SortIcon columnKey="casita" />
+                  <SortIcon sortConfig={sortConfig} columnKey="casita" />
                 </div>
               </th>
               {/*<th 
@@ -614,7 +607,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-1">
                   Vianda
-                  <SortIcon columnKey="vianda" />
+                  <SortIcon sortConfig={sortConfig} columnKey="vianda" />
                 </div>
               </th>*/}
               <th 
@@ -623,7 +616,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-1">
                   Total
-                  <SortIcon columnKey="total" />
+                  <SortIcon sortConfig={sortConfig} columnKey="total" />
                 </div>
               </th>
               <th 
@@ -632,7 +625,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
               >
                 <div className="flex items-center gap-1">
                   Representante
-                  <SortIcon columnKey="representante" />
+                  <SortIcon sortConfig={sortConfig} columnKey="representante" />
                 </div>
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
