@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
+import { calculateTotal } from '../utils/playerUtils';
 import { Plus, Edit2, Trash2, Users, Download, ArrowUpDown, ArrowUp, ArrowDown, History, Eye, Type } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { NameVisualEditor } from '../components/NameVisualEditor';
@@ -150,12 +151,6 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   };
 
   // calculateAge imported from dateUtils
-
-  // Calculate total for a player
-  const calculateTotal = (player) => {
-    if (player.contrato) return 0;
-    return (player.viatico || 0) + (player.complemento || 0);
-  };
 
   // Sorting function
   const handleSort = (key) => {
