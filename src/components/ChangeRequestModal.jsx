@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, Save, X } from 'lucide-react';
 import { AlertModal } from './AlertModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose }) => {
   const [newValues, setNewValues] = useState({
@@ -10,7 +11,7 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
   });
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
 
   useEffect(() => {
     if (newValues.contrato) {
@@ -29,12 +30,7 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
 
   const handleSubmit = () => {
     if (!hasChanges) {
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'No hay cambios para solicitar',
-        type: 'info'
-      });
+      showAlert('Error', 'No hay cambios para solicitar', 'info');
       return;
     }
 
@@ -173,7 +169,7 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
       </div>
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={closeAlert}
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}

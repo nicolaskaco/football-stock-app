@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employees = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -23,10 +24,8 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     const timer = setTimeout(() => setSearchTerm(inputValue), 300);
     return () => clearTimeout(timer);
   }, [inputValue]);
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
-  const { execute } = useMutation((msg) =>
-    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
-  );
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
+  const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const canEditTorneo = currentUser?.canEditTorneo || false;
@@ -65,12 +64,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
   const handleDelete = (id) => setConfirmDelete(id);
 
   const handleConfirmDelete = () => {
-    setAlertModal({
-      isOpen: true,
-      title: 'Aviso',
-      message: 'Comunicarse con Kaco antes de borrar un torneo',
-      type: 'error'
-    });
+    showAlert('Aviso', 'Comunicarse con Kaco antes de borrar un torneo', 'error');
   };
 
   const handleExportToExcel = () => {
@@ -304,7 +298,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
       </div>
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={closeAlert}
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}

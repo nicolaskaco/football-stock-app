@@ -6,6 +6,7 @@ import { EmployeeForm } from '../forms/EmployeeForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
 import { ConfirmModal } from './ConfirmModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,10 +25,8 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
-  const { execute } = useMutation((msg) =>
-    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
-  );
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
+  const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const handleAdd = (emp) => execute(async () => {
@@ -45,12 +44,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
   const handleDelete = (id) => setConfirmDelete(id);
 
   const handleConfirmDelete = () => {
-    setAlertModal({
-      isOpen: true,
-      title: 'Aviso',
-      message: 'Comunicarse con Kaco antes de borrar un funcionario',
-      type: 'error'
-    });
+    showAlert('Aviso', 'Comunicarse con Kaco antes de borrar un funcionario', 'error');
   };
 
   return (
@@ -126,7 +120,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
       </div>
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={closeAlert}
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}

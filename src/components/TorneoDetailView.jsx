@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
 import { formatDate, formatDateLong, todayISO } from '../utils/dateUtils';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 export const TorneoDetailView = ({ torneo }) => {
 
@@ -16,7 +17,7 @@ export const TorneoDetailView = ({ torneo }) => {
     posicion: true,
     date_of_birth: true
   });
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
 
   const toggleExportField = (field) => {
     setExportFields(prev => ({ ...prev, [field]: !prev[field] }));
@@ -354,12 +355,7 @@ export const TorneoDetailView = ({ torneo }) => {
   const handleExportPlayersToExcel = () => {
     if (!torneo.torneo_players || torneo.torneo_players.length === 0) {
 
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'No hay jugadores para exportar',
-        type: 'warning'
-      });
+      showAlert('Error', 'No hay jugadores para exportar', 'warning');
       return;
     }
 
@@ -663,7 +659,7 @@ export const TorneoDetailView = ({ torneo }) => {
       )}
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={closeAlert}
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}

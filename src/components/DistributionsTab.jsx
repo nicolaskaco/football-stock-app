@@ -9,6 +9,7 @@ import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { PromptModal } from './PromptModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 
 export const DistributionsTab = ({
@@ -55,10 +56,8 @@ export const DistributionsTab = ({
     (filter === 'active' && !d.return_date) ||
     (filter === 'returned' && d.return_date)
   );
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
-  const { execute } = useMutation((msg) =>
-    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
-  );
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
+  const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [returnPrompt, setReturnPrompt] = useState(null);
 
   // Sorting function
@@ -132,7 +131,7 @@ export const DistributionsTab = ({
   const handleAdd = (dist) => {
     const item = inventory.find(i => i.id === dist.item_id);
     if (!item || item.quantity < dist.quantity) {
-      setAlertModal({ isOpen: true, title: 'Error', message: 'No hay inventario suficiente', type: 'error' });
+      showAlert('Error', 'No hay inventario suficiente', 'error');
       return;
     }
     execute(async () => {
@@ -365,7 +364,7 @@ export const DistributionsTab = ({
       </div>
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={closeAlert}
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
