@@ -6,6 +6,7 @@ import { todayISO } from '../utils/dateUtils';
 import { ComisionForm } from '../forms/ComisionForm';
 import { ComisionDetailView } from '../components/ComisionDetailView';
 import { database } from '../utils/database';
+import { SearchInput } from './ui/SearchInput';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
@@ -112,12 +113,11 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
       </div>
 
       <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <input
-          type="text"
-          placeholder="Buscar por nombre o dirigente..."
+        <SearchInput
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg"
+          onChange={setInputValue}
+          placeholder="Buscar por nombre o dirigente..."
+          className="w-full"
         />
       </div>
 

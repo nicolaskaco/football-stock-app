@@ -6,6 +6,7 @@ import { calculateTotal } from '../utils/playerUtils';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { SortIcon } from './ui/SortIcon';
+import { SearchInput } from './ui/SearchInput';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
@@ -394,12 +395,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
             
       <div className="bg-white rounded-lg shadow mb-6 mt-6 p-4">
         <div className="flex gap-4 flex-wrap">
-          <input 
-            type="text" 
-            placeholder="Buscar por nombre o cédula..." 
+          <SearchInput
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 min-w-[200px] px-4 py-2 border rounded-lg" 
+            onChange={setInputValue}
+            placeholder="Buscar por nombre o cédula..."
+            className="flex-1 min-w-[200px]"
           />
           <select 
             value={filterCategoria} 

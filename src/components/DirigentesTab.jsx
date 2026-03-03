@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download } from 'lucide-react';
 import { SortIcon } from './ui/SortIcon';
+import { SearchInput } from './ui/SearchInput';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { DirigenteForm } from '../forms/DirigenteForm';
 import { database } from '../utils/database';
@@ -233,12 +234,11 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
             
       <div className="bg-white rounded-lg shadow mb-6 p-4">
         <div className="flex gap-4 flex-wrap">
-          <input 
-            type="text" 
-            placeholder="Buscar por nombre o cédula..." 
+          <SearchInput
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 min-w-[200px] px-4 py-2 border rounded-lg" 
+            onChange={setInputValue}
+            placeholder="Buscar por nombre o cédula..."
+            className="flex-1 min-w-[200px]"
           />
           <select 
             value={filterRol} 
