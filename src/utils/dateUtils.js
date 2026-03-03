@@ -73,13 +73,19 @@ export function parseDOB(isoDate) {
 }
 
 /**
- * ISO timestamp → number of full days elapsed since that date.
+ * ISO timestamp → number of full calendar days since that date.
  * Returns 0 if the date is today or in the future.
+ * Compares midnight-to-midnight in local time so a request made at
+ * 5pm yesterday always returns 1, not 0.
  * Use for SLA/age indicators on pending items.
  */
 export function daysSince(dateStr) {
   if (!dateStr) return 0;
-  return Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000));
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const then = new Date(dateStr);
+  const thenMidnight = new Date(then.getFullYear(), then.getMonth(), then.getDate());
+  return Math.max(0, Math.floor((todayMidnight - thenMidnight) / 86_400_000));
 }
 
 /**
