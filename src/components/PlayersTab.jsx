@@ -15,6 +15,7 @@ import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
 import { ConfirmModal } from './ConfirmModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -60,10 +61,8 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
-  const { execute } = useMutation((msg) =>
-    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
-  );
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
+  const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
   const defaultExportFields = {
     name: true,
@@ -256,12 +255,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const handleDelete = (id) => setConfirmDelete(id);
 
   const handleConfirmDelete = () => {
-    setAlertModal({
-      isOpen: true,
-      title: 'Aviso',
-      message: 'Comunicarse con Kaco antes de borrar un jugador',
-      type: 'error'
-    });
+    showAlert('Aviso', 'Comunicarse con Kaco antes de borrar un jugador', 'error');
   };
 
   const handleEditNameVisual = async (player) => {
@@ -290,12 +284,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const handleExportToExcel = () => {
     if (selectedPlayers.length === 0) {
 
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'Selecciona al menos un jugador para exportar',
-        type: 'warning'
-      });
+      showAlert('Error', 'Selecciona al menos un jugador para exportar', 'warning');
       return;
     }
 
@@ -416,16 +405,11 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gestión de Jugadores</h2>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => {
               if (selectedPlayers.length === 0) {
 
-                setAlertModal({
-                  isOpen: true,
-                  title: 'Error',
-                  message: 'Selecciona al menos un jugador para exportar',
-                  type: 'warning'
-                });
+                showAlert('Error', 'Selecciona al menos un jugador para exportar', 'warning');
                 return;
               }
               setShowExportConfig(true);
@@ -758,7 +742,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       )}
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={closeAlert}
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}

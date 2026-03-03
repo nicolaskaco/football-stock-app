@@ -6,13 +6,14 @@ import { formatDateTime, daysSince } from '../utils/dateUtils';
 import { AlertModal } from './AlertModal';
 import { PromptModal } from './PromptModal';
 import { ConfirmModal } from './ConfirmModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 export const ChangeRequestsTab = ({ currentUser }) => {
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
   const [selectedIds, setSelectedIds] = useState(new Set());
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
   const [promptModal, setPromptModal] = useState({ isOpen: false });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
@@ -79,10 +80,10 @@ export const ChangeRequestsTab = ({ currentUser }) => {
         try {
           await database.approveChangeRequest(requestId, currentUser.email, '');
           await loadRequests();
-          setAlertModal({ isOpen: true, title: 'Éxito', message: 'Solicitud aprobada exitosamente', type: 'success' });
+          showAlert('Éxito', 'Solicitud aprobada exitosamente', 'success');
         } catch (error) {
           console.error('Error approving request:', error);
-          setAlertModal({ isOpen: true, title: 'Error', message: 'Error aprobando solicitud: ' + error.message, type: 'error' });
+          showAlert('Error', 'Error aprobando solicitud: ' + error.message, 'error');
         }
       }
     });
@@ -100,10 +101,10 @@ export const ChangeRequestsTab = ({ currentUser }) => {
         try {
           await database.rejectChangeRequest(requestId, currentUser.email, notes);
           await loadRequests();
-          setAlertModal({ isOpen: true, title: 'Rechazada', message: 'Solicitud rechazada exitosamente', type: 'success' });
+          showAlert('Rechazada', 'Solicitud rechazada exitosamente', 'success');
         } catch (error) {
           console.error('Error rejecting request:', error);
-          setAlertModal({ isOpen: true, title: 'Error', message: 'Error rechazando solicitud: ' + error.message, type: 'error' });
+          showAlert('Error', 'Error rechazando solicitud: ' + error.message, 'error');
         }
       }
     });
@@ -127,10 +128,10 @@ export const ChangeRequestsTab = ({ currentUser }) => {
           }
           setSelectedIds(new Set());
           await loadRequests();
-          setAlertModal({ isOpen: true, title: 'Éxito', message: `${count} solicitud${count !== 1 ? 'es aprobadas' : ' aprobada'} exitosamente`, type: 'success' });
+          showAlert('Éxito', `${count} solicitud${count !== 1 ? 'es aprobadas' : ' aprobada'} exitosamente`, 'success');
         } catch (error) {
           console.error('Error bulk approving:', error);
-          setAlertModal({ isOpen: true, title: 'Error', message: 'Error aprobando solicitudes: ' + error.message, type: 'error' });
+          showAlert('Error', 'Error aprobando solicitudes: ' + error.message, 'error');
         }
       }
     });
@@ -152,10 +153,10 @@ export const ChangeRequestsTab = ({ currentUser }) => {
           }
           setSelectedIds(new Set());
           await loadRequests();
-          setAlertModal({ isOpen: true, title: 'Rechazadas', message: `${count} solicitud${count !== 1 ? 'es rechazadas' : ' rechazada'} exitosamente`, type: 'success' });
+          showAlert('Rechazadas', `${count} solicitud${count !== 1 ? 'es rechazadas' : ' rechazada'} exitosamente`, 'success');
         } catch (error) {
           console.error('Error bulk rejecting:', error);
-          setAlertModal({ isOpen: true, title: 'Error', message: 'Error rechazando solicitudes: ' + error.message, type: 'error' });
+          showAlert('Error', 'Error rechazando solicitudes: ' + error.message, 'error');
         }
       }
     });
@@ -369,7 +370,7 @@ export const ChangeRequestsTab = ({ currentUser }) => {
 
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={closeAlert}
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}

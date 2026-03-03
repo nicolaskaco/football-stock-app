@@ -9,12 +9,11 @@ import * as XLSX from 'xlsx';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onFormDirtyChange }) => {
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
-  const { execute } = useMutation((msg) =>
-    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
-  );
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
+  const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('dg_search') || '';
@@ -387,7 +386,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
 
     <AlertModal
       isOpen={alertModal.isOpen}
-      onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+      onClose={closeAlert}
       title={alertModal.title}
       message={alertModal.message}
       type={alertModal.type}

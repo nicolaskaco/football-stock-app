@@ -15,6 +15,7 @@ import { ChangeRequestModal } from '../components/ChangeRequestModal';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
+import { useAlertModal } from '../hooks/useAlertModal';
 
 export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -55,10 +56,8 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
 
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [showChangeRequestModal, setShowChangeRequestModal] = useState(null);
-  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '', type: 'info' });
-  const { execute } = useMutation((msg) =>
-    setAlertModal({ isOpen: true, title: 'Error', message: msg, type: 'error' })
-  );
+  const { alertModal, showAlert, closeAlert } = useAlertModal();
+  const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const [selectedPlayers, setSelectedPlayers] = useState([]);
@@ -257,12 +256,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const handleExportToExcel = () => {
     if (selectedPlayers.length === 0) {
 
-      setAlertModal({
-        isOpen: true,
-        title: 'Error',
-        message: 'Selecciona al menos un jugador para exportar',
-        type: 'warning'
-      });
+      showAlert('Error', 'Selecciona al menos un jugador para exportar', 'warning');
       return;
     }
 
@@ -354,16 +348,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gestión de Jugadores</h2>
         <div className="flex gap-2">
-          <button 
+          <button
             onClick={() => {
               if (selectedPlayers.length === 0) {
 
-                setAlertModal({
-                  isOpen: true,
-                  title: 'Error',
-                  message: 'Selecciona al menos un jugador para exportar',
-                  type: 'warning'
-                });
+                showAlert('Error', 'Selecciona al menos un jugador para exportar', 'warning');
                 return;
               }
               setShowExportConfig(true);
@@ -667,7 +656,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       )}
       <AlertModal
         isOpen={alertModal.isOpen}
-        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        onClose={closeAlert}
         title={alertModal.title}
         message={alertModal.message}
         type={alertModal.type}
