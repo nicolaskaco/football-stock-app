@@ -6,6 +6,7 @@ import { TorneoForm } from '../forms/TorneoForm';
 import { TorneoDetailView } from '../components/TorneoDetailView';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
+import { SearchInput } from './ui/SearchInput';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
@@ -150,12 +151,11 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
       )}
 
       <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <input
-          type="text"
-          placeholder="Buscar por nombre, ciudad o país..."
+        <SearchInput
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg"
+          onChange={setInputValue}
+          placeholder="Buscar por nombre, ciudad o país..."
+          className="w-full"
         />
       </div>
 

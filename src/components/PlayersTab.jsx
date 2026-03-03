@@ -7,6 +7,7 @@ import { calculateTotal } from '../utils/playerUtils';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { SortIcon } from './ui/SortIcon';
+import { SearchInput } from './ui/SearchInput';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
 import { database } from '../utils/database';
@@ -479,12 +480,11 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             
       <div className="bg-white rounded-lg shadow mb-6 mt-6 p-4">
         <div className="flex gap-4 flex-wrap items-center">
-          <input 
-            type="text" 
-            placeholder="Buscar por nombre o cédula..." 
+          <SearchInput
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 min-w-[180px] px-4 py-2 border rounded-lg" 
+            onChange={setInputValue}
+            placeholder="Buscar por nombre o cédula..."
+            className="flex-1 min-w-[180px]"
           />
           <select 
             value={filterCategoria} 

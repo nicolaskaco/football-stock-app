@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { SearchInput } from './ui/SearchInput';
 import { InventoryForm } from '../forms/InventoryForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
@@ -82,12 +83,10 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
       </div>
       <div className="bg-white rounded-lg shadow mb-6 p-4">
         <div className="flex gap-4">
-          <input 
-            type="text" 
-            placeholder="Buscar..." 
+          <SearchInput
             value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 px-4 py-2 border rounded-lg" 
+            onChange={setInputValue}
+            placeholder="Buscar..."
           />
           <select 
             value={filterCategory} 

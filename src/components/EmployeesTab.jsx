@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { SearchInput } from './ui/SearchInput';
 import { EmployeeForm } from '../forms/EmployeeForm';
 import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
@@ -63,12 +64,11 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
         </button>
       </div>
       <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <input 
-          type="text" 
-          placeholder="Buscar por nombre o rol" 
+        <SearchInput
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          className="w-full px-4 py-2 border rounded-lg" 
+          onChange={setInputValue}
+          placeholder="Buscar por nombre o rol"
+          className="w-full"
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
