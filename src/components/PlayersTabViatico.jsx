@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS } from '../utils/constants';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye } from 'lucide-react';
@@ -40,11 +41,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   };
 
   const setSearchTerm = (v) => setParam('v_search', v, '');
-  const [inputValue, setInputValue] = useState(searchTerm);
-  useEffect(() => {
-    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
-    return () => clearTimeout(timer);
-  }, [inputValue]);
+  const [inputValue, setInputValue] = useDebouncedSearch(searchTerm, setSearchTerm);
   const setFilterCategoria = (v) => setParam('v_cat', v, 'all');
   const setSortConfig = ({ key, direction }) => {
     setSearchParams(prev => {

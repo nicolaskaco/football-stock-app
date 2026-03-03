@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { SearchInput } from './ui/SearchInput';
 import { InventoryForm } from '../forms/InventoryForm';
@@ -30,11 +31,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
   };
 
   const setSearchTerm = (v) => setParam('i_search', v, '');
-  const [inputValue, setInputValue] = useState(searchTerm);
-  useEffect(() => {
-    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
-    return () => clearTimeout(timer);
-  }, [inputValue]);
+  const [inputValue, setInputValue] = useDebouncedSearch(searchTerm, setSearchTerm);
   const setFilterCategory = (v) => setParam('i_cat', v, 'all');
 
   const categories = [...new Set(inventory.map(item => item.category))];

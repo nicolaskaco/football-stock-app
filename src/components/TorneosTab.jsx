@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Trophy, Download, Eye, Info } from 'lucide-react';
 import { formatDate, todayISO } from '../utils/dateUtils';
@@ -7,6 +7,7 @@ import { TorneoDetailView } from '../components/TorneoDetailView';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { SearchInput } from './ui/SearchInput';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
@@ -20,11 +21,7 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     v ? p.set('t_search', v) : p.delete('t_search');
     return p;
   });
-  const [inputValue, setInputValue] = useState(searchTerm);
-  useEffect(() => {
-    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
-    return () => clearTimeout(timer);
-  }, [inputValue]);
+  const [inputValue, setInputValue] = useDebouncedSearch(searchTerm, setSearchTerm);
   const { alertModal, showAlert, closeAlert } = useAlertModal();
   const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { SearchInput } from './ui/SearchInput';
 import { EmployeeForm } from '../forms/EmployeeForm';
@@ -17,11 +18,7 @@ export const EmployeesTab = ({ employees, setShowModal, onDataChange, onFormDirt
     v ? p.set('e_search', v) : p.delete('e_search');
     return p;
   });
-  const [inputValue, setInputValue] = useState(searchTerm);
-  useEffect(() => {
-    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
-    return () => clearTimeout(timer);
-  }, [inputValue]);
+  const [inputValue, setInputValue] = useDebouncedSearch(searchTerm, setSearchTerm);
   const filtered = employees.filter(e => 
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     e.role.toLowerCase().includes(searchTerm.toLowerCase())
