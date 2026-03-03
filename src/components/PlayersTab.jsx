@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
@@ -42,11 +43,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   };
 
   const setSearchTerm = (v) => setParam('p_search', v, '');
-  const [inputValue, setInputValue] = useState(searchTerm);
-  useEffect(() => {
-    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
-    return () => clearTimeout(timer);
-  }, [inputValue]);
+  const [inputValue, setInputValue] = useDebouncedSearch(searchTerm, setSearchTerm);
   const setFilterCategoria = (v) => setParam('p_cat', v, 'all');
   const setSortConfig = ({ key, direction }) => {
     setSearchParams(prev => {

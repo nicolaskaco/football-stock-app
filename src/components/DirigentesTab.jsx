@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Users, Download } from 'lucide-react';
 import { SortIcon } from './ui/SortIcon';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { SearchInput } from './ui/SearchInput';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { DirigenteForm } from '../forms/DirigenteForm';
@@ -38,11 +39,7 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
   };
 
   const setSearchTerm = (v) => setParam('dg_search', v, '');
-  const [inputValue, setInputValue] = useState(searchTerm);
-  useEffect(() => {
-    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
-    return () => clearTimeout(timer);
-  }, [inputValue]);
+  const [inputValue, setInputValue] = useDebouncedSearch(searchTerm, setSearchTerm);
   const setFilterRol = (v) => setParam('dg_rol', v, 'all');
   const setFilterCategoria = (v) => setParam('dg_cat', v, 'all');
   const setSortConfig = ({ key, direction }) => {

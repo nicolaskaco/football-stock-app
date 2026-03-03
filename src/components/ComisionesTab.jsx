@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Shield, Info, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -7,6 +7,7 @@ import { ComisionForm } from '../forms/ComisionForm';
 import { ComisionDetailView } from '../components/ComisionDetailView';
 import { database } from '../utils/database';
 import { SearchInput } from './ui/SearchInput';
+import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
@@ -23,11 +24,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
     v ? p.set('c_search', v) : p.delete('c_search');
     return p;
   });
-  const [inputValue, setInputValue] = useState(searchTerm);
-  useEffect(() => {
-    const timer = setTimeout(() => setSearchTerm(inputValue), 300);
-    return () => clearTimeout(timer);
-  }, [inputValue]);
+  const [inputValue, setInputValue] = useDebouncedSearch(searchTerm, setSearchTerm);
 
   const canEditComision = currentUser?.canEditComision || false;
 
