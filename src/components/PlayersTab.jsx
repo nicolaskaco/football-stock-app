@@ -5,7 +5,7 @@ import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
-import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type, Stethoscope } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { SortIcon } from './ui/SortIcon';
 import { SearchInput } from './ui/SearchInput';
@@ -62,6 +62,31 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const { alertModal, showAlert, closeAlert } = useAlertModal();
   const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [fichaMedicaLoading, setFichaMedicaLoading] = useState(null);
+
+  const handleCheckFichaMedica = async (player) => {
+    if (!player.gov_id) {
+      showAlert('Sin cédula', 'Este jugador no tiene cédula registrada', 'warning');
+      return;
+    }
+    setFichaMedicaLoading(player.id);
+    try {
+      const result = await database.checkFichaMedica(player.gov_id);
+      if (!result.found) {
+        showAlert('Sin resultados', `No se encontró carné para cédula ${player.gov_id}`, 'info');
+      } else {
+        const anyVencido = result.fichas.some(f => f.vencido);
+        const lines = result.fichas.length > 0
+          ? result.fichas.map(f => `${f.deporte}: ${f.desde} → ${f.hasta} (${f.vencido ? '❌ Vencido' : '✅ Vigente'})`).join('\n')
+          : 'Sin disciplinas registradas';
+        showAlert(result.nombre, lines, anyVencido ? 'error' : 'success');
+      }
+    } catch {
+      showAlert('Error', 'No se pudo consultar el carné del deportista (SND)', 'error');
+    } finally {
+      setFichaMedicaLoading(null);
+    }
+  };
   const defaultExportFields = {
     name: true,
     name_visual: false,
@@ -699,7 +724,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                         </button>
                       )}
                       {canEditPlayers && (
-                        <button 
+                        <button
                           onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
                           className="text-purple-600 hover:text-purple-800"
                           title="Ver historial"
@@ -707,6 +732,16 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                           <History className="w-4 h-4" />
                         </button>
                       )}
+                      <button
+                        onClick={() => handleCheckFichaMedica(player)}
+                        disabled={fichaMedicaLoading === player.id}
+                        className="text-teal-600 hover:text-teal-800 disabled:opacity-40"
+                        title="Consultar carné deportista (SND)"
+                      >
+                        {fichaMedicaLoading === player.id
+                          ? <span className="w-4 h-4 block animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
+                          : <Stethoscope className="w-4 h-4" />}
+                      </button>
                     </div>
                   </td>
               </tr>
