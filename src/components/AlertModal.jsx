@@ -31,7 +31,7 @@ export const AlertModal = ({ isOpen, onClose, title, message, type = 'info' }) =
         </div>
         
         <div className="p-6">
-          <p className="text-gray-700">{message}</p>
+          <div className="text-gray-700">{message}</div>
         </div>
         
         <div className="p-6 bg-gray-50 flex justify-end">

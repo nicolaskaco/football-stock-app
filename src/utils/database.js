@@ -294,6 +294,16 @@ export const database = {
     return data;
   },
 
+  // Check ficha médica via SND proxy Edge Function
+  async checkFichaMedica(cedula) {
+    const documento = String(cedula).replace(/\D/g, '');
+    const { data, error } = await supabase.functions.invoke('check-ficha-medica', {
+      body: { documento, idtipodocumento: 1 },
+    });
+    if (error) throw error;
+    return data;
+  },
+
   // Validate employee credentials via Edge Function
   //https://czboublvkbkvtbkmkqmx.supabase.co/functions/v1/validate-employee
   async validateEmployee(govId, employeeId) {
