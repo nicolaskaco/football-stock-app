@@ -76,6 +76,12 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         showAlert('Sin resultados', `No se encontró carné para cédula ${player.gov_id}`, 'info');
       } else {
         const anyVencido = result.fichas.some(f => f.vencido);
+        if (result.fichas.length > 0) {
+          const futbol = result.fichas.find(f => f.deporte.toUpperCase().includes('FÚTBOL') || f.deporte.toUpperCase().includes('FUTBOL'));
+          const fichaToSave = futbol || result.fichas[0];
+          await database.saveFichaMedicaHasta(player.id, fichaToSave.hasta);
+          onDataChange();
+        }
         const content = result.fichas.length > 0
           ? (
             <div className="space-y-3">

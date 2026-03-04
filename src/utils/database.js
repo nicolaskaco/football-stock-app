@@ -304,6 +304,17 @@ export const database = {
     return data;
   },
 
+  async saveFichaMedicaHasta(playerId, hastaStr) {
+    // hastaStr is DD/MM/YYYY — convert to YYYY-MM-DD for PostgreSQL
+    const [d, m, y] = hastaStr.split('/');
+    const isoDate = `${y}-${m}-${d}`;
+    const { error } = await supabase
+      .from('players')
+      .update({ ficha_medica_hasta: isoDate })
+      .eq('id', playerId);
+    if (error) throw error;
+  },
+
   // Validate employee credentials via Edge Function
   //https://czboublvkbkvtbkmkqmx.supabase.co/functions/v1/validate-employee
   async validateEmployee(govId, employeeId) {
