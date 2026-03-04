@@ -108,6 +108,7 @@ Stored as `user_permissions.role`:
 | `can_edit_comisiones` | Edit committee records |
 | `can_view_partidos` | Rivales + Partidos tabs |
 | `can_edit_partidos` | Create/edit jornadas, partidos, rivales |
+| `can_see_ropa_widgets` | Inventory/distribution widgets on OverviewTab |
 | `categoria[]` | Array — restricts access to specific player categories |
 
 The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`.
@@ -139,6 +140,8 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `jornadas` | A matchday grouping 5 category matches vs. the same rival |
 | `partidos` | Individual match per category (child of jornada) |
 | `partido_players` | Players convoked per partido (titulares + suplentes) |
+| `partido_eventos` | Match events (goals, yellow/red cards) per partido |
+| `app_settings` | Global key-value feature flags toggled via ConfiguracionTab |
 | `user_permissions` | Role and permission flags per user email |
 
 ### Campeonato Juvenil Tables Detail
@@ -183,6 +186,17 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `posicion` | text | nullable — only for titulares |
 | `orden` | integer | 1–11 for titulares, 1–10 for suplentes |
 
+#### `partido_eventos`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `partido_id` | uuid FK → partidos | ON DELETE CASCADE |
+| `player_id` | uuid FK → players | ON DELETE CASCADE |
+| `tipo` | text | `'gol'` \| `'amarilla'` \| `'roja'` |
+| `minuto` | integer | nullable — minute the event occurred |
+
+Used by `EstadisticasTab` to compute per-player totals (goals, cards) and standings.
+
 ### Audit-Tracked Player Fields
 
 Changes to `contrato`, `viatico`, `complemento`, `vianda`, and `casita` are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call.
@@ -214,18 +228,22 @@ Bucket: `player-documents` (private)
 | Tab ID | Label | Visible When |
 |--------|-------|--------------|
 | `overview` | Resumen | Always |
-| `inventory` | Inventario | `can_access_ropa` |
+| `inventory` | Inventario | `can_access_ropa` **and** `inventario_tab_enabled` app setting |
 | `employees` | Funcionarios | `can_access_ropa` |
 | `players` | Jugadores | `can_access_players` |
 | `players_viatico` | Viáticos | `can_access_viatico` |
 | `change_requests` | Solicitudes | role in `[admin, ejecutivo, presidente, presidente_categoria]` |
-| `distributions` | Distribuciones | `can_access_ropa` |
+| `distributions` | Distribuciones | `can_access_ropa` **and** `distribuciones_tab_enabled` app setting |
 | `dirigentes` | Dirigentes | `can_access_dirigentes` |
 | `torneos` | Torneos | `view_torneo` |
 | `comisiones` | Comisiones | `can_view_comisiones` |
-| `rivales` | Rivales | `can_view_partidos` |
+| `rivales` | Rivales | `can_view_partidos` **and** `rivales_tab_enabled` app setting |
 | `partidos` | Partidos | `can_view_partidos` |
-| `reports` | Reportes | `can_access_ropa` |
+| `estadisticas` | Estadísticas | `can_view_partidos` **and** `estadisticas_tab_enabled` app setting |
+| `reports` | Reportes | `can_access_ropa` **and** `reportes_tab_enabled` app setting |
+| `configuracion` | Configuración | `role = 'admin'` only |
+
+App settings (`app_settings` table) are loaded at login into `appSettings` global state in `App.jsx`. Admins toggle them via `ConfiguracionTab`. The `tabEnabled(key)` helper in `AdminDashboard` checks `appSettings[key] === 'true'`.
 
 ### Components
 
@@ -250,6 +268,8 @@ Bucket: `player-documents` (private)
 | [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, and comment |
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
+| [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival; top-scorer podium; filterable by category and phase |
+| [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()` |
 | [EmployeeView.jsx](src/components/EmployeeView.jsx) | Staff self-service: view own clothing distributions |
 | [LoginView.jsx](src/components/LoginView.jsx) | Dual-mode login (admin / funcionario) |
 
@@ -297,6 +317,9 @@ Bucket: `player-documents` (private)
 | [StatCard.jsx](src/components/StatCard.jsx) | Reusable stat summary card |
 | [Toast.jsx](src/components/Toast.jsx) | Toast notification display |
 | [ui/FilterButtonGroup.jsx](src/components/ui/FilterButtonGroup.jsx) | Generic toggle-button filter bar; props: `options: string[]`, `value`, `onChange`, `label?`, `allLabel?` |
+| [ui/SearchInput.jsx](src/components/ui/SearchInput.jsx) | Controlled text search input; `onChange` receives the string value (not the DOM event); base styles baked in, layout class passed as `className` prop (default: `flex-1`) |
+| [ui/SortIcon.jsx](src/components/ui/SortIcon.jsx) | Sort direction arrow for table headers; shows neutral icon when column is unsorted, blue up/down arrow when active; requires `columnKey` and `sortConfig` props |
+| [ui/ViandaIcons.jsx](src/components/ui/ViandaIcons.jsx) | Renders `Utensils` icons equal to the player's `vianda` count, capped at 10; returns null when count ≤ 0 |
 
 ---
 
@@ -451,6 +474,12 @@ All shared enums are centralized here — never defined inline in components:
 | `CATEGORIAS_INVENTARIO` | Clothing categories |
 | `CHANGE_REQUEST_STATUS` | `{ PENDING, APPROVED, REJECTED }` |
 
+### Player Utilities (`src/utils/playerUtils.js`)
+
+| Export | Description |
+|--------|-------------|
+| `calculateTotal(player)` | Returns viatico + complemento sum; returns 0 for players with `contrato = true` |
+
 ### Date Utilities (`src/utils/dateUtils.js`)
 
 | Export | Description |
@@ -461,7 +490,17 @@ All shared enums are centralized here — never defined inline in components:
 | `formatBirthday(str)` | `DD/MM` (no year, timezone-safe) |
 | `todayISO()` | `YYYY-MM-DD` for date inputs |
 | `parseDOB(str)` | Date from `YYYY-MM-DD` without timezone drift |
-| `daysSince(str)` | Number of full days elapsed since a date (returns 0 for future/null); used for SLA age badges |
+| `calculateAge(isoDate)` | Timezone-safe age in years from an ISO date string; returns `'-'` for null input |
+| `daysSince(str)` | Full calendar days since a date (midnight-to-midnight, local time); returns 0 for future/null; used for SLA age badges |
+
+### Hooks (`src/hooks/`)
+
+| Hook | Description |
+|------|-------------|
+| `useMutation.jsx` | Wraps async operations with loading state, error handling, and toast feedback; returns `{ execute, isSaving }` |
+| `useAlertModal.js` | Manages `AlertModal` state; returns `{ alertModal, showAlert(title, message, type), closeAlert }` |
+| `useDebouncedSearch.js` | Syncs a local `inputValue` to a URL search param after a 300ms debounce; returns `[inputValue, setInputValue]` |
+| `useTableSort.jsx` | Table sort state for `EstadisticasTab`; exports `SORT_DEFAULTS`, `thClass`, and `useTableSort(initialKey, initialDir)` returning `{ handleSort, sortFn, SortIcon, sortKey, sortDir }` |
 
 ---
 
@@ -506,7 +545,10 @@ football-stock-app/
     ├── logo.jpeg
     ├── components/                # UI components (tabs, widgets, modals)
     │   ├── ui/
-    │   │   └── FilterButtonGroup.jsx  # Shared toggle-button filter bar
+    │   │   ├── FilterButtonGroup.jsx  # Shared toggle-button filter bar
+    │   │   ├── SearchInput.jsx        # Shared debounced search input
+    │   │   ├── SortIcon.jsx           # Shared sort direction arrow
+    │   │   └── ViandaIcons.jsx        # Shared vianda icon renderer
     │   ├── AdminDashboard.jsx
     │   ├── LoginView.jsx
     │   ├── EmployeeView.jsx
@@ -527,6 +569,8 @@ football-stock-app/
     │   ├── PartidoDetailView.jsx
     │   ├── CalendarioView.jsx
     │   ├── ReportsTab.jsx
+    │   ├── EstadisticasTab.jsx
+    │   ├── ConfiguracionTab.jsx
     │   ├── BirthdayWidget.jsx
     │   ├── SpendingTrendsWidget.jsx
     │   ├── CategoryDistributionWidget.jsx
@@ -561,9 +605,14 @@ football-stock-app/
     ├── context/
     │   └── ToastContext.jsx       # Toast notification context + provider
     ├── hooks/
-    │   └── useMutation.jsx        # Async mutation helper with toast feedback
+    │   ├── useMutation.jsx        # Async mutation helper with toast feedback
+    │   ├── useAlertModal.js       # AlertModal state manager
+    │   ├── useDebouncedSearch.js  # Debounced URL-param search input
+    │   └── useTableSort.jsx       # Table sort state for EstadisticasTab
     └── utils/
         ├── constants.js           # All shared enums and constant lists
-        ├── dateUtils.js           # Date formatting helpers
-        └── storage.js
+        ├── database.js            # All Supabase data access methods
+        ├── dateUtils.js           # Date formatting and age calculation helpers
+        ├── playerUtils.js         # Player business logic (calculateTotal)
+        └── storage.js             # Legacy localStorage wrapper (largely unused)
 ```
