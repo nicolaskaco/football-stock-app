@@ -26,7 +26,6 @@ serve(async (req) => {
   );
 
   const html = await res.text();
-  console.log('SND HTML snippet:', html.substring(0, 3000));
 
   if (html.includes('No existen resultados')) {
     return new Response(JSON.stringify({ found: false }), {
@@ -37,17 +36,21 @@ serve(async (req) => {
   const nameMatch = html.match(/<h4>([^<(]+)/);
   const nombre = nameMatch ? nameMatch[1].trim() : '';
 
-  // Each sport block looks like:
-  // <strong>FÚTBOL</strong>: desde DD/MM/YYYY hasta DD/MM/YYYY <span class="label label-danger">Vencido</span>
+  // Each sport block: <strong>FÚTBOL</strong>: desde DD/MM/YYYY hasta DD/MM/YYYY
   const fichas: { deporte: string; desde: string; hasta: string; vencido: boolean }[] = [];
-  const blockRegex = /<strong>([^<]+)<\/strong>[\s\S]*?desde\s+([\d\/]+)[\s\S]*?hasta\s+([\d\/]+)[\s\S]*?label-(danger|success)/g;
+  const blockRegex = /<strong>([^<]+)<\/strong>[^]*?desde\s+([\d\/]+)[^]*?hasta\s+([\d\/]+)/g;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
   let match;
   while ((match = blockRegex.exec(html)) !== null) {
+    const hasta = match[3].trim();
+    const [d, m, y] = hasta.split('/').map(Number);
+    const hastaDate = new Date(y, m - 1, d);
     fichas.push({
       deporte: match[1].trim(),
-      desde: match[2],
-      hasta: match[3],
-      vencido: match[4] === 'danger',
+      desde: match[2].trim(),
+      hasta,
+      vencido: hastaDate < today,
     });
   }
 
