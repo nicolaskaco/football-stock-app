@@ -26,6 +26,7 @@ serve(async (req) => {
   );
 
   const html = await res.text();
+  console.log('SND HTML snippet:', html.substring(0, 3000));
 
   if (html.includes('No existen resultados')) {
     return new Response(JSON.stringify({ found: false }), {

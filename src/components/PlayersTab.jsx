@@ -76,10 +76,22 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         showAlert('Sin resultados', `No se encontró carné para cédula ${player.gov_id}`, 'info');
       } else {
         const anyVencido = result.fichas.some(f => f.vencido);
-        const lines = result.fichas.length > 0
-          ? result.fichas.map(f => `${f.deporte}: ${f.desde} → ${f.hasta} (${f.vencido ? '❌ Vencido' : '✅ Vigente'})`).join('\n')
+        const content = result.fichas.length > 0
+          ? (
+            <div className="space-y-3">
+              {result.fichas.map((f, i) => (
+                <div key={i} className="border rounded-lg p-3">
+                  <div className="font-semibold text-gray-800 mb-1">{f.deporte}</div>
+                  <div className="text-sm">Desde: {f.desde}</div>
+                  <div className={`text-sm font-medium ${f.vencido ? 'text-red-600' : 'text-green-700'}`}>
+                    Hasta: {f.hasta} — {f.vencido ? '❌ Vencido' : '✅ Vigente'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
           : 'Sin disciplinas registradas';
-        showAlert(result.nombre, lines, anyVencido ? 'error' : 'success');
+        showAlert(result.nombre, content, anyVencido ? 'error' : 'success');
       }
     } catch {
       showAlert('Error', 'No se pudo consultar el carné del deportista (SND)', 'error');
