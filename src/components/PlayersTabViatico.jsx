@@ -6,6 +6,7 @@ import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
+import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
 import { SortIcon } from './ui/SortIcon';
 import { SearchInput } from './ui/SearchInput';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
@@ -523,14 +524,15 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                   />
                 </td>
                 <td className="px-6 py-4 font-medium">
-                  <div className="flex items-center gap-2">
-                    <div>
-                      <div className="font-semibold whitespace-nowrap">{player.name_visual || player.name}</div>
-                      {player.name_visual && player.name_visual !== player.name && (
-                        <div className="text-xs text-gray-500 mt-1">({player.name})</div>
-                      )}
+                  <div>
+                    <div className="flex items-center gap-1 font-semibold whitespace-nowrap">
+                      {player.name_visual || player.name}
+                      <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
+                      <ViandaIcons count={player.vianda} />
                     </div>
-                    <ViandaIcons count={player.vianda} />
+                    {player.name_visual && player.name_visual !== player.name && (
+                      <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                    )}
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm">{player.gov_id}</td>
