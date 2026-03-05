@@ -437,6 +437,25 @@ export const database = {
     });
   },
 
+  async getPlayersWithExpiredFichaMedica(categorias = null) {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    let query = supabase
+      .from('players')
+      .select('id, name, name_visual, categoria, ficha_medica_hasta')
+      .eq('hide_player', false)
+      .not('ficha_medica_hasta', 'is', null)
+      .lt('ficha_medica_hasta', today)
+      .order('ficha_medica_hasta', { ascending: true });
+
+    if (categorias && categorias.length > 0) {
+      query = query.in('categoria', categorias);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  },
+
   async getUpcomingBirthdaysDirigentes(days = 7) {
     try {
       const { data, error } = await supabase
