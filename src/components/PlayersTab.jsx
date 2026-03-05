@@ -680,19 +680,17 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                   />
                 </td>
                 <td className="px-6 py-4 font-medium">
-                  <div className="flex items-center gap-2">
-                    <div>
-                      <div className="flex items-center gap-1 font-semibold whitespace-nowrap">
-                        {player.name_visual || player.name}
-                        {fichaMedicaColor(player.ficha_medica_hasta) && (
-                          <Stethoscope className={`w-3.5 h-3.5 ${fichaMedicaColor(player.ficha_medica_hasta)}`} title={`Ficha médica hasta ${player.ficha_medica_hasta}`} />
-                        )}
-                      </div>
-                      {player.name_visual && player.name_visual !== player.name && (
-                        <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                  <div>
+                    <div className="flex items-center gap-1 font-semibold whitespace-nowrap">
+                      {player.name_visual || player.name}
+                      {fichaMedicaColor(player.ficha_medica_hasta) && (
+                        <Stethoscope className={`w-3.5 h-3.5 ${fichaMedicaColor(player.ficha_medica_hasta)}`} title={`Ficha médica hasta ${player.ficha_medica_hasta}`} />
                       )}
+                      <ViandaIcons count={player.vianda} />
                     </div>
-                    <ViandaIcons count={player.vianda} />
+                    {player.name_visual && player.name_visual !== player.name && (
+                      <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                    )}
                   </div>
                 </td>
                 <td className="px-3 py-4 text-sm">{player.celular}</td>
