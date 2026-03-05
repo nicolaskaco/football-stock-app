@@ -64,6 +64,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [fichaMedicaLoading, setFichaMedicaLoading] = useState(null);
+  const [bulkFichaProgress, setBulkFichaProgress] = useState(null); // { current, total } while running
 
   const handleCheckFichaMedica = async (player) => {
     if (!player.gov_id) {
@@ -105,6 +106,59 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     } finally {
       setFichaMedicaLoading(null);
     }
+  };
+
+  const handleBulkFichaMedica = async () => {
+    const players = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
+    const total = players.length;
+    const results = { updated: [], notFound: [], sinCedula: [], error: [] };
+
+    setBulkFichaProgress({ current: 0, total });
+    for (let i = 0; i < players.length; i++) {
+      const player = players[i];
+      setBulkFichaProgress({ current: i + 1, total });
+      if (!player.gov_id) {
+        results.sinCedula.push(player.name_visual || player.name);
+        continue;
+      }
+      try {
+        const result = await database.checkFichaMedica(player.gov_id);
+        if (!result.found) {
+          results.notFound.push(player.name_visual || player.name);
+        } else if (result.fichas.length > 0) {
+          const futbol = result.fichas.find(f => f.deporte.toUpperCase().includes('FÚTBOL') || f.deporte.toUpperCase().includes('FUTBOL'));
+          const ficha = futbol || result.fichas[0];
+          await database.saveFichaMedicaHasta(player.id, ficha.hasta);
+          results.updated.push(player.name_visual || player.name);
+        } else {
+          results.notFound.push(player.name_visual || player.name);
+        }
+      } catch {
+        results.error.push(player.name_visual || player.name);
+      }
+      if (i < players.length - 1) await new Promise(r => setTimeout(r, 500));
+    }
+
+    setBulkFichaProgress(null);
+    onDataChange();
+
+    const content = (
+      <div className="space-y-3 text-sm">
+        {results.updated.length > 0 && (
+          <div><span className="font-semibold text-green-700">✅ Actualizados ({results.updated.length}):</span> {results.updated.join(', ')}</div>
+        )}
+        {results.notFound.length > 0 && (
+          <div><span className="font-semibold text-gray-600">🔍 No encontrados en SND ({results.notFound.length}):</span> {results.notFound.join(', ')}</div>
+        )}
+        {results.sinCedula.length > 0 && (
+          <div><span className="font-semibold text-orange-600">⚠️ Sin cédula ({results.sinCedula.length}):</span> {results.sinCedula.join(', ')}</div>
+        )}
+        {results.error.length > 0 && (
+          <div><span className="font-semibold text-red-600">❌ Error ({results.error.length}):</span> {results.error.join(', ')}</div>
+        )}
+      </div>
+    );
+    showAlert('Resultado actualización ficha médica', content, results.error.length > 0 ? 'error' : 'success');
   };
   const defaultExportFields = {
     name: true,
@@ -461,6 +515,25 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             <Download className="w-5 h-5" />
             Exportar a Excel {selectedPlayers.length > 0 && `(${selectedPlayers.length})`}
           </button>
+          {selectedPlayers.length >= 2 && (
+            <button
+              onClick={handleBulkFichaMedica}
+              disabled={!!bulkFichaProgress}
+              className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50"
+            >
+              {bulkFichaProgress ? (
+                <>
+                  <span className="w-4 h-4 block animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Consultando {bulkFichaProgress.current}/{bulkFichaProgress.total}
+                </>
+              ) : (
+                <>
+                  <Stethoscope className="w-5 h-5" />
+                  Ficha médica ({selectedPlayers.length})
+                </>
+              )}
+            </button>
+          )}
           {canEditPlayers && (
             <button 
               onClick={() => setShowModal({
