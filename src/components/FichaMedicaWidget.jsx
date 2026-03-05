@@ -2,13 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Stethoscope } from 'lucide-react';
 import { database } from '../utils/database';
 
+const CATEGORIA_ORDER = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
+
 export const FichaMedicaWidget = ({ currentUser }) => {
   const [players, setPlayers] = useState([]);
 
   useEffect(() => {
     const categorias = currentUser?.categoria?.length > 0 ? currentUser.categoria : null;
     database.getPlayersWithExpiredFichaMedica(categorias)
-      .then(setPlayers)
+      .then((data) => {
+        const sorted = [...data].sort((a, b) => {
+          const ai = CATEGORIA_ORDER.indexOf(a.categoria);
+          const bi = CATEGORIA_ORDER.indexOf(b.categoria);
+          return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+        });
+        setPlayers(sorted);
+      })
       .catch(() => {});
   }, []);
 
