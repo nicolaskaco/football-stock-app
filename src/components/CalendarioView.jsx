@@ -210,7 +210,7 @@ const MONTHS_ES = [
 
 export const CalendarioView = ({ jornadas = [], onJornadaClick }) => {
   const today = new Date();
-  const [calView, setCalView] = useState('month'); // 'month' | 'week'
+  const [calView, setCalView] = useState('week'); // 'month' | 'week'
   const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [weekStart, setWeekStart] = useState(getMonday(today));
 
