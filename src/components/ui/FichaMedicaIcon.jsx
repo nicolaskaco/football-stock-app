@@ -14,10 +14,11 @@ const getColor = (hasta) => {
 export function FichaMedicaIcon({ hasta }) {
   const color = getColor(hasta);
   if (!color) return null;
+  const [y, m, d] = hasta.split('-');
+  const label = `Ficha médica hasta ${d}/${m}/${y}`;
   return (
-    <Stethoscope
-      className={`w-3.5 h-3.5 ${color}`}
-      title={`Ficha médica hasta ${hasta}`}
-    />
+    <span title={label} className="inline-flex">
+      <Stethoscope className={`w-3.5 h-3.5 ${color}`} />
+    </span>
   );
 }
