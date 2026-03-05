@@ -5,6 +5,17 @@ import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
+
+const fichaMedicaColor = (hasta) => {
+  if (!hasta) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const hastaDate = new Date(hasta + 'T00:00:00');
+  const diffDays = Math.floor((hastaDate - today) / 86_400_000);
+  if (diffDays < 0) return 'text-red-500';
+  if (diffDays <= 30) return 'text-orange-400';
+  return 'text-green-500';
+};
 import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type, Stethoscope } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { SortIcon } from './ui/SortIcon';
@@ -671,7 +682,12 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                 <td className="px-6 py-4 font-medium">
                   <div className="flex items-center gap-2">
                     <div>
-                      <div className="font-semibold whitespace-nowrap">{player.name_visual || player.name}</div>
+                      <div className="flex items-center gap-1 font-semibold whitespace-nowrap">
+                        {player.name_visual || player.name}
+                        {fichaMedicaColor(player.ficha_medica_hasta) && (
+                          <Stethoscope className={`w-3.5 h-3.5 ${fichaMedicaColor(player.ficha_medica_hasta)}`} title={`Ficha médica hasta ${player.ficha_medica_hasta}`} />
+                        )}
+                      </div>
                       {player.name_visual && player.name_visual !== player.name && (
                         <div className="text-xs text-gray-500 mt-1">({player.name})</div>
                       )}
