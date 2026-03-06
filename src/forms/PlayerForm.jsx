@@ -28,7 +28,8 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     tipo_pasaporte_ext: '',
     fecha_llegada: null,
     captador: '',
-    celular: ''
+    celular: '',
+    tipo_documento: 'Cédula de Identidad',
   });
   const initialData = useRef(JSON.stringify(player || {}));
 
@@ -66,21 +67,73 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información Básica</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Fila 1: Nombre | Categoría */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Nombre Completo *
             </label>
-            <input 
-              type="text" 
-              required 
-              value={formData.name} 
-              onChange={(e) => setFormData({...formData, name: e.target.value})} 
+            <input
+              type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({...formData, name: e.target.value})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Categoría *
+            </label>
+            <select
+              required
+              value={formData.categoria}
+              onChange={(e) => setFormData({...formData, categoria: e.target.value})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Seleccione Categoría</option>
+              {categorias.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Fila 2: Tipo Documento | Número de Documento */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tipo de Documento *
+            </label>
+            <select
+              required
+              value={formData.tipo_documento || 'Cédula de Identidad'}
+              onChange={(e) => setFormData({...formData, tipo_documento: e.target.value})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Cédula de Identidad">Cédula de Identidad</option>
+              <option value="Pasaporte">Pasaporte</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Número de Documento *
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.gov_id}
+              onChange={(e) => setFormData({...formData, gov_id: e.target.value})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           {player && player.name_visual && (
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Nombre Visual (para mostrar)
               </label>
@@ -95,47 +148,15 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Cédula o Pasaporte *
-            </label>
-            <input 
-              type="text" 
-              required 
-              value={formData.gov_id} 
-              onChange={(e) => setFormData({...formData, gov_id: e.target.value})} 
-              disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
               Fecha de Nacimiento *
             </label>
-            <input 
-              type="date" 
-              value={formData.date_of_birth} 
-              onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})} 
-              disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Categoría *
-            </label>
-            <select 
-              required 
-              value={formData.categoria} 
-              onChange={(e) => setFormData({...formData, categoria: e.target.value})} 
+            <input
+              type="date"
+              value={formData.date_of_birth}
+              onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Seleccione Categoría</option>
-              {categorias.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>
