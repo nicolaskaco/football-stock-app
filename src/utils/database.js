@@ -295,10 +295,16 @@ export const database = {
   },
 
   // Check ficha médica via SND proxy Edge Function
-  async checkFichaMedica(cedula) {
+  async checkFichaMedica(cedula, tipoDocumento) {
     const documento = String(cedula).replace(/\D/g, '');
+    const tipoMap = {
+      'Cédula de Identidad': 1,
+      'Pasaporte': 2,
+      'Otro': 3,
+    };
+    const idtipodocumento = tipoMap[tipoDocumento] ?? 1;
     const { data, error } = await supabase.functions.invoke('check-ficha-medica', {
-      body: { documento, idtipodocumento: 1 },
+      body: { documento, idtipodocumento },
     });
     if (error) throw error;
     return data;

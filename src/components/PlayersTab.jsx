@@ -73,7 +73,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     }
     setFichaMedicaLoading(player.id);
     try {
-      const result = await database.checkFichaMedica(player.gov_id);
+      const result = await database.checkFichaMedica(player.gov_id, player.tipo_documento);
       if (!result.found) {
         showAlert('Sin resultados', `No se encontró carné para cédula ${player.gov_id}`, 'info');
       } else {
@@ -122,7 +122,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         continue;
       }
       try {
-        const result = await database.checkFichaMedica(player.gov_id);
+        const result = await database.checkFichaMedica(player.gov_id, player.tipo_documento);
         if (!result.found) {
           results.notFound.push(player.name_visual || player.name);
         } else if (result.fichas.length > 0) {
