@@ -292,6 +292,39 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
           </div>
         </div>
 
+        {/* Override Temporal de Complemento — solo lectura, se edita desde la pestaña Viático */}
+        {!formData.contrato && (
+          <div className="mt-4 border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-yellow-800 mb-1">
+              Override Temporal de Complemento
+            </h4>
+            <p className="text-xs text-yellow-700 mb-3">
+              Para modificar estos valores, usá la pestaña <strong>Viático</strong>.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Valor Override</label>
+                <input
+                  type="text"
+                  disabled
+                  value={formData.complemento_override ?? ''}
+                  placeholder="Sin override activo"
+                  className="w-full px-4 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Válido hasta</label>
+                <input
+                  type="date"
+                  disabled
+                  value={formData.complemento_override_expira ?? ''}
+                  className="w-full px-4 py-2 border rounded-lg bg-gray-100 cursor-not-allowed"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Comentario Viático
