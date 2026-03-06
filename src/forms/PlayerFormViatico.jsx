@@ -13,21 +13,26 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
     bank_account: '',
     comentario_viatico: '',
     categoria: '',
+    complemento_override: null,
+    complemento_override_expira: null,
   });
   const initialData = useRef(JSON.stringify(player || {}));
   const isPresidenteCategoria = currentUser?.role === 'presidente_categoria';
+  const canEditOverride = ['presidente', 'ejecutivo', 'admin'].includes(currentUser?.role);
 
   useEffect(() => {
     onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
   }, [formData]);
 
-  // When contrato is checked, clear viatico and complemento
+  // When contrato is checked, clear viatico, complemento, and override
   useEffect(() => {
     if (formData.contrato) {
       setFormData(prev => ({
         ...prev,
         viatico: 0,
-        complemento: 0
+        complemento: 0,
+        complemento_override: null,
+        complemento_override_expira: null,
       }));
     }
   }, [formData.contrato]);
@@ -140,10 +145,10 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
 
       <div>
         <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-          <input 
-            type="checkbox" 
-            checked={formData.contrato} 
-            onChange={(e) => setFormData({...formData, contrato: e.target.checked})} 
+          <input
+            type="checkbox"
+            checked={formData.contrato}
+            onChange={(e) => setFormData({...formData, contrato: e.target.checked})}
             disabled={readOnly || isPresidenteCategoria}
             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
@@ -151,6 +156,52 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
           {isPresidenteCategoria && <span className="text-orange-500 text-xs">(Requiere aprobación)</span>}
         </label>
       </div>
+
+      {/* Override Temporal de Complemento */}
+      {!formData.contrato && (
+        <div className="border border-yellow-200 bg-yellow-50 rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-yellow-800 mb-3">
+            Override Temporal de Complemento
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Valor Override
+                {!canEditOverride && <span className="text-gray-400 ml-1">(solo lectura)</span>}
+              </label>
+              <input
+                type="text" inputMode="numeric" pattern="[0-9]*"
+                disabled={readOnly || !canEditOverride}
+                value={formData.complemento_override ?? ''}
+                placeholder="Sin override activo"
+                onChange={(e) => setFormData({...formData, complemento_override: parseInt(e.target.value) || null})}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Válido hasta
+              </label>
+              <input
+                type="date"
+                disabled={readOnly || !canEditOverride}
+                value={formData.complemento_override_expira ?? ''}
+                onChange={(e) => setFormData({...formData, complemento_override_expira: e.target.value || null})}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              />
+            </div>
+          </div>
+          {canEditOverride && formData.complemento_override != null && (
+            <button
+              type="button"
+              onClick={() => setFormData({...formData, complemento_override: null, complemento_override_expira: null})}
+              className="mt-2 text-xs text-red-600 hover:underline"
+            >
+              Limpiar override
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Bank Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

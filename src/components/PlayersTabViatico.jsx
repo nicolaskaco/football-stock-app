@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS } from '../utils/constants';
 import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { todayISO, calculateAge } from '../utils/dateUtils';
-import { calculateTotal } from '../utils/playerUtils';
+import { calculateTotal, getComplementoEfectivo } from '../utils/playerUtils';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
@@ -557,7 +557,22 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                   {player.contrato ? '-' : `$${player.viatico.toLocaleString()}`}
                 </td>
                 <td className="px-6 py-4 text-sm">
-                  {player.contrato ? '-' : `$${player.complemento.toLocaleString()}`}
+                  {player.contrato ? '-' : (() => {
+                    const { valor, activo } = getComplementoEfectivo(player);
+                    return (
+                      <span className={activo ? 'font-semibold text-yellow-700' : ''}>
+                        ${valor.toLocaleString()}
+                        {activo && (
+                          <span
+                            title={`Override activo hasta ${new Date(player.complemento_override_expira + 'T00:00:00').toLocaleDateString('es-UY')}`}
+                            className="ml-1 text-xs bg-yellow-100 text-yellow-700 rounded px-1"
+                          >
+                            temp
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td className="px-6 py-4 text-sm">
                   {player.contrato ? (
