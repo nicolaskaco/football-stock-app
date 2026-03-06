@@ -266,7 +266,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
         title="Eliminar Jornada"
         message={`¿Estás seguro que querés eliminar la jornada contra "${confirmDelete?.rivales?.name}" del ${formatDate(confirmDelete?.fecha)}? Esta acción no se puede deshacer.`}
         onConfirm={() => handleDelete(confirmDelete.id)}
-        onCancel={() => setConfirmDelete(null)}
+        onClose={() => setConfirmDelete(null)}
       />
     </div>
   );
