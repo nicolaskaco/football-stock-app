@@ -296,7 +296,9 @@ export const database = {
 
   // Check ficha médica via SND proxy Edge Function
   async checkFichaMedica(cedula, tipoDocumento) {
-    const documento = String(cedula).replace(/\D/g, '');
+    const raw = String(cedula);
+    // Solo se limpian los no-dígitos para Cédula de Identidad (formato numérico puro)
+    const documento = tipoDocumento === 'Cédula de Identidad' ? raw.replace(/\D/g, '') : raw.trim();
     const tipoMap = {
       'Cédula de Identidad': 1,
       'Pasaporte': 2,
