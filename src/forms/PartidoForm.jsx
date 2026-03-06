@@ -124,8 +124,13 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
       goles_visitante: formData.goles_visitante === '' ? null : Number(formData.goles_visitante),
     };
 
+    const lineupIds = new Set([
+      ...titularesData.map((t) => t.player_id),
+      ...suplentesData.map((s) => s.player_id),
+    ]);
     const eventosData = [];
     Object.entries(eventosState).forEach(([player_id, stats]) => {
+      if (!lineupIds.has(player_id)) return;
       for (let i = 0; i < (stats.goles || 0); i++)
         eventosData.push({ player_id, tipo: 'gol' });
       if (stats.amarilla) eventosData.push({ player_id, tipo: 'amarilla' });
