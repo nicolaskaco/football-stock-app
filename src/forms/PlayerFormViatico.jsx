@@ -180,24 +180,13 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Válido hasta (fin de mes)
+                Válido hasta
               </label>
               <input
-                type="month"
+                type="date"
                 disabled={readOnly || !canEditOverride}
-                value={formData.complemento_override_expira
-                  ? formData.complemento_override_expira.substring(0, 7)
-                  : ''}
-                onChange={(e) => {
-                  if (!e.target.value) {
-                    setFormData({...formData, complemento_override_expira: null});
-                    return;
-                  }
-                  const [y, m] = e.target.value.split('-');
-                  const ultimoDia = new Date(parseInt(y), parseInt(m), 0);
-                  const isoDate = ultimoDia.toISOString().split('T')[0];
-                  setFormData({...formData, complemento_override_expira: isoDate});
-                }}
+                value={formData.complemento_override_expira ?? ''}
+                onChange={(e) => setFormData({...formData, complemento_override_expira: e.target.value || null})}
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-400 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
