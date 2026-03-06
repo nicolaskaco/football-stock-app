@@ -82,7 +82,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
           const futbol = result.fichas.find(f => f.deporte.toUpperCase().includes('FÚTBOL') || f.deporte.toUpperCase().includes('FUTBOL'));
           const fichaToSave = futbol || result.fichas[0];
           await database.saveFichaMedicaHasta(player.id, fichaToSave.hasta);
-          onDataChange();
+          onDataChange('players');
         }
         const content = result.fichas.length > 0
           ? (
