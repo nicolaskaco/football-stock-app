@@ -140,7 +140,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     }
 
     setBulkFichaProgress(null);
-    onDataChange();
+    onDataChange('players');
 
     const content = (
       <div className="space-y-3 text-sm">
