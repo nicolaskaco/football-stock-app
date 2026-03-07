@@ -72,9 +72,9 @@ function JornadaCard({ jornada, onClick }) {
   return (
     <button
       onClick={() => onClick(jornada)}
-      className="w-full text-left bg-white border border-gray-200 rounded-md px-2 py-1.5 hover:border-blue-400 hover:shadow-sm transition group"
+      className="w-full text-left bg-white border border-gray-200 rounded-md px-1 py-1 sm:px-2 sm:py-1.5 hover:border-blue-400 hover:shadow-sm transition group"
     >
-      <p className="text-xs font-semibold text-gray-800 truncate group-hover:text-blue-700">
+      <p className="text-[10px] sm:text-xs font-semibold text-gray-800 truncate group-hover:text-blue-700">
         {jornada.rivales?.name || 'Rival'}
       </p>
       <div className="flex items-center gap-1">
@@ -111,18 +111,18 @@ function MonthView({ year, month, jornadasByDate, onJornadaClick }) {
     <div>
       <div className="grid grid-cols-7 text-center mb-1">
         {DAYS_ES.map((d) => (
-          <div key={d} className="text-xs font-medium text-gray-400 py-1">{d}</div>
+          <div key={d} className="text-xs font-medium text-gray-400 py-1 truncate">{d}</div>
         ))}
       </div>
       <div className="grid grid-cols-7 gap-px bg-gray-200 border border-gray-200 rounded-lg overflow-hidden">
         {cells.map((day, idx) => {
-          if (!day) return <div key={idx} className="bg-gray-50 min-h-[80px]" />;
+          if (!day) return <div key={idx} className="bg-gray-50 min-h-[56px] sm:min-h-[80px]" />;
           const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const jornadas = jornadasByDate[dateKey] || [];
           return (
             <div
               key={idx}
-              className={`bg-white min-h-[80px] p-1.5 flex flex-col gap-1 ${isToday(day) ? 'ring-2 ring-inset ring-blue-400' : ''}`}
+              className={`bg-white min-h-[56px] sm:min-h-[80px] p-0.5 sm:p-1.5 flex flex-col gap-0.5 sm:gap-1 ${isToday(day) ? 'ring-2 ring-inset ring-blue-400' : ''}`}
             >
               <span
                 className={`text-xs font-semibold self-start w-5 h-5 flex items-center justify-center rounded-full ${
@@ -176,12 +176,12 @@ function WeekView({ weekStart, jornadasByDate, onJornadaClick }) {
           return (
             <div
               key={idx}
-              className={`bg-white min-h-[120px] p-2 flex flex-col gap-1.5 ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''}`}
+              className={`bg-white min-h-[80px] sm:min-h-[120px] p-1 sm:p-2 flex flex-col gap-1 sm:gap-1.5 ${isToday ? 'ring-2 ring-inset ring-blue-400' : ''}`}
             >
-              <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-400 font-medium">{dayLabel}</span>
+              <div className="flex flex-col items-center sm:flex-row sm:items-center gap-0 sm:gap-1">
+                <span className="text-[10px] sm:text-xs text-gray-400 font-medium">{dayLabel}</span>
                 <span
-                  className={`text-sm font-bold w-6 h-6 flex items-center justify-center rounded-full ${
+                  className={`text-xs sm:text-sm font-bold w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center rounded-full ${
                     isToday ? 'bg-blue-500 text-white' : 'text-gray-700'
                   }`}
                 >
@@ -250,17 +250,17 @@ export const CalendarioView = ({ jornadas = [], onJornadaClick }) => {
         })();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => navigate(-1)}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <h3 className="text-base font-semibold text-gray-800 min-w-[200px] text-center">{title}</h3>
+          <h3 className="text-sm sm:text-base font-semibold text-gray-800 text-center flex-1 sm:flex-none sm:min-w-[180px]">{title}</h3>
           <button
             onClick={() => navigate(1)}
             className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600"
@@ -269,14 +269,14 @@ export const CalendarioView = ({ jornadas = [], onJornadaClick }) => {
           </button>
           <button
             onClick={goToToday}
-            className="ml-2 px-3 py-1 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600"
+            className="ml-1 px-2.5 py-1 text-xs font-medium border border-gray-300 rounded-lg hover:bg-gray-50 text-gray-600"
           >
             Hoy
           </button>
         </div>
 
         {/* View toggle */}
-        <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm font-medium">
+        <div className="flex rounded-lg border border-gray-300 overflow-hidden text-sm font-medium self-start sm:self-auto">
           <button
             onClick={() => setCalView('month')}
             className={`px-3 py-1.5 transition ${calView === 'month' ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
@@ -293,12 +293,12 @@ export const CalendarioView = ({ jornadas = [], onJornadaClick }) => {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-gray-500">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> Ganamos</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> Perdimos</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-400 inline-block" /> Empate</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gray-200 inline-block" /> Sin resultado</span>
-        <span className="text-gray-400">— Dots: {CATEGORIAS_PARTIDO.join(' · ')}</span>
+        <span className="text-gray-400 hidden sm:inline">— Dots: {CATEGORIAS_PARTIDO.join(' · ')}</span>
       </div>
 
       {/* Calendar */}
