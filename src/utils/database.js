@@ -446,13 +446,19 @@ export const database = {
   },
 
   async getPlayersWithExpiredFichaMedica(categorias = null) {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const in30Days = new Date(today);
+    in30Days.setDate(in30Days.getDate() + 30);
+    const todayStr = today.toISOString().split('T')[0];
+    const in30DaysStr = in30Days.toISOString().split('T')[0];
+
     let query = supabase
       .from('players')
       .select('id, name, name_visual, categoria, ficha_medica_hasta')
       .eq('hide_player', false)
       .not('ficha_medica_hasta', 'is', null)
-      .lt('ficha_medica_hasta', today)
+      .lte('ficha_medica_hasta', in30DaysStr)
       .order('ficha_medica_hasta', { ascending: true });
 
     if (categorias && categorias.length > 0) {
@@ -461,7 +467,11 @@ export const database = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    return (data || []).map((p) => ({
+      ...p,
+      expiringSoon: p.ficha_medica_hasta >= todayStr && p.ficha_medica_hasta <= in30DaysStr,
+      expired: p.ficha_medica_hasta < todayStr,
+    }));
   },
 
   async getUpcomingBirthdaysDirigentes(days = 7) {
