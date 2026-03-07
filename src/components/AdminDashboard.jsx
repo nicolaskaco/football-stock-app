@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Package } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
 import { OverviewTab } from './OverviewTab';
@@ -43,6 +43,7 @@ export const AdminDashboard = ({
   });
   const [showModal, setShowModal] = useState(null);
   const [modalIsDirty, setModalIsDirty] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!showModal) setModalIsDirty(false);
@@ -96,12 +97,22 @@ export const AdminDashboard = ({
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMenuOpen(true)}
+                className="sm:hidden p-2 rounded-lg hover:bg-gray-100"
+                aria-label="Abrir menú"
+              >
+                <Menu className="w-5 h-5 text-gray-600" />
+              </button>
               <img
                 src={logo}
                 alt="Ropa CAP logo"
                 className="w-8 h-8 object-contain"
               />
               <h1 className="text-xl font-bold text-gray-800">CAP</h1>
+              <span className="sm:hidden text-sm font-medium text-gray-500 truncate max-w-[120px]">
+                {visibleTabs.find(t => t.id === activeTab)?.label}
+              </span>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-700">
@@ -119,7 +130,7 @@ export const AdminDashboard = ({
       </nav>
 
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div className="hidden sm:flex gap-2 mb-6 overflow-x-auto">
           {visibleTabs.map(tab => (
             <button 
               key={tab.id} 
@@ -280,6 +291,43 @@ export const AdminDashboard = ({
           </div>
         )}
       </div>
+
+      {/* Mobile drawer */}
+      {menuOpen && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-40 sm:hidden"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="fixed top-0 left-0 h-full w-64 bg-white z-50 shadow-xl flex flex-col sm:hidden">
+            <div className="flex items-center justify-between px-4 py-4 border-b">
+              <span className="font-bold text-gray-800">Menú</span>
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="p-1 rounded hover:bg-gray-100"
+                aria-label="Cerrar menú"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto py-2">
+              {visibleTabs.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => { setActiveTab(tab.id); setMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-3 text-sm font-medium transition ${
+                    activeTab === tab.id
+                      ? 'bg-black text-yellow-400'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </>
+      )}
 
       {showModal && (
         <Modal
