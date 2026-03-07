@@ -121,7 +121,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 
 | Table | Purpose |
 |-------|---------|
-| `players` | Player records: personal info, financials, boarding, clothing sizes |
+| `players` | Player records: personal info, financials, boarding, clothing sizes. Notable columns: `tipo_documento` (text, default `'Cédula de Identidad'`), `complemento_override` (integer, nullable), `complemento_override_expira` (date, nullable) |
 | `player_history` | Audit log of changes to `contrato`, `viatico`, `complemento` |
 | `player_change_requests` | Approval workflow for financial field modifications |
 | `player_documents` | Document metadata — file paths in `player-documents` storage bucket |
@@ -199,7 +199,7 @@ Used by `EstadisticasTab` to compute per-player totals (goals, cards) and standi
 
 ### Audit-Tracked Player Fields
 
-Changes to `contrato`, `viatico`, `complemento`, `vianda`, and `casita` are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call.
+Changes to `contrato`, `viatico`, `complemento`, `vianda`, and `casita` are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call. `complemento_override` and `complemento_override_expira` are **not** audit-tracked — they are transient by design.
 
 ### Row-Level Security (RLS) — `players` table
 
@@ -252,8 +252,8 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 |-----------|-------------|
 | [AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell + permission gating |
 | [OverviewTab.jsx](src/components/OverviewTab.jsx) | Dashboard with stat cards, optional widgets, and CalendarioView for `can_view_partidos` users |
-| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal |
-| [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow |
+| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits from the document number for Cédulas. |
+| [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow. Complemento column shows the effective value (override if active) with a yellow "temp" badge and tooltip showing the expiry date. |
 | [ChangeRequestsTab.jsx](src/components/ChangeRequestsTab.jsx) | Approval/rejection UI for financial change requests |
 | [InventoryTab.jsx](src/components/InventoryTab.jsx) | Inventory CRUD, low-stock alerts |
 | [DistributionsTab.jsx](src/components/DistributionsTab.jsx) | Distribution CRUD with return tracking |
@@ -289,8 +289,8 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 #### Forms
 | Form | Description |
 |------|-------------|
-| [PlayerForm.jsx](src/forms/PlayerForm.jsx) | Full player add/edit (admin) |
-| [PlayerFormViatico.jsx](src/forms/PlayerFormViatico.jsx) | Financial fields form for viatico tab |
+| [PlayerForm.jsx](src/forms/PlayerForm.jsx) | Full player add/edit (admin). Layout: row 1 = Nombre \| Categoría; row 2 = Tipo Documento dropdown (Cédula de Identidad / Pasaporte / Otro, stored as `tipo_documento`) \| Número de Documento. Shows "Override Temporal de Complemento" section in read-only mode (edit from Viático tab). |
+| [PlayerFormViatico.jsx](src/forms/PlayerFormViatico.jsx) | Financial fields form for viatico tab. Includes "Override Temporal de Complemento" section: editable only by `admin`, `ejecutivo`, `presidente`; other roles see it read-only. Override auto-clears when `contrato` is activated. |
 | [PlayerFormPublic.jsx](src/forms/PlayerFormPublic.jsx) | Public-facing player registration at `/formulario` |
 | [EmployeeForm.jsx](src/forms/EmployeeForm.jsx) | Staff add/edit |
 | [InventoryForm.jsx](src/forms/InventoryForm.jsx) | Inventory item add/edit |
@@ -300,7 +300,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
 | [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit (name only) |
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
-| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario |
+| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. |
 
 #### Modals & Utilities
 | Component | Description |
@@ -362,6 +362,18 @@ Applies when `currentUser.role === 'presidente_categoria'` attempts to edit `via
 - Supported categories: 3era, 4ta, 5ta, S16, 6ta, 7ma, Sub13
 - Departments: all 19 Uruguayan departments + Argentina, Brasil, Colombia, España, Venezuela
 - Submissions saved to `player_responses` table (reviewed manually by admin)
+
+### Complemento Override Temporal
+
+Allows temporarily changing a player's `complemento` for a specific date range without modifying the base value.
+
+- Two nullable columns on `players`: `complemento_override` (integer) and `complemento_override_expira` (date)
+- `calculateTotal()` and `getComplementoEfectivo()` use the override when it is set and `complemento_override_expira` is today or in the future; they fall back to `complemento` automatically once expired — no cron job or manual intervention needed
+- Editable via "Override Temporal de Complemento" section in `PlayerFormViatico` — restricted to `admin`, `ejecutivo`, `presidente`; all other roles see it read-only
+- `PlayerForm` shows the section read-only with a note to edit from the Viático tab
+- `PlayersTabViatico` displays a yellow "temp" badge on the Complemento column when an active override is in effect
+- When a player's `contrato` is activated, any active override is automatically cleared
+- Override fields are **not** audit-tracked in `player_history`
 
 ### Low-Stock Alerts
 
@@ -478,7 +490,8 @@ All shared enums are centralized here — never defined inline in components:
 
 | Export | Description |
 |--------|-------------|
-| `calculateTotal(player)` | Returns viatico + complemento sum; returns 0 for players with `contrato = true` |
+| `calculateTotal(player)` | Returns viatico + effective complemento sum; returns 0 for players with `contrato = true`. Uses `complemento_override` instead of `complemento` when the override is set and `complemento_override_expira` is today or in the future. |
+| `getComplementoEfectivo(player)` | Returns `{ valor: number, activo: boolean }` — the effective complemento value and whether a temporary override is currently active. |
 
 ### Date Utilities (`src/utils/dateUtils.js`)
 
