@@ -428,7 +428,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
               </th>
               <th
                 onClick={() => handleSort('name')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none sticky left-0 z-10 bg-gray-50 border-r border-gray-200"
+                className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none sticky left-0 z-10 bg-gray-50 border-r border-gray-200"
               >
                 <div className="flex items-center gap-2">
                   Nombre
@@ -523,15 +523,15 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
                 </td>
-                <td className="px-6 py-4 font-medium sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-200">
+                <td className="px-3 py-4 font-medium sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-200 max-w-[160px]">
                   <div>
-                    <div className="flex items-center gap-1 font-semibold whitespace-nowrap">
-                      {player.name_visual || player.name}
+                    <div className="flex items-center gap-1 font-semibold min-w-0">
+                      <span className="truncate">{player.name_visual || player.name}</span>
                       <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
                       <ViandaIcons count={player.vianda} />
                     </div>
                     {player.name_visual && player.name_visual !== player.name && (
-                      <div className="text-xs text-gray-500 mt-1">({player.name})</div>
+                      <div className="text-xs text-gray-500 mt-1 truncate">({player.name})</div>
                     )}
                   </div>
                 </td>
