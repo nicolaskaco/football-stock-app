@@ -15,7 +15,14 @@ export const FichaMedicaWidget = ({ currentUser }) => {
 
   if (players.length === 0) return null;
 
-  const categorias = [...new Set(players.map((p) => p.categoria))];
+  const CATEGORIA_ORDER = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
+  const categorias = [...new Set(players.map((p) => p.categoria))].sort(
+    (a, b) => {
+      const ai = CATEGORIA_ORDER.indexOf(a);
+      const bi = CATEGORIA_ORDER.indexOf(b);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    }
+  );
   const filtered = catFiltro ? players.filter((p) => p.categoria === catFiltro) : players;
   const expiredCount = players.filter((p) => p.expired).length;
   const soonCount = players.filter((p) => p.expiringSoon).length;
