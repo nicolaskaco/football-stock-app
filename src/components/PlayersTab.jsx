@@ -77,12 +77,12 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       if (!result.found) {
         showAlert('Sin resultados', `No se encontró carné para cédula ${player.gov_id}`, 'info');
       } else {
-        const anyVencido = result.fichas.some(f => f.vencido);
         const fichaFutbol = result.fichas.find(f => ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase()));
         if (fichaFutbol) {
           await database.saveFichaMedicaHasta(player.id, fichaFutbol.hasta);
           onDataChange('players');
         }
+        const alertType = fichaFutbol ? (fichaFutbol.vencido ? 'error' : 'success') : 'info';
         const content = result.fichas.length > 0
           ? (
             <div className="space-y-3">
@@ -98,7 +98,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             </div>
           )
           : 'Sin disciplinas registradas';
-        showAlert(result.nombre, content, anyVencido ? 'error' : 'success');
+        showAlert(result.nombre, content, alertType);
       }
     } catch {
       showAlert('Error', 'No se pudo consultar el carné del deportista (SND)', 'error');
