@@ -77,13 +77,12 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       if (!result.found) {
         showAlert('Sin resultados', `No se encontró carné para cédula ${player.gov_id}`, 'info');
       } else {
-        const anyVencido = result.fichas.some(f => f.vencido);
-        if (result.fichas.length > 0) {
-          const futbol = result.fichas.find(f => f.deporte.toUpperCase().includes('FÚTBOL') || f.deporte.toUpperCase().includes('FUTBOL'));
-          const fichaToSave = futbol || result.fichas[0];
-          await database.saveFichaMedicaHasta(player.id, fichaToSave.hasta);
+        const fichaFutbol = result.fichas.find(f => ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase()));
+        if (fichaFutbol) {
+          await database.saveFichaMedicaHasta(player.id, fichaFutbol.hasta);
           onDataChange('players');
         }
+        const alertType = fichaFutbol ? (fichaFutbol.vencido ? 'error' : 'success') : 'info';
         const content = result.fichas.length > 0
           ? (
             <div className="space-y-3">
@@ -99,7 +98,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             </div>
           )
           : 'Sin disciplinas registradas';
-        showAlert(result.nombre, content, anyVencido ? 'error' : 'success');
+        showAlert(result.nombre, content, alertType);
       }
     } catch {
       showAlert('Error', 'No se pudo consultar el carné del deportista (SND)', 'error');
@@ -126,10 +125,13 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         if (!result.found) {
           results.notFound.push(player.name_visual || player.name);
         } else if (result.fichas.length > 0) {
-          const futbol = result.fichas.find(f => f.deporte.toUpperCase().includes('FÚTBOL') || f.deporte.toUpperCase().includes('FUTBOL'));
-          const ficha = futbol || result.fichas[0];
-          await database.saveFichaMedicaHasta(player.id, ficha.hasta);
-          results.updated.push(player.name_visual || player.name);
+          const fichaFutbol = result.fichas.find(f => ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase()));
+          if (fichaFutbol) {
+            await database.saveFichaMedicaHasta(player.id, fichaFutbol.hasta);
+            results.updated.push(player.name_visual || player.name);
+          } else {
+            results.notFound.push(player.name_visual || player.name);
+          }
         } else {
           results.notFound.push(player.name_visual || player.name);
         }
