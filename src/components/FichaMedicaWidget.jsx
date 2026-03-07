@@ -31,7 +31,7 @@ export const FichaMedicaWidget = ({ currentUser }) => {
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center gap-2 mb-3">
         <Stethoscope className="w-6 h-6 text-red-600" />
-        <h3 className="text-lg font-bold">Carné Deportista</h3>
+        <h3 className="text-lg font-bold">Ficha Médica</h3>
         <div className="ml-auto flex gap-1">
           {expiredCount > 0 && (
             <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">
