@@ -114,7 +114,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Partidos</h2>
           <p className="text-sm text-gray-500 mt-1">
@@ -146,7 +146,8 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], setShow
               className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800 font-medium"
             >
               <Plus className="w-4 h-4" />
-              Nueva Jornada
+              <span className="hidden sm:inline">Nueva Jornada</span>
+              <span className="sm:hidden">Nueva</span>
             </button>
           )}
         </div>
