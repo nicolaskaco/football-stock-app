@@ -60,6 +60,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const [selectedPlayers, setSelectedPlayers] = useState([]);
+  const [expandedNameId, setExpandedNameId] = useState(null);
   const [showExportConfig, setShowExportConfig] = useState(false);
   const [exportFields, setExportFields] = useState({
     name: true,
@@ -526,7 +527,12 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                 <td className="px-3 py-4 font-medium sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-200 max-w-[160px] sm:max-w-none">
                   <div>
                     <div className="flex items-center gap-1 font-semibold min-w-0">
-                      <span className="truncate sm:overflow-visible sm:whitespace-normal">{player.name_visual || player.name}</span>
+                      <button
+                        className={`text-left sm:cursor-default sm:pointer-events-none ${expandedNameId === player.id ? 'whitespace-normal overflow-visible' : 'truncate sm:overflow-visible sm:whitespace-normal'}`}
+                        onClick={() => setExpandedNameId(expandedNameId === player.id ? null : player.id)}
+                      >
+                        {player.name_visual || player.name}
+                      </button>
                       <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
                       <ViandaIcons count={player.vianda} />
                     </div>
