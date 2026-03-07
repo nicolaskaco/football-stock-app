@@ -4,25 +4,25 @@ import { database } from '../utils/database';
 
 export const FichaMedicaWidget = ({ currentUser }) => {
   const [players, setPlayers] = useState([]);
+  const [catFiltro, setCatFiltro] = useState(null);
 
   useEffect(() => {
     const categorias = currentUser?.categoria?.length > 0 ? currentUser.categoria : null;
     database.getPlayersWithExpiredFichaMedica(categorias)
-      .then((data) => {
-        // Already ordered by ficha_medica_hasta ascending from DB
-        setPlayers(data);
-      })
+      .then((data) => setPlayers(data))
       .catch(() => {});
   }, []);
 
   if (players.length === 0) return null;
 
+  const categorias = [...new Set(players.map((p) => p.categoria))];
+  const filtered = catFiltro ? players.filter((p) => p.categoria === catFiltro) : players;
   const expiredCount = players.filter((p) => p.expired).length;
   const soonCount = players.filter((p) => p.expiringSoon).length;
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-2 mb-3">
         <Stethoscope className="w-6 h-6 text-red-600" />
         <h3 className="text-lg font-bold">Carné Deportista</h3>
         <div className="ml-auto flex gap-1">
@@ -38,24 +38,40 @@ export const FichaMedicaWidget = ({ currentUser }) => {
           )}
         </div>
       </div>
-      <div className="space-y-3">
-        {players.map((player) => {
+
+      {/* Categoria filter pills */}
+      <div className="flex flex-wrap gap-1 mb-3">
+        <button
+          onClick={() => setCatFiltro(null)}
+          className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition ${!catFiltro ? 'bg-black text-yellow-400 border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+        >
+          Todas
+        </button>
+        {categorias.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setCatFiltro(cat === catFiltro ? null : cat)}
+            className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition ${catFiltro === cat ? 'bg-black text-yellow-400 border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-2 overflow-y-auto max-h-96 pr-1">
+        {filtered.map((player) => {
           const isExpired = player.expired;
-          const borderColor = isExpired ? 'border-red-400' : 'border-orange-400';
-          const bgColor = isExpired ? 'bg-red-50' : 'bg-orange-50';
-          const textColor = isExpired ? 'text-red-600' : 'text-orange-600';
-          const label = isExpired ? 'Venció' : 'Vence';
           return (
             <div
               key={player.id}
-              className={`flex items-center justify-between border-l-4 ${borderColor} ${bgColor} pl-3 py-2`}
+              className={`flex items-center justify-between border-l-4 pl-3 py-2 ${isExpired ? 'border-red-400 bg-red-50' : 'border-orange-400 bg-orange-50'}`}
             >
               <div>
-                <p className="font-medium">{player.name_visual || player.name}</p>
+                <p className="font-medium text-sm">{player.name_visual || player.name}</p>
                 <p className="text-xs text-gray-500">{player.categoria}</p>
               </div>
-              <span className={`text-sm font-semibold ${textColor}`}>
-                {label}: {new Date(player.ficha_medica_hasta + 'T00:00:00').toLocaleDateString('es-UY')}
+              <span className={`text-sm font-semibold ${isExpired ? 'text-red-600' : 'text-orange-600'}`}>
+                {isExpired ? 'Venció' : 'Vence'}: {new Date(player.ficha_medica_hasta + 'T00:00:00').toLocaleDateString('es-UY')}
               </span>
             </div>
           );
