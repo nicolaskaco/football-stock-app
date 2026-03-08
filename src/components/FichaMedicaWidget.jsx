@@ -36,7 +36,10 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
       await database.saveFichaMedicaHasta(selectedPlayer.id, fichaFutbol.hasta);
       if (onDataChange) onDataChange('players');
       fetchPlayers();
-      setSelectedPlayer((prev) => ({ ...prev, ficha_medica_hasta: fichaFutbol.hasta }));
+      // fichaFutbol.hasta is DD/MM/YYYY — convert to YYYY-MM-DD for display
+      const [d, m, y] = fichaFutbol.hasta.split('/');
+      const isoHasta = `${y}-${m}-${d}`;
+      setSelectedPlayer((prev) => ({ ...prev, ficha_medica_hasta: isoHasta, expired: false }));
       setRefreshResult({ ok: true, msg: `Actualizado: vence ${fichaFutbol.hasta}` });
     } catch (err) {
       setRefreshResult({ ok: false, msg: 'Error al consultar SND.' });
