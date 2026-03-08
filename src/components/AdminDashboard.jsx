@@ -104,12 +104,18 @@ export const AdminDashboard = ({
               >
                 <Menu className="w-5 h-5 text-gray-600" />
               </button>
-              <img
-                src={logo}
-                alt="Ropa CAP logo"
-                className="w-8 h-8 object-contain"
-              />
-              <h1 className="text-xl font-bold text-gray-800">CAP</h1>
+              <button
+                onClick={() => setActiveTab('overview')}
+                className="flex items-center gap-2 hover:opacity-80 transition"
+                aria-label="Ir a Resumen"
+              >
+                <img
+                  src={logo}
+                  alt="Ropa CAP logo"
+                  className="w-8 h-8 object-contain"
+                />
+                <h1 className="text-xl font-bold text-gray-800">CAP</h1>
+              </button>
               <span className="sm:hidden text-sm font-medium text-gray-500 truncate max-w-[120px]">
                 {visibleTabs.find(t => t.id === activeTab)?.label}
               </span>
