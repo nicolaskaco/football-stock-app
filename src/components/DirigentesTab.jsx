@@ -264,9 +264,9 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th 
+              <th
                 onClick={() => handleSort('name')}
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                className="sticky left-0 z-10 bg-gray-50 border-r border-gray-200 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-2">
                   Nombre
@@ -325,8 +325,10 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
           </thead>
           <tbody className="divide-y">
             {sortedDirigentes.map(dirigente => (
-              <tr key={dirigente.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">{dirigente.name}</td>
+              <tr key={dirigente.id} className="hover:bg-gray-50 group">
+                <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-200 px-3 py-4 font-medium max-w-[160px] sm:max-w-none">
+                  <span className="truncate sm:overflow-visible sm:whitespace-normal block">{dirigente.name}</span>
+                </td>
                 <td className="px-6 py-4 text-sm">{dirigente.cedula || '-'}</td>
                 <td className="px-6 py-4 text-sm">{calculateAge(dirigente.date_of_birth)}</td>
                 <td className="px-6 py-4">
