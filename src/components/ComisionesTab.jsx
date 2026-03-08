@@ -122,7 +122,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-64">
+              <th className="sticky left-0 z-10 bg-gray-50 border-r border-gray-200 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Nombre
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -138,8 +138,10 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
           </thead>
           <tbody className="divide-y">
             {filtered.map(comision => (
-              <tr key={comision.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">{comision.name}</td>
+              <tr key={comision.id} className="hover:bg-gray-50 group">
+                <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-200 px-3 py-4 font-medium max-w-[160px] sm:max-w-none">
+                  <span className="truncate sm:overflow-visible sm:whitespace-normal block">{comision.name}</span>
+                </td>
                   <td className="px-6 py-4 text-sm">
                     <div className="max-w-m text-gray-800">
                       {comision.description || '-'}
