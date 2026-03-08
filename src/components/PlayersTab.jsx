@@ -65,7 +65,6 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [fichaMedicaLoading, setFichaMedicaLoading] = useState(null);
   const [bulkFichaProgress, setBulkFichaProgress] = useState(null); // { current, total } while running
-  const [expandedNameId, setExpandedNameId] = useState(null);
 
   const handleCheckFichaMedica = async (player) => {
     if (!player.gov_id) {
@@ -749,8 +748,11 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                   <div>
                     <div className="flex items-center gap-1 font-semibold min-w-0">
                       <button
-                        className={`text-left sm:cursor-default sm:pointer-events-none ${expandedNameId === player.id ? 'whitespace-normal overflow-visible' : 'truncate sm:overflow-visible sm:whitespace-normal'}`}
-                        onClick={() => setExpandedNameId(expandedNameId === player.id ? null : player.id)}
+                        className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
+                        onClick={() => setShowModal({
+                          title: `Ver Jugador: ${player.name}`,
+                          content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} />
+                        })}
                       >
                         {player.name_visual || player.name}
                       </button>
