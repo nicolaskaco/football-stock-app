@@ -17,6 +17,7 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
   const { alertModal, showAlert, closeAlert } = useAlertModal();
   const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [expandedNameId, setExpandedNameId] = useState(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('c_search') || '';
   const setSearchTerm = (v) => setSearchParams(prev => {
@@ -140,7 +141,12 @@ export const ComisionesTab = ({ comisiones = [], dirigentes = [], setShowModal, 
             {filtered.map(comision => (
               <tr key={comision.id} className="hover:bg-gray-50 group">
                 <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-200 px-3 py-4 font-medium max-w-[160px] sm:max-w-none">
-                  <span className="truncate sm:overflow-visible sm:whitespace-normal block">{comision.name}</span>
+                  <button
+                    className={`text-left sm:cursor-default sm:pointer-events-none w-full ${expandedNameId === comision.id ? 'whitespace-normal' : 'truncate sm:overflow-visible sm:whitespace-normal'} block`}
+                    onClick={() => setExpandedNameId(expandedNameId === comision.id ? null : comision.id)}
+                  >
+                    {comision.name}
+                  </button>
                 </td>
                   <td className="px-6 py-4 text-sm">
                     <div className="max-w-m text-gray-800">
