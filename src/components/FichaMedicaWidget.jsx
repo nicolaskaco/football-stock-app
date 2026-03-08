@@ -39,7 +39,15 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
       // fichaFutbol.hasta is DD/MM/YYYY — convert to YYYY-MM-DD for display
       const [d, m, y] = fichaFutbol.hasta.split('/');
       const isoHasta = `${y}-${m}-${d}`;
-      setSelectedPlayer((prev) => ({ ...prev, ficha_medica_hasta: isoHasta, expired: false }));
+      const todayStr2 = new Date().toISOString().split('T')[0];
+      const in30 = new Date(); in30.setDate(in30.getDate() + 30);
+      const in30Str = in30.toISOString().split('T')[0];
+      setSelectedPlayer((prev) => ({
+        ...prev,
+        ficha_medica_hasta: isoHasta,
+        expired: isoHasta < todayStr2,
+        expiringSoon: isoHasta >= todayStr2 && isoHasta <= in30Str,
+      }));
       setRefreshResult({ ok: true, msg: `Actualizado: vence ${fichaFutbol.hasta}` });
     } catch (err) {
       setRefreshResult({ ok: false, msg: 'Error al consultar SND.' });
@@ -151,7 +159,7 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Ficha Médica vence</p>
-                <p className={`font-semibold ${selectedPlayer.expired ? 'text-red-600' : 'text-orange-600'}`}>
+                <p className={`font-semibold ${selectedPlayer.expired ? 'text-red-600' : selectedPlayer.expiringSoon ? 'text-orange-600' : 'text-green-600'}`}>
                   {new Date(selectedPlayer.ficha_medica_hasta + 'T00:00:00').toLocaleDateString('es-UY')}
                 </p>
               </div>
