@@ -60,7 +60,6 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const [selectedPlayers, setSelectedPlayers] = useState([]);
-  const [expandedNameId, setExpandedNameId] = useState(null);
   const [showExportConfig, setShowExportConfig] = useState(false);
   const [exportFields, setExportFields] = useState({
     name: true,
@@ -528,8 +527,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                   <div>
                     <div className="flex items-center gap-1 font-semibold min-w-0">
                       <button
-                        className={`text-left sm:cursor-default sm:pointer-events-none ${expandedNameId === player.id ? 'whitespace-normal overflow-visible' : 'truncate sm:overflow-visible sm:whitespace-normal'}`}
-                        onClick={() => setExpandedNameId(expandedNameId === player.id ? null : player.id)}
+                        className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
+                        onClick={() => setShowModal({
+                          title: `Ver Jugador: ${player.name}`,
+                          content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} />
+                        })}
                       >
                         {player.name_visual || player.name}
                       </button>
