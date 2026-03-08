@@ -455,7 +455,7 @@ export const database = {
 
     let query = supabase
       .from('players')
-      .select('id, name, name_visual, categoria, ficha_medica_hasta')
+      .select('id, name, name_visual, categoria, ficha_medica_hasta, gov_id, celular, tipo_documento')
       .eq('hide_player', false)
       .not('ficha_medica_hasta', 'is', null)
       .lte('ficha_medica_hasta', in30DaysStr)
