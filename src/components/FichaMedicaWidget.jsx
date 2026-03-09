@@ -57,9 +57,14 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
   };
 
   const handlePrint = () => {
+    const pad = (n) => String(n).padStart(2, '0');
+    const fmtISO = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+    const now = new Date();
+    const nowStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
     const title = catFiltro ? `Ficha Médica — ${catFiltro}` : 'Ficha Médica — Todas las categorías';
     const rows = filtered.map((p) => {
-      const fecha = new Date(p.ficha_medica_hasta + 'T00:00:00').toLocaleDateString('es-UY');
+      const fecha = fmtISO(p.ficha_medica_hasta);
       const estado = p.expired ? 'Vencida' : 'Próxima a vencer';
       return `<tr>
         <td>${p.name_visual || p.name}</td>
@@ -84,14 +89,12 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
     th { background: #f3f4f6; text-align: left; padding: 6px 8px; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #d1d5db; }
     td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
     tr:nth-child(even) td { background: #f9fafb; }
-    .vencida { color: #dc2626; font-weight: 600; }
-    .proxima { color: #d97706; font-weight: 600; }
     @media print { body { margin: 0; } }
   </style>
 </head>
 <body>
   <h1>${title}</h1>
-  <p class="subtitle">Generado el ${new Date().toLocaleDateString('es-UY')} — ${filtered.length} jugador${filtered.length !== 1 ? 'es' : ''}</p>
+  <p class="subtitle">Generado el ${nowStr} — ${filtered.length} jugador${filtered.length !== 1 ? 'es' : ''}</p>
   <table>
     <thead><tr><th>Nombre</th><th>Documento</th><th>Celular</th><th>Categoría</th><th>Vence</th><th>Estado</th></tr></thead>
     <tbody>${rows}</tbody>
