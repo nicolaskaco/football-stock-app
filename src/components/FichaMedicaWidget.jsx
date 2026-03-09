@@ -84,17 +84,19 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
   <style>
     body { font-family: Arial, sans-serif; font-size: 12px; margin: 24px; color: #111; }
     h1 { font-size: 16px; margin-bottom: 4px; }
-    p.subtitle { font-size: 11px; color: #555; margin-bottom: 16px; }
+    p.subtitle { font-size: 11px; color: #555; margin-bottom: 8px; }
+    p.tip { font-size: 10px; color: #888; margin-bottom: 16px; background: #fefce8; border: 1px solid #fde68a; padding: 5px 8px; border-radius: 4px; }
     table { width: 100%; border-collapse: collapse; }
     th { background: #f3f4f6; text-align: left; padding: 6px 8px; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #d1d5db; }
     td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
     tr:nth-child(even) td { background: #f9fafb; }
-    @media print { body { margin: 0; } }
+    @media print { body { margin: 0; } .tip { display: none; } }
   </style>
 </head>
 <body>
   <h1>${title}</h1>
   <p class="subtitle">Generado el ${nowStr} — ${filtered.length} jugador${filtered.length !== 1 ? 'es' : ''}</p>
+  <p class="tip">💡 Para guardar sin el encabezado del navegador (fecha/hora arriba): en el diálogo de impresión desmarca <strong>Encabezados y pies de página</strong>.</p>
   <table>
     <thead><tr><th>Nombre</th><th>Documento</th><th>Celular</th><th>Categoría</th><th>Vence</th><th>Estado</th></tr></thead>
     <tbody>${rows}</tbody>
