@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Stethoscope, X, RefreshCw } from 'lucide-react';
+import { Stethoscope, X, RefreshCw, Printer } from 'lucide-react';
 import { database } from '../utils/database';
 
 export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
@@ -56,6 +56,55 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
     }
   };
 
+  const handlePrint = () => {
+    const title = catFiltro ? `Ficha Médica — ${catFiltro}` : 'Ficha Médica — Todas las categorías';
+    const rows = filtered.map((p) => {
+      const fecha = new Date(p.ficha_medica_hasta + 'T00:00:00').toLocaleDateString('es-UY');
+      const estado = p.expired ? 'Vencida' : 'Próxima a vencer';
+      return `<tr>
+        <td>${p.name_visual || p.name}</td>
+        <td>${p.gov_id || '—'}</td>
+        <td>${p.celular || '—'}</td>
+        <td>${p.categoria}</td>
+        <td>${fecha}</td>
+        <td>${estado}</td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>${title}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; margin: 24px; color: #111; }
+    h1 { font-size: 16px; margin-bottom: 4px; }
+    p.subtitle { font-size: 11px; color: #555; margin-bottom: 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #f3f4f6; text-align: left; padding: 6px 8px; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid #d1d5db; }
+    td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    tr:nth-child(even) td { background: #f9fafb; }
+    .vencida { color: #dc2626; font-weight: 600; }
+    .proxima { color: #d97706; font-weight: 600; }
+    @media print { body { margin: 0; } }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  <p class="subtitle">Generado el ${new Date().toLocaleDateString('es-UY')} — ${filtered.length} jugador${filtered.length !== 1 ? 'es' : ''}</p>
+  <table>
+    <thead><tr><th>Nombre</th><th>Documento</th><th>Celular</th><th>Categoría</th><th>Vence</th><th>Estado</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    win.document.write(html);
+    win.document.close();
+  };
+
   if (players.length === 0) return null;
 
   const CATEGORIA_ORDER = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
@@ -76,7 +125,14 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
         <div className="flex items-center gap-2 mb-3">
           <Stethoscope className="w-6 h-6 text-red-600" />
           <h3 className="text-lg font-bold">Ficha Médica</h3>
-          <div className="ml-auto flex gap-1">
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              onClick={handlePrint}
+              className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition"
+              title="Imprimir / Guardar como PDF"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
             {expiredCount > 0 && (
               <span className="bg-red-100 text-red-700 text-xs font-semibold px-2 py-1 rounded-full">
                 {expiredCount} vencido{expiredCount !== 1 ? 's' : ''}
