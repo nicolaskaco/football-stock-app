@@ -250,21 +250,21 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 #### Tab Components
 | Component | Description |
 |-----------|-------------|
-| [AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell + permission gating |
+| [AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell + permission gating. On desktop (`sm+`) renders a horizontal scrollable tab bar; on mobile, the tab bar is hidden and replaced by a hamburger icon + active tab label in the nav bar that opens a slide-in drawer. Clicking the logo/title navigates to the Resumen tab. |
 | [OverviewTab.jsx](src/components/OverviewTab.jsx) | Dashboard with stat cards, optional widgets, and CalendarioView for `can_view_partidos` users |
-| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits from the document number for Cédulas. |
-| [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow. Complemento column shows the effective value (override if active) with a yellow "temp" badge and tooltip showing the expiry date. |
+| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits for Cédulas. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerForm` modal. |
+| [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow. Complemento column shows the effective value (override if active) with a yellow "temp" badge and tooltip showing the expiry date. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerFormViatico` modal. |
 | [ChangeRequestsTab.jsx](src/components/ChangeRequestsTab.jsx) | Approval/rejection UI for financial change requests |
 | [InventoryTab.jsx](src/components/InventoryTab.jsx) | Inventory CRUD, low-stock alerts |
 | [DistributionsTab.jsx](src/components/DistributionsTab.jsx) | Distribution CRUD with return tracking |
 | [EmployeesTab.jsx](src/components/EmployeesTab.jsx) | Staff CRUD with photo and clothing size tracking |
-| [DirigentesTab.jsx](src/components/DirigentesTab.jsx) | Board member CRUD |
+| [DirigentesTab.jsx](src/components/DirigentesTab.jsx) | Board member CRUD. Sticky Nombre column on horizontal scroll; name truncates on mobile. |
 | [TorneosTab.jsx](src/components/TorneosTab.jsx) | Tournament list and management |
 | [TorneoDetailView.jsx](src/components/TorneoDetailView.jsx) | Detailed tournament view with participants |
-| [ComisionesTab.jsx](src/components/ComisionesTab.jsx) | Committee list and management |
+| [ComisionesTab.jsx](src/components/ComisionesTab.jsx) | Committee list and management. Sticky Nombre column on horizontal scroll; tap name on mobile to expand truncated text. |
 | [ComisionDetailView.jsx](src/components/ComisionDetailView.jsx) | Committee detail with member list |
 | [RivalesTab.jsx](src/components/RivalesTab.jsx) | Rival team CRUD + Excel bulk import |
-| [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions; list view shows escenario + result badge per category |
+| [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions; list view shows escenario + result badge per category. Mobile-friendly header: button label collapses to "Nueva" on small screens. |
 | [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, and comment |
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
@@ -277,6 +277,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | Widget | Description |
 |--------|-------------|
 | [BirthdayWidget.jsx](src/components/BirthdayWidget.jsx) | Upcoming birthdays for players and dirigentes (7-day window); scoped to `currentUser.categoria` so `presidente_categoria` users only see their categories |
+| [FichaMedicaWidget.jsx](src/components/FichaMedicaWidget.jsx) | Players with expired or expiring-soon (≤ 30 days) ficha médica, ordered by date; color-coded red (expired) / orange (soon). Admin-only (`role = 'admin'`). Category filter pills. Clicking a row opens a detail modal with nombre, documento, celular, and expiry date, plus a button to refresh via the SND API (`checkFichaMedica` → `saveFichaMedicaHasta`). |
 | [SpendingTrendsWidget.jsx](src/components/SpendingTrendsWidget.jsx) | Viatico + complemento spend over time |
 | [CategoryDistributionWidget.jsx](src/components/CategoryDistributionWidget.jsx) | Player count by category |
 | [AgeDistributionWidget.jsx](src/components/AgeDistributionWidget.jsx) | Player age breakdown |
@@ -374,6 +375,16 @@ Allows temporarily changing a player's `complemento` for a specific date range w
 - `PlayersTabViatico` displays a yellow "temp" badge on the Complemento column when an active override is in effect
 - When a player's `contrato` is activated, any active override is automatically cleared
 - Override fields are **not** audit-tracked in `player_history`
+
+### Ficha Médica SND Integration
+
+Players have a `ficha_medica_hasta` (date) column that records when their SND sports medical license expires.
+
+- **`database.checkFichaMedica(cedula, tipoDocumento)`** — calls the `check-ficha-medica` Supabase Edge Function (proxy to SND). Returns a `fichas` array of license records, each with `deporte` and `hasta` (DD/MM/YYYY).
+- The app always filters for an **exact FÚTBOL match**: `['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase())` — no fallback to other sports.
+- **`database.saveFichaMedicaHasta(playerId, hastaStr)`** — converts `hastaStr` from DD/MM/YYYY to YYYY-MM-DD and writes it to `players.ficha_medica_hasta`.
+- **PlayersTab** supports individual and bulk ficha checks for all filtered players.
+- **FichaMedicaWidget** (home page) shows expired / expiring-soon players and lets admins trigger a per-player refresh directly from the modal.
 
 ### Low-Stock Alerts
 
@@ -585,6 +596,7 @@ football-stock-app/
     │   ├── EstadisticasTab.jsx
     │   ├── ConfiguracionTab.jsx
     │   ├── BirthdayWidget.jsx
+    │   ├── FichaMedicaWidget.jsx
     │   ├── SpendingTrendsWidget.jsx
     │   ├── CategoryDistributionWidget.jsx
     │   ├── AgeDistributionWidget.jsx
