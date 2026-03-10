@@ -115,7 +115,7 @@ export const OverviewTab = ({
 
       {/* Analytics Widgets Grid */}
       {canAccessWidgets && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-start">
           <BirthdayWidget currentUser={currentUser} />
           {currentUser?.role === 'admin' && <FichaMedicaWidget currentUser={currentUser} onDataChange={onDataChange} />}
           {currentUser?.role === 'admin' && <InjuredPlayersWidget players={visiblePlayers} injuries={injuries} />}
