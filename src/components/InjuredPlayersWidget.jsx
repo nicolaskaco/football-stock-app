@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { CATEGORIAS } from '../utils/constants';
 
 const severityBadge = {
   leve: 'bg-yellow-100 text-yellow-800',
@@ -7,6 +8,8 @@ const severityBadge = {
 };
 
 export const InjuredPlayersWidget = ({ players = [], injuries = [] }) => {
+  const [catFiltro, setCatFiltro] = useState(null);
+
   // Only active (open) injuries
   const active = injuries.filter(inj => !inj.fecha_alta);
   if (active.length === 0) return null;
@@ -14,10 +17,24 @@ export const InjuredPlayersWidget = ({ players = [], injuries = [] }) => {
   const playerMap = {};
   players.forEach(p => { playerMap[p.id] = p; });
 
+  // Category order for sorting
+  const catOrder = {};
+  CATEGORIAS.forEach((c, i) => { catOrder[c] = i; });
+
   const rows = active
     .map(inj => ({ ...inj, player: playerMap[inj.player_id] }))
     .filter(r => r.player)
-    .sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio));
+    .filter(r => !catFiltro || r.player.categoria === catFiltro)
+    .sort((a, b) => {
+      const catDiff = (catOrder[a.player.categoria] ?? 99) - (catOrder[b.player.categoria] ?? 99);
+      if (catDiff !== 0) return catDiff;
+      return new Date(a.fecha_inicio) - new Date(b.fecha_inicio);
+    });
+
+  // Categories that have active injuries (for filter pills)
+  const categorias = CATEGORIAS.filter(cat =>
+    active.some(inj => playerMap[inj.player_id]?.categoria === cat)
+  );
 
   const formatDate = (iso) => {
     if (!iso) return '—';
@@ -37,6 +54,23 @@ export const InjuredPlayersWidget = ({ players = [], injuries = [] }) => {
           Jugadores Lesionados
         </h3>
         <span className="text-sm font-bold text-red-600">{rows.length}</span>
+      </div>
+      <div className="flex flex-wrap gap-1 mb-3">
+        <button
+          onClick={() => setCatFiltro(null)}
+          className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition ${!catFiltro ? 'bg-black text-yellow-400 border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+        >
+          Todas
+        </button>
+        {categorias.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setCatFiltro(cat === catFiltro ? null : cat)}
+            className={`px-2.5 py-0.5 rounded-full text-xs font-medium border transition ${catFiltro === cat ? 'bg-black text-yellow-400 border-black' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
       <div className="space-y-2 max-h-64 overflow-y-auto">
         {rows.map(r => (
