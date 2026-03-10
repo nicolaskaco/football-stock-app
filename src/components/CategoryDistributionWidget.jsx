@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Users, PieChart } from 'lucide-react';
+import { Users } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export const CategoryDistributionWidget = ({ players }) => {
   const [categoryData, setCategoryData] = useState([]);
@@ -36,24 +37,26 @@ export const CategoryDistributionWidget = ({ players }) => {
         <h3 className="text-lg font-bold">Distribución por Categoría</h3>
       </div>
 
-      <div className="mb-6">
-        <div className="flex h-8 rounded-lg overflow-hidden">
-          {categoryData.map((cat, index) => (
-            cat.count > 0 && (
-              <div
-                key={index}
-                className="flex items-center justify-center text-white text-xs font-semibold"
-                style={{ 
-                  width: `${cat.percentage}%`,
-                  backgroundColor: cat.color
-                }}
-                title={`${cat.categoria}: ${cat.count} jugadores (${cat.percentage}%)`}
-              >
-                {cat.percentage > 8 && cat.categoria}
-              </div>
-            )
-          ))}
-        </div>
+      <div className="mb-4">
+        <ResponsiveContainer width="100%" height={200}>
+          <PieChart>
+            <Pie
+              data={categoryData.filter(c => c.count > 0)}
+              dataKey="count"
+              nameKey="categoria"
+              cx="50%"
+              cy="50%"
+              innerRadius={50}
+              outerRadius={80}
+              paddingAngle={2}
+            >
+              {categoryData.filter(c => c.count > 0).map((cat, index) => (
+                <Cell key={index} fill={cat.color} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value, name) => [`${value} jugadores`, name]} />
+          </PieChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="grid grid-cols-2 gap-3">

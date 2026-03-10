@@ -3,6 +3,10 @@ import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
+import { GoalTrendChart } from './charts/GoalTrendChart';
+import { CardDistributionChart } from './charts/CardDistributionChart';
+import { AgeCurveChart } from './charts/AgeCurveChart';
+import { RivalPerformanceChart } from './charts/RivalPerformanceChart';
 
 // ─── Player stats helpers ────────────────────────────────────────────────────
 
@@ -432,6 +436,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
 
   const isJugadoresTab = ['general', 'goleadores', 'tarjetas'].includes(subTab);
   const isRivalesTab   = subTab === 'rivales';
+  const isGraficosTab  = subTab === 'graficos';
 
   const subTabBtn = (id, label) => (
     <button
@@ -456,6 +461,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
         {subTabBtn('goleadores',  'Goleadores')}
         {subTabBtn('tarjetas',    'Tarjetas')}
         {subTabBtn('rivales', 'Por Rival')}
+        {subTabBtn('graficos', 'Gráficos')}
       </div>
 
       {/* Top goleadores podium */}
@@ -470,7 +476,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
           onCategoriaFiltro={setCategoriaFiltro}
         />
       )}
-      {isRivalesTab && (
+      {(isRivalesTab || isGraficosTab) && (
         <ResultadosFilters
           faseFiltro={faseFiltro}
           onFaseFiltro={setFaseFiltro}
@@ -484,6 +490,16 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
       {subTab === 'rivales' && <RivalesTable data={partidoRows} faseFiltro={faseFiltro} />}
+
+      {/* Charts tab */}
+      {isGraficosTab && (
+        <div className="space-y-6">
+          <GoalTrendChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
+          <CardDistributionChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
+          <RivalPerformanceChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
+          <AgeCurveChart players={players} />
+        </div>
+      )}
     </div>
   );
 };
