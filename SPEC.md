@@ -26,6 +26,7 @@ Internal management system for Club Atlético Peñarol (CAP) formative divisions
 | Backend/DB | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
 | Icons | lucide-react |
 | Excel export/import | xlsx |
+| Charts | recharts |
 
 ---
 
@@ -253,7 +254,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 |-----------|-------------|
 | [AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell + permission gating. On desktop (`sm+`) renders a horizontal scrollable tab bar; on mobile, the tab bar is hidden and replaced by a hamburger icon + active tab label in the nav bar that opens a slide-in drawer. Clicking the logo/title navigates to the Resumen tab. |
 | [OverviewTab.jsx](src/components/OverviewTab.jsx) | Dashboard with stat cards, optional widgets, and CalendarioView for `can_view_partidos` users |
-| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits for Cédulas. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerForm` modal. Bulk actions (change category, toggle casita, hide, import from XLSX). Injury icon (Swiss cross) shown next to player name when injured. Injury CRUD button (admin only). |
+| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits for Cédulas. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerForm` modal. Bulk actions (change category, toggle casita, hide, import from XLSX). Injury icon (Swiss cross) shown next to player name when injured. Injury CRUD button (admin only). "Comparar" button (indigo, Users icon) appears when 2-3 players are selected, opens `PlayerComparisonModal`. |
 | [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow. Complemento column shows the effective value (override if active) with a yellow "temp" badge and tooltip showing the expiry date. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerFormViatico` modal. |
 | [ChangeRequestsTab.jsx](src/components/ChangeRequestsTab.jsx) | Approval/rejection UI for financial change requests |
 | [InventoryTab.jsx](src/components/InventoryTab.jsx) | Inventory CRUD, low-stock alerts, bulk stock adjustment via multi-select |
@@ -269,7 +270,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, and comment |
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
-| [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival; top-scorer podium; filterable by category and phase |
+| [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Gráficos; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart |
 | [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()` |
 | [EmployeeView.jsx](src/components/EmployeeView.jsx) | Staff self-service: view own clothing distributions |
 | [LoginView.jsx](src/components/LoginView.jsx) | Dual-mode login (admin / funcionario) |
@@ -280,7 +281,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [BirthdayWidget.jsx](src/components/BirthdayWidget.jsx) | Upcoming birthdays for players and dirigentes (7-day window); scoped to `currentUser.categoria` so `presidente_categoria` users only see their categories |
 | [FichaMedicaWidget.jsx](src/components/FichaMedicaWidget.jsx) | Players with expired or expiring-soon (≤ 30 days) ficha médica, ordered by date; color-coded red (expired) / orange (soon). Admin-only (`role = 'admin'`). Category filter pills. Clicking a row opens a detail modal with nombre, documento, celular, and expiry date, plus a button to refresh via the SND API (`checkFichaMedica` → `saveFichaMedicaHasta`). |
 | [SpendingTrendsWidget.jsx](src/components/SpendingTrendsWidget.jsx) | Viatico + complemento spend over time |
-| [CategoryDistributionWidget.jsx](src/components/CategoryDistributionWidget.jsx) | Player count by category |
+| [CategoryDistributionWidget.jsx](src/components/CategoryDistributionWidget.jsx) | Player count by category; rendered as a recharts donut chart (PieChart with innerRadius) |
 | [AgeDistributionWidget.jsx](src/components/AgeDistributionWidget.jsx) | Player age breakdown |
 | [DepartamentoWidget.jsx](src/components/DepartamentoWidget.jsx) | Geographic distribution of players |
 | [MostDistributedWidget.jsx](src/components/MostDistributedWidget.jsx) | Top distributed clothing items |
@@ -317,6 +318,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes; includes per-field filter buttons when history spans multiple fields |
 | [BulkActionModal.jsx](src/components/BulkActionModal.jsx) | Generic before→after preview modal for bulk player/inventory operations |
 | [ImportPreviewModal.jsx](src/components/ImportPreviewModal.jsx) | XLSX import with field auto-mapping, row validation (required fields, category/position checks, duplicate detection), green/red preview rows |
+| [PlayerComparisonModal.jsx](src/components/PlayerComparisonModal.jsx) | Side-by-side comparison for 2-3 players: Datos Personales, Estado, Financiero, Estadísticas de Partido, goal timeline LineChart. Best values highlighted in green via `getBest()` helper |
 | [ExportConfigModal.jsx](src/components/ExportConfigModal.jsx) | Excel export field selector |
 | [DocumentUpload.jsx](src/components/DocumentUpload.jsx) | Supabase Storage document upload/download |
 | [NameVisualEditor.jsx](src/components/NameVisualEditor.jsx) | Visual name editing (dual-name system) |
@@ -411,6 +413,32 @@ Tracks player injuries for availability management. Admin-only feature (`role = 
 - **PartidoForm**: Injured players shown with 🏥 prefix and injury type in the player select dropdowns (titulares and suplentes).
 - **InjuredPlayersWidget**: Overview widget showing all active injuries, with category filter pills and sorted by category then injury start date. Admin-only.
 - **Database methods**: `getInjuries()`, `addInjury()`, `updateInjury()`, `dischargeInjury()` — discharge sets `fecha_alta` to today.
+
+### Advanced Analytics with Charts
+
+Interactive charts powered by `recharts` for match statistics and dashboard widgets.
+
+- **GoalTrendChart**: LineChart showing goals per jornada, one line per category (colored using `CATEGORIAS_PARTIDO` palette).
+- **CardDistributionChart**: BarChart of amarillas vs rojas per category.
+- **AgeCurveChart**: Stacked BarChart of player age distribution per category; respects `categoriaFiltro` prop for filtering.
+- **RivalPerformanceChart**: Horizontal stacked BarChart of wins/draws/losses per rival.
+- **EstadisticasTab "Gráficos" sub-tab**: Renders all 4 charts above, shares category and phase filters with the existing sub-tabs.
+- **CategoryDistributionWidget**: Replaced horizontal bar with a recharts donut chart (PieChart with `innerRadius`).
+- Chart components located in `src/components/charts/`.
+
+### Player Comparison Tool
+
+Side-by-side comparison modal for 2-3 selected players.
+
+- **PlayerComparisonModal**: Displays comparison across sections:
+  - Datos Personales (edad, categoría, posición, departamento)
+  - Estado (contrato, residencia, ficha médica, lesión activa)
+  - Financiero (viático, complemento, total)
+  - Estadísticas de Partido (PJ, titular, suplente, goles, amarillas, rojas, G/PJ)
+  - Goal timeline LineChart (per-player lines overlaid)
+- **Best value highlighting**: `getBest()` helper auto-highlights the best value in each row in green.
+- **PlayersTab integration**: "Comparar" button (indigo, `Users` icon) appears when 2-3 players are selected via checkboxes.
+- **AdminDashboard**: Passes `jornadas` prop to PlayersTab for the comparison chart data.
 
 ### Low-Stock Alerts
 
@@ -601,6 +629,11 @@ football-stock-app/
     │   │   ├── ViandaIcons.jsx        # Shared vianda icon renderer
     │   │   ├── FichaMedicaIcon.jsx     # Ficha médica status icon
     │   │   └── InjuryIcon.jsx          # Swiss-cross injury severity icon
+    │   ├── charts/
+    │   │   ├── GoalTrendChart.jsx       # Goals per jornada line chart
+    │   │   ├── CardDistributionChart.jsx # Cards by category bar chart
+    │   │   ├── AgeCurveChart.jsx        # Age distribution stacked bar chart
+    │   │   └── RivalPerformanceChart.jsx # W/D/L per rival horizontal bar chart
     │   ├── AdminDashboard.jsx
     │   ├── LoginView.jsx
     │   ├── EmployeeView.jsx
@@ -641,6 +674,7 @@ football-stock-app/
     │   ├── BulkActionModal.jsx
     │   ├── ImportPreviewModal.jsx
     │   ├── ExportConfigModal.jsx
+    │   ├── PlayerComparisonModal.jsx
     │   ├── DocumentUpload.jsx
     │   ├── NameVisualEditor.jsx
     │   ├── StatCard.jsx
