@@ -585,7 +585,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                     <td className="py-2 pr-3 font-medium">{inj.tipo}</td>
                     <td className="py-2 pr-3">
                       <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${SEVERITY_BADGE[inj.severidad] || 'bg-gray-100 text-gray-600'}`}>
-                        {inj.severidad}
+                        {inj.severidad?.charAt(0).toUpperCase() + inj.severidad?.slice(1)}
                       </span>
                     </td>
                     <td className="py-2 pr-3 whitespace-nowrap">{formatDate(inj.fecha_inicio)}</td>
