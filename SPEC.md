@@ -142,6 +142,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `partido_players` | Players convoked per partido (titulares + suplentes) |
 | `partido_eventos` | Match events (goals, yellow/red cards) per partido |
 | `app_settings` | Global key-value feature flags toggled via ConfiguracionTab |
+| `player_injuries` | Injury log per player: tipo, severidad, dates (inicio, retorno estimado, alta) |
 | `user_permissions` | Role and permission flags per user email |
 
 ### Campeonato Juvenil Tables Detail
@@ -252,10 +253,10 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 |-----------|-------------|
 | [AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell + permission gating. On desktop (`sm+`) renders a horizontal scrollable tab bar; on mobile, the tab bar is hidden and replaced by a hamburger icon + active tab label in the nav bar that opens a slide-in drawer. Clicking the logo/title navigates to the Resumen tab. |
 | [OverviewTab.jsx](src/components/OverviewTab.jsx) | Dashboard with stat cards, optional widgets, and CalendarioView for `can_view_partidos` users |
-| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits for Cédulas. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerForm` modal. |
+| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits for Cédulas. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerForm` modal. Bulk actions (change category, toggle casita/contrato, hide, import from XLSX). Injury icon (Swiss cross) shown next to player name when injured. Injury CRUD button (admin only). |
 | [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow. Complemento column shows the effective value (override if active) with a yellow "temp" badge and tooltip showing the expiry date. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerFormViatico` modal. |
 | [ChangeRequestsTab.jsx](src/components/ChangeRequestsTab.jsx) | Approval/rejection UI for financial change requests |
-| [InventoryTab.jsx](src/components/InventoryTab.jsx) | Inventory CRUD, low-stock alerts |
+| [InventoryTab.jsx](src/components/InventoryTab.jsx) | Inventory CRUD, low-stock alerts, bulk stock adjustment via multi-select |
 | [DistributionsTab.jsx](src/components/DistributionsTab.jsx) | Distribution CRUD with return tracking |
 | [EmployeesTab.jsx](src/components/EmployeesTab.jsx) | Staff CRUD with photo and clothing size tracking |
 | [DirigentesTab.jsx](src/components/DirigentesTab.jsx) | Board member CRUD. Sticky Nombre column on horizontal scroll; name truncates on mobile. |
@@ -284,6 +285,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [DepartamentoWidget.jsx](src/components/DepartamentoWidget.jsx) | Geographic distribution of players |
 | [MostDistributedWidget.jsx](src/components/MostDistributedWidget.jsx) | Top distributed clothing items |
 | [PendingChangeRequestsWidget.jsx](src/components/PendingChangeRequestsWidget.jsx) | Count of pending financial change requests with SLA age badge (admin home) |
+| [InjuredPlayersWidget.jsx](src/components/InjuredPlayersWidget.jsx) | Active (open) injuries summary. Admin-only. Category filter pills. Sorted by category order then injury start date ascending. |
 
 > All player-based analytics widgets (`SpendingTrends`, `CategoryDistribution`, `AgeDistribution`, `Departamento`) receive a `visiblePlayers` array derived in `OverviewTab` — filtered by `currentUser.categoria` when the user has category restrictions. This prevents cross-category players (visible via the partido RLS policy) from leaking into home page statistics.
 
@@ -301,7 +303,8 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
 | [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit (name only) |
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
-| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. |
+| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. |
+| [InjuryForm.jsx](src/forms/InjuryForm.jsx) | Injury registration/editing: tipo (Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro), severidad (leve/moderada/grave), descripción, fecha_inicio, fecha_retorno_estimada, fecha_alta. Admin-only. |
 
 #### Modals & Utilities
 | Component | Description |
@@ -312,6 +315,8 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PromptModal.jsx](src/components/PromptModal.jsx) | Text input prompt dialog |
 | [ChangeRequestModal.jsx](src/components/ChangeRequestModal.jsx) | Financial change request submission form |
 | [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes; includes per-field filter buttons when history spans multiple fields |
+| [BulkActionModal.jsx](src/components/BulkActionModal.jsx) | Generic before→after preview modal for bulk player/inventory operations |
+| [ImportPreviewModal.jsx](src/components/ImportPreviewModal.jsx) | XLSX import with field auto-mapping, row validation (required fields, category/position checks, duplicate detection), green/red preview rows |
 | [ExportConfigModal.jsx](src/components/ExportConfigModal.jsx) | Excel export field selector |
 | [DocumentUpload.jsx](src/components/DocumentUpload.jsx) | Supabase Storage document upload/download |
 | [NameVisualEditor.jsx](src/components/NameVisualEditor.jsx) | Visual name editing (dual-name system) |
@@ -321,6 +326,8 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [ui/SearchInput.jsx](src/components/ui/SearchInput.jsx) | Controlled text search input; `onChange` receives the string value (not the DOM event); base styles baked in, layout class passed as `className` prop (default: `flex-1`) |
 | [ui/SortIcon.jsx](src/components/ui/SortIcon.jsx) | Sort direction arrow for table headers; shows neutral icon when column is unsorted, blue up/down arrow when active; requires `columnKey` and `sortConfig` props |
 | [ui/ViandaIcons.jsx](src/components/ui/ViandaIcons.jsx) | Renders `Utensils` icons equal to the player's `vianda` count, capped at 10; returns null when count ≤ 0 |
+| [ui/FichaMedicaIcon.jsx](src/components/ui/FichaMedicaIcon.jsx) | Stethoscope icon colored by ficha médica expiry status (red=expired, orange=expiring, green=valid) |
+| [ui/InjuryIcon.jsx](src/components/ui/InjuryIcon.jsx) | Swiss-cross SVG icon colored by injury severity (yellow=leve, orange=moderada, red=grave); tooltip shows injury type and estimated return date |
 
 ---
 
@@ -385,6 +392,25 @@ Players have a `ficha_medica_hasta` (date) column that records when their SND sp
 - **`database.saveFichaMedicaHasta(playerId, hastaStr)`** — converts `hastaStr` from DD/MM/YYYY to YYYY-MM-DD and writes it to `players.ficha_medica_hasta`.
 - **PlayersTab** supports individual and bulk ficha checks for all filtered players.
 - **FichaMedicaWidget** (home page) shows expired / expiring-soon players and lets admins trigger a per-player refresh directly from the modal.
+
+### Bulk Operations
+
+Multiple bulk action features are available for admin users:
+
+- **PlayersTab bulk actions**: select multiple players via checkboxes, then use the dropdown menu to change category, toggle casita/contrato (enabling contrato resets viatico and complemento to 0), or hide players. All bulk actions show a before→after preview via `BulkActionModal` before applying.
+- **PlayersTab XLSX import**: import players from Excel via `ImportPreviewModal`; auto-maps columns, validates required fields, detects duplicates, and shows green/red preview rows before inserting.
+- **InventoryTab bulk stock adjustment**: select items via checkboxes, enter a quantity adjustment, preview changes, and apply.
+
+### Injury & Availability Log
+
+Tracks player injuries for availability management. Admin-only feature (`role = 'admin'`).
+
+- **`player_injuries` table**: `id` (uuid), `player_id` (FK → players), `tipo` (text), `severidad` (leve/moderada/grave), `descripcion`, `fecha_inicio` (date), `fecha_retorno_estimada` (date, nullable), `fecha_alta` (date, nullable), `created_by` (email), `created_at` (timestamptz). An injury is considered active (open) when `fecha_alta IS NULL`.
+- **Injury types**: Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro.
+- **PlayersTab**: Swiss-cross icon (InjuryIcon) shown next to player name when actively injured, colored by severity. Admin users see a cross button per row to register a new injury or edit/discharge an existing one.
+- **PartidoForm**: Injured players shown with 🏥 prefix and injury type in the player select dropdowns (titulares and suplentes).
+- **InjuredPlayersWidget**: Overview widget showing all active injuries, with category filter pills and sorted by category then injury start date. Admin-only.
+- **Database methods**: `getInjuries()`, `addInjury()`, `updateInjury()`, `dischargeInjury()` — discharge sets `fecha_alta` to today.
 
 ### Low-Stock Alerts
 
@@ -572,7 +598,9 @@ football-stock-app/
     │   │   ├── FilterButtonGroup.jsx  # Shared toggle-button filter bar
     │   │   ├── SearchInput.jsx        # Shared debounced search input
     │   │   ├── SortIcon.jsx           # Shared sort direction arrow
-    │   │   └── ViandaIcons.jsx        # Shared vianda icon renderer
+    │   │   ├── ViandaIcons.jsx        # Shared vianda icon renderer
+    │   │   ├── FichaMedicaIcon.jsx     # Ficha médica status icon
+    │   │   └── InjuryIcon.jsx          # Swiss-cross injury severity icon
     │   ├── AdminDashboard.jsx
     │   ├── LoginView.jsx
     │   ├── EmployeeView.jsx
@@ -603,12 +631,15 @@ football-stock-app/
     │   ├── DepartamentoWidget.jsx
     │   ├── MostDistributedWidget.jsx
     │   ├── PendingChangeRequestsWidget.jsx
+    │   ├── InjuredPlayersWidget.jsx
     │   ├── Modal.jsx
     │   ├── ConfirmModal.jsx
     │   ├── AlertModal.jsx
     │   ├── PromptModal.jsx
     │   ├── ChangeRequestModal.jsx
     │   ├── PlayerHistoryModal.jsx
+    │   ├── BulkActionModal.jsx
+    │   ├── ImportPreviewModal.jsx
     │   ├── ExportConfigModal.jsx
     │   ├── DocumentUpload.jsx
     │   ├── NameVisualEditor.jsx
@@ -626,7 +657,8 @@ football-stock-app/
     │   ├── ComisionForm.jsx
     │   ├── RivalForm.jsx
     │   ├── JornadaForm.jsx
-    │   └── PartidoForm.jsx
+    │   ├── PartidoForm.jsx
+    │   └── InjuryForm.jsx
     ├── context/
     │   └── ToastContext.jsx       # Toast notification context + provider
     ├── hooks/
