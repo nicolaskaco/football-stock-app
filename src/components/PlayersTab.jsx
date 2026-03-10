@@ -271,10 +271,12 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
     // Check if user is 3era-only user
     const is3eraOnlyUser = currentUser?.categoria?.length === 1 && currentUser.categoria[0] === '3era';
 
+    const efectivaCat = p.categoria_juego || p.categoria;
+
     // Modified categoria filter
-    const matchesCategoria = filterCategoria === 'all' 
-      ? (is3eraOnlyUser ? true : p.categoria !== '3era')  // Include 3era only for 3era-only users
-      : p.categoria === filterCategoria;
+    const matchesCategoria = filterCategoria === 'all'
+      ? (is3eraOnlyUser ? true : efectivaCat !== '3era')  // Include 3era only for 3era-only users
+      : efectivaCat === filterCategoria;
 
     const matchesCasita = !filterCasita || p.casita === true;
     const matchesContrato = !filterContrato || p.contrato === true;
@@ -283,11 +285,11 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
     const filterDisp = searchParams.get('p_disp') || 'all';
     const hasActiveInjury = !!activeInjuryMap[p.id];
     const matchesDisp = filterDisp === 'all' || (filterDisp === 'lesionados' ? hasActiveInjury : !hasActiveInjury);
-    
-    // Add permission-based categoria filter
-    const hasAccessToCategoria = !currentUser?.categoria || 
-                                  currentUser.categoria.length === 0 || 
-                                  currentUser.categoria.includes(p.categoria);
+
+    // Add permission-based categoria filter (uses playing category)
+    const hasAccessToCategoria = !currentUser?.categoria ||
+                                  currentUser.categoria.length === 0 ||
+                                  currentUser.categoria.includes(efectivaCat);
 
     return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && matchesDisp && hasAccessToCategoria;
   });
@@ -361,8 +363,8 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
         if (bValue === -1) bValue = 999;
         break; }
       case 'categoria':
-        aValue = categorias.indexOf(a.categoria);
-        bValue = categorias.indexOf(b.categoria);
+        aValue = categorias.indexOf(a.categoria_juego || a.categoria);
+        bValue = categorias.indexOf(b.categoria_juego || b.categoria);
         break;
       case 'departamento':
         aValue = a.departamento.toLowerCase();
@@ -987,8 +989,13 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
                 <td className="px-3 py-4 text-sm">{player.posicion}</td>
                 <td className="px-3 py-4">
                   <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
-                    {player.categoria}
+                    {player.categoria_juego || player.categoria}
                   </span>
+                  {player.categoria_juego && player.categoria_juego !== player.categoria && (
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full" title="Categoría de cobro">
+                      💰 {player.categoria}
+                    </span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-sm">{player.departamento || '-'}</td>
                 <td className="px-3 py-4">

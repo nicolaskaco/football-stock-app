@@ -404,7 +404,8 @@ export const database = {
       .eq('hide_player', false);
 
     if (categorias && categorias.length > 0) {
-      query = query.in('categoria', categorias);
+      const cats = categorias.join(',');
+      query = query.or(`categoria_juego.in.(${cats}),and(categoria_juego.is.null,categoria.in.(${cats}))`);
     }
 
     const { data: players, error } = await query;
@@ -455,14 +456,15 @@ export const database = {
 
     let query = supabase
       .from('players')
-      .select('id, name, name_visual, categoria, ficha_medica_hasta, gov_id, celular, tipo_documento')
+      .select('id, name, name_visual, categoria, categoria_juego, ficha_medica_hasta, gov_id, celular, tipo_documento')
       .eq('hide_player', false)
       .not('ficha_medica_hasta', 'is', null)
       .lte('ficha_medica_hasta', in30DaysStr)
       .order('ficha_medica_hasta', { ascending: true });
 
     if (categorias && categorias.length > 0) {
-      query = query.in('categoria', categorias);
+      const cats = categorias.join(',');
+      query = query.or(`categoria_juego.in.(${cats}),and(categoria_juego.is.null,categoria.in.(${cats}))`);
     }
 
     const { data, error } = await query;

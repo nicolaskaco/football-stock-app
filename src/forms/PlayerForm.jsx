@@ -3,7 +3,7 @@ import { DocumentUpload } from '../components/DocumentUpload';
 import { CATEGORIAS, BANCOS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
 
 export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange }) => {
-  const [formData, setFormData] = useState(player || {
+  const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null } : {
     name: '',
     gov_id: '',
     date_of_birth: null,
@@ -14,6 +14,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     bank_account: '',
     comentario_viatico: '',
     categoria: '',
+    categoria_juego: null,
     numero_buzo: null,
     numero_pantalon: null,
     hide_player: false,
@@ -99,6 +100,24 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               ))}
             </select>
           </div>
+
+          {!readOnly && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Categoría de juego <span className="text-gray-400 font-normal">(solo si difiere del cobro)</span>
+              </label>
+              <select
+                value={formData.categoria_juego || ''}
+                onChange={(e) => setFormData({ ...formData, categoria_juego: e.target.value || null })}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">— Igual que categoría de cobro —</option>
+                {categorias.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Fila 2: Tipo Documento | Número de Documento */}
           <div>
