@@ -9,6 +9,7 @@ import { AgeDistributionWidget } from './AgeDistributionWidget';
 import { DepartamentoWidget } from './DepartamentoWidget';
 import { PendingChangeRequestsWidget } from './PendingChangeRequestsWidget';
 import { FichaMedicaWidget } from './FichaMedicaWidget';
+import { InjuredPlayersWidget } from './InjuredPlayersWidget';
 import { CalendarioView } from './CalendarioView';
 import { PartidoDetailView } from './PartidoDetailView';
 import { formatDate } from '../utils/dateUtils';
@@ -26,6 +27,7 @@ export const OverviewTab = ({
   canSeeRopaWidgets = false,
   currentUser,
   jornadas = [],
+  injuries = [],
   canViewPartidos = false,
   setShowModal,
   onDataChange,
@@ -47,6 +49,7 @@ export const OverviewTab = ({
         <PartidoDetailView
           jornada={jornada}
           players={players}
+          injuries={injuries}
           canEdit={canEditPartidos}
           setShowModal={setShowModal}
           onDataChange={onDataChange}
@@ -115,6 +118,7 @@ export const OverviewTab = ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           <BirthdayWidget currentUser={currentUser} />
           {currentUser?.role === 'admin' && <FichaMedicaWidget currentUser={currentUser} onDataChange={onDataChange} />}
+          {currentUser?.role === 'admin' && <InjuredPlayersWidget players={visiblePlayers} injuries={injuries} />}
           <SpendingTrendsWidget players={visiblePlayers} />
           <CategoryDistributionWidget players={visiblePlayers} />
           <AgeDistributionWidget players={visiblePlayers} />

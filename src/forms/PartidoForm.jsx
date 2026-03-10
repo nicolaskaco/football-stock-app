@@ -7,8 +7,14 @@ const MAX_SUPLENTES = 10;
 
 const emptySlot = () => ({ player_id: '', posicion: '' });
 
-export const PartidoForm = ({ partido, players = [], onSubmit }) => {
+export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) => {
   const categoria = partido?.categoria || '';
+
+  // Build active injury map
+  const activeInjuryMap = {};
+  injuries.forEach(inj => {
+    if (!inj.fecha_alta && !activeInjuryMap[inj.player_id]) activeInjuryMap[inj.player_id] = inj;
+  });
 
   // Datos básicos del partido
   const [formData, setFormData] = useState({
@@ -307,7 +313,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
                     value={p.id}
                     disabled={usedIds.has(p.id) && t.player_id !== p.id}
                   >
-                    {p.name_visual || p.name}{p.categoria !== categoria ? ` (${p.categoria})` : ''}
+                    {activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{p.categoria !== categoria ? ` (${p.categoria})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                   </option>
                 ))}
               </select>
@@ -359,7 +365,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
                     value={p.id}
                     disabled={usedIds.has(p.id) && s.player_id !== p.id}
                   >
-                    {p.name_visual || p.name}{p.categoria !== categoria ? ` (${p.categoria})` : ''}
+                    {activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{p.categoria !== categoria ? ` (${p.categoria})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                   </option>
                 ))}
               </select>

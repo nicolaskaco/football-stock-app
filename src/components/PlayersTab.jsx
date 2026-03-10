@@ -9,6 +9,7 @@ import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type, Stethoscope, 
 import { ViandaIcons } from './ui/ViandaIcons';
 import { SortIcon } from './ui/SortIcon';
 import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
+import { InjuryIcon } from './ui/InjuryIcon';
 import { SearchInput } from './ui/SearchInput';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
@@ -21,8 +22,15 @@ import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 import { BulkActionModal } from './BulkActionModal';
 import { ImportPreviewModal } from './ImportPreviewModal';
+import { InjuryForm } from '../forms/InjuryForm';
 
-export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
+export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
+  const isAdmin = currentUser?.role === 'admin';
+  // Build a map: player_id -> active (open) injury
+  const activeInjuryMap = {};
+  injuries.forEach(inj => {
+    if (!inj.fecha_alta && !activeInjuryMap[inj.player_id]) activeInjuryMap[inj.player_id] = inj;
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('p_search') || '';
   const filterCategoria = searchParams.get('p_cat') || 'all';
@@ -111,6 +119,55 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     } finally {
       setFichaMedicaLoading(null);
     }
+  };
+
+  const openInjuryModal = (player) => {
+    const activeInjury = activeInjuryMap[player.id] || null;
+    const playerName = player.name_visual || player.name;
+
+    const handleSaveInjury = async (payload) => {
+      await execute(async () => {
+        if (activeInjury) {
+          await database.updateInjury(activeInjury.id, payload);
+        } else {
+          payload.created_by = currentUser?.email || 'Unknown';
+          await database.addInjury(payload);
+        }
+        await onDataChange('injuries');
+        setShowModal(null);
+      }, 'Error guardando lesión', activeInjury ? 'Lesión actualizada' : 'Lesión registrada');
+    };
+
+    const handleDischarge = async () => {
+      await execute(async () => {
+        await database.dischargeInjury(activeInjury.id);
+        await onDataChange('injuries');
+        setShowModal(null);
+      }, 'Error dando de alta', 'Jugador dado de alta');
+    };
+
+    setShowModal({
+      title: activeInjury ? `Lesión: ${playerName}` : `Registrar Lesión: ${playerName}`,
+      content: (
+        <div>
+          <InjuryForm
+            injury={activeInjury}
+            playerId={player.id}
+            playerName={playerName}
+            onSubmit={handleSaveInjury}
+          />
+          {activeInjury && !activeInjury.fecha_alta && (
+            <button
+              type="button"
+              onClick={handleDischarge}
+              className="w-full mt-3 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            >
+              Dar de Alta
+            </button>
+          )}
+        </div>
+      ),
+    });
   };
 
   const handleBulkFichaMedica = async () => {
@@ -221,13 +278,18 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
 
     const matchesCasita = !filterCasita || p.casita === true;
     const matchesContrato = !filterContrato || p.contrato === true;
+
+    // Availability filter
+    const filterDisp = searchParams.get('p_disp') || 'all';
+    const hasActiveInjury = !!activeInjuryMap[p.id];
+    const matchesDisp = filterDisp === 'all' || (filterDisp === 'lesionados' ? hasActiveInjury : !hasActiveInjury);
     
     // Add permission-based categoria filter
     const hasAccessToCategoria = !currentUser?.categoria || 
                                   currentUser.categoria.length === 0 || 
                                   currentUser.categoria.includes(p.categoria);
 
-    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && hasAccessToCategoria;
+    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && matchesDisp && hasAccessToCategoria;
   });
 
   const handleSelectAll = () => {
@@ -777,6 +839,17 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
             />
             <span className="text-sm font-medium text-gray-700">Solo Contrato</span>
           </label>
+          {isAdmin && (
+            <select
+              value={searchParams.get('p_disp') || 'all'}
+              onChange={(e) => setParam('p_disp', e.target.value, 'all')}
+              className="px-4 py-2 border rounded-lg bg-gray-50 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Todos</option>
+              <option value="disponibles">Disponibles</option>
+              <option value="lesionados">Lesionados</option>
+            </select>
+          )}
         </div>
       </div>
 
@@ -902,6 +975,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                         {player.name_visual || player.name}
                       </button>
                       <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
+                      {activeInjuryMap[player.id] && <InjuryIcon injury={activeInjuryMap[player.id]} />}
                       <ViandaIcons count={player.vianda} />
                     </div>
                     {player.name_visual && player.name_visual !== player.name && (
@@ -990,6 +1064,15 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                           ? <span className="w-4 h-4 block animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
                           : <Stethoscope className="w-4 h-4" />}
                       </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => openInjuryModal(player)}
+                          className={`hover:opacity-80 ${activeInjuryMap[player.id] ? 'text-red-600' : 'text-gray-400 hover:text-red-500'}`}
+                          title={activeInjuryMap[player.id] ? 'Ver / editar lesión' : 'Registrar lesión'}
+                        >
+                          <svg viewBox="0 0 16 16" className="w-4 h-4"><rect x="0" y="0" width="16" height="16" rx="2" fill={activeInjuryMap[player.id] ? '#dc2626' : 'currentColor'} /><rect x="6" y="2" width="4" height="12" rx="0.5" fill="white" /><rect x="2" y="6" width="12" height="4" rx="0.5" fill="white" /></svg>
+                        </button>
+                      )}
                     </div>
                   </td>
               </tr>

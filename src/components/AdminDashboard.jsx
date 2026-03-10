@@ -29,6 +29,7 @@ export const AdminDashboard = ({
   comisiones,
   rivales,
   jornadas,
+  injuries = [],
   appSettings = {},
   onLogout,
   onDataChange,
@@ -164,6 +165,7 @@ export const AdminDashboard = ({
             canSeeRopaWidgets={canSeeRopaWidgets}
             currentUser={currentUser}
             jornadas={jornadas}
+            injuries={injuries}
             canViewPartidos={canViewPartidos}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
@@ -208,6 +210,7 @@ export const AdminDashboard = ({
         {activeTab === 'players' && canAccessPlayers && (
           <PlayersTab
             players={players}
+            injuries={injuries}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
@@ -263,6 +266,7 @@ export const AdminDashboard = ({
             jornadas={jornadas}
             rivales={rivales}
             players={players}
+            injuries={injuries}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
