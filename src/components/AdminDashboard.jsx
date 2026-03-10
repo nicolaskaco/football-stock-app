@@ -211,6 +211,7 @@ export const AdminDashboard = ({
           <PlayersTab
             players={players}
             injuries={injuries}
+            jornadas={jornadas}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
