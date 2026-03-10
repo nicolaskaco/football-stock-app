@@ -454,29 +454,6 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
         ];
         break;
       }
-      case 'contrato': {
-        const newVal = !selected.every(p => p.contrato);
-        changes = selected.filter(p => p.contrato !== newVal).map(p => {
-          const before = { contrato: p.contrato };
-          const after = { contrato: newVal };
-          if (newVal) {
-            before.viatico = p.viatico;
-            before.complemento = p.complemento;
-            after.viatico = 0;
-            after.complemento = 0;
-          }
-          return { id: p.id, name: p.name_visual || p.name, before, after };
-        });
-        columns = [
-          { key: 'name', label: 'Jugador', render: (r) => r.name },
-          { key: 'contrato', label: 'Contrato' },
-          ...(newVal ? [
-            { key: 'viatico', label: 'Viático' },
-            { key: 'complemento', label: 'Complemento' },
-          ] : []),
-        ];
-        break;
-      }
       case 'hide': {
         changes = selected.map(p => ({
           id: p.id,
@@ -730,7 +707,6 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
                 <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-20 min-w-[200px]">
                   <button onClick={() => prepareBulkAction('categoria')} className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Cambiar categoría</button>
                   <button onClick={() => prepareBulkAction('casita')} className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Toggle residencia</button>
-                  <button onClick={() => prepareBulkAction('contrato')} className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Toggle contrato</button>
                   <button onClick={() => prepareBulkAction('hide')} className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-red-600">Ocultar jugadores</button>
                 </div>
               )}
