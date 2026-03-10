@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { CATEGORIAS } from '../utils/constants';
+import { InjuryForm } from '../forms/InjuryForm';
+import { database } from '../utils/database';
+import { useMutation } from '../hooks/useMutation';
 
 const severityBadge = {
   leve: 'bg-yellow-100 text-yellow-800',
@@ -7,8 +10,9 @@ const severityBadge = {
   grave: 'bg-red-100 text-red-800',
 };
 
-export const InjuredPlayersWidget = ({ players = [], injuries = [] }) => {
+export const InjuredPlayersWidget = ({ players = [], injuries = [], setShowModal, onDataChange, currentUser }) => {
   const [catFiltro, setCatFiltro] = useState(null);
+  const { execute } = useMutation();
 
   // Only active (open) injuries
   const active = injuries.filter(inj => !inj.fecha_alta);
@@ -40,6 +44,49 @@ export const InjuredPlayersWidget = ({ players = [], injuries = [] }) => {
     if (!iso) return '—';
     const [y, m, d] = iso.split('-');
     return `${d}/${m}/${y}`;
+  };
+
+  const openInjuryModal = (injury, player) => {
+    const playerName = player.name_visual || player.name;
+
+    const handleSaveInjury = async (payload) => {
+      await execute(async () => {
+        await database.updateInjury(injury.id, payload);
+        await onDataChange('injuries');
+        setShowModal(null);
+      }, 'Error guardando lesión', 'Lesión actualizada');
+    };
+
+    const handleDischarge = async () => {
+      await execute(async () => {
+        await database.dischargeInjury(injury.id);
+        await onDataChange('injuries');
+        setShowModal(null);
+      }, 'Error dando de alta', 'Jugador dado de alta');
+    };
+
+    setShowModal({
+      title: `Lesión: ${playerName}`,
+      content: (
+        <div>
+          <InjuryForm
+            injury={injury}
+            playerId={player.id}
+            playerName={playerName}
+            onSubmit={handleSaveInjury}
+          />
+          {!injury.fecha_alta && (
+            <button
+              type="button"
+              onClick={handleDischarge}
+              className="w-full mt-3 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            >
+              Dar de Alta
+            </button>
+          )}
+        </div>
+      ),
+    });
   };
 
   return (
@@ -77,7 +124,16 @@ export const InjuredPlayersWidget = ({ players = [], injuries = [] }) => {
           <div key={r.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-gray-50">
             <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-800 truncate">
-                {r.player.name_visual || r.player.name}
+                {setShowModal ? (
+                  <button
+                    onClick={() => openInjuryModal(r, r.player)}
+                    className="hover:text-blue-700 hover:underline cursor-pointer text-left"
+                  >
+                    {r.player.name_visual || r.player.name}
+                  </button>
+                ) : (
+                  r.player.name_visual || r.player.name
+                )}
                 <span className="ml-2 text-xs font-normal text-gray-500">{r.player.categoria}</span>
               </p>
               <p className="text-xs text-gray-500">{r.tipo} — desde {formatDate(r.fecha_inicio)}</p>
