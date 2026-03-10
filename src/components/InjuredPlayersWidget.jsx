@@ -72,7 +72,7 @@ export const InjuredPlayersWidget = ({ players = [], injuries = [] }) => {
           </button>
         ))}
       </div>
-      <div className="space-y-2 max-h-64 overflow-y-auto">
+      <div className="space-y-2 overflow-y-auto">
         {rows.map(r => (
           <div key={r.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-gray-50">
             <div className="min-w-0">
