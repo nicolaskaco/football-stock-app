@@ -1206,4 +1206,48 @@ export const database = {
     if (error) throw error;
     return data;
   },
+
+  // ── Injuries ──────────────────────────────────────────
+  async getInjuries() {
+    const { data, error } = await supabase
+      .from('player_injuries')
+      .select('*')
+      .order('fecha_inicio', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  async addInjury(injury) {
+    const { data, error } = await supabase
+      .from('player_injuries')
+      .insert([injury])
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  },
+
+  async updateInjury(id, fields) {
+    const { data, error } = await supabase
+      .from('player_injuries')
+      .update(fields)
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  },
+
+  async dischargeInjury(id) {
+    const today = new Date().toISOString().split('T')[0];
+    const { data, error } = await supabase
+      .from('player_injuries')
+      .update({ fecha_alta: today })
+      .eq('id', id)
+      .select();
+
+    if (error) throw error;
+    return data[0];
+  },
 };

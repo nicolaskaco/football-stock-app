@@ -34,6 +34,7 @@ const App = () => {
   const [comisiones, setComisiones] = useState([]);
   const [rivales, setRivales] = useState([]);
   const [jornadas, setJornadas] = useState([]);
+  const [injuries, setInjuries] = useState([]);
   const [appSettings, setAppSettings] = useState({});
 
   useEffect(() => {
@@ -99,6 +100,7 @@ const App = () => {
   const loadComisiones = async () => { const d = await database.getComisiones(); setComisiones(d || []); };
   const loadRivales = async () => { const d = await database.getRivales(); setRivales(d || []); };
   const loadJornadas = async () => { const d = await database.getJornadas(); setJornadas(d || []); };
+  const loadInjuries = async () => { const d = await database.getInjuries(); setInjuries(d || []); };
   const loadAppSettings = async () => { const d = await database.getAppSettings(); setAppSettings(d || {}); };
 
   const loadData = async () => {
@@ -113,6 +115,7 @@ const App = () => {
         loadComisiones(),
         loadRivales(),
         loadJornadas(),
+        loadInjuries(),
         loadAppSettings(),
       ]);
     } catch (error) {
@@ -131,6 +134,7 @@ const App = () => {
     comisiones: loadComisiones,
     rivales: loadRivales,
     jornadas: loadJornadas,
+    injuries: loadInjuries,
     appSettings: loadAppSettings,
   };
 
@@ -269,6 +273,7 @@ const App = () => {
                 comisiones={comisiones}
                 rivales={rivales}
                 jornadas={jornadas}
+                injuries={injuries}
                 appSettings={appSettings}
                 currentUser={currentUser}
                 onLogout={handleLogout}
