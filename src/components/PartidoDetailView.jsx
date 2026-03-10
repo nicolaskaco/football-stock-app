@@ -129,6 +129,11 @@ export const PartidoDetailView = ({ jornada, players = [], canEdit, setShowModal
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cespedBadge(partido.cesped)}`}>
                   {partido.cesped}
                 </span>
+                {partido.escenario === 'Local' && partido.cancha && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-800">
+                    {partido.cancha}
+                  </span>
+                )}
                 {resultado && (
                   <span className={`ml-2 px-3 py-0.5 rounded-full text-sm font-bold ${resultadoBadgeClass(partido)}`}>
                     {resultado}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CATEGORIAS_PARTIDO, CATEGORIAS } from '../utils/constants';
+import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS } from '../utils/constants';
 
 const MAX_TITULARES = 11;
 const MAX_SUPLENTES = 10;
@@ -14,6 +14,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
   const [formData, setFormData] = useState({
     escenario: partido?.escenario || '',
     cesped: partido?.cesped || 'Natural',
+    cancha: partido?.cancha || 'Ciudad Deportiva',
     goles_local: partido?.goles_local ?? '',
     goles_visitante: partido?.goles_visitante ?? '',
     comentario: partido?.comentario || '',
@@ -120,6 +121,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
 
     const data = {
       ...formData,
+      cancha: formData.escenario === 'Local' ? formData.cancha : null,
       goles_local: formData.goles_local === '' ? null : Number(formData.goles_local),
       goles_visitante: formData.goles_visitante === '' ? null : Number(formData.goles_visitante),
     };
@@ -214,6 +216,20 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
           </select>
         </div>
       </div>
+
+      {/* Cancha (solo Local) */}
+      {formData.escenario === 'Local' && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cancha</label>
+          <select
+            value={formData.cancha}
+            onChange={(e) => setFormData({ ...formData, cancha: e.target.value })}
+            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            {CANCHAS_LOCAL.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      )}
 
       {/* Resultado */}
       <div>
