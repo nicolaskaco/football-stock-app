@@ -6,6 +6,8 @@ const TIPOS_LESION = [
   'Esguince',
   'Contusión',
   'Tendinitis',
+  'Ligamentos cruzados',
+  'Meniscos',
   'Otro',
 ];
 
