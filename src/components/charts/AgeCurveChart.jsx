@@ -13,12 +13,13 @@ const COLORS = {
   'Sub13': '#605259',
 };
 
-export const AgeCurveChart = ({ players = [] }) => {
+export const AgeCurveChart = ({ players = [], categoriaFiltro }) => {
   const data = useMemo(() => {
     const ageMap = {};
 
     players.forEach(p => {
       if (!p.date_of_birth) return;
+      if (categoriaFiltro && p.categoria !== categoriaFiltro) return;
       const age = calculateAge(p.date_of_birth);
       if (age === '-') return;
       const key = String(age);
@@ -33,7 +34,7 @@ export const AgeCurveChart = ({ players = [] }) => {
     });
 
     return Object.values(ageMap).sort((a, b) => Number(a.edad) - Number(b.edad));
-  }, [players]);
+  }, [players, categoriaFiltro]);
 
   if (data.length === 0) return <p className="text-center text-gray-500 py-8">No hay datos de edad.</p>;
 

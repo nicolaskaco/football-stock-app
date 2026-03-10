@@ -497,7 +497,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
           <GoalTrendChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
           <CardDistributionChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
           <RivalPerformanceChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
-          <AgeCurveChart players={players} />
+          <AgeCurveChart players={players} categoriaFiltro={categoriaFiltroRivales} />
         </div>
       )}
     </div>
