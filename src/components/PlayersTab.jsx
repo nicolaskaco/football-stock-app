@@ -23,8 +23,9 @@ import { useAlertModal } from '../hooks/useAlertModal';
 import { BulkActionModal } from './BulkActionModal';
 import { ImportPreviewModal } from './ImportPreviewModal';
 import { InjuryForm } from '../forms/InjuryForm';
+import { PlayerComparisonModal } from './PlayerComparisonModal';
 
-export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
+export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const isAdmin = currentUser?.role === 'admin';
   // Build a map: player_id -> active (open) injury
   const activeInjuryMap = {};
@@ -675,6 +676,21 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
             <Download className="w-5 h-5" />
             Exportar a Excel {selectedPlayers.length > 0 && `(${selectedPlayers.length})`}
           </button>
+          {selectedPlayers.length >= 2 && selectedPlayers.length <= 3 && (
+            <button
+              onClick={() => {
+                const selected = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
+                setShowModal({
+                  title: 'Comparar Jugadores',
+                  content: <PlayerComparisonModal players={selected} jornadas={jornadas} injuries={injuries} />
+                });
+              }}
+              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+            >
+              <Users className="w-5 h-5" />
+              Comparar ({selectedPlayers.length})
+            </button>
+          )}
           {selectedPlayers.length >= 2 && (
             <button
               onClick={handleBulkFichaMedica}
