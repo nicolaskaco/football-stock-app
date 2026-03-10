@@ -39,7 +39,7 @@ export const OverviewTab = ({
   // Cross-category players can appear in the global list (via partido RLS),
   // so we filter them out here to avoid leaking data in home page widgets.
   const visiblePlayers = currentUser?.categoria?.length > 0
-    ? players.filter(p => currentUser.categoria.includes(p.categoria))
+    ? players.filter(p => currentUser.categoria.includes(p.categoria_juego || p.categoria))
     : players;
 
   const openDetail = (jornada) => {

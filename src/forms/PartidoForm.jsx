@@ -313,7 +313,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
                     value={p.id}
                     disabled={usedIds.has(p.id) && t.player_id !== p.id}
                   >
-                    {activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{p.categoria !== categoria ? ` (${p.categoria})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                    {activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{(p.categoria_juego || p.categoria) !== categoria ? ` (${p.categoria_juego || p.categoria})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                   </option>
                 ))}
               </select>
@@ -365,7 +365,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
                     value={p.id}
                     disabled={usedIds.has(p.id) && s.player_id !== p.id}
                   >
-                    {activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{p.categoria !== categoria ? ` (${p.categoria})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                    {activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{(p.categoria_juego || p.categoria) !== categoria ? ` (${p.categoria_juego || p.categoria})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                   </option>
                 ))}
               </select>
