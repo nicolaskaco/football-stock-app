@@ -1169,4 +1169,41 @@ export const database = {
       if (evError) throw evError;
     }
   },
+
+  // BULK OPERATIONS
+  async bulkUpdatePlayers(ids, fields) {
+    const { data, error } = await supabase
+      .from('players')
+      .update(fields)
+      .in('id', ids)
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async bulkAdjustInventory(adjustments) {
+    // adjustments: [{ id, quantity }]
+    const results = [];
+    for (const adj of adjustments) {
+      const { data, error } = await supabase
+        .from('inventory')
+        .update({ quantity: adj.quantity })
+        .eq('id', adj.id)
+        .select();
+      if (error) throw error;
+      results.push(data[0]);
+    }
+    return results;
+  },
+
+  async bulkAddPlayers(players) {
+    const { data, error } = await supabase
+      .from('players')
+      .insert(players)
+      .select();
+
+    if (error) throw error;
+    return data;
+  },
 };
