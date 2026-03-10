@@ -947,7 +947,7 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
                         className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
                         onClick={() => setShowModal({
                           title: `Ver Jugador: ${player.name}`,
-                          content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} />
+                          content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} />
                         })}
                       >
                         {player.name_visual || player.name}
@@ -1000,7 +1000,7 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
                         <button 
                           onClick={() => setShowModal({
                             title: `Editar Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} />
+                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} />
                           })} 
                           className="text-blue-600 hover:text-blue-800"
                           title="Editar"
@@ -1011,7 +1011,7 @@ export const PlayersTab = ({ players = [], injuries = [], setShowModal, onDataCh
                         <button 
                           onClick={() => setShowModal({
                             title: `Ver Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} />
+                            content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} />
                           })} 
                           className="text-blue-600 hover:text-blue-800"
                           title="Ver detalles"

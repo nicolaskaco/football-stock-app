@@ -292,7 +292,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 #### Forms
 | Form | Description |
 |------|-------------|
-| [PlayerForm.jsx](src/forms/PlayerForm.jsx) | Full player add/edit (admin). Layout: row 1 = Nombre \| Categoría; row 2 = Tipo Documento dropdown (Cédula de Identidad / Pasaporte / Otro, stored as `tipo_documento`) \| Número de Documento. Shows "Override Temporal de Complemento" section in read-only mode (edit from Viático tab). |
+| [PlayerForm.jsx](src/forms/PlayerForm.jsx) | Full player add/edit (admin). Layout: row 1 = Nombre \| Categoría; row 2 = Tipo Documento dropdown (Cédula de Identidad / Pasaporte / Otro, stored as `tipo_documento`) \| Número de Documento. Shows "Override Temporal de Complemento" section in read-only mode (edit from Viático tab). Includes a "Lesiones" related list at the bottom showing all injuries for the player (oldest first) with tipo, severidad badge, dates, and description. |
 | [PlayerFormViatico.jsx](src/forms/PlayerFormViatico.jsx) | Financial fields form for viatico tab. Includes "Override Temporal de Complemento" section: editable only by `admin`, `ejecutivo`, `presidente`; other roles see it read-only. Override auto-clears when `contrato` is activated. |
 | [PlayerFormPublic.jsx](src/forms/PlayerFormPublic.jsx) | Public-facing player registration at `/formulario` |
 | [EmployeeForm.jsx](src/forms/EmployeeForm.jsx) | Staff add/edit |

@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { CATEGORIAS, BANCOS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
+import { formatDate } from '../utils/dateUtils';
 
-export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange }) => {
+const SEVERITY_BADGE = {
+  leve: 'bg-yellow-100 text-yellow-800',
+  moderada: 'bg-orange-100 text-orange-800',
+  grave: 'bg-red-100 text-red-800',
+};
+
+export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [] }) => {
   const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null } : {
     name: '',
     gov_id: '',
@@ -553,6 +560,47 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Documentos</h3>
           <DocumentUpload playerId={player.id} playerName={player.name} readOnly={readOnly} />
+        </div>
+      )}
+
+      {/* INJURIES RELATED LIST */}
+      {player && player.id && injuries.length > 0 && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Lesiones ({injuries.length})</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 text-left text-gray-500 text-xs uppercase">
+                  <th className="pb-2 pr-3">Tipo</th>
+                  <th className="pb-2 pr-3">Severidad</th>
+                  <th className="pb-2 pr-3">Inicio</th>
+                  <th className="pb-2 pr-3">Retorno Est.</th>
+                  <th className="pb-2 pr-3">Alta</th>
+                  <th className="pb-2">Descripción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {injuries.map(inj => (
+                  <tr key={inj.id} className="border-b border-gray-100 last:border-0">
+                    <td className="py-2 pr-3 font-medium">{inj.tipo}</td>
+                    <td className="py-2 pr-3">
+                      <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${SEVERITY_BADGE[inj.severidad] || 'bg-gray-100 text-gray-600'}`}>
+                        {inj.severidad}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{formatDate(inj.fecha_inicio)}</td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{inj.fecha_retorno_estimada ? formatDate(inj.fecha_retorno_estimada) : '-'}</td>
+                    <td className="py-2 pr-3 whitespace-nowrap">
+                      {inj.fecha_alta
+                        ? <span className="text-green-700">{formatDate(inj.fecha_alta)}</span>
+                        : <span className="text-red-600 font-medium">Activa</span>}
+                    </td>
+                    <td className="py-2 text-gray-600">{inj.descripcion || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
