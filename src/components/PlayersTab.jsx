@@ -392,15 +392,24 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
       }
       case 'contrato': {
         const newVal = !selected.every(p => p.contrato);
-        changes = selected.filter(p => p.contrato !== newVal).map(p => ({
-          id: p.id,
-          name: p.name_visual || p.name,
-          before: { contrato: p.contrato },
-          after: { contrato: newVal },
-        }));
+        changes = selected.filter(p => p.contrato !== newVal).map(p => {
+          const before = { contrato: p.contrato };
+          const after = { contrato: newVal };
+          if (newVal) {
+            before.viatico = p.viatico;
+            before.complemento = p.complemento;
+            after.viatico = 0;
+            after.complemento = 0;
+          }
+          return { id: p.id, name: p.name_visual || p.name, before, after };
+        });
         columns = [
           { key: 'name', label: 'Jugador', render: (r) => r.name },
           { key: 'contrato', label: 'Contrato' },
+          ...(newVal ? [
+            { key: 'viatico', label: 'Viático' },
+            { key: 'complemento', label: 'Complemento' },
+          ] : []),
         ];
         break;
       }
