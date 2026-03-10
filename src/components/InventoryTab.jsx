@@ -9,6 +9,7 @@ import { database } from '../utils/database';
 import { AlertModal } from './AlertModal';
 import { ConfirmModal } from './ConfirmModal';
 import { BulkActionModal } from './BulkActionModal';
+import { PromptModal } from './PromptModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 
 export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirtyChange }) => {
@@ -17,6 +18,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [selectedItems, setSelectedItems] = useState([]);
   const [bulkAdjust, setBulkAdjust] = useState(null); // { changes, columns }
+  const [showStockPrompt, setShowStockPrompt] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('i_search') || '';
   const filterCategory = searchParams.get('i_cat') || 'all';
@@ -85,8 +87,12 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
       showAlert('Error', 'Selecciona al menos un artículo', 'warning');
       return;
     }
-    const input = prompt('Ajuste de stock (ej: +5, -3, o cantidad fija 10):');
-    if (input === null || input.trim() === '') return;
+    setShowStockPrompt(true);
+  };
+
+  const handleStockPromptConfirm = (input) => {
+    setShowStockPrompt(false);
+    if (!input || input.trim() === '') return;
     const trimmed = input.trim();
     const isRelative = trimmed.startsWith('+') || trimmed.startsWith('-');
     const num = parseInt(trimmed, 10);
@@ -94,6 +100,7 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
       showAlert('Error', 'Valor numérico inválido', 'error');
       return;
     }
+    const selected = filteredInventory.filter(i => selectedItems.includes(i.id));
 
     const changes = selected.map(item => {
       const newQty = isRelative ? Math.max(0, item.quantity + num) : Math.max(0, num);
@@ -265,6 +272,15 @@ export const InventoryTab = ({ inventory, setShowModal, onDataChange, onFormDirt
       title={`Ajustar stock — ${bulkAdjust?.changes.length || 0} artículo${(bulkAdjust?.changes.length || 0) !== 1 ? 's' : ''}`}
       changes={bulkAdjust?.changes}
       columns={bulkAdjust?.columns}
+    />
+    <PromptModal
+      isOpen={showStockPrompt}
+      onClose={() => setShowStockPrompt(false)}
+      onConfirm={handleStockPromptConfirm}
+      title="Ajustar stock"
+      message="Ingresá el ajuste: +5 para sumar, -3 para restar, o un número fijo (ej: 10)."
+      placeholder="Ej: +5, -3, 10"
+      required
     />
     </>
   );

@@ -70,6 +70,7 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [showBulkAction, setShowBulkAction] = useState(null); // { action, changes, columns }
   const [showImportModal, setShowImportModal] = useState(false);
   const [showBulkMenu, setShowBulkMenu] = useState(false);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   const handleCheckFichaMedica = async (player) => {
     if (!player.gov_id) {
@@ -372,22 +373,8 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     let changes, columns;
     switch (action) {
       case 'categoria': {
-        const newCat = prompt('Nueva categoría: ' + CATEGORIAS.join(', '));
-        if (!newCat || !CATEGORIAS.includes(newCat)) {
-          if (newCat) showAlert('Error', 'Categoría inválida', 'error');
-          return;
-        }
-        changes = selected.filter(p => p.categoria !== newCat).map(p => ({
-          id: p.id,
-          name: p.name_visual || p.name,
-          before: { categoria: p.categoria },
-          after: { categoria: newCat },
-        }));
-        columns = [
-          { key: 'name', label: 'Jugador', render: (r) => r.name },
-          { key: 'categoria', label: 'Categoría' },
-        ];
-        break;
+        setShowCategoryPicker(true);
+        return;
       }
       case 'casita': {
         const newVal = !selected.every(p => p.casita);
@@ -448,6 +435,26 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     setShowBulkAction(null);
     setSelectedPlayers([]);
   }, 'Error actualizando jugadores', `${showBulkAction?.changes.length} jugador${showBulkAction?.changes.length !== 1 ? 'es' : ''} actualizado${showBulkAction?.changes.length !== 1 ? 's' : ''}`);
+
+  const handleCategorySelect = (newCat) => {
+    setShowCategoryPicker(false);
+    const selected = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
+    const changes = selected.filter(p => p.categoria !== newCat).map(p => ({
+      id: p.id,
+      name: p.name_visual || p.name,
+      before: { categoria: p.categoria },
+      after: { categoria: newCat },
+    }));
+    if (changes.length === 0) {
+      showAlert('Sin cambios', 'Ningún jugador requiere modificación', 'info');
+      return;
+    }
+    const columns = [
+      { key: 'name', label: 'Jugador', render: (r) => r.name },
+      { key: 'categoria', label: 'Categoría' },
+    ];
+    setShowBulkAction({ action: 'categoria', changes, columns });
+  };
 
   const handleImportConfirm = async (players) => {
     await execute(async () => {
@@ -1034,6 +1041,37 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         onConfirm={handleImportConfirm}
         existingPlayers={safePlayers}
       />
+      {showCategoryPicker && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">Seleccionar categoría</h3>
+            </div>
+            <div className="p-6">
+              <p className="text-gray-600 text-sm mb-4">Elegí la nueva categoría para los {selectedPlayers.length} jugador{selectedPlayers.length !== 1 ? 'es' : ''} seleccionado{selectedPlayers.length !== 1 ? 's' : ''}:</p>
+              <div className="grid grid-cols-2 gap-2">
+                {CATEGORIAS.map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => handleCategorySelect(cat)}
+                    className="px-4 py-3 border-2 rounded-lg text-sm font-semibold hover:bg-yellow-50 hover:border-yellow-400 transition-colors"
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 flex justify-end">
+              <button
+                onClick={() => setShowCategoryPicker(false)}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-100 font-semibold"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
