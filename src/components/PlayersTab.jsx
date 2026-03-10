@@ -5,7 +5,7 @@ import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
-import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type, Stethoscope } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type, Stethoscope, Upload, Settings2 } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { SortIcon } from './ui/SortIcon';
 import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
@@ -19,6 +19,8 @@ import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
+import { BulkActionModal } from './BulkActionModal';
+import { ImportPreviewModal } from './ImportPreviewModal';
 
 export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -65,6 +67,9 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [fichaMedicaLoading, setFichaMedicaLoading] = useState(null);
   const [bulkFichaProgress, setBulkFichaProgress] = useState(null); // { current, total } while running
+  const [showBulkAction, setShowBulkAction] = useState(null); // { action, changes, columns }
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showBulkMenu, setShowBulkMenu] = useState(false);
 
   const handleCheckFichaMedica = async (player) => {
     if (!player.gov_id) {
@@ -356,6 +361,102 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
     showAlert('Aviso', 'Comunicarse con Kaco antes de borrar un jugador', 'error');
   };
 
+  const prepareBulkAction = (action) => {
+    setShowBulkMenu(false);
+    const selected = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
+    if (selected.length === 0) {
+      showAlert('Error', 'Selecciona al menos un jugador', 'warning');
+      return;
+    }
+
+    let changes, columns;
+    switch (action) {
+      case 'categoria': {
+        const newCat = prompt('Nueva categoría: ' + CATEGORIAS.join(', '));
+        if (!newCat || !CATEGORIAS.includes(newCat)) {
+          if (newCat) showAlert('Error', 'Categoría inválida', 'error');
+          return;
+        }
+        changes = selected.filter(p => p.categoria !== newCat).map(p => ({
+          id: p.id,
+          name: p.name_visual || p.name,
+          before: { categoria: p.categoria },
+          after: { categoria: newCat },
+        }));
+        columns = [
+          { key: 'name', label: 'Jugador', render: (r) => r.name },
+          { key: 'categoria', label: 'Categoría' },
+        ];
+        break;
+      }
+      case 'casita': {
+        const newVal = !selected.every(p => p.casita);
+        changes = selected.filter(p => p.casita !== newVal).map(p => ({
+          id: p.id,
+          name: p.name_visual || p.name,
+          before: { casita: p.casita },
+          after: { casita: newVal },
+        }));
+        columns = [
+          { key: 'name', label: 'Jugador', render: (r) => r.name },
+          { key: 'casita', label: 'Residencia' },
+        ];
+        break;
+      }
+      case 'contrato': {
+        const newVal = !selected.every(p => p.contrato);
+        changes = selected.filter(p => p.contrato !== newVal).map(p => ({
+          id: p.id,
+          name: p.name_visual || p.name,
+          before: { contrato: p.contrato },
+          after: { contrato: newVal },
+        }));
+        columns = [
+          { key: 'name', label: 'Jugador', render: (r) => r.name },
+          { key: 'contrato', label: 'Contrato' },
+        ];
+        break;
+      }
+      case 'hide': {
+        changes = selected.map(p => ({
+          id: p.id,
+          name: p.name_visual || p.name,
+          before: { hide_player: false },
+          after: { hide_player: true },
+        }));
+        columns = [
+          { key: 'name', label: 'Jugador', render: (r) => r.name },
+          { key: 'hide_player', label: 'Ocultar' },
+        ];
+        break;
+      }
+      default: return;
+    }
+    if (!changes || changes.length === 0) {
+      showAlert('Sin cambios', 'Ningún jugador requiere modificación', 'info');
+      return;
+    }
+    setShowBulkAction({ action, changes, columns });
+  };
+
+  const handleBulkConfirm = () => execute(async () => {
+    const { action, changes } = showBulkAction;
+    const ids = changes.map(c => c.id);
+    const fields = changes[0].after;
+    await database.bulkUpdatePlayers(ids, fields);
+    await onDataChange('players');
+    setShowBulkAction(null);
+    setSelectedPlayers([]);
+  }, 'Error actualizando jugadores', `${showBulkAction?.changes.length} jugador${showBulkAction?.changes.length !== 1 ? 'es' : ''} actualizado${showBulkAction?.changes.length !== 1 ? 's' : ''}`);
+
+  const handleImportConfirm = async (players) => {
+    await execute(async () => {
+      await database.bulkAddPlayers(players);
+      await onDataChange('players');
+      setShowImportModal(false);
+    }, 'Error importando jugadores', `${players.length} jugador${players.length !== 1 ? 'es' : ''} importado${players.length !== 1 ? 's' : ''} correctamente`);
+  };
+
   const handleEditNameVisual = async (player) => {
     setShowModal({
       title: `Editar Nombre Visual: ${player.name}`,
@@ -534,6 +635,34 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
                   Ficha médica ({selectedPlayers.length})
                 </>
               )}
+            </button>
+          )}
+          {canEditPlayers && selectedPlayers.length >= 1 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowBulkMenu(!showBulkMenu)}
+                className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+              >
+                <Settings2 className="w-5 h-5" />
+                Acción masiva ({selectedPlayers.length})
+              </button>
+              {showBulkMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-20 min-w-[200px]">
+                  <button onClick={() => prepareBulkAction('categoria')} className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Cambiar categoría</button>
+                  <button onClick={() => prepareBulkAction('casita')} className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Toggle residencia</button>
+                  <button onClick={() => prepareBulkAction('contrato')} className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm">Toggle contrato</button>
+                  <button onClick={() => prepareBulkAction('hide')} className="block w-full text-left px-4 py-2 hover:bg-gray-50 text-sm text-red-600">Ocultar jugadores</button>
+                </div>
+              )}
+            </div>
+          )}
+          {canEditPlayers && (
+            <button
+              onClick={() => setShowImportModal(true)}
+              className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800"
+            >
+              <Upload className="w-5 h-5" />
+              Importar
             </button>
           )}
           {canEditPlayers && (
@@ -890,6 +1019,20 @@ export const PlayersTab = ({ players = [], setShowModal, onDataChange, currentUs
         message="¿Estás seguro de que quieres eliminar este jugador?"
         confirmText="Continuar"
         type="warning"
+      />
+      <BulkActionModal
+        isOpen={!!showBulkAction}
+        onClose={() => setShowBulkAction(null)}
+        onConfirm={handleBulkConfirm}
+        title={`Acción masiva — ${showBulkAction?.changes.length || 0} jugador${(showBulkAction?.changes.length || 0) !== 1 ? 'es' : ''}`}
+        changes={showBulkAction?.changes}
+        columns={showBulkAction?.columns}
+      />
+      <ImportPreviewModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onConfirm={handleImportConfirm}
+        existingPlayers={safePlayers}
       />
     </div>
   );
