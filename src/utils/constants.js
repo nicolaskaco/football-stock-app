@@ -77,6 +77,9 @@ export const ESCENARIOS = ['Local', 'Visitante'];
 /** Tipos de césped */
 export const CESPED_TIPOS = ['Natural', 'Sintético'];
 
+/** Canchas propias (solo aplica cuando escenario = Local) */
+export const CANCHAS_LOCAL = ['Ciudad Deportiva', 'Las Acacias', 'CAR'];
+
 /** Posiciones específicas para la planilla de partidos */
 export const POSICIONES_PARTIDO = [
   'Arquero',
