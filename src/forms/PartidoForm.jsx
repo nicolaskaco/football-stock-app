@@ -121,6 +121,7 @@ export const PartidoForm = ({ partido, players = [], onSubmit }) => {
 
     const data = {
       ...formData,
+      cancha: formData.escenario === 'Local' ? formData.cancha : null,
       goles_local: formData.goles_local === '' ? null : Number(formData.goles_local),
       goles_visitante: formData.goles_visitante === '' ? null : Number(formData.goles_visitante),
     };
