@@ -76,7 +76,7 @@ const Row = ({ label, values, highlight, format }) => {
       {formatted.map((val, i) => (
         <td
           key={i}
-          className={`py-2.5 px-3 text-sm text-center font-semibold ${best === i ? 'text-green-700 bg-green-50' : 'text-gray-900'}`}
+          className={`py-2.5 px-3 text-sm text-center font-semibold ${best && best.has(i) ? 'text-green-700 bg-green-50' : 'text-gray-900'}`}
         >
           {val}
         </td>
@@ -88,9 +88,11 @@ const Row = ({ label, values, highlight, format }) => {
 const getBest = (values, type) => {
   const nums = values.map(v => typeof v === 'number' ? v : parseFloat(v) || 0);
   if (nums.every(n => n === nums[0])) return null;
-  if (type === 'max') return nums.indexOf(Math.max(...nums));
-  if (type === 'min') return nums.indexOf(Math.min(...nums));
-  return null;
+  const target = type === 'max' ? Math.max(...nums) : type === 'min' ? Math.min(...nums) : null;
+  if (target === null) return null;
+  const indices = new Set();
+  nums.forEach((n, i) => { if (n === target) indices.add(i); });
+  return indices;
 };
 
 const SectionHeader = ({ title }) => (
