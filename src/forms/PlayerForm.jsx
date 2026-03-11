@@ -9,7 +9,7 @@ const SEVERITY_BADGE = {
   grave: 'bg-red-100 text-red-800',
 };
 
-export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [] }) => {
+export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [] }) => {
   const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null } : {
     name: '',
     gov_id: '',
@@ -603,6 +603,92 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
           </div>
         </div>
       )}
+
+      {/* MATCH HISTORY RELATED LIST */}
+      {player && player.id && jornadas.length > 0 && (() => {
+        const history = [];
+        jornadas.forEach(jornada => {
+          (jornada.partidos || []).forEach(partido => {
+            const pp = (partido.partido_players || []).find(p => p.player_id === player.id);
+            if (!pp) return;
+            const eventos = (partido.partido_eventos || []).filter(e => e.player_id === player.id);
+            const goles = eventos.filter(e => e.tipo === 'gol').length;
+            const amarillas = eventos.filter(e => e.tipo === 'amarilla').length;
+            const rojas = eventos.filter(e => e.tipo === 'roja').length;
+            const capGoles = partido.escenario === 'Local' ? partido.goles_local : partido.goles_visitante;
+            const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+            const hasResult = capGoles != null && rivalGoles != null;
+            let resultado = null;
+            if (hasResult) {
+              if (capGoles > rivalGoles) resultado = 'G';
+              else if (capGoles < rivalGoles) resultado = 'P';
+              else resultado = 'E';
+            }
+            history.push({
+              id: partido.id,
+              fecha: jornada.fecha,
+              rival: jornada.rivales?.name || '-',
+              categoria: partido.categoria,
+              tipo: pp.tipo,
+              resultado,
+              marcador: hasResult ? `${capGoles} - ${rivalGoles}` : null,
+              goles,
+              amarillas,
+              rojas,
+            });
+          });
+        });
+        history.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        if (history.length === 0) return null;
+        const RESULT_BADGE = { G: 'bg-green-100 text-green-800', E: 'bg-gray-100 text-gray-800', P: 'bg-red-100 text-red-800' };
+        const RESULT_LABEL = { G: 'Ganado', E: 'Empate', P: 'Perdido' };
+        return (
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Historial de Partidos ({history.length})</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left text-gray-500 text-xs uppercase">
+                    <th className="pb-2 pr-3">Fecha</th>
+                    <th className="pb-2 pr-3">Rival</th>
+                    <th className="pb-2 pr-3">Cat.</th>
+                    <th className="pb-2 pr-3">Rol</th>
+                    <th className="pb-2 pr-3">Resultado</th>
+                    <th className="pb-2 pr-3 text-center">⚽</th>
+                    <th className="pb-2 pr-3 text-center">🟨</th>
+                    <th className="pb-2 text-center">🟥</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.map(m => (
+                    <tr key={m.id} className="border-b border-gray-100 last:border-0">
+                      <td className="py-2 pr-3 whitespace-nowrap">{formatDate(m.fecha)}</td>
+                      <td className="py-2 pr-3 font-medium">{m.rival}</td>
+                      <td className="py-2 pr-3">{m.categoria}</td>
+                      <td className="py-2 pr-3">
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'titular' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                          {m.tipo === 'titular' ? 'Titular' : 'Suplente'}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-3 whitespace-nowrap">
+                        {m.resultado ? (
+                          <span className="flex items-center gap-1.5">
+                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${RESULT_BADGE[m.resultado]}`}>{RESULT_LABEL[m.resultado]}</span>
+                            <span className="text-gray-500 text-xs">{m.marcador}</span>
+                          </span>
+                        ) : <span className="text-gray-400">-</span>}
+                      </td>
+                      <td className="py-2 pr-3 text-center">{m.goles || '-'}</td>
+                      <td className="py-2 pr-3 text-center">{m.amarillas || '-'}</td>
+                      <td className="py-2 text-center">{m.rojas || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      })()}
 
       {readOnly ? (
         <div className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg text-center font-bold text-lg">
