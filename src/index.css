@@ -1,3 +1,97 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Smooth dark-mode transition on backgrounds and text */
+  *, *::before, *::after {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+  }
+
+  /* Dark-mode: default border colour for bare border-* utilities */
+  .dark *,
+  .dark *::before,
+  .dark *::after {
+    border-color: rgb(51 65 85); /* slate-700 */
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+}
+
+/* ── Dark-mode global overrides ──────────────────────────────────
+   Override common Tailwind gray utilities when <html> has .dark.
+   Placed AFTER @tailwind utilities so specificity (.dark .class)
+   beats the single-class utility.
+   ─────────────────────────────────────────────────────────────── */
+
+/* Backgrounds */
+.dark .bg-white   { background-color: #1e293b; } /* slate-800 */
+.dark .bg-gray-50  { background-color: #0f172a; } /* slate-900 */
+.dark .bg-gray-100 { background-color: #1e293b; } /* slate-800 */
+.dark .bg-gray-200 { background-color: #334155; } /* slate-700 */
+
+/* Text */
+.dark .text-gray-400 { color: #94a3b8; } /* slate-400 */
+.dark .text-gray-500 { color: #94a3b8; } /* slate-400 */
+.dark .text-gray-600 { color: #cbd5e1; } /* slate-300 */
+.dark .text-gray-700 { color: #e2e8f0; } /* slate-200 */
+.dark .text-gray-800 { color: #f1f5f9; } /* slate-100 */
+.dark .text-gray-900 { color: #f8fafc; } /* slate-50  */
+
+/* Borders */
+.dark .border-gray-200 { border-color: #334155; } /* slate-700 */
+.dark .border-gray-300 { border-color: #475569; } /* slate-600 */
+
+/* Hover states */
+.dark .hover\:bg-gray-50:hover  { background-color: #334155; }
+.dark .hover\:bg-gray-100:hover { background-color: #334155; }
+.dark .hover\:bg-gray-200:hover { background-color: #475569; }
+.dark .hover\:text-gray-600:hover { color: #cbd5e1; }
+.dark .hover\:text-gray-800:hover { color: #f1f5f9; }
+
+/* Colored backgrounds — lighten for dark surfaces */
+.dark .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.15); }
+.dark .bg-green-100  { background-color: rgba(34, 197, 94, 0.15); }
+.dark .bg-red-100    { background-color: rgba(239, 68, 68, 0.15); }
+.dark .bg-blue-100   { background-color: rgba(59, 130, 246, 0.15); }
+.dark .bg-purple-100 { background-color: rgba(168, 85, 247, 0.15); }
+.dark .bg-orange-100 { background-color: rgba(249, 115, 22, 0.15); }
+
+/* Form controls */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.dark select,
+.dark textarea {
+  background-color: #0f172a; /* slate-900 */
+  border-color: #475569;    /* slate-600 */
+  color: #e2e8f0;           /* slate-200 */
+}
+
+.dark input:disabled,
+.dark select:disabled,
+.dark textarea:disabled {
+  background-color: #1e293b; /* slate-800 */
+  color: #64748b;            /* slate-500 */
+}
+
+.dark ::placeholder {
+  color: #64748b; /* slate-500 */
+}
+
+/* Recharts (SVG text in charts) */
+.dark .recharts-text {
+  fill: #cbd5e1; /* slate-300 */
+}
+.dark .recharts-cartesian-grid line {
+  stroke: #334155; /* slate-700 */
+}
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: #1e293b !important;
+  border-color: #475569 !important;
+}
+
+/* Scrollbar */
+.dark ::-webkit-scrollbar       { background: #0f172a; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
