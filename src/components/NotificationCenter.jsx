@@ -126,7 +126,7 @@ function NotifIcon({ icon, severity }) {
     case 'player': return <Users className={`w-4 h-4 ${cls}`} />;
     case 'dirigente': return <Shield className={`w-4 h-4 ${cls}`} />;
     case 'clipboard': return <ClipboardList className={`w-4 h-4 ${cls}`} />;
-    case 'injury': return <InjuryIcon severity={severity === 'critical' ? 'grave' : severity === 'warning' ? 'moderada' : 'leve'} className="w-4 h-4" />;
+    case 'injury': return <InjuryIcon injury={{ severidad: severity === 'critical' ? 'grave' : severity === 'warning' ? 'moderada' : 'leve', tipo: 'Lesión' }} />;
     default: return <Bell className={`w-4 h-4 ${cls}`} />;
   }
 }
