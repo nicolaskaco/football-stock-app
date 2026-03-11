@@ -90,7 +90,7 @@ export const OverviewTab = ({
           <button
             onClick={handleExportPDF}
             disabled={exportingPDF}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 text-sm font-medium"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-yellow-400 rounded-lg hover:bg-black disabled:opacity-50 text-sm font-medium"
           >
             <FileDown className="w-4 h-4" />
             {exportingPDF ? 'Generando...' : 'Exportar PDF'}
