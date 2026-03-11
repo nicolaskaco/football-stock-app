@@ -3,6 +3,8 @@ import { calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Download, Copy } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const COLORS = ['#3B82F6', '#EF4444', '#10B981'];
 
@@ -123,8 +125,77 @@ export const PlayerComparisonModal = ({ players = [], jornadas = [], injuries = 
     return 'Vigente';
   };
 
+  const buildExportRows = () => {
+    const rows = [
+      { Campo: 'Datos Personales', ...Object.fromEntries(playerNames.map(n => [n, ''])) },
+      { Campo: 'Edad', ...Object.fromEntries(players.map((p, i) => [playerNames[i], calculateAge(p.date_of_birth)])) },
+      { Campo: 'Categoría', ...Object.fromEntries(players.map((p, i) => [playerNames[i], p.categoria || '—'])) },
+      { Campo: 'Posición', ...Object.fromEntries(players.map((p, i) => [playerNames[i], p.posicion || '—'])) },
+      { Campo: 'Departamento', ...Object.fromEntries(players.map((p, i) => [playerNames[i], p.departamento || '—'])) },
+      { Campo: 'Estado', ...Object.fromEntries(playerNames.map(n => [n, ''])) },
+      { Campo: 'Contrato', ...Object.fromEntries(players.map((p, i) => [playerNames[i], p.contrato ? 'Sí' : 'No'])) },
+      { Campo: 'Residencia', ...Object.fromEntries(players.map((p, i) => [playerNames[i], p.casita ? 'Sí' : 'No'])) },
+      { Campo: 'Ficha Médica', ...Object.fromEntries(players.map((p, i) => [playerNames[i], fichaMedicaStatus(p.ficha_medica_hasta)])) },
+      { Campo: 'Lesión', ...Object.fromEntries(players.map((p, i) => [playerNames[i], activeInjuries[p.id] ? `${activeInjuries[p.id].tipo} (${activeInjuries[p.id].severidad})` : 'Ninguna'])) },
+      { Campo: 'Financiero', ...Object.fromEntries(playerNames.map(n => [n, ''])) },
+      { Campo: 'Viático', ...Object.fromEntries(players.map((p, i) => [playerNames[i], p.contrato ? 'Contrato' : p.viatico])) },
+      { Campo: 'Complemento', ...Object.fromEntries(players.map((p, i) => [playerNames[i], p.contrato ? 'Contrato' : p.complemento])) },
+      { Campo: 'Total', ...Object.fromEntries(players.map((p, i) => [playerNames[i], p.contrato ? 'Contrato' : calculateTotal(p)])) },
+      { Campo: 'Estadísticas de Partido', ...Object.fromEntries(playerNames.map(n => [n, ''])) },
+      { Campo: 'PJ', ...Object.fromEntries(playerIds.map((id, i) => [playerNames[i], stats[id]?.pj || 0])) },
+      { Campo: 'Titular', ...Object.fromEntries(playerIds.map((id, i) => [playerNames[i], stats[id]?.titular || 0])) },
+      { Campo: 'Suplente', ...Object.fromEntries(playerIds.map((id, i) => [playerNames[i], stats[id]?.suplente || 0])) },
+      { Campo: 'Goles', ...Object.fromEntries(playerIds.map((id, i) => [playerNames[i], stats[id]?.goles || 0])) },
+      { Campo: 'Amarillas', ...Object.fromEntries(playerIds.map((id, i) => [playerNames[i], stats[id]?.amarillas || 0])) },
+      { Campo: 'Rojas', ...Object.fromEntries(playerIds.map((id, i) => [playerNames[i], stats[id]?.rojas || 0])) },
+      { Campo: 'G/PJ', ...Object.fromEntries(playerIds.map((id, i) => {
+        const s = stats[id];
+        return [playerNames[i], s && s.pj > 0 ? (s.goles / s.pj).toFixed(2) : '0.00'];
+      })) },
+    ];
+    return rows;
+  };
+
+  const handleExportExcel = () => {
+    const rows = buildExportRows();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Comparación');
+    XLSX.writeFile(wb, `comparacion_${playerNames.join('_vs_')}.xlsx`);
+  };
+
+  const handleCopyClipboard = async () => {
+    const rows = buildExportRows();
+    const headers = ['Campo', ...playerNames];
+    const lines = [headers.join('\t')];
+    rows.forEach(row => {
+      lines.push(headers.map(h => row[h] ?? '').join('\t'));
+    });
+    await navigator.clipboard.writeText(lines.join('\n'));
+  };
+
   return (
     <div className="space-y-4">
+      {/* Export buttons */}
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={handleCopyClipboard}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          title="Copiar al portapapeles"
+        >
+          <Copy className="w-4 h-4" />
+          Copiar
+        </button>
+        <button
+          onClick={handleExportExcel}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+          title="Exportar a Excel"
+        >
+          <Download className="w-4 h-4" />
+          Excel
+        </button>
+      </div>
+
       {/* Headers */}
       <div className="overflow-x-auto">
         <table className="w-full">
