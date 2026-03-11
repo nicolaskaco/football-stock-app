@@ -132,8 +132,8 @@ export const AdminDashboard = ({
                 {visibleTabs.find(t => t.id === activeTab)?.label}
               </span>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-700">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <span className="hidden sm:inline text-sm text-gray-700">
                 👤 {currentUser?.email || currentUser?.name || 'Usuario'}
               </span>
               <button
@@ -152,9 +152,10 @@ export const AdminDashboard = ({
               />
               <button 
                 onClick={onLogout} 
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                className="px-2 sm:px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
               >
-                Cerrar sesión
+                <span className="hidden sm:inline">Cerrar sesión</span>
+                <span className="sm:hidden">Salir</span>
               </button>
             </div>
           </div>

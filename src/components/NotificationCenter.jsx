@@ -160,7 +160,7 @@ export const NotificationCenter = ({ currentUser, players = [], injuries = [], s
       promises.push(Promise.resolve([]));
     }
 
-    const [upcomingPlayers, upcomingDirigentes, fichas, pendingRequests] = await promises;
+    const [upcomingPlayers, upcomingDirigentes, fichas, pendingRequests] = await Promise.all(promises);
 
     const birthdays = [
       ...upcomingPlayers.map(p => ({ ...p, type: 'player' })),
@@ -196,6 +196,20 @@ export const NotificationCenter = ({ currentUser, players = [], injuries = [], s
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  const severityOrder = { critical: 0, warning: 1, info: 2 };
+
+  const sorted = [...notifications].sort((a, b) => {
+    // Unread first
+    const aRead = readIds.includes(a.id) ? 1 : 0;
+    const bRead = readIds.includes(b.id) ? 1 : 0;
+    if (aRead !== bRead) return aRead - bRead;
+    // Then by severity (critical > warning > info)
+    const sevDiff = (severityOrder[a.severity] ?? 2) - (severityOrder[b.severity] ?? 2);
+    if (sevDiff !== 0) return sevDiff;
+    // Then by date descending (newest first)
+    return (b.date || '').localeCompare(a.date || '');
+  });
 
   const unreadCount = notifications.filter(n => !readIds.includes(n.id)).length;
 
@@ -236,7 +250,9 @@ export const NotificationCenter = ({ currentUser, players = [], injuries = [], s
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-50 notification-panel">
+        <>
+        <div className="fixed inset-0 z-40 sm:hidden" onClick={() => setOpen(false)} />
+        <div className="fixed inset-x-0 top-14 mx-2 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:mx-0 sm:w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-50 notification-panel">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
             <h3 className="font-bold text-gray-800 text-sm">Notificaciones</h3>
@@ -261,13 +277,13 @@ export const NotificationCenter = ({ currentUser, players = [], injuries = [], s
 
           {/* List */}
           <div className="max-h-[400px] overflow-y-auto">
-            {notifications.length === 0 ? (
+            {sorted.length === 0 ? (
               <div className="py-12 text-center">
                 <Bell className="w-10 h-10 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">No hay notificaciones</p>
               </div>
             ) : (
-              notifications.map(notif => {
+              sorted.map(notif => {
                 const isRead = readIds.includes(notif.id);
                 return (
                   <button
@@ -295,6 +311,7 @@ export const NotificationCenter = ({ currentUser, players = [], injuries = [], s
             )}
           </div>
         </div>
+        </>
       )}
     </div>
   );
