@@ -6,7 +6,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { Download, Copy } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
-const COLORS = ['#3B82F6', '#EF4444', '#10B981'];
+const COLORS = ['#D4A017', '#1F2937', '#0D9488'];
 
 const buildPlayerStats = (jornadas, playerIds) => {
   const map = {};
