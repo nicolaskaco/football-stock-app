@@ -991,7 +991,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                     {player.categoria_juego || player.categoria}
                   </span>
                   {player.categoria_juego && player.categoria_juego !== player.categoria && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full" title="Categoría de cobro">
+                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full whitespace-nowrap" title="Categoría de cobro">
                       💰 {player.categoria}
                     </span>
                   )}
