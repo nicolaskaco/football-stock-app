@@ -45,46 +45,73 @@ Comparación lado a lado de 2-3 jugadores.
 - **PlayersTab**: botón "Comparar" (indigo, ícono Users) visible al seleccionar 2-3 jugadores.
 - **AdminDashboard**: pasa `jornadas` a PlayersTab para alimentar el chart de comparación.
 
+### Phase 5: Historial de Partidos por Jugador ✅
+
+Sección en el detalle de cada jugador mostrando todos los partidos en los que participó.
+
+- **PlayerForm**: sección "Historial de Partidos" al final del formulario de edición/lectura.
+- **Datos por partido**: fecha, rival, resultado, titular/suplente, goles y tarjetas en ese partido.
+- **Database**: consulta `partido_players` + `partidos` + `jornadas` + `rivales` + `partido_eventos` para armar el historial completo.
+
+### Phase 6: Exportar Comparación de Jugadores ✅
+
+Exportar la tabla comparativa de jugadores a Excel o copiar al portapapeles.
+
+- **PlayerComparisonModal**: botones "Exportar Excel" y "Copiar" en el header del modal.
+- **Excel export**: genera archivo `.xlsx` con nombre `comparacion_Jugador1_vs_Jugador2.xlsx` via `xlsx`.
+- **Copiar al portapapeles**: copia la tabla como texto tabulado con `navigator.clipboard.writeText()`.
+- **Datos exportados**: Datos Personales, Estado, Financiero, Estadísticas de Partido (PJ, titular, suplente, goles, amarillas, rojas, G/PJ).
+
+### Phase 7: Reportes PDF del Dashboard ✅
+
+Generación de PDF con snapshot de los widgets del dashboard para compartir sin acceso a la app.
+
+- **`src/utils/pdfExport.js`**: utilidad de generación PDF con `jspdf` + `jspdf-autotable`.
+- **Header**: branding Club Atlético Peñarol con colores institucionales (amarillo #D4A017 + gris oscuro).
+- **Secciones del reporte**: Jugadores Lesionados, Fichas Médicas (vencidas/por vencer), Cumpleaños Próximos, Distribución por Categoría.
+- **OverviewTab**: botón "Exportar PDF" (ícono FileDown) que genera `Reporte-Dashboard-DD-MM-YYYY.pdf`.
+- **Respeta categoría**: el PDF filtra datos según `currentUser.categoria`.
+
+### Phase 8: Mejoras de Responsive/Mobile ✅
+
+Optimización de tablas, modales y formularios para pantallas chicas.
+
+- **AdminDashboard**: hamburger menu + slide-in drawer para navegación mobile en lugar de tab bar horizontal.
+- **PlayersTab / PlayersTabViatico**: columna Nombre sticky en scroll horizontal.
+- **DirigentesTab / ComisionesTab**: nombre sticky con truncado en mobile, tap para expandir.
+- **PartidosTab**: label de botón "Nueva Jornada" colapsa a "Nueva" en pantallas chicas.
+- **Formularios y modales**: padding responsivo (`px-4 sm:px-6 lg:px-8`), scroll vertical en modales.
+
+### Phase 9: Dark Mode ✅
+
+Modo oscuro con toggle y persistencia via `localStorage`.
+
+- **`src/context/DarkModeContext.jsx`**: Context + Provider con estado `dark`, persiste en `localStorage` con key `cap-dark-mode`.
+- **`tailwind.config.js`**: `darkMode: 'class'` para activación por clase CSS.
+- **Toggle**: botón Moon/Sun en la nav bar de `AdminDashboard` y `EmployeeView`.
+- **`src/index.css`**: overrides globales CSS para backgrounds, texto, bordes, gradientes, formularios, badges, recharts, scrollbar.
+- **Transiciones suaves**: CSS transitions de 0.2s para background/border y 0.15s para color.
+
 ---
 
 ## Próximas features sugeridas
 
-### 1. Historial de partidos por jugador
-
-Agregar una pestaña o sección en el detalle de cada jugador que muestre todos los partidos en los que participó: fecha, rival, resultado, si fue titular o suplente, goles y tarjetas en ese partido.
-
-### 2. Exportar comparación de jugadores
-
-Agregar botón de exportar a Excel o copiar al portapapeles en `PlayerComparisonModal`, para compartir la tabla comparativa fuera de la app.
-
-### 3. Reportes PDF del dashboard
-
-Generar un PDF con un snapshot de los widgets del dashboard (lesionados, fichas médicas, distribución por categoría, cumpleaños) para compartir en reuniones sin acceso a la app.
-
-### 4. Mejoras de responsive/mobile
-
-Revisar y optimizar tablas, modales y formularios para pantallas chicas. Priorizar PlayersTab, PartidoForm y el dashboard de widgets.
-
-### 5. Dark mode
-
-Implementar un toggle de tema oscuro usando las clases `dark:` de Tailwind. Guardar preferencia en `localStorage`.
-
-### 6. Code splitting y lazy loading
+### 1. Code splitting y lazy loading
 
 Implementar `React.lazy()` + `Suspense` para cargar tabs bajo demanda y reducir el bundle inicial.
 
-### 7. Paginación server-side
+### 2. Paginación server-side
 
 Para tablas con muchos registros (jugadores, distribuciones), implementar paginación con Supabase `.range()` en lugar de cargar todo en memoria.
 
-### 8. Notificaciones in-app
+### 3. Notificaciones in-app
 
 Sistema de notificaciones para alertar sobre: lesiones nuevas, fichas médicas por vencer, solicitudes de cambio pendientes, cumpleaños del día.
 
-### 9. Calendario de entrenamientos
+### 4. Calendario de entrenamientos
 
 Extender `CalendarioView` para incluir entrenamientos además de partidos, con distinción visual entre ambos tipos de evento.
 
-### 10. Registro de transferencias/movimientos
+### 5. Registro de transferencias/movimientos
 
 Historial de movimientos de jugadores entre categorías, con fecha, motivo, y categoría de origen/destino. Útil para auditoría y seguimiento de desarrollo.
