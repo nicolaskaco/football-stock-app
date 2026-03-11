@@ -85,11 +85,11 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
 
   // Jugadores filtrados según las categorías activas
   const jugadoresCategoria = players
-    .filter((p) => categoriasActivas.includes(p.categoria))
+    .filter((p) => categoriasActivas.includes(p.categoria) || categoriasActivas.includes(p.categoria_juego))
     .sort((a, b) => {
       // Primero los de la categoría propia, luego el resto por categoría
-      const aPropia = a.categoria === categoria ? 0 : 1;
-      const bPropia = b.categoria === categoria ? 0 : 1;
+      const aPropia = (a.categoria === categoria || a.categoria_juego === categoria) ? 0 : 1;
+      const bPropia = (b.categoria === categoria || b.categoria_juego === categoria) ? 0 : 1;
       if (aPropia !== bPropia) return aPropia - bPropia;
       return (a.name_visual || a.name).localeCompare(b.name_visual || b.name);
     });
