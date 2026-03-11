@@ -157,42 +157,6 @@ export const OverviewTab = ({
           <DepartamentoWidget players={visiblePlayers} />
         </div>
       )}
-
-      {/* Keep MostDistributedWidget outside - it's inventory related, not player related */}
-      {canSeeRopaWidgets && (
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6 mb-8">
-          <MostDistributedWidget distributions={distributions} inventory={inventory} />
-        </div>
-      )}
-
-      {/* Low Stock Alert */}
-      {lowStockItems.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertCircle className="w-6 h-6 text-red-600" />
-            <h3 className="text-lg font-semibold text-red-800">Alerta Stock Bajo</h3>
-          </div>
-          <div className="space-y-2">
-            {lowStockItems.map(item => (
-              <div key={item.id} className="flex justify-between items-center bg-white p-3 rounded">
-                <div>
-                  <span className="font-medium text-gray-800">{item.name}</span>
-                  <span className="text-sm text-gray-600 ml-2">Size {item.size}</span>
-                </div>
-                <span className="text-red-600 font-semibold">
-                  {item.quantity} / {item.min_stock} min
-                </span>
-              </div>
-            ))}
-          </div>
-          <button 
-            onClick={() => setActiveTab('inventory')} 
-            className="mt-4 text-sm text-yellow-600 hover:text-yellow-700 font-medium"
-          >
-            Ver Inventario →
-          </button>
-        </div>
-      )}
     </div>
   );
 };
