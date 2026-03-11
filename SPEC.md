@@ -1,4 +1,4 @@
-# SPEC.md — App interna CAP v2
+# SPEC.md — App interna CAP v3
 
 Internal management system for Club Atlético Peñarol (CAP) formative divisions.
 
@@ -8,7 +8,7 @@ Internal management system for Club Atlético Peñarol (CAP) formative divisions
 
 | Field | Value |
 |-------|-------|
-| App name | App interna CAP v2 |
+| App name | App interna CAP v3 |
 | Organization | Club Atlético Peñarol |
 | Purpose | Manage players, staff, inventory, tournaments, board members, and campeonato juvenil matches for formative divisions |
 | Language | Spanish (Uruguayan locale — `es-UY`) |
