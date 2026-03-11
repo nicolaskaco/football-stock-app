@@ -49,18 +49,6 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
   doc.text(`Generado: ${dateStr}`, pageWidth - 15, 37, { align: 'right' });
   y = 42;
 
-  // Helper: run autoTable and return finalY
-  const addTable = (options) => {
-    let finalY = y;
-    y = addTable({
-      ...options,
-      didDrawPage: (data) => {
-        finalY = data.cursor.y;
-      },
-    });
-    return finalY;
-  };
-
   // Helper: add section title
   const addSectionTitle = (title) => {
     if (y > doc.internal.pageSize.getHeight() - 30) {
@@ -95,7 +83,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       });
 
     addSectionTitle(`Jugadores Lesionados (${injuryRows.length})`);
-    y = addTable({
+    let table = autoTable(doc, {
       startY: y,
       margin: { left: 15, right: 15 },
       head: [['Jugador', 'Categoría', 'Lesión', 'Severidad', 'Desde']],
@@ -110,7 +98,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       headStyles: { fillColor: DARK_GRAY, textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: LIGHT_GRAY },
     });
-    y = y + 8;
+    y = table.finalY + 8;
   }
 
   // ─── 2. Fichas Médicas Vencidas / Por Vencer ──────────
@@ -119,7 +107,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
     const fichas = await database.getPlayersWithExpiredFichaMedica(categorias);
     if (fichas.length > 0) {
       addSectionTitle(`Fichas Médicas — Atención Requerida (${fichas.length})`);
-      y = addTable({
+      let table = autoTable(doc, {
         startY: y,
         margin: { left: 15, right: 15 },
         head: [['Jugador', 'Categoría', 'Documento', 'Vencimiento', 'Estado']],
@@ -144,7 +132,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
           }
         },
       });
-      y = y + 8;
+      y = table.finalY + 8;
     }
   } catch (err) {
     console.error('Error fetching ficha médica data for PDF:', err);
@@ -165,7 +153,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
 
     if (allBirthdays.length > 0) {
       addSectionTitle(`Cumpleaños Próximos (${allBirthdays.length})`);
-      y = addTable({
+      let table = autoTable(doc, {
         startY: y,
         margin: { left: 15, right: 15 },
         head: [['Nombre', 'Tipo', 'Fecha de Nacimiento', 'Días']],
@@ -179,7 +167,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
         headStyles: { fillColor: DARK_GRAY, textColor: [255, 255, 255] },
         alternateRowStyles: { fillColor: LIGHT_GRAY },
       });
-      y = y + 8;
+      y = table.finalY + 8;
     }
   } catch (err) {
     console.error('Error fetching birthday data for PDF:', err);
@@ -204,7 +192,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       .forEach(c => catRows.push([c, catCounts[c], ((catCounts[c] / totalPlayers) * 100).toFixed(1) + '%']));
 
     addSectionTitle(`Distribución por Categoría (${totalPlayers} jugadores)`);
-    y = addTable({
+    let table = autoTable(doc, {
       startY: y,
       margin: { left: 15, right: 15 },
       head: [['Categoría', 'Cantidad', 'Porcentaje']],
@@ -213,7 +201,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       headStyles: { fillColor: DARK_GRAY, textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: LIGHT_GRAY },
     });
-    y = y + 8;
+    y = table.finalY + 8;
   }
 
   // ─── 5. Distribución por Edad ─────────────────────────
@@ -239,7 +227,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
   const totalWithAge = ageCounts.reduce((s, g) => s + g.count, 0);
   if (totalWithAge > 0) {
     addSectionTitle('Distribución por Edad');
-    y = addTable({
+    let table = autoTable(doc, {
       startY: y,
       margin: { left: 15, right: 15 },
       head: [['Rango de Edad', 'Cantidad', 'Porcentaje']],
@@ -252,7 +240,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       headStyles: { fillColor: DARK_GRAY, textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: LIGHT_GRAY },
     });
-    y = y + 8;
+    y = table.finalY + 8;
   }
 
   // ─── 6. Distribución por Departamento ─────────────────
@@ -269,7 +257,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
 
   if (deptRows.length > 0) {
     addSectionTitle('Distribución por Departamento (Top 10)');
-    y = addTable({
+    let table = autoTable(doc, {
       startY: y,
       margin: { left: 15, right: 15 },
       head: [['Departamento', 'Cantidad', 'Porcentaje']],
@@ -278,7 +266,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       headStyles: { fillColor: DARK_GRAY, textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: LIGHT_GRAY },
     });
-    y = y + 8;
+    y = table.finalY + 8;
   }
 
   // ─── 7. Ropa Más Distribuida ──────────────────────────
@@ -300,7 +288,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       .map(([name, count]) => [name, count, itemReturned[name] || 0]);
 
     addSectionTitle('Ropa Más Distribuida (Top 10)');
-    y = addTable({
+    let table = autoTable(doc, {
       startY: y,
       margin: { left: 15, right: 15 },
       head: [['Ítem', 'Entregas', 'Devueltos']],
@@ -309,7 +297,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       headStyles: { fillColor: DARK_GRAY, textColor: [255, 255, 255] },
       alternateRowStyles: { fillColor: LIGHT_GRAY },
     });
-    y = y + 8;
+    y = table.finalY + 8;
   }
 
   // ─── Footer on last page ──────────────────────────────
