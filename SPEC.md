@@ -26,6 +26,7 @@ Internal management system for Club Atlético Peñarol (CAP) formative divisions
 | Backend/DB | Supabase (PostgreSQL + Auth + Storage + Edge Functions) |
 | Icons | lucide-react |
 | Excel export/import | xlsx |
+| PDF generation | jspdf + jspdf-autotable |
 | Charts | recharts |
 
 ---
@@ -48,7 +49,8 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 
 - All Supabase interactions go through `src/utils/database.js`
 - Global state (employees, inventory, distributions, players, dirigentes, torneos, comisiones, rivales, jornadas) is held in `App.jsx` and passed down as props
-- No Redux or React Context — pure prop drilling
+- React Context used only for cross-cutting concerns: `ToastContext` (notifications) and `DarkModeContext` (theme toggle)
+- All domain state uses pure prop drilling (no Redux)
 - On login, `loadData()` fetches all entities in parallel via `Promise.all`
 
 ### Key Files
@@ -62,6 +64,8 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 | [src/utils/constants.js](src/utils/constants.js) | Centralized enums and constant lists |
 | [src/utils/dateUtils.js](src/utils/dateUtils.js) | Centralized date formatting helpers |
 | [src/utils/storage.js](src/utils/storage.js) | Storage utilities |
+| [src/utils/pdfExport.js](src/utils/pdfExport.js) | PDF dashboard report generation |
+| [src/context/DarkModeContext.jsx](src/context/DarkModeContext.jsx) | Dark mode state + localStorage persistence |
 | [src/PasswordReset.jsx](src/PasswordReset.jsx) | Password reset page |
 
 ---
@@ -293,7 +297,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 #### Forms
 | Form | Description |
 |------|-------------|
-| [PlayerForm.jsx](src/forms/PlayerForm.jsx) | Full player add/edit (admin). Layout: row 1 = Nombre \| Categoría; row 2 = Tipo Documento dropdown (Cédula de Identidad / Pasaporte / Otro, stored as `tipo_documento`) \| Número de Documento. Shows "Override Temporal de Complemento" section in read-only mode (edit from Viático tab). Includes a "Lesiones" related list at the bottom showing all injuries for the player (oldest first) with tipo, severidad badge, dates, and description. |
+| [PlayerForm.jsx](src/forms/PlayerForm.jsx) | Full player add/edit (admin). Layout: row 1 = Nombre \| Categoría; row 2 = Tipo Documento dropdown (Cédula de Identidad / Pasaporte / Otro, stored as `tipo_documento`) \| Número de Documento. Shows "Override Temporal de Complemento" section in read-only mode (edit from Viático tab). Includes a "Lesiones" related list at the bottom showing all injuries for the player (oldest first) with tipo, severidad badge, dates, and description. Includes a "Historial de Partidos" related list showing all matches the player participated in: fecha, rival, resultado, titular/suplente, goles and tarjetas. |
 | [PlayerFormViatico.jsx](src/forms/PlayerFormViatico.jsx) | Financial fields form for viatico tab. Includes "Override Temporal de Complemento" section: editable only by `admin`, `ejecutivo`, `presidente`; other roles see it read-only. Override auto-clears when `contrato` is activated. |
 | [PlayerFormPublic.jsx](src/forms/PlayerFormPublic.jsx) | Public-facing player registration at `/formulario` |
 | [EmployeeForm.jsx](src/forms/EmployeeForm.jsx) | Staff add/edit |
@@ -318,7 +322,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes; includes per-field filter buttons when history spans multiple fields |
 | [BulkActionModal.jsx](src/components/BulkActionModal.jsx) | Generic before→after preview modal for bulk player/inventory operations |
 | [ImportPreviewModal.jsx](src/components/ImportPreviewModal.jsx) | XLSX import with field auto-mapping, row validation (required fields, category/position checks, duplicate detection), green/red preview rows |
-| [PlayerComparisonModal.jsx](src/components/PlayerComparisonModal.jsx) | Side-by-side comparison for 2-3 players: Datos Personales, Estado, Financiero, Estadísticas de Partido, goal timeline LineChart. Best values highlighted in green via `getBest()` helper |
+| [PlayerComparisonModal.jsx](src/components/PlayerComparisonModal.jsx) | Side-by-side comparison for 2-3 players: Datos Personales, Estado, Financiero, Estadísticas de Partido, goal timeline LineChart. Best values highlighted in green via `getBest()` helper. Export to Excel (`.xlsx`) or copy to clipboard as tab-separated text |
 | [ExportConfigModal.jsx](src/components/ExportConfigModal.jsx) | Excel export field selector |
 | [DocumentUpload.jsx](src/components/DocumentUpload.jsx) | Supabase Storage document upload/download |
 | [NameVisualEditor.jsx](src/components/NameVisualEditor.jsx) | Visual name editing (dual-name system) |
@@ -439,6 +443,56 @@ Side-by-side comparison modal for 2-3 selected players.
 - **Best value highlighting**: `getBest()` helper auto-highlights the best value in each row in green.
 - **PlayersTab integration**: "Comparar" button (indigo, `Users` icon) appears when 2-3 players are selected via checkboxes.
 - **AdminDashboard**: Passes `jornadas` prop to PlayersTab for the comparison chart data.
+- **Export to Excel**: Generates a `.xlsx` file named `comparacion_Player1_vs_Player2.xlsx` containing all comparison sections.
+- **Copy to clipboard**: Copies the comparison as tab-separated text via `navigator.clipboard.writeText()`.
+
+### Player Match History
+
+Embedded section in `PlayerForm` showing all matches a player participated in.
+
+- **PlayerForm**: "Historial de Partidos" section at the bottom of the form, listing all `partido_players` records.
+- **Data per match**: fecha, rival, resultado (color-coded), titular/suplente, goles and tarjetas in that match.
+- **Data source**: Joins `partido_players` → `partidos` → `jornadas` → `rivales` + `partido_eventos` for events.
+
+### Dashboard PDF Export
+
+Generate a PDF report snapshot of the dashboard widgets for sharing in meetings without app access.
+
+- **`src/utils/pdfExport.js`**: Utility using `jspdf` + `jspdf-autotable` (named import `autoTable`).
+- **Header**: Club Atlético Peñarol branding with institutional colors (yellow `#D4A017` + dark gray `#1F2937`).
+- **Report sections**: Jugadores Lesionados, Fichas Médicas (vencidas/por vencer), Cumpleaños Próximos, Distribución por Categoría.
+- **Category scoping**: Respects `currentUser.categoria` to filter data.
+- **Trigger**: "Exportar PDF" button (`FileDown` icon) on `OverviewTab`.
+- **Output filename**: `Reporte-Dashboard-DD-MM-YYYY.pdf`.
+
+### Dark Mode
+
+Class-based dark theme with user preference persistence.
+
+- **`src/context/DarkModeContext.jsx`**: React Context + Provider managing `dark` boolean state. Persists to `localStorage` under key `cap-dark-mode`. Toggles `dark` class on `document.documentElement`.
+- **`tailwind.config.js`**: `darkMode: 'class'` config entry.
+- **Toggle**: Moon/Sun button in the nav bars of `AdminDashboard` and `EmployeeView` using `useDarkMode()` hook.
+- **`src/index.css`**: Global CSS overrides in `@layer base` for dark mode:
+  - Backgrounds (`bg-white` → slate-800, `bg-gray-50` → slate-900, etc.)
+  - Text colors (`text-gray-*` → slate equivalents)
+  - Borders (`border-gray-*`, plus colored variants like orange, red, yellow, blue, green, zinc)
+  - Gradient stops (gray and colored `-50` variants)
+  - Colored badge backgrounds and text (`-50`, `-100` bg variants; `-700/-800` text → `-400`)
+  - Form controls (input, select, textarea)
+  - Recharts SVG text, grid lines, tooltip
+  - Scrollbar styling (webkit)
+  - Group-hover and hover states
+- **Transitions**: Smooth CSS transitions (0.2s for background/border, 0.15s for color).
+
+### Responsive / Mobile Optimizations
+
+Optimized layouts for small screens across tabs, modals, and forms.
+
+- **AdminDashboard**: On mobile (`< sm`), horizontal tab bar is hidden; replaced by hamburger icon + active tab label in the nav bar that opens a slide-in drawer for navigation.
+- **PlayersTab / PlayersTabViatico**: Sticky Nombre column on horizontal scroll.
+- **DirigentesTab / ComisionesTab**: Sticky Nombre column with text truncation on mobile; tap to expand.
+- **PartidosTab**: "Nueva Jornada" button label collapses to "Nueva" on small screens.
+- **Forms and modals**: Responsive padding (`px-4 sm:px-6 lg:px-8`), vertical scroll within modals.
 
 ### Low-Stock Alerts
 
@@ -694,7 +748,8 @@ football-stock-app/
     │   ├── PartidoForm.jsx
     │   └── InjuryForm.jsx
     ├── context/
-    │   └── ToastContext.jsx       # Toast notification context + provider
+    │   ├── ToastContext.jsx       # Toast notification context + provider
+    │   └── DarkModeContext.jsx    # Dark mode state + localStorage persistence
     ├── hooks/
     │   ├── useMutation.jsx        # Async mutation helper with toast feedback
     │   ├── useAlertModal.js       # AlertModal state manager
@@ -704,6 +759,7 @@ football-stock-app/
         ├── constants.js           # All shared enums and constant lists
         ├── database.js            # All Supabase data access methods
         ├── dateUtils.js           # Date formatting and age calculation helpers
+        ├── pdfExport.js           # Dashboard PDF report generation
         ├── playerUtils.js         # Player business logic (calculateTotal)
         └── storage.js             # Legacy localStorage wrapper (largely unused)
 ```
