@@ -315,6 +315,9 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
   }
 
   // ─── Save ─────────────────────────────────────────────
-  const fileName = `reporte-dashboard-${now.toISOString().slice(0, 10)}.pdf`;
+  const dd = String(now.getDate()).padStart(2, '0');
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy = now.getFullYear();
+  const fileName = `Reporte-Dashboard-${dd}-${mm}-${yyyy}.pdf`;
   doc.save(fileName);
 }
