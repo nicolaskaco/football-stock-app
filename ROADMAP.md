@@ -105,22 +105,18 @@ Centro de notificaciones unificado accesible desde un ícono de campana en la ba
 - **Dark mode**: estilos via clase `.notification-panel` en `index.css`.
 - **Integración**: AdminDashboard (entre toggle dark y logout) y EmployeeView (solo cumpleaños).
 
+### Phase 11: Code splitting y lazy loading ✅
+
+Implementar `React.lazy()` + `Suspense` para cargar tabs bajo demanda y reducir el bundle inicial.
+
+### Phase 12: Paginación server-side ✅
+
+Para tablas con muchos registros (jugadores, distribuciones), implementar paginación con Supabase `.range()` en lugar de cargar todo en memoria.
+
 ---
 
 ## Próximas features sugeridas
 
-### 1. Code splitting y lazy loading
-
-Implementar `React.lazy()` + `Suspense` para cargar tabs bajo demanda y reducir el bundle inicial.
-
-### 2. Paginación server-side
-
-Para tablas con muchos registros (jugadores, distribuciones), implementar paginación con Supabase `.range()` en lugar de cargar todo en memoria.
-
-### 3. Calendario de entrenamientos
-
-Extender `CalendarioView` para incluir entrenamientos además de partidos, con distinción visual entre ambos tipos de evento.
-
-### 4. Registro de transferencias/movimientos
+### 1. Registro de transferencias/movimientos
 
 Historial de movimientos de jugadores entre categorías, con fecha, motivo, y categoría de origen/destino. Útil para auditoría y seguimiento de desarrollo.
