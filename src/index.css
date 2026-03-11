@@ -58,6 +58,9 @@
 .dark .hover\:bg-blue-50:hover   { background-color: rgba(59, 130, 246, 0.15); }
 .dark .hover\:bg-purple-50:hover { background-color: rgba(168, 85, 247, 0.15); }
 .dark .hover\:text-gray-600:hover { color: #cbd5e1; }
+
+/* Group-hover states (table rows with sticky columns) */
+.dark .group:hover .group-hover\:bg-gray-50 { background-color: #334155; }
 .dark .hover\:text-gray-800:hover { color: #f1f5f9; }
 
 /* Colored -50 backgrounds — make them dark-friendly translucent */
