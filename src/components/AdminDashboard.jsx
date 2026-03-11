@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Menu, X, Moon, Sun, Loader2 } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
+import { NotificationCenter } from './NotificationCenter';
 import { useDarkMode } from '../context/DarkModeContext';
 
 // Lazy-loaded tab components — each chunk is downloaded only when the tab is first opened
@@ -131,8 +132,8 @@ export const AdminDashboard = ({
                 {visibleTabs.find(t => t.id === activeTab)?.label}
               </span>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-700">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <span className="hidden sm:inline text-sm text-gray-700">
                 👤 {currentUser?.email || currentUser?.name || 'Usuario'}
               </span>
               <button
@@ -143,11 +144,18 @@ export const AdminDashboard = ({
               >
                 {dark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
               </button>
+              <NotificationCenter
+                currentUser={currentUser}
+                players={players}
+                injuries={injuries}
+                setActiveTab={setActiveTab}
+              />
               <button 
                 onClick={onLogout} 
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                className="px-2 sm:px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
               >
-                Cerrar sesión
+                <span className="hidden sm:inline">Cerrar sesión</span>
+                <span className="sm:hidden">Salir</span>
               </button>
             </div>
           </div>

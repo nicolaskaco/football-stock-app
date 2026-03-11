@@ -147,3 +147,12 @@
 .dark ::-webkit-scrollbar       { background: #0f172a; }
 .dark ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* Notification panel */
+.dark .notification-panel {
+  background-color: #1e293b;
+  border-color: #334155;
+}
+.dark .notification-panel h3 { color: #e2e8f0; }
+.dark .notification-panel button:hover { background-color: #334155; }
+.dark .notification-panel .border-gray-100 { border-color: #334155; }
