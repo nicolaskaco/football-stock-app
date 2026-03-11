@@ -1,9 +1,11 @@
 import React from 'react';
-import { Package } from 'lucide-react';
+import { Package, Moon, Sun } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { formatDate } from '../utils/dateUtils';
+import { useDarkMode } from '../context/DarkModeContext';
 
 export const EmployeeView = ({ employee, distributions, inventory, onLogout }) => {
+  const { dark, toggle: toggleDark } = useDarkMode();
   const myDistributions = distributions.filter(d => d.employee_id === employee.id);
   const activeDistributions = myDistributions.filter(d => !d.return_date);
   const returnedDistributions = myDistributions.filter(d => d.return_date);
@@ -22,12 +24,21 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
               />
               <h1 className="text-xl font-bold text-gray-800">Mi Ropa</h1>
             </div>
-            <button 
-              onClick={onLogout} 
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-            >
-              Cerrar sesión
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleDark}
+                className="p-2 rounded-lg hover:bg-gray-100"
+                aria-label={dark ? 'Modo claro' : 'Modo oscuro'}
+              >
+                {dark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
+              </button>
+              <button 
+                onClick={onLogout} 
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cerrar sesión
+              </button>
+            </div>
           </div>
         </div>
       </nav>

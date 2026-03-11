@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Moon, Sun } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
 import { OverviewTab } from './OverviewTab';
@@ -18,6 +18,7 @@ import { RivalesTab } from './RivalesTab';
 import { PartidosTab } from './PartidosTab';
 import { ConfiguracionTab } from './ConfiguracionTab';
 import { EstadisticasTab } from './EstadisticasTab';
+import { useDarkMode } from '../context/DarkModeContext';
 
 export const AdminDashboard = ({
   employees,
@@ -45,6 +46,7 @@ export const AdminDashboard = ({
   const [showModal, setShowModal] = useState(null);
   const [modalIsDirty, setModalIsDirty] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { dark, toggle: toggleDark } = useDarkMode();
 
   useEffect(() => {
     if (!showModal) setModalIsDirty(false);
@@ -125,6 +127,14 @@ export const AdminDashboard = ({
               <span className="text-sm text-gray-700">
                 👤 {currentUser?.email || currentUser?.name || 'Usuario'}
               </span>
+              <button
+                onClick={toggleDark}
+                className="p-2 rounded-lg hover:bg-gray-100"
+                aria-label={dark ? 'Modo claro' : 'Modo oscuro'}
+                title={dark ? 'Modo claro' : 'Modo oscuro'}
+              >
+                {dark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
+              </button>
               <button 
                 onClick={onLogout} 
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
