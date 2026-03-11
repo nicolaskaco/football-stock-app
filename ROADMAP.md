@@ -92,6 +92,19 @@ Modo oscuro con toggle y persistencia via `localStorage`.
 - **`src/index.css`**: overrides globales CSS para backgrounds, texto, bordes, gradientes, formularios, badges, recharts, scrollbar.
 - **Transiciones suaves**: CSS transitions de 0.2s para background/border y 0.15s para color.
 
+### Phase 10: Notificaciones in-app ✅
+
+Centro de notificaciones unificado accesible desde un ícono de campana en la barra de navegación.
+
+- **`src/components/NotificationCenter.jsx`**: campana con badge de conteo, panel dropdown con lista de notificaciones.
+- **Tipos de notificación**: cumpleaños (jugadores/dirigentes), fichas médicas vencidas/por vencer, solicitudes de cambio pendientes, lesiones activas.
+- **Severidad visual**: bordes coloreados (rojo=crítico, naranja=advertencia, amarillo=info) + puntos de no leído.
+- **Lectura/no leída**: estado persistido en `localStorage`, con opción "Marcar todas como leídas".
+- **Navegación directa**: click en notificación lleva al tab correspondiente (Jugadores, Solicitudes, etc.).
+- **Permisos**: Admins ven los 4 tipos filtrados por categoría; Funcionarios solo cumpleaños.
+- **Dark mode**: estilos via clase `.notification-panel` en `index.css`.
+- **Integración**: AdminDashboard (entre toggle dark y logout) y EmployeeView (solo cumpleaños).
+
 ---
 
 ## Próximas features sugeridas
@@ -104,14 +117,10 @@ Implementar `React.lazy()` + `Suspense` para cargar tabs bajo demanda y reducir 
 
 Para tablas con muchos registros (jugadores, distribuciones), implementar paginación con Supabase `.range()` en lugar de cargar todo en memoria.
 
-### 3. Notificaciones in-app
-
-Sistema de notificaciones para alertar sobre: lesiones nuevas, fichas médicas por vencer, solicitudes de cambio pendientes, cumpleaños del día.
-
-### 4. Calendario de entrenamientos
+### 3. Calendario de entrenamientos
 
 Extender `CalendarioView` para incluir entrenamientos además de partidos, con distinción visual entre ambos tipos de evento.
 
-### 5. Registro de transferencias/movimientos
+### 4. Registro de transferencias/movimientos
 
 Historial de movimientos de jugadores entre categorías, con fecha, motivo, y categoría de origen/destino. Útil para auditoría y seguimiento de desarrollo.

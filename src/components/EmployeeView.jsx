@@ -3,6 +3,7 @@ import { Package, Moon, Sun } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { formatDate } from '../utils/dateUtils';
 import { useDarkMode } from '../context/DarkModeContext';
+import { NotificationCenter } from './NotificationCenter';
 
 export const EmployeeView = ({ employee, distributions, inventory, onLogout }) => {
   const { dark, toggle: toggleDark } = useDarkMode();
@@ -32,6 +33,11 @@ export const EmployeeView = ({ employee, distributions, inventory, onLogout }) =
               >
                 {dark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
               </button>
+              <NotificationCenter
+                currentUser={employee}
+                players={[]}
+                injuries={[]}
+              />
               <button 
                 onClick={onLogout} 
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
