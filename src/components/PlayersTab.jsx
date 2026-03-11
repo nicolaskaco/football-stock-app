@@ -659,9 +659,9 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h2 className="text-2xl font-bold">Gestión de Jugadores</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => {
               if (selectedPlayers.length === 0) {
@@ -671,10 +671,12 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
               }
               setShowExportConfig(true);
             }}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+            className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm"
+            title="Exportar a Excel"
           >
-            <Download className="w-5 h-5" />
-            Exportar a Excel {selectedPlayers.length > 0 && `(${selectedPlayers.length})`}
+            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Exportar</span>
+            {selectedPlayers.length > 0 && `(${selectedPlayers.length})`}
           </button>
           {selectedPlayers.length >= 2 && selectedPlayers.length <= 3 && (
             <button
@@ -685,27 +687,29 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                   content: <PlayerComparisonModal players={selected} jornadas={jornadas} injuries={injuries} />
                 });
               }}
-              className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+              className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm"
+              title="Comparar jugadores"
             >
-              <Users className="w-5 h-5" />
-              Comparar ({selectedPlayers.length})
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Comparar</span> ({selectedPlayers.length})
             </button>
           )}
           {selectedPlayers.length >= 2 && (
             <button
               onClick={handleBulkFichaMedica}
               disabled={!!bulkFichaProgress}
-              className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50"
+              className="flex items-center gap-2 bg-teal-600 text-white px-3 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50 text-sm"
+              title="Consultar ficha médica"
             >
               {bulkFichaProgress ? (
                 <>
                   <span className="w-4 h-4 block animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  Consultando {bulkFichaProgress.current}/{bulkFichaProgress.total}
+                  {bulkFichaProgress.current}/{bulkFichaProgress.total}
                 </>
               ) : (
                 <>
-                  <Stethoscope className="w-5 h-5" />
-                  Ficha médica ({selectedPlayers.length})
+                  <Stethoscope className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline">Ficha médica</span> ({selectedPlayers.length})
                 </>
               )}
             </button>
@@ -714,10 +718,11 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
             <div className="relative">
               <button
                 onClick={() => setShowBulkMenu(!showBulkMenu)}
-                className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                className="flex items-center gap-2 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 text-sm"
+                title="Acción masiva"
               >
-                <Settings2 className="w-5 h-5" />
-                Acción masiva ({selectedPlayers.length})
+                <Settings2 className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Acción masiva</span> ({selectedPlayers.length})
               </button>
               {showBulkMenu && (
                 <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-20 min-w-[200px]">
@@ -731,10 +736,11 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
           {canEditPlayers && (
             <button
               onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800"
+              className="flex items-center gap-2 bg-green-700 text-white px-3 py-2 rounded-lg hover:bg-green-800 text-sm"
+              title="Importar jugadores"
             >
-              <Upload className="w-5 h-5" />
-              Importar
+              <Upload className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Importar</span>
             </button>
           )}
           {canEditPlayers && (
@@ -743,10 +749,11 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                 title: "Agregar Nuevo Jugador",
                 content: <PlayerForm onSubmit={handleAdd} currentUser={currentUser} onDirtyChange={onFormDirtyChange} />
               })} 
-              className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
+              className="flex items-center gap-2 bg-black text-yellow-400 px-3 py-2 rounded-lg hover:bg-gray-800 text-sm"
+              title="Agregar jugador"
             >
-              <Plus className="w-5 h-5" />
-              Agregar Jugador
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Agregar</span>
             </button>
           )}
           

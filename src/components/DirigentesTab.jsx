@@ -181,25 +181,27 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
   return (
     <>
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <h2 className="text-2xl font-bold">Gestión de Dirigentes</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button 
             onClick={handleExportToExcel}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+            className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 text-sm"
+            title="Exportar a Excel"
           >
-            <Download className="w-5 h-5" />
-            Exportar a Excel
+            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Exportar</span>
           </button>
           <button 
             onClick={() => setShowModal({
               title: "Agregar Nuevo Dirigente",
               content: <DirigenteForm onSubmit={handleAdd} onDirtyChange={onFormDirtyChange} />
             })} 
-            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
+            className="flex items-center gap-2 bg-black text-yellow-400 px-3 py-2 rounded-lg hover:bg-gray-800 text-sm"
+            title="Agregar dirigente"
           >
-            <Plus className="w-5 h-5" />
-            Agregar Dirigente
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Agregar</span>
           </button>
         </div>
       </div>

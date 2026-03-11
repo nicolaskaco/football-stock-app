@@ -200,7 +200,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
       </div>
 
       {/* Escenario y Césped */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Escenario</label>
           <select
@@ -299,12 +299,12 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
         </div>
         <div className="space-y-2">
           {titulares.map((t, i) => (
-            <div key={i} className="flex gap-2 items-center">
+            <div key={i} className="flex gap-2 items-center flex-wrap sm:flex-nowrap">
               <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
               <select
                 value={t.player_id}
                 onChange={(e) => updateTitular(i, 'player_id', e.target.value)}
-                className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Jugador —</option>
                 {getOptionsForSlot(t.player_id).map((p) => (
@@ -320,7 +320,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
               <select
                 value={t.posicion}
                 onChange={(e) => updateTitular(i, 'posicion', e.target.value)}
-                className="w-44 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-44 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 disabled={!t.player_id}
               >
                 <option value="">— Posición —</option>
