@@ -269,37 +269,6 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
     y = doc.lastAutoTable.finalY + 8;
   }
 
-  // ─── 7. Ropa Más Distribuida ──────────────────────────
-  if (distributions.length > 0 && inventory.length > 0) {
-    const itemMap = {};
-    inventory.forEach(item => { itemMap[item.id] = item.name; });
-
-    const itemCounts = {};
-    const itemReturned = {};
-    distributions.forEach(d => {
-      const name = itemMap[d.item_id] || 'Desconocido';
-      itemCounts[name] = (itemCounts[name] || 0) + 1;
-      if (d.return_date) itemReturned[name] = (itemReturned[name] || 0) + 1;
-    });
-
-    const topItems = Object.entries(itemCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([name, count]) => [name, count, itemReturned[name] || 0]);
-
-    addSectionTitle('Ropa Más Distribuida (Top 10)');
-    autoTable(doc, {
-      startY: y,
-      margin: { left: 15, right: 15 },
-      head: [['Ítem', 'Entregas', 'Devueltos']],
-      body: topItems,
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: DARK_GRAY, textColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: LIGHT_GRAY },
-    });
-    y = doc.lastAutoTable.finalY + 8;
-  }
-
   // ─── Footer on last page ──────────────────────────────
   const totalPages = doc.internal.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
