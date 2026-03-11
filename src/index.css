@@ -80,6 +80,14 @@
 .dark .bg-purple-100 { background-color: rgba(168, 85, 247, 0.15); }
 .dark .bg-orange-100 { background-color: rgba(249, 115, 22, 0.15); }
 
+/* Colored text on badges — lighten for dark surfaces */
+.dark .text-yellow-700, .dark .text-yellow-800 { color: #fbbf24; } /* yellow-400 */
+.dark .text-orange-700, .dark .text-orange-800 { color: #fb923c; } /* orange-400 */
+.dark .text-red-700,    .dark .text-red-800    { color: #f87171; } /* red-400    */
+.dark .text-green-700,  .dark .text-green-800  { color: #4ade80; } /* green-400  */
+.dark .text-blue-700,   .dark .text-blue-800   { color: #60a5fa; } /* blue-400   */
+.dark .text-purple-700, .dark .text-purple-800 { color: #c084fc; } /* purple-400 */
+
 /* Form controls */
 .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .dark select,
