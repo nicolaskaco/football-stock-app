@@ -1,24 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Menu, X, Moon, Sun } from 'lucide-react';
+import { Menu, X, Moon, Sun, Loader2 } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
-import { OverviewTab } from './OverviewTab';
-import { InventoryTab } from './InventoryTab';
-import { EmployeesTab } from './EmployeesTab';
-import { DistributionsTab } from './DistributionsTab';
-import { PlayersTab } from './PlayersTab';
-import { PlayersTabViatico } from './PlayersTabViatico';
-import { ReportsTab } from './ReportsTab';
-import { DirigentesTab } from './DirigentesTab';
-import { TorneosTab } from './TorneosTab';
-import { ComisionesTab } from './ComisionesTab';
-import { ChangeRequestsTab } from './ChangeRequestsTab';
-import { RivalesTab } from './RivalesTab';
-import { PartidosTab } from './PartidosTab';
-import { ConfiguracionTab } from './ConfiguracionTab';
-import { EstadisticasTab } from './EstadisticasTab';
 import { useDarkMode } from '../context/DarkModeContext';
+
+// Lazy-loaded tab components — each chunk is downloaded only when the tab is first opened
+const OverviewTab = lazy(() => import('./OverviewTab').then(m => ({ default: m.OverviewTab })));
+const InventoryTab = lazy(() => import('./InventoryTab').then(m => ({ default: m.InventoryTab })));
+const EmployeesTab = lazy(() => import('./EmployeesTab').then(m => ({ default: m.EmployeesTab })));
+const DistributionsTab = lazy(() => import('./DistributionsTab').then(m => ({ default: m.DistributionsTab })));
+const PlayersTab = lazy(() => import('./PlayersTab').then(m => ({ default: m.PlayersTab })));
+const PlayersTabViatico = lazy(() => import('./PlayersTabViatico').then(m => ({ default: m.PlayersTabViatico })));
+const ReportsTab = lazy(() => import('./ReportsTab').then(m => ({ default: m.ReportsTab })));
+const DirigentesTab = lazy(() => import('./DirigentesTab').then(m => ({ default: m.DirigentesTab })));
+const TorneosTab = lazy(() => import('./TorneosTab').then(m => ({ default: m.TorneosTab })));
+const ComisionesTab = lazy(() => import('./ComisionesTab').then(m => ({ default: m.ComisionesTab })));
+const ChangeRequestsTab = lazy(() => import('./ChangeRequestsTab').then(m => ({ default: m.ChangeRequestsTab })));
+const RivalesTab = lazy(() => import('./RivalesTab').then(m => ({ default: m.RivalesTab })));
+const PartidosTab = lazy(() => import('./PartidosTab').then(m => ({ default: m.PartidosTab })));
+const ConfiguracionTab = lazy(() => import('./ConfiguracionTab').then(m => ({ default: m.ConfiguracionTab })));
+const EstadisticasTab = lazy(() => import('./EstadisticasTab').then(m => ({ default: m.EstadisticasTab })));
+
+const TabFallback = () => (
+  <div className="flex items-center justify-center py-24">
+    <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+  </div>
+);
 
 export const AdminDashboard = ({
   employees,
@@ -161,6 +169,7 @@ export const AdminDashboard = ({
           ))}
         </div>
 
+        <Suspense fallback={<TabFallback />}>
         {activeTab === 'overview' && (
           <OverviewTab
             lowStockItems={lowStockItems}
@@ -311,6 +320,7 @@ export const AdminDashboard = ({
             <p className="text-gray-600">No tienes permiso para acceder a esta sección.</p>
           </div>
         )}
+        </Suspense>
       </div>
 
       {/* Mobile drawer */}
