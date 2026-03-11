@@ -1,5 +1,6 @@
-import React from 'react';
-import { Package, Users, TrendingUp, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Package, Users, TrendingUp, AlertCircle, FileDown } from 'lucide-react';
+import { exportDashboardPDF } from '../utils/pdfExport';
 import { StatCard } from './StatCard';
 import { BirthdayWidget } from './BirthdayWidget';
 import { SpendingTrendsWidget } from './SpendingTrendsWidget';
@@ -62,9 +63,40 @@ export const OverviewTab = ({
   // Check if user can see change requests
   const canViewChangeRequests = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
 
+  const [exportingPDF, setExportingPDF] = useState(false);
+
+  const handleExportPDF = async () => {
+    setExportingPDF(true);
+    try {
+      await exportDashboardPDF({
+        players: visiblePlayers,
+        injuries,
+        distributions,
+        inventory,
+        currentUser,
+      });
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   return (
     <div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Vista General</h2>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Vista General</h2>
+        {canAccessWidgets && (
+          <button
+            onClick={handleExportPDF}
+            disabled={exportingPDF}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 text-sm font-medium"
+          >
+            <FileDown className="w-4 h-4" />
+            {exportingPDF ? 'Generando...' : 'Exportar PDF'}
+          </button>
+        )}
+      </div>
       
       {/* Pending Change Requests Alert - Show at the top for high visibility */}
       {canViewChangeRequests && (
