@@ -679,7 +679,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
           {selectedPlayers.length >= 2 && selectedPlayers.length <= 3 && (
             <button
               onClick={() => {
-                const selected = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
+                const selected = players.filter(p => selectedPlayers.includes(p.id));
                 setShowModal({
                   title: 'Comparar Jugadores',
                   content: <PlayerComparisonModal players={selected} jornadas={jornadas} injuries={injuries} />
