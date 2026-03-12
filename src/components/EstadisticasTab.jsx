@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
+import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
@@ -106,6 +106,7 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
         numero_jornada: jornada.numero_jornada || null,
         categoria: partido.categoria,
         escenario: partido.escenario,
+        cancha: partido.cancha || null,
         capGoles,
         rivalGoles,
         resultado,
@@ -115,6 +116,46 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
     });
   });
   return rows;
+};
+
+// ─── Cancha stats helper ─────────────────────────────────────────────────────
+
+const ALL_LOCATIONS = [...CANCHAS_LOCAL, 'Visitante'];
+
+const buildCanchaStats = (rows) => {
+  const map = Object.fromEntries(
+    ALL_LOCATIONS.map((loc) => [loc, { loc, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 }])
+  );
+
+  rows.forEach((row) => {
+    const key =
+      row.escenario === 'Local'
+        ? (row.cancha && map[row.cancha] ? row.cancha : 'Ciudad Deportiva')
+        : 'Visitante';
+    const s = map[key];
+    s.pj++;
+    if (row.resultado === 'G') s.g++;
+    else if (row.resultado === 'E') s.e++;
+    else if (row.resultado === 'P') s.p++;
+    if (row.capGoles != null) s.gf += row.capGoles;
+    if (row.rivalGoles != null) s.gc += row.rivalGoles;
+  });
+
+  const localRows = CANCHAS_LOCAL.map((loc) => map[loc]);
+  const localTotal = localRows.reduce(
+    (acc, r) => ({
+      loc: 'Local Total',
+      pj: acc.pj + r.pj,
+      g: acc.g + r.g,
+      e: acc.e + r.e,
+      p: acc.p + r.p,
+      gf: acc.gf + r.gf,
+      gc: acc.gc + r.gc,
+    }),
+    { loc: 'Local Total', pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 }
+  );
+
+  return [...localRows, localTotal, map['Visitante']];
 };
 
 // ─── Player filter ───────────────────────────────────────────────────────────
@@ -406,6 +447,109 @@ const RivalesTable = ({ data, faseFiltro }) => {
   );
 };
 
+// ─── Cancha stats table ───────────────────────────────────────────────────────
+
+const CanchaStatsTable = ({ data }) => {
+  const total = data.find((r) => r.loc === 'Local Total');
+  const hasAny = data.some((r) => r.pj > 0);
+
+  if (!hasAny) {
+    return (
+      <div className="bg-white rounded-lg shadow">
+        <p className="text-center text-gray-500 py-12">No hay datos para mostrar.</p>
+      </div>
+    );
+  }
+
+  const efect = (r) =>
+    r.pj > 0 ? (((r.g + r.e * 0.5) / r.pj) * 100).toFixed(1) + '%' : '—';
+  const dif = (r) => {
+    const d = r.gf - r.gc;
+    return d > 0 ? `+${d}` : `${d}`;
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 border-b">
+            <tr>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600">Cancha / Escenario</th>
+              <th className="px-3 py-3 text-center font-semibold text-gray-600">PJ</th>
+              <th className="px-3 py-3 text-center font-semibold text-green-700">G</th>
+              <th className="px-3 py-3 text-center font-semibold text-gray-500">E</th>
+              <th className="px-3 py-3 text-center font-semibold text-red-700">P</th>
+              <th className="px-3 py-3 text-center font-semibold text-gray-600">GF</th>
+              <th className="px-3 py-3 text-center font-semibold text-gray-600">GC</th>
+              <th className="px-3 py-3 text-center font-semibold text-gray-600">Dif</th>
+              <th className="px-3 py-3 text-center font-semibold text-gray-600">Efect.</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {data.map((row) => {
+              const isLocalTotal = row.loc === 'Local Total';
+              const isVisitante = row.loc === 'Visitante';
+              const d = row.gf - row.gc;
+
+              const rowBg = isLocalTotal
+                ? 'bg-green-100'
+                : isVisitante
+                ? 'bg-blue-50'
+                : 'bg-green-50';
+              const nameCls = isLocalTotal
+                ? 'font-bold text-green-900'
+                : isVisitante
+                ? 'font-semibold text-blue-900'
+                : 'text-green-800';
+              const greyOut = row.pj === 0 && !isLocalTotal ? 'opacity-40' : '';
+
+              return (
+                <tr key={row.loc} className={`${rowBg} ${greyOut}`}>
+                  <td className={`px-4 py-3 ${nameCls}`}>
+                    {isVisitante ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">Visitante</span>
+                      </span>
+                    ) : isLocalTotal ? (
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-200 text-green-900 font-bold">Local Total</span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 pl-4">
+                        <span className="text-xs text-gray-400 mr-1">↳</span>
+                        {row.loc}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-3 text-center font-semibold text-gray-800">{row.pj || '—'}</td>
+                  <td className="px-3 py-3 text-center font-bold text-green-700">{row.pj > 0 ? row.g : '—'}</td>
+                  <td className="px-3 py-3 text-center text-gray-600">{row.pj > 0 ? row.e : '—'}</td>
+                  <td className="px-3 py-3 text-center font-bold text-red-600">{row.pj > 0 ? row.p : '—'}</td>
+                  <td className="px-3 py-3 text-center text-gray-700">{row.pj > 0 ? row.gf : '—'}</td>
+                  <td className="px-3 py-3 text-center text-gray-700">{row.pj > 0 ? row.gc : '—'}</td>
+                  <td className={`px-3 py-3 text-center font-semibold ${row.pj > 0 ? (d > 0 ? 'text-green-700' : d < 0 ? 'text-red-600' : 'text-gray-500') : 'text-gray-300'}`}>
+                    {row.pj > 0 ? dif(row) : '—'}
+                  </td>
+                  <td className="px-3 py-3 text-center text-gray-700 font-medium">{efect(row)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+          {total && (
+            <tfoot className="border-t-2 border-gray-300 bg-gray-50">
+              <tr>
+                <td colSpan={9} className="px-4 py-2 text-xs text-gray-400 italic">
+                  Efect. = (Ganados + Empates×0.5) / PJ × 100
+                </td>
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
@@ -436,6 +580,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
 
   const isJugadoresTab = ['general', 'goleadores', 'tarjetas'].includes(subTab);
   const isRivalesTab   = subTab === 'rivales';
+  const isCanchaTab    = subTab === 'cancha';
   const isGraficosTab  = subTab === 'graficos';
 
   const subTabBtn = (id, label) => (
@@ -460,8 +605,9 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
         {subTabBtn('general',     'General')}
         {subTabBtn('goleadores',  'Goleadores')}
         {subTabBtn('tarjetas',    'Tarjetas')}
-        {subTabBtn('rivales', 'Por Rival')}
-        {subTabBtn('graficos', 'Gráficos')}
+        {subTabBtn('rivales',     'Por Rival')}
+        {subTabBtn('cancha',      'Por Cancha')}
+        {subTabBtn('graficos',    'Gráficos')}
       </div>
 
       {/* Top goleadores podium */}
@@ -476,7 +622,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
           onCategoriaFiltro={setCategoriaFiltro}
         />
       )}
-      {(isRivalesTab || isGraficosTab) && (
+      {(isRivalesTab || isCanchaTab || isGraficosTab) && (
         <ResultadosFilters
           faseFiltro={faseFiltro}
           onFaseFiltro={setFaseFiltro}
@@ -490,6 +636,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
       {subTab === 'rivales' && <RivalesTable data={partidoRows} faseFiltro={faseFiltro} />}
+      {subTab === 'cancha'  && <CanchaStatsTable data={buildCanchaStats(partidoRows)} />}
 
       {/* Charts tab */}
       {isGraficosTab && (
