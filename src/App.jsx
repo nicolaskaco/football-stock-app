@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginView } from './components/LoginView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { EmployeeView } from './components/EmployeeView';
+import { SetPassword } from './components/SetPassword';
 import { PlayerFormPublic } from './forms/PlayerFormPublic';
 import { database } from './utils/database';
 import { supabase } from './supabaseClient';
@@ -39,6 +40,14 @@ const App = () => {
 
   useEffect(() => {
     checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setCurrentView('set-password');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const checkSession = async () => {
@@ -286,6 +295,13 @@ const App = () => {
                 distributions={distributions}
                 inventory={inventory}
                 onLogout={handleLogout}
+              />
+            )}
+            {currentView === 'set-password' && (
+              <SetPassword
+                onComplete={async () => {
+                  await checkSession();
+                }}
               />
             )}
             <FooterComponent />

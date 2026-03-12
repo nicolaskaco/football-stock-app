@@ -1,6 +1,7 @@
 import React from 'react';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
+import { UserManagementSection } from './UserManagementSection';
 
 const SettingToggle = ({ label, description, enabled, onToggle, loading }) => (
   <div className="flex items-center justify-between py-4">
@@ -89,6 +90,8 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
           />
         ))}
       </div>
+
+      <UserManagementSection />
     </div>
   );
 };
