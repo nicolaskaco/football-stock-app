@@ -73,17 +73,20 @@ serve(async (req) => {
     // ── Send the invite email ────────────────────────────────
     const { data: inviteData, error: inviteError } =
       await adminClient.auth.admin.inviteUserByEmail(email, {
-        redirectTo: redirectTo || `${supabaseUrl.replace('.supabase.co', '')}.vercel.app`,
+        redirectTo: redirectTo || undefined,
       });
 
     if (inviteError) {
-      return new Response(
-        JSON.stringify({ error: inviteError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // If user already exists, still allow updating permissions
+      if (!inviteError.message?.includes("already been registered")) {
+        return new Response(
+          JSON.stringify({ error: "Error al enviar invitación: " + inviteError.message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
-    // ── Insert user_permissions row ──────────────────────────
+    // ── Insert or update user_permissions row ────────────────
     const permRow: Record<string, unknown> = {
       email: email.toLowerCase(),
       role,
@@ -104,13 +107,38 @@ serve(async (req) => {
       categoria: permissions?.categoria ?? null,
     };
 
-    const { error: insertError } = await adminClient
+    // Try upsert first; if it fails (no unique constraint), try insert
+    let insertError;
+    const { error: upsertErr } = await adminClient
       .from("user_permissions")
       .upsert(permRow, { onConflict: "email" });
 
+    if (upsertErr) {
+      // Fallback: check if row exists, then update or insert
+      const { data: existing } = await adminClient
+        .from("user_permissions")
+        .select("email")
+        .eq("email", email.toLowerCase())
+        .maybeSingle();
+
+      if (existing) {
+        const { email: _e, ...updates } = permRow;
+        const { error: updateErr } = await adminClient
+          .from("user_permissions")
+          .update(updates)
+          .eq("email", email.toLowerCase());
+        insertError = updateErr;
+      } else {
+        const { error: plainInsertErr } = await adminClient
+          .from("user_permissions")
+          .insert(permRow);
+        insertError = plainInsertErr;
+      }
+    }
+
     if (insertError) {
       return new Response(
-        JSON.stringify({ error: insertError.message }),
+        JSON.stringify({ error: "Error al guardar permisos: " + insertError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -118,7 +146,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         message: "Invitación enviada correctamente",
-        user_id: inviteData.user?.id,
+        user_id: inviteData?.user?.id ?? null,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -1041,7 +1041,17 @@ export const database = {
         redirectTo: window.location.origin,
       },
     });
-    if (error) throw error;
+    if (error) {
+      // Extract the actual message from the Edge Function response
+      let message = error.message;
+      try {
+        if (error.context && typeof error.context.json === 'function') {
+          const body = await error.context.json();
+          message = body?.error || message;
+        }
+      } catch { /* keep original message */ }
+      throw new Error(message);
+    }
     if (data?.error) throw new Error(data.error);
     return data;
   },
