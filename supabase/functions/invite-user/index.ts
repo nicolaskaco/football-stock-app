@@ -7,6 +7,12 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const ok = (body: Record<string, unknown>) =>
+  new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -16,10 +22,7 @@ serve(async (req) => {
     // ── Authenticate the caller ──────────────────────────────
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return ok({ error: "Missing authorization header" });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -37,10 +40,7 @@ serve(async (req) => {
     } = await callerClient.auth.getUser();
 
     if (callerError || !caller) {
-      return new Response(
-        JSON.stringify({ error: "Invalid session" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return ok({ error: "Sesión inválida. Volvé a iniciar sesión. (" + (callerError?.message || "no user") + ")" });
     }
 
     // Admin-only client (bypasses RLS)
@@ -54,20 +54,14 @@ serve(async (req) => {
       .single();
 
     if (permError || callerPerms?.role !== "admin") {
-      return new Response(
-        JSON.stringify({ error: "Solo administradores pueden invitar usuarios" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return ok({ error: "Solo administradores pueden invitar usuarios (tu email: " + caller.email + ", rol: " + (callerPerms?.role || "sin permisos") + ")" });
     }
 
     // ── Parse request body ───────────────────────────────────
     const { email, role, permissions, redirectTo } = await req.json();
 
     if (!email || !role) {
-      return new Response(
-        JSON.stringify({ error: "Email y rol son requeridos" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return ok({ error: "Email y rol son requeridos" });
     }
 
     // ── Send the invite email ────────────────────────────────
@@ -79,10 +73,7 @@ serve(async (req) => {
     if (inviteError) {
       // If user already exists, still allow updating permissions
       if (!inviteError.message?.includes("already been registered")) {
-        return new Response(
-          JSON.stringify({ error: "Error al enviar invitación: " + inviteError.message }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return ok({ error: "Error al enviar invitación: " + inviteError.message });
       }
     }
 
@@ -137,23 +128,14 @@ serve(async (req) => {
     }
 
     if (insertError) {
-      return new Response(
-        JSON.stringify({ error: "Error al guardar permisos: " + insertError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return ok({ error: "Error al guardar permisos: " + insertError.message });
     }
 
-    return new Response(
-      JSON.stringify({
-        message: "Invitación enviada correctamente",
-        user_id: inviteData?.user?.id ?? null,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return ok({
+      message: "Invitación enviada correctamente",
+      user_id: inviteData?.user?.id ?? null,
+    });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return ok({ error: "Error inesperado: " + err.message });
   }
 });
