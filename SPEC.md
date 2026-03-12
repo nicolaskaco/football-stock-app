@@ -314,7 +314,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | Widget | Description |
 |--------|-------------|
 | [BirthdayWidget.jsx](src/components/BirthdayWidget.jsx) | Upcoming birthdays for players and dirigentes (7-day window); scoped to `currentUser.categoria` so `presidente_categoria` users only see their categories |
-| [FichaMedicaWidget.jsx](src/components/FichaMedicaWidget.jsx) | Players with expired or expiring-soon (≤ 30 days) ficha médica, ordered by date; color-coded red (expired) / orange (soon). Admin-only (`role = 'admin'`). Category filter pills. Clicking a row opens a detail modal with nombre, documento, celular, and expiry date, plus a button to refresh via the SND API (`checkFichaMedica` → `saveFichaMedicaHasta`). |
+| [FichaMedicaWidget.jsx](src/components/FichaMedicaWidget.jsx) | Players with expired or expiring-soon (≤ 30 days) ficha médica, ordered by date; color-coded red (expired) / orange (soon). Visible to all named roles (`admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision`) with `can_access_widgets`. Category filter pills. Clicking a row opens a detail modal. **SND refresh button (individual and bulk) is admin-only** — other roles see the widget read-only. |
 | [SpendingTrendsWidget.jsx](src/components/SpendingTrendsWidget.jsx) | Viatico + complemento spend over time |
 | [CategoryDistributionWidget.jsx](src/components/CategoryDistributionWidget.jsx) | Player count by category; rendered as a recharts donut chart (PieChart with innerRadius) |
 | [AgeDistributionWidget.jsx](src/components/AgeDistributionWidget.jsx) | Player age breakdown |

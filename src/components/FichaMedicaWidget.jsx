@@ -201,25 +201,27 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
           ))}
         </div>
 
-        {/* Bulk refresh */}
-        <div className="mb-3">
-          <button
-            onClick={handleBulkRefresh}
-            disabled={bulkRefreshing}
-            className="w-full flex items-center justify-center gap-2 bg-black text-yellow-400 text-xs font-semibold py-1.5 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${bulkRefreshing ? 'animate-spin' : ''}`} />
-            {bulkRefreshing
-              ? `Actualizando... ${bulkProgress?.done}/${bulkProgress?.total}`
-              : `Actualizar todos (${filtered.filter(p => p.gov_id).length})`}
-          </button>
-          {!bulkRefreshing && bulkProgress && bulkProgress.done === bulkProgress.total && (
-            <p className="text-xs text-center mt-1 text-gray-500">
-              {bulkProgress.updated} actualizados
-              {bulkProgress.errors > 0 && `, ${bulkProgress.errors} sin ficha FÚTBOL`}
-            </p>
-          )}
-        </div>
+        {/* Bulk refresh — admin only */}
+        {currentUser?.role === 'admin' && (
+          <div className="mb-3">
+            <button
+              onClick={handleBulkRefresh}
+              disabled={bulkRefreshing}
+              className="w-full flex items-center justify-center gap-2 bg-black text-yellow-400 text-xs font-semibold py-1.5 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${bulkRefreshing ? 'animate-spin' : ''}`} />
+              {bulkRefreshing
+                ? `Actualizando... ${bulkProgress?.done}/${bulkProgress?.total}`
+                : `Actualizar todos (${filtered.filter(p => p.gov_id).length})`}
+            </button>
+            {!bulkRefreshing && bulkProgress && bulkProgress.done === bulkProgress.total && (
+              <p className="text-xs text-center mt-1 text-gray-500">
+                {bulkProgress.updated} actualizados
+                {bulkProgress.errors > 0 && `, ${bulkProgress.errors} sin ficha FÚTBOL`}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="space-y-2 overflow-y-auto max-h-96 pr-1">
           {filtered.map((player) => {
@@ -282,14 +284,16 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
                 </p>
               )}
 
-              <button
-                onClick={handleRefreshFicha}
-                disabled={refreshing || !selectedPlayer.gov_id}
-                className="w-full flex items-center justify-center gap-2 bg-black text-yellow-400 font-semibold py-2 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                {refreshing ? 'Consultando SND...' : 'Actualizar Ficha Médica'}
-              </button>
+              {currentUser?.role === 'admin' && (
+                <button
+                  onClick={handleRefreshFicha}
+                  disabled={refreshing || !selectedPlayer.gov_id}
+                  className="w-full flex items-center justify-center gap-2 bg-black text-yellow-400 font-semibold py-2 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  {refreshing ? 'Consultando SND...' : 'Actualizar Ficha Médica'}
+                </button>
+              )}
             </div>
           </div>
         </div>
