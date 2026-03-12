@@ -43,6 +43,7 @@ const App = () => {
     const hash = window.location.hash;
     if (hash && (hash.includes('type=invite') || hash.includes('type=signup'))) {
       // Wait for Supabase to exchange the token, then show password setup
+      setLoading(false);
       supabase.auth.onAuthStateChange((event, session) => {
         if (session) {
           setCurrentView('set-password');
