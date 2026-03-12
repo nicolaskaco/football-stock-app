@@ -77,6 +77,7 @@ export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
       // SUM formula 3 rows below the last data row (row 1 = header, rows 2..N+1 = data)
       const lastDataRow = data.length + 1;
       const sumRow = lastDataRow + 3;
+      sheet[`A${sumRow}`] = { v: 'TOTAL', t: 's' };
       sheet[`C${sumRow}`] = { f: `SUM(C2:C${lastDataRow})`, t: 'n' };
       const range = XLSX.utils.decode_range(sheet['!ref']);
       range.e.r = Math.max(range.e.r, sumRow - 1);
