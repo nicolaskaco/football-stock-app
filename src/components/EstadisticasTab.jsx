@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
+import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
@@ -120,8 +120,7 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
 
 // ─── Cancha stats helper ─────────────────────────────────────────────────────
 
-const LOCAL_CANCHAS = ['Ciudad Deportiva', 'Las Acacias', 'CAR'];
-const ALL_LOCATIONS = [...LOCAL_CANCHAS, 'Visitante'];
+const ALL_LOCATIONS = [...CANCHAS_LOCAL, 'Visitante'];
 
 const buildCanchaStats = (rows) => {
   const map = Object.fromEntries(
@@ -142,7 +141,7 @@ const buildCanchaStats = (rows) => {
     if (row.rivalGoles != null) s.gc += row.rivalGoles;
   });
 
-  const localRows = LOCAL_CANCHAS.map((loc) => map[loc]);
+  const localRows = CANCHAS_LOCAL.map((loc) => map[loc]);
   const localTotal = localRows.reduce(
     (acc, r) => ({
       loc: 'Local Total',
