@@ -40,6 +40,8 @@ const App = () => {
 
   useEffect(() => {
     const hash = window.location.hash;
+    const hashParams = new URLSearchParams(hash.slice(1));
+    const tokenHash = hashParams.get('token_hash');
     const isInviteFlow = hash && (hash.includes('type=invite') || hash.includes('type=signup'));
 
     // Single listener — handles both invite and password-recovery flows
@@ -51,13 +53,27 @@ const App = () => {
     });
 
     if (isInviteFlow) {
-      // Fallback: if onAuthStateChange already fired before listener was registered
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session) {
-          setCurrentView('set-password');
-        }
-        setLoading(false);
-      });
+      if (tokenHash) {
+        // New flow: link has token_hash in the fragment (WhatsApp-safe).
+        // verifyOtp exchanges it for a session; onAuthStateChange handles the rest.
+        supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'invite' })
+          .then(({ error }) => {
+            if (error) {
+              // Token invalid/expired — fall through to login
+              setLoading(false);
+            }
+            // Success: onAuthStateChange fires and sets 'set-password' view
+          });
+      } else {
+        // Legacy flow: Supabase already exchanged the token and put
+        // access_token in the hash (old direct action_link behaviour).
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            setCurrentView('set-password');
+          }
+          setLoading(false);
+        });
+      }
     } else {
       checkSession();
     }

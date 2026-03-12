@@ -80,7 +80,16 @@ serve(async (req) => {
         return ok({ error: "Error al generar invitación: " + linkError.message });
       }
     } else {
-      actionLink = linkData?.properties?.action_link ?? null;
+      // Build a custom link that puts the token in the hash fragment so that
+      // WhatsApp's link-preview crawler (which strips the hash before fetching)
+      // cannot consume the one-time Supabase token.
+      const hashedToken = linkData?.properties?.hashed_token;
+      const baseUrl = redirectTo || Deno.env.get("SITE_URL") || "";
+      if (hashedToken && baseUrl) {
+        actionLink = `${baseUrl}/#type=invite&token_hash=${hashedToken}`;
+      } else {
+        actionLink = linkData?.properties?.action_link ?? null;
+      }
     }
 
     // ── Insert or update user_permissions row ────────────────
