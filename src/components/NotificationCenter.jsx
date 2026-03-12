@@ -160,7 +160,13 @@ export const NotificationCenter = ({ currentUser, players = [], injuries = [], s
       promises.push(Promise.resolve([]));
     }
 
-    const [upcomingPlayers, upcomingDirigentes, fichas, pendingRequests] = await Promise.all(promises);
+    let [upcomingPlayers, upcomingDirigentes, fichas, pendingRequests] = await Promise.all(promises);
+
+    if (currentUser?.role === 'presidente_categoria' && categorias?.length > 0) {
+      pendingRequests = pendingRequests.filter(req =>
+        req.players?.categoria && categorias.includes(req.players.categoria)
+      );
+    }
 
     const birthdays = [
       ...upcomingPlayers.map(p => ({ ...p, type: 'player' })),
