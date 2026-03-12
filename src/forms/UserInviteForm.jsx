@@ -23,6 +23,7 @@ const PERMISSION_GROUPS = [
     label: 'Viáticos',
     permissions: [
       { key: 'can_access_viatico', label: 'Ver viáticos' },
+      { key: 'can_access_tesorero', label: 'Acceder a Tesorero' },
     ],
   },
   {

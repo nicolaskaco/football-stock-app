@@ -121,6 +121,7 @@ const App = () => {
             canViewPartidos: permissions?.can_view_partidos || false,
             canEditPartidos: permissions?.can_edit_partidos || false,
             canEditDirigentes: permissions?.can_edit_dirigentes || false,
+            canAccessTesorero: permissions?.can_access_tesorero || false,
           });
           await loadData();
           setCurrentView('dashboard');
@@ -236,6 +237,7 @@ const App = () => {
           canViewPartidos: permissions?.can_view_partidos || false,
           canEditPartidos: permissions?.can_edit_partidos || false,
           canEditDirigentes: permissions?.can_edit_dirigentes || false,
+          canAccessTesorero: permissions?.can_access_tesorero || false,
         });
 
         await loadData();

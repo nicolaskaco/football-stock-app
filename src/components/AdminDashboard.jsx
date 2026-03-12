@@ -22,6 +22,7 @@ const RivalesTab = lazy(() => import('./RivalesTab').then(m => ({ default: m.Riv
 const PartidosTab = lazy(() => import('./PartidosTab').then(m => ({ default: m.PartidosTab })));
 const ConfiguracionTab = lazy(() => import('./ConfiguracionTab').then(m => ({ default: m.ConfiguracionTab })));
 const EstadisticasTab = lazy(() => import('./EstadisticasTab').then(m => ({ default: m.EstadisticasTab })));
+const TesoreroTab = lazy(() => import('./TesoreroTab').then(m => ({ default: m.TesoreroTab })));
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-24">
@@ -78,6 +79,7 @@ export const AdminDashboard = ({
   const canAccessRopa = currentUser?.canAccessRopa || false;
   const canSeeRopaWidgets = currentUser?.canSeeRopaWidgets || false;
   const canViewPartidos = currentUser?.canViewPartidos || false;
+  const canAccessTesorero = currentUser?.canAccessTesorero || false;
   const isAdmin = currentUser?.role === 'admin';
   const tabEnabled = (key) => appSettings[key] === 'true';
 
@@ -88,6 +90,7 @@ export const AdminDashboard = ({
     { id: 'employees',      label: 'Funcionarios',   show: canAccessRopa },
     { id: 'players',        label: 'Jugadores',      show: canAccessPlayers },
     { id: 'players_viatico',label: 'Viáticos',       show: canAccessViaticos },
+    { id: 'tesorero',       label: 'Tesorero',       show: canAccessTesorero },
     { id: 'change_requests',label: 'Solicitudes',    show: canViewChangeRequests },
     { id: 'distributions',  label: 'Distribuciones', show: canAccessRopa && tabEnabled('distribuciones_tab_enabled') },
     { id: 'dirigentes',     label: 'Dirigentes',     show: canAccessDirigentes },
@@ -316,6 +319,14 @@ export const AdminDashboard = ({
           <EstadisticasTab
             jornadas={jornadas}
             players={players}
+          />
+        )}
+        {activeTab === 'tesorero' && canAccessTesorero && (
+          <TesoreroTab
+            players={players}
+            appSettings={appSettings}
+            onDataChange={onDataChange}
+            currentUser={currentUser}
           />
         )}
         {activeTab === 'configuracion' && isAdmin && (
