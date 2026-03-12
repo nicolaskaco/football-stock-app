@@ -31,7 +31,14 @@ const ContactoInput = ({ value, loading, onSave }) => {
   );
 };
 
-const EXPORT_CATEGORIAS = ['4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
+const EXPORT_CATEGORIAS = [
+  { key: '4ta', label: 'Sub 19' },
+  { key: '5ta', label: 'Sub 17' },
+  { key: 'S16', label: 'Sub 16' },
+  { key: '6ta', label: 'Sub 15' },
+  { key: '7ma', label: 'Sub 14' },
+  { key: 'Sub13', label: 'Sub 13' },
+];
 
 export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
   const { execute, isSaving } = useMutation();
@@ -51,9 +58,9 @@ export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
   const handleExport = () => {
     const workbook = XLSX.utils.book_new();
 
-    EXPORT_CATEGORIAS.forEach(cat => {
+    EXPORT_CATEGORIAS.forEach(({ key, label }) => {
       const catPlayers = players
-        .filter(p => p.categoria === cat && !p.contrato)
+        .filter(p => p.categoria === key && !p.contrato)
         .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
 
       if (catPlayers.length === 0) return;
@@ -62,11 +69,11 @@ export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
         'Nombre': p.name || '',
         'Cédula': p.gov_id || '',
         'Total Viático': calculateTotal(p),
-        'Categoría': p.categoria || '',
+        'Categoría': label,
       }));
 
       const sheet = XLSX.utils.json_to_sheet(data);
-      XLSX.utils.book_append_sheet(workbook, sheet, cat);
+      XLSX.utils.book_append_sheet(workbook, sheet, label);
     });
 
     const today = new Date();
