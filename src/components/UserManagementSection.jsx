@@ -129,7 +129,7 @@ export const UserManagementSection = () => {
       'can_access_widgets', 'can_access_dirigentes', 'can_access_ropa',
       'editar_nombre_especial', 'view_torneo', 'edit_torneo',
       'can_view_comisiones', 'can_edit_comisiones', 'can_view_partidos',
-      'can_edit_partidos', 'can_see_ropa_widgets',
+      'can_edit_partidos', 'can_see_ropa_widgets', 'can_access_tesorero',
     ];
     return flags.filter(f => user[f]).length;
   };
@@ -193,7 +193,7 @@ export const UserManagementSection = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-gray-600">
-                          {enabledCount(user)} / 14
+                          {enabledCount(user)} / 15
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           {user.categoria && user.categoria.length > 0
