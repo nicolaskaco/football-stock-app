@@ -201,22 +201,26 @@ export const UserManagementSection = () => {
                             : <span className="text-gray-400">Todas</span>}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => setEditingUser(user)}
-                              title="Editar permisos"
-                              className="p-1.5 text-gray-400 hover:text-blue-600 rounded"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteConfirm(user.email)}
-                              title="Eliminar"
-                              className="p-1.5 text-gray-400 hover:text-red-600 rounded"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {user.role === 'admin' ? (
+                            <span className="text-xs text-gray-400 italic px-2">Protegido</span>
+                          ) : (
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => setEditingUser(user)}
+                                title="Editar permisos"
+                                className="p-1.5 text-gray-400 hover:text-blue-600 rounded"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeleteConfirm(user.email)}
+                                title="Eliminar"
+                                className="p-1.5 text-gray-400 hover:text-red-600 rounded"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
