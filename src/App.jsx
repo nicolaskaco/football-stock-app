@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginView } from './components/LoginView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { EmployeeView } from './components/EmployeeView';
+import { SetPassword } from './components/SetPassword';
 import { PlayerFormPublic } from './forms/PlayerFormPublic';
 import { database } from './utils/database';
 import { supabase } from './supabaseClient';
@@ -38,7 +39,27 @@ const App = () => {
   const [appSettings, setAppSettings] = useState({});
 
   useEffect(() => {
+    // Detect invite or recovery tokens in the URL hash
+    const hash = window.location.hash;
+    if (hash && (hash.includes('type=invite') || hash.includes('type=signup'))) {
+      // Wait for Supabase to exchange the token, then show password setup
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+          setCurrentView('set-password');
+        }
+      });
+      return;
+    }
+
     checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setCurrentView('set-password');
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const checkSession = async () => {
@@ -286,6 +307,15 @@ const App = () => {
                 distributions={distributions}
                 inventory={inventory}
                 onLogout={handleLogout}
+              />
+            )}
+            {currentView === 'set-password' && (
+              <SetPassword
+                onComplete={async () => {
+                  // Clear the hash so invite token isn't re-detected on refresh
+                  window.location.hash = '';
+                  await checkSession();
+                }}
               />
             )}
             <FooterComponent />

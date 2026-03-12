@@ -1020,6 +1020,57 @@ export const database = {
   },
 
   // ============================================================
+  // USER PERMISSIONS (admin-only)
+  // ============================================================
+
+  async listUserPermissions() {
+    const { data, error } = await supabase
+      .from('user_permissions')
+      .select('*')
+      .order('email', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+
+  async inviteUser(email, role, permissions) {
+    // Explicitly pass the session token to ensure auth reaches the Edge Function
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+
+    const { data, error } = await supabase.functions.invoke('invite-user', {
+      headers,
+      body: {
+        email,
+        role,
+        permissions,
+        redirectTo: window.location.origin,
+      },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  },
+
+  async updateUserPermissions(email, updates) {
+    const { error } = await supabase
+      .from('user_permissions')
+      .update(updates)
+      .eq('email', email);
+    if (error) throw error;
+  },
+
+  async deleteUserPermissions(email) {
+    const { error } = await supabase
+      .from('user_permissions')
+      .delete()
+      .eq('email', email);
+    if (error) throw error;
+  },
+
+  // ============================================================
   // JORNADAS + PARTIDOS
   // ============================================================
 
