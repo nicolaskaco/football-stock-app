@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Pencil, Trash2, Shield, ChevronDown, ChevronUp } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, Shield, ChevronDown, ChevronUp, Copy, Check, Link } from 'lucide-react';
 import { database } from '../utils/database';
 import { Modal } from './Modal';
 import { ConfirmModal } from './ConfirmModal';
@@ -27,6 +27,8 @@ export const UserManagementSection = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [expanded, setExpanded] = useState(true);
+  const [inviteLink, setInviteLink] = useState(null);
+  const [copied, setCopied] = useState(false);
   const { execute } = useMutation();
 
   const loadUsers = async () => {
@@ -57,13 +59,36 @@ export const UserManagementSection = () => {
   const handleInvite = async ({ email, role, permissions }) => {
     await execute(
       async () => {
-        await database.inviteUser(email, role, permissions);
+        const result = await database.inviteUser(email, role, permissions);
         setShowModal(false);
+        if (result?.invite_link) {
+          setInviteLink(result.invite_link);
+          setCopied(false);
+        }
         await loadUsers();
       },
       'Error al enviar invitación',
-      'Invitación enviada correctamente'
+      'Invitación generada correctamente'
     );
+  };
+
+  const handleCopyLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = inviteLink;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   const handleEdit = async ({ email, role, permissions }) => {
@@ -231,6 +256,38 @@ export const UserManagementSection = () => {
           onConfirm={() => handleDelete(deleteConfirm)}
           onCancel={() => setDeleteConfirm(null)}
         />
+      )}
+
+      {/* Invite Link Modal */}
+      {inviteLink && (
+        <Modal title="Enlace de Invitación" onClose={() => setInviteLink(null)}>
+          <div className="p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <Link className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-gray-600">
+                Copiá este enlace y envialo al usuario por WhatsApp u otro medio. El enlace expira en 24 horas.
+              </p>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <p className="text-xs text-gray-900 break-all font-mono select-all">{inviteLink}</p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setInviteLink(null)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-yellow-400 rounded-lg hover:bg-gray-800 text-sm font-medium"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copiado!' : 'Copiar Enlace'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
     </div>
   );
