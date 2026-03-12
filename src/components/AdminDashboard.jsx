@@ -232,6 +232,7 @@ export const AdminDashboard = ({
             onDataChange={onDataChange}
             currentUser={currentUser}
             onFormDirtyChange={setModalIsDirty}
+            appSettings={appSettings}
           />
         )}
         {activeTab === 'players' && canAccessPlayers && (
@@ -243,11 +244,13 @@ export const AdminDashboard = ({
             onDataChange={onDataChange}
             currentUser={currentUser}
             onFormDirtyChange={setModalIsDirty}
+            appSettings={appSettings}
           />
         )}
         {activeTab === 'change_requests' && canViewChangeRequests && (
           <ChangeRequestsTab
             currentUser={currentUser}
+            appSettings={appSettings}
           />
         )}
         {activeTab === 'dirigentes' && canAccessDirigentes && (

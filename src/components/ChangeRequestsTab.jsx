@@ -7,8 +7,9 @@ import { AlertModal } from './AlertModal';
 import { PromptModal } from './PromptModal';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
+import { ViaticosCongeladosBanner } from './ViaticosCongeladosBanner';
 
-export const ChangeRequestsTab = ({ currentUser }) => {
+export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
   const [requests, setRequests] = useState([]);
   const [filter, setFilter] = useState('pending');
   const [loading, setLoading] = useState(true);
@@ -17,7 +18,8 @@ export const ChangeRequestsTab = ({ currentUser }) => {
   const [promptModal, setPromptModal] = useState({ isOpen: false });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
 
-  const canApprove = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
+  const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
+  const canApprove = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role) && !viaticosCongelados;
 
   useEffect(() => {
     loadRequests();
@@ -172,6 +174,11 @@ export const ChangeRequestsTab = ({ currentUser }) => {
 
   return (
     <div className="pb-20">
+      {viaticosCongelados && (
+        <div className="mb-4">
+          <ViaticosCongeladosBanner contacto={appSettings['viaticos_congelados_contacto'] || 'Martín Arroyo'} />
+        </div>
+      )}
       <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
         <div className="flex items-center gap-4">
           <h2 className="text-2xl font-bold">Solicitudes de Cambio</h2>

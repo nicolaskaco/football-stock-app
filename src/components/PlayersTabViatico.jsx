@@ -10,6 +10,7 @@ import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
 import { SortIcon } from './ui/SortIcon';
 import { SearchInput } from './ui/SearchInput';
 import { PlayerFormViatico } from '../forms/PlayerFormViatico';
+import { ViaticosCongeladosBanner } from './ViaticosCongeladosBanner';
 import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { PlayerHistoryModal } from './PlayerHistoryModal';
@@ -20,7 +21,7 @@ import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 
-export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
+export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('v_search') || '';
   const filterCategoria = searchParams.get('v_cat') || 'all';
@@ -77,6 +78,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
 
   const categorias = CATEGORIAS;
   const canDirectEdit = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
+  const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
 
   // Add safety check
   const safePlayers = Array.isArray(players) ? players : [];
@@ -344,6 +346,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
 
   return (
     <div>
+      {viaticosCongelados && (
+        <div className="mb-4">
+          <ViaticosCongeladosBanner contacto={appSettings['viaticos_congelados_contacto'] || 'Martín Arroyo'} />
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gestión de Jugadores</h2>
         <div className="flex gap-2">
@@ -530,7 +537,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                         className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
                         onClick={() => setShowModal({
                           title: `Ver Jugador: ${player.name}`,
-                          content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} />
+                          content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} appSettings={appSettings} />
                         })}
                       >
                         {player.name_visual || player.name}
@@ -599,7 +606,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                     <button 
                       onClick={() => setShowModal({
                         title: `Ver Jugador: ${player.name}`,
-                        content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} />
+                        content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} appSettings={appSettings} />
                       })} 
                       className="text-blue-600 hover:text-blue-800"
                       title="Ver información"
@@ -611,15 +618,15 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                       <button 
                         onClick={() => setShowModal({
                           title: `Editar Jugador: ${player.name}`,
-                          content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} />
+                          content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} appSettings={appSettings} />
                         })} 
                         className="text-yellow-600 hover:text-yellow-800"
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
-                    ) : (
-                      <button 
+                    ) : !viaticosCongelados && (
+                      <button
                         onClick={() => setShowChangeRequestModal(player)}
                         className="text-yellow-600 hover:text-yellow-800"
                         title="Solicitar cambio"

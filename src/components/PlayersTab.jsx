@@ -25,7 +25,7 @@ import { ImportPreviewModal } from './ImportPreviewModal';
 import { InjuryForm } from '../forms/InjuryForm';
 import { PlayerComparisonModal } from './PlayerComparisonModal';
 
-export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
+export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const isAdmin = currentUser?.role === 'admin';
   // Build a map: player_id -> active (open) injury
   const activeInjuryMap = {};
@@ -747,7 +747,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
             <button 
               onClick={() => setShowModal({
                 title: "Agregar Nuevo Jugador",
-                content: <PlayerForm onSubmit={handleAdd} currentUser={currentUser} onDirtyChange={onFormDirtyChange} />
+                content: <PlayerForm onSubmit={handleAdd} currentUser={currentUser} onDirtyChange={onFormDirtyChange} appSettings={appSettings} />
               })} 
               className="flex items-center gap-2 bg-black text-yellow-400 px-3 py-2 rounded-lg hover:bg-gray-800 text-sm"
               title="Agregar jugador"
@@ -970,7 +970,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                         className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
                         onClick={() => setShowModal({
                           title: `Ver Jugador: ${player.name}`,
-                          content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} />
+                          content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings} />
                         })}
                       >
                         {player.name_visual || player.name}
@@ -1023,7 +1023,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                         <button 
                           onClick={() => setShowModal({
                             title: `Editar Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} />
+                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings} />
                           })} 
                           className="text-blue-600 hover:text-blue-800"
                           title="Editar"
@@ -1034,7 +1034,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                         <button 
                           onClick={() => setShowModal({
                             title: `Ver Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} />
+                            content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings} />
                           })} 
                           className="text-blue-600 hover:text-blue-800"
                           title="Ver detalles"
