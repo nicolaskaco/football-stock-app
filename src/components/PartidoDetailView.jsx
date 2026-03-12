@@ -224,6 +224,33 @@ export const PartidoDetailView = ({ jornada, players = [], injuries = [], canEdi
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">{partido.comentario}</p>
               </div>
             )}
+
+            {/* Árbitros */}
+            {(partido.arbitro || partido.primer_linea || partido.segundo_linea) && (
+              <div className="px-4 pb-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Árbitros</p>
+                <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
+                  {partido.arbitro && (
+                    <div>
+                      <span className="text-gray-500 text-xs">Árbitro: </span>
+                      <span className="text-gray-800 font-medium">{partido.arbitro}</span>
+                    </div>
+                  )}
+                  {partido.primer_linea && (
+                    <div>
+                      <span className="text-gray-500 text-xs">1ª Línea: </span>
+                      <span className="text-gray-800 font-medium">{partido.primer_linea}</span>
+                    </div>
+                  )}
+                  {partido.segundo_linea && (
+                    <div>
+                      <span className="text-gray-500 text-xs">2ª Línea: </span>
+                      <span className="text-gray-800 font-medium">{partido.segundo_linea}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         );
       })}

@@ -24,6 +24,9 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
     goles_local: partido?.goles_local ?? '',
     goles_visitante: partido?.goles_visitante ?? '',
     comentario: partido?.comentario || '',
+    arbitro: partido?.arbitro || '',
+    primer_linea: partido?.primer_linea || '',
+    segundo_linea: partido?.segundo_linea || '',
   });
 
   // Construir slots iniciales desde partido_players existentes
@@ -288,6 +291,43 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
           onChange={(e) => setFormData({ ...formData, comentario: e.target.value })}
           className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm resize-none"
         />
+      </div>
+
+      {/* Árbitros */}
+      <div>
+        <p className="text-sm font-medium text-gray-700 mb-3">Árbitros</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Árbitro</label>
+            <input
+              type="text"
+              placeholder="Nombre del árbitro"
+              value={formData.arbitro}
+              onChange={(e) => setFormData({ ...formData, arbitro: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Primer Línea</label>
+            <input
+              type="text"
+              placeholder="Nombre"
+              value={formData.primer_linea}
+              onChange={(e) => setFormData({ ...formData, primer_linea: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Segundo Línea</label>
+            <input
+              type="text"
+              placeholder="Nombre"
+              value={formData.segundo_linea}
+              onChange={(e) => setFormData({ ...formData, segundo_linea: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Titulares */}
