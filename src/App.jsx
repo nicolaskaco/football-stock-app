@@ -104,6 +104,7 @@ const App = () => {
             canSeeRopaWidgets: permissions?.can_see_ropa_widgets || false,
             canViewPartidos: permissions?.can_view_partidos || false,
             canEditPartidos: permissions?.can_edit_partidos || false,
+            canEditDirigentes: permissions?.can_edit_dirigentes || false,
           });
           await loadData();
           setCurrentView('dashboard');
@@ -218,6 +219,7 @@ const App = () => {
           canSeeRopaWidgets: permissions?.can_see_ropa_widgets || false,
           canViewPartidos: permissions?.can_view_partidos || false,
           canEditPartidos: permissions?.can_edit_partidos || false,
+          canEditDirigentes: permissions?.can_edit_dirigentes || false,
         });
 
         await loadData();
