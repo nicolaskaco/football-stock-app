@@ -95,10 +95,11 @@ Admins can invite new users directly from `ConfiguracionTab` → `UserManagement
 3. The Edge Function:
    - Validates the caller is an `admin` via `user_permissions`.
    - Calls `auth.admin.generateLink({ type: 'invite', email })` — returns the invite URL **without sending an email**.
+   - Extracts `hashed_token` from the response and builds a custom link: `<app-origin>/#type=invite&token_hash=<hashed_token>`. Using the URL hash fragment prevents WhatsApp's link-preview crawler from consuming the one-time token (hash is never sent in HTTP requests).
    - Inserts/upserts the `user_permissions` row with the chosen role and flags.
    - Returns `invite_link` in the JSON response.
 4. The UI shows a modal with the invite link and a "Copiar Enlace" button so the admin can share it via WhatsApp or any other channel.
-5. When the invitee opens the link, `App.jsx` detects `type=invite` in the URL hash, registers an `onAuthStateChange` listener, and calls `getSession()` as a fallback. Once Supabase exchanges the token a session is established and `loading` is set to `false`, routing the user to `SetPassword`.
+5. When the invitee opens the link, `App.jsx` detects `type=invite` and `token_hash` in the URL hash. It calls `supabase.auth.verifyOtp({ token_hash, type: 'invite' })` client-side to exchange the token for a session, then the `onAuthStateChange` listener routes the user to `SetPassword`. Legacy direct `action_link` behaviour (without `token_hash`) is kept as a fallback via `getSession()`.
 6. After the user sets their password the hash is cleared and `checkSession()` refreshes the view.
 
 **Edge Function:** `supabase/functions/invite-user/index.ts`  
@@ -118,6 +119,8 @@ Stored as `user_permissions.role`:
 | `ejecutivo` | Management-level access |
 | `presidente` | Presidential access |
 | `presidente_categoria` | Category manager — must submit change requests for financial edits |
+| `delegado` | Limited role — can view Solicitudes tab (read-only); no approve/reject/create; access to other tabs controlled by permission flags |
+| `comision` | Limited role — same access model as `delegado` |
 | (default) | Limited view-only, controlled by permission flags |
 
 ### Permission Flags (`user_permissions` table)
@@ -128,7 +131,8 @@ Stored as `user_permissions.role`:
 | `can_edit_players` | Edit player records |
 | `can_access_viatico` | Viáticos tab |
 | `can_access_widgets` | Analytics widgets on Overview |
-| `can_access_dirigentes` | Dirigentes tab |
+| `can_access_dirigentes` | Dirigentes tab (view) |
+| `can_edit_dirigentes` | Add/edit/delete in DirigentesTab |
 | `can_access_ropa` | Inventory, Funcionarios, Distribuciones, Reportes tabs |
 | `editar_nombre_especial` | Edit visual name (`name_visual`) |
 | `view_torneo` | Torneos tab |
@@ -140,7 +144,7 @@ Stored as `user_permissions.role`:
 | `can_see_ropa_widgets` | Inventory/distribution widgets on OverviewTab |
 | `categoria[]` | Array — restricts access to specific player categories |
 
-The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`.
+The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision` (read-only for the last two — approve/reject/create buttons hidden).
 
 ---
 
@@ -284,11 +288,11 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [OverviewTab.jsx](src/components/OverviewTab.jsx) | Dashboard with stat cards, optional widgets, and CalendarioView for `can_view_partidos` users |
 | [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits for Cédulas. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerForm` modal. Bulk actions (change category, toggle casita, hide, import from XLSX). Injury icon (Swiss cross) shown next to player name when injured. Injury CRUD button (admin only). "Comparar" button (indigo, Users icon) appears when 2-3 players are selected, opens `PlayerComparisonModal`. |
 | [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow. Complemento column shows the effective value (override if active) with a yellow "temp" badge and tooltip showing the expiry date. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerFormViatico` modal. |
-| [ChangeRequestsTab.jsx](src/components/ChangeRequestsTab.jsx) | Approval/rejection UI for financial change requests |
+| [ChangeRequestsTab.jsx](src/components/ChangeRequestsTab.jsx) | Approval/rejection UI for financial change requests. When viáticos are frozen, approve/reject buttons are hidden and a `ViaticosCongeladosBanner` is shown. |
 | [InventoryTab.jsx](src/components/InventoryTab.jsx) | Inventory CRUD, low-stock alerts, bulk stock adjustment via multi-select |
 | [DistributionsTab.jsx](src/components/DistributionsTab.jsx) | Distribution CRUD with return tracking |
 | [EmployeesTab.jsx](src/components/EmployeesTab.jsx) | Staff CRUD with photo and clothing size tracking |
-| [DirigentesTab.jsx](src/components/DirigentesTab.jsx) | Board member CRUD. Sticky Nombre column on horizontal scroll; name truncates on mobile. |
+| [DirigentesTab.jsx](src/components/DirigentesTab.jsx) | Board member CRUD. Add/edit/delete buttons gated behind `can_edit_dirigentes` permission flag. Sticky Nombre column on horizontal scroll; name truncates on mobile. |
 | [TorneosTab.jsx](src/components/TorneosTab.jsx) | Tournament list and management |
 | [TorneoDetailView.jsx](src/components/TorneoDetailView.jsx) | Detailed tournament view with participants |
 | [ComisionesTab.jsx](src/components/ComisionesTab.jsx) | Committee list and management. Sticky Nombre column on horizontal scroll; tap name on mobile to expand truncated text. |
@@ -299,7 +303,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
 | [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Gráficos; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart |
-| [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()`. Also renders `UserManagementSection` for inviting and managing admin users. |
+| [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()`. Includes a **Congelar Viáticos** toggle — when enabled, all viatico/complemento/contrato fields are disabled app-wide, solicitud creation is blocked, and approve/reject actions in ChangeRequestsTab are hidden. A configurable contact name (stored in `app_settings`) is shown in freeze banners. Also renders `UserManagementSection` for inviting and managing admin users. |
 | [UserManagementSection.jsx](src/components/UserManagementSection.jsx) | Collapsible section inside ConfiguracionTab. Displays a table of all `user_permissions` rows (email, role badge, permission count, category restrictions). Provides invite, edit-permissions, and delete actions. After a successful invite the admin sees a modal with a copyable invite link. |
 | [SetPassword.jsx](src/components/SetPassword.jsx) | Full-page password setup form shown after an invite or password-recovery link is opened. Validates minimum 6 characters and confirmation match; calls `supabase.auth.updateUser({ password })`. Styled with the black/yellow CAP theme. |
 | [NotificationCenter.jsx](src/components/NotificationCenter.jsx) | Bell icon with unread-count badge in the nav bar. Opens a dropdown panel listing notifications by type: cumpleaños (players & dirigentes within 7 days), fichas médicas vencidas/por vencer, solicitudes de cambio pendientes, and lesiones activas. Unread state persisted to `localStorage`. Clicking a notification navigates to the relevant tab. Admins see all four types (filtered by `categoria`); Funcionarios only see cumpleaños. |
@@ -354,6 +358,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [ExportConfigModal.jsx](src/components/ExportConfigModal.jsx) | Excel export field selector |
 | [DocumentUpload.jsx](src/components/DocumentUpload.jsx) | Supabase Storage document upload/download |
 | [NameVisualEditor.jsx](src/components/NameVisualEditor.jsx) | Visual name editing (dual-name system) |
+| [ViaticosCongeladosBanner.jsx](src/components/ViaticosCongeladosBanner.jsx) | Amber banner shown in PlayerForm, PlayerFormViatico, PlayersTabViatico, and ChangeRequestsTab when viáticos are frozen. Displays a configurable contact name from `app_settings`. |
 | [StatCard.jsx](src/components/StatCard.jsx) | Reusable stat summary card |
 | [Toast.jsx](src/components/Toast.jsx) | Toast notification display |
 | [ui/FilterButtonGroup.jsx](src/components/ui/FilterButtonGroup.jsx) | Generic toggle-button filter bar; props: `options: string[]`, `value`, `onChange`, `label?`, `allLabel?` |
