@@ -208,6 +208,9 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `goles_local` | integer | nullable — filled after the match |
 | `goles_visitante` | integer | nullable — filled after the match |
 | `comentario` | text | nullable — freetext match notes |
+| `arbitro` | text | nullable — referee name |
+| `primer_linea` | text | nullable — first linesman name |
+| `segundo_linea` | text | nullable — second linesman name |
 | `created_at` | timestamptz | |
 
 #### `partido_players`
