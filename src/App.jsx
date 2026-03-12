@@ -39,26 +39,28 @@ const App = () => {
   const [appSettings, setAppSettings] = useState({});
 
   useEffect(() => {
-    // Detect invite or recovery tokens in the URL hash
     const hash = window.location.hash;
-    if (hash && (hash.includes('type=invite') || hash.includes('type=signup'))) {
-      // Wait for Supabase to exchange the token, then show password setup
-      setLoading(false);
-      supabase.auth.onAuthStateChange((event, session) => {
-        if (session) {
-          setCurrentView('set-password');
-        }
-      });
-      return;
-    }
+    const isInviteFlow = hash && (hash.includes('type=invite') || hash.includes('type=signup'));
 
-    checkSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+    // Single listener — handles both invite and password-recovery flows
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || (isInviteFlow && session)) {
+        setLoading(false);
         setCurrentView('set-password');
       }
     });
+
+    if (isInviteFlow) {
+      // Fallback: if onAuthStateChange already fired before listener was registered
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          setCurrentView('set-password');
+        }
+        setLoading(false);
+      });
+    } else {
+      checkSession();
+    }
 
     return () => subscription.unsubscribe();
   }, []);
