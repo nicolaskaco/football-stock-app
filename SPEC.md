@@ -42,6 +42,7 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
   login         → LoginView
   dashboard     → AdminDashboard (admin users)
   employee-view → EmployeeView (staff self-service)
+  set-password  → SetPassword (invite & password-recovery flow)
 /formulario     → PlayerFormPublic (public, no auth)
 ```
 
@@ -67,6 +68,7 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 | [src/utils/pdfExport.js](src/utils/pdfExport.js) | PDF dashboard report generation |
 | [src/context/DarkModeContext.jsx](src/context/DarkModeContext.jsx) | Dark mode state + localStorage persistence |
 | [src/PasswordReset.jsx](src/PasswordReset.jsx) | Password reset page |
+| [src/components/SetPassword.jsx](src/components/SetPassword.jsx) | Password setup form shown when a user follows an invite or recovery link |
 
 ---
 
@@ -83,6 +85,28 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 1. Calls Supabase Edge Function `validate-employee`
 2. Only loads that employee's distributions and inventory items
 3. Routes to `EmployeeView`
+
+### Admin User Invite Flow
+
+Admins can invite new users directly from `ConfiguracionTab` → `UserManagementSection`. No email is sent, bypassing the Supabase free-tier 2 emails/hour limit.
+
+1. Admin fills `UserInviteForm`: email, role, permission flags, and optional category restrictions.
+2. Frontend calls `database.inviteUser()`, which invokes the `invite-user` Edge Function with the caller's JWT.
+3. The Edge Function:
+   - Validates the caller is an `admin` via `user_permissions`.
+   - Calls `auth.admin.generateLink({ type: 'invite', email })` — returns the invite URL **without sending an email**.
+   - Inserts/upserts the `user_permissions` row with the chosen role and flags.
+   - Returns `invite_link` in the JSON response.
+4. The UI shows a modal with the invite link and a "Copiar Enlace" button so the admin can share it via WhatsApp or any other channel.
+5. When the invitee opens the link, `App.jsx` detects `type=invite` in the URL hash, registers an `onAuthStateChange` listener, and calls `getSession()` as a fallback. Once Supabase exchanges the token a session is established and `loading` is set to `false`, routing the user to `SetPassword`.
+6. After the user sets their password the hash is cleared and `checkSession()` refreshes the view.
+
+**Edge Function:** `supabase/functions/invite-user/index.ts`  
+**Deployed with:** `--no-verify-jwt` (the function performs its own caller-identity check internally using the `Authorization` header)
+
+### Password Recovery Flow
+
+`App.jsx` handles standard password recovery links via the same `onAuthStateChange` listener: the `PASSWORD_RECOVERY` event routes the user to `SetPassword`.
 
 ### Roles
 
@@ -148,7 +172,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `partido_eventos` | Match events (goals, yellow/red cards) per partido |
 | `app_settings` | Global key-value feature flags toggled via ConfiguracionTab |
 | `player_injuries` | Injury log per player: tipo, severidad, dates (inicio, retorno estimado, alta) |
-| `user_permissions` | Role and permission flags per user email |
+| `user_permissions` | Role and permission flags per user email (RLS disabled — access controlled via Edge Function caller verification) |
 
 ### Campeonato Juvenil Tables Detail
 
@@ -247,7 +271,7 @@ Bucket: `player-documents` (private)
 | `partidos` | Partidos | `can_view_partidos` |
 | `estadisticas` | Estadísticas | `can_view_partidos` **and** `estadisticas_tab_enabled` app setting |
 | `reports` | Reportes | `can_access_ropa` **and** `reportes_tab_enabled` app setting |
-| `configuracion` | Configuración | `role = 'admin'` only |
+| `configuracion` | Configuración (includes User Management) | `role = 'admin'` only |
 
 App settings (`app_settings` table) are loaded at login into `appSettings` global state in `App.jsx`. Admins toggle them via `ConfiguracionTab`. The `tabEnabled(key)` helper in `AdminDashboard` checks `appSettings[key] === 'true'`.
 
@@ -275,7 +299,10 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
 | [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Gráficos; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart |
-| [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()` |
+| [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()`. Also renders `UserManagementSection` for inviting and managing admin users. |
+| [UserManagementSection.jsx](src/components/UserManagementSection.jsx) | Collapsible section inside ConfiguracionTab. Displays a table of all `user_permissions` rows (email, role badge, permission count, category restrictions). Provides invite, edit-permissions, and delete actions. After a successful invite the admin sees a modal with a copyable invite link. |
+| [SetPassword.jsx](src/components/SetPassword.jsx) | Full-page password setup form shown after an invite or password-recovery link is opened. Validates minimum 6 characters and confirmation match; calls `supabase.auth.updateUser({ password })`. Styled with the black/yellow CAP theme. |
+| [NotificationCenter.jsx](src/components/NotificationCenter.jsx) | Bell icon with unread-count badge in the nav bar. Opens a dropdown panel listing notifications by type: cumpleaños (players & dirigentes within 7 days), fichas médicas vencidas/por vencer, solicitudes de cambio pendientes, and lesiones activas. Unread state persisted to `localStorage`. Clicking a notification navigates to the relevant tab. Admins see all four types (filtered by `categoria`); Funcionarios only see cumpleaños. |
 | [EmployeeView.jsx](src/components/EmployeeView.jsx) | Staff self-service: view own clothing distributions |
 | [LoginView.jsx](src/components/LoginView.jsx) | Dual-mode login (admin / funcionario) |
 
@@ -310,6 +337,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
 | [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. |
 | [InjuryForm.jsx](src/forms/InjuryForm.jsx) | Injury registration/editing: tipo (Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro), severidad (leve/moderada/grave), descripción, fecha_inicio, fecha_retorno_estimada, fecha_alta. Admin-only. |
+| [UserInviteForm.jsx](src/forms/UserInviteForm.jsx) | Invite / edit-permissions form. Fields: email (disabled in edit mode), role dropdown, 14 grouped permission checkboxes with select-all/none per group, and category chip multi-select. Used by `UserManagementSection` for both invite and edit flows. |
 
 #### Modals & Utilities
 | Component | Description |
@@ -497,6 +525,42 @@ Optimized layouts for small screens across tabs, modals, and forms.
 ### Low-Stock Alerts
 
 `database.checkLowStock()` queries inventory items where `quantity <= min_stock`. Called after every inventory save.
+
+### In-App Notification Center
+
+A unified notification hub accessible from a bell icon in the nav bar of both `AdminDashboard` and `EmployeeView`.
+
+- **Notification types**:
+  - **Cumpleaños** — upcoming birthdays for players and dirigentes within 7 days.
+  - **Fichas Médicas** — players with expired or expiring-soon (≤ 30 days) sports medical licenses.
+  - **Solicitudes pendientes** — pending financial change requests awaiting approval.
+  - **Lesiones activas** — players currently injured.
+- **Severity styling**: border colors — red (crítico), orange (advertencia), yellow (info) — with unread dot indicators.
+- **Read/unread tracking**: persisted to `localStorage`; "Marcar todas como leídas" button clears all.
+- **Direct navigation**: clicking a notification switches to the relevant tab.
+- **Permissions**: Admins see all four types filtered by their `categoria`; Funcionarios only see cumpleaños.
+- **Dark mode**: styles applied via `.notification-panel` class in `index.css`.
+
+### Admin User Management
+
+Full CRUD for admin-level users managed from `ConfiguracionTab`. See [Admin User Invite Flow](#admin-user-invite-flow) for the invite sequence.
+
+**Database methods (`database.js`):**
+
+| Method | Description |
+|--------|-------------|
+| `listUserPermissions()` | Returns all rows in `user_permissions` ordered by email |
+| `inviteUser(email, role, permissions)` | Calls the `invite-user` Edge Function; returns `{ invite_link, user_id }` |
+| `updateUserPermissions(email, updates)` | Updates role and permission flags for an existing user |
+| `deleteUserPermissions(email)` | Removes the user's `user_permissions` row (revokes dashboard access) |
+
+**Supabase Edge Functions:**
+
+| Function | Description |
+|----------|-------------|
+| `invite-user` | Verifies caller is admin, calls `auth.admin.generateLink({ type: 'invite' })`, upserts `user_permissions`, returns `invite_link` |
+| `validate-employee` | Validates funcionario credentials and returns the employee record |
+| `check-ficha-medica` | Proxies to SND API to retrieve sports medical license records by document number |
 
 ### Campeonato Juvenil — Partidos Module
 
@@ -719,6 +783,9 @@ football-stock-app/
     │   ├── MostDistributedWidget.jsx
     │   ├── PendingChangeRequestsWidget.jsx
     │   ├── InjuredPlayersWidget.jsx
+    │   ├── NotificationCenter.jsx      # Bell icon + notification dropdown panel
+    │   ├── SetPassword.jsx              # Password setup for invite / recovery flow
+    │   ├── UserManagementSection.jsx    # User invite + permission management UI
     │   ├── Modal.jsx
     │   ├── ConfirmModal.jsx
     │   ├── AlertModal.jsx
@@ -746,7 +813,8 @@ football-stock-app/
     │   ├── RivalForm.jsx
     │   ├── JornadaForm.jsx
     │   ├── PartidoForm.jsx
-    │   └── InjuryForm.jsx
+    │   ├── InjuryForm.jsx
+    │   └── UserInviteForm.jsx         # Invite / permission form for admin user management
     ├── context/
     │   ├── ToastContext.jsx       # Toast notification context + provider
     │   └── DarkModeContext.jsx    # Dark mode state + localStorage persistence
@@ -762,4 +830,10 @@ football-stock-app/
         ├── pdfExport.js           # Dashboard PDF report generation
         ├── playerUtils.js         # Player business logic (calculateTotal)
         └── storage.js             # Legacy localStorage wrapper (largely unused)
+supabase/
+└── functions/
+    ├── invite-user/               # Generate invite link + upsert user_permissions (no email sent)
+    │   └── index.ts
+    ├── validate-employee/         # Funcionario credential validation
+    └── check-ficha-medica/        # SND API proxy for sports medical license lookup
 ```

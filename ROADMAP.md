@@ -113,6 +113,18 @@ Implementar `React.lazy()` + `Suspense` para cargar tabs bajo demanda y reducir 
 
 Para tablas con muchos registros (jugadores, distribuciones), implementar paginación con Supabase `.range()` en lugar de cargar todo en memoria.
 
+### Phase 13: Gestión de usuarios admins e invitaciones ✅
+
+Sistema completo para que admins inviten nuevos usuarios y gestionen sus permisos desde la app.
+
+- **`invite-user` Edge Function**: usa `auth.admin.generateLink({ type: 'invite' })` para generar el enlace de invitación **sin enviar email** (evita el límite de 2 emails/hora del plan free de Supabase).
+- **`UserManagementSection`**: sección colapsable en ConfiguracionTab con tabla de usuarios (`user_permissions`), badges de rol, conteo de permisos y categorías. Acciones: invitar, editar permisos, eliminar.
+- **`UserInviteForm`**: formulario con email, rol (4 opciones), 14 checkboxes de permisos agrupados con toggle seleccionar todo/ninguno, y chips de categoría.
+- **`SetPassword`**: pantalla de configuración de contraseña para usuarios que siguen un enlace de invitación o recuperación. Valida mínimo 6 caracteres y confirmación.
+- **Flujo de invite**: al abrir el enlace, `App.jsx` detecta `type=invite` en el hash, registra `onAuthStateChange` con fallback a `getSession()`, y navega a `SetPassword`. Hash limpiado tras guardar la contraseña.
+- **Modal de enlace copiable**: tras crear la invitación, se muestra un modal con el enlace y botón "Copiar Enlace" para compartir por WhatsApp u otro medio.
+- **Gestión de permisos existentes**: los admins pueden editar los permisos de cualquier usuario o eliminar su acceso directamente desde la tabla.
+
 ---
 
 ## Próximas features sugeridas
