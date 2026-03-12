@@ -39,6 +39,18 @@ const App = () => {
   const [appSettings, setAppSettings] = useState({});
 
   useEffect(() => {
+    // Detect invite or recovery tokens in the URL hash
+    const hash = window.location.hash;
+    if (hash && (hash.includes('type=invite') || hash.includes('type=signup'))) {
+      // Wait for Supabase to exchange the token, then show password setup
+      supabase.auth.onAuthStateChange((event, session) => {
+        if (session) {
+          setCurrentView('set-password');
+        }
+      });
+      return;
+    }
+
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
@@ -300,6 +312,8 @@ const App = () => {
             {currentView === 'set-password' && (
               <SetPassword
                 onComplete={async () => {
+                  // Clear the hash so invite token isn't re-detected on refresh
+                  window.location.hash = '';
                   await checkSession();
                 }}
               />
