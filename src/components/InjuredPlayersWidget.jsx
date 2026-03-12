@@ -140,7 +140,7 @@ export const InjuredPlayersWidget = ({ players = [], injuries = [], setShowModal
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${severityBadge[r.severidad] || 'bg-gray-100 text-gray-600'}`}>
-                {r.severidad}
+                {r.severidad ? r.severidad.charAt(0).toUpperCase() + r.severidad.slice(1) : ''}
               </span>
               {r.fecha_retorno_estimada && (
                 <span className="text-xs text-gray-500">↩ {formatDate(r.fecha_retorno_estimada)}</span>
