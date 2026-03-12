@@ -64,17 +64,23 @@ serve(async (req) => {
       return ok({ error: "Email y rol son requeridos" });
     }
 
-    // ── Send the invite email ────────────────────────────────
-    const { data: inviteData, error: inviteError } =
-      await adminClient.auth.admin.inviteUserByEmail(email, {
-        redirectTo: redirectTo || undefined,
+    // ── Generate invite link (does NOT send email) ─────────
+    const { data: linkData, error: linkError } =
+      await adminClient.auth.admin.generateLink({
+        type: "invite",
+        email,
+        options: { redirectTo: redirectTo || undefined },
       });
 
-    if (inviteError) {
+    let actionLink: string | null = null;
+
+    if (linkError) {
       // If user already exists, still allow updating permissions
-      if (!inviteError.message?.includes("already been registered")) {
-        return ok({ error: "Error al enviar invitación: " + inviteError.message });
+      if (!linkError.message?.includes("already been registered")) {
+        return ok({ error: "Error al generar invitación: " + linkError.message });
       }
+    } else {
+      actionLink = linkData?.properties?.action_link ?? null;
     }
 
     // ── Insert or update user_permissions row ────────────────
@@ -132,8 +138,9 @@ serve(async (req) => {
     }
 
     return ok({
-      message: "Invitación enviada correctamente",
-      user_id: inviteData?.user?.id ?? null,
+      message: "Invitación generada correctamente",
+      user_id: linkData?.user?.id ?? null,
+      invite_link: actionLink,
     });
   } catch (err) {
     return ok({ error: "Error inesperado: " + err.message });
