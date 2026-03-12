@@ -142,6 +142,7 @@ Stored as `user_permissions.role`:
 | `can_view_partidos` | Rivales + Partidos tabs |
 | `can_edit_partidos` | Create/edit jornadas, partidos, rivales |
 | `can_see_ropa_widgets` | Inventory/distribution widgets on OverviewTab |
+| `can_access_tesorero` | Tesorero tab (Congelar Viáticos toggle + viático Excel export) |
 | `categoria[]` | Array — restricts access to specific player categories |
 
 The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision` (read-only for the last two — approve/reject/create buttons hidden).
@@ -277,6 +278,7 @@ Bucket: `player-documents` (private)
 | `rivales` | Rivales | `can_view_partidos` **and** `rivales_tab_enabled` app setting |
 | `partidos` | Partidos | `can_view_partidos` |
 | `estadisticas` | Estadísticas | `can_view_partidos` **and** `estadisticas_tab_enabled` app setting |
+| `tesorero` | Tesorero | `can_access_tesorero` |
 | `reports` | Reportes | `can_access_ropa` **and** `reportes_tab_enabled` app setting |
 | `configuracion` | Configuración (includes User Management) | `role = 'admin'` only |
 
@@ -304,6 +306,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions; list view shows escenario + result badge per category. Mobile-friendly header: button label collapses to "Nueva" on small screens. |
 | [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, and comment |
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
+| [TesoreroTab.jsx](src/components/TesoreroTab.jsx) | Tesorero view with two features: (1) **Congelar Viáticos** toggle (same `viaticos_congelados` app setting also shown in ConfiguracionTab) — when enabled the card turns amber and a configurable contact name input appears; (2) **Exportar Viáticos** — generates a multi-sheet Excel workbook (`Viaticos-Formativas-DD-MM-YYYY.xlsx`) with one sheet per formative category (Sub 19/17/16/15/14/13), sorted by name, excluding 3era and contracted players; each sheet includes a `TOTAL` / SUM formula row 3 rows below the last data row. |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
 | [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Gráficos; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart |
 | [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()`. Includes a **Congelar Viáticos** toggle — when enabled, all viatico/complemento/contrato fields are disabled app-wide, solicitud creation is blocked, and approve/reject actions in ChangeRequestsTab are hidden. A configurable contact name (stored in `app_settings`) is shown in freeze banners. Also renders `UserManagementSection` for inviting and managing admin users. |
