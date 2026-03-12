@@ -74,7 +74,7 @@ export const AdminDashboard = ({
   const canViewTorneo = currentUser?.canViewTorneo || false;
   const canViewComisiones = currentUser?.canViewComisiones || false;
   //const canEditComision = currentUser?.canEditComision || false;
-  const canViewChangeRequests = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria'].includes(currentUser?.role);
+  const canViewChangeRequests = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria', 'delegado', 'comision'].includes(currentUser?.role);
   const canAccessRopa = currentUser?.canAccessRopa || false;
   const canSeeRopaWidgets = currentUser?.canSeeRopaWidgets || false;
   const canViewPartidos = currentUser?.canViewPartidos || false;
@@ -256,6 +256,7 @@ export const AdminDashboard = ({
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             onFormDirtyChange={setModalIsDirty}
+            currentUser={currentUser}
           />
         )}
         {activeTab === 'torneos' && canViewTorneo && (

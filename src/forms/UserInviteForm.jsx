@@ -6,6 +6,8 @@ const ROLES = [
   { value: 'ejecutivo', label: 'Ejecutivo' },
   { value: 'presidente', label: 'Presidente' },
   { value: 'presidente_categoria', label: 'Presidente de Categoría' },
+  { value: 'delegado', label: 'Delegado' },
+  { value: 'comision', label: 'Comisión' },
 ];
 
 const PERMISSION_GROUPS = [
@@ -51,6 +53,7 @@ const PERMISSION_GROUPS = [
     permissions: [
       { key: 'can_access_widgets', label: 'Ver widgets de estadísticas' },
       { key: 'can_access_dirigentes', label: 'Ver dirigentes' },
+      { key: 'can_edit_dirigentes', label: 'Editar dirigentes' },
     ],
   },
 ];

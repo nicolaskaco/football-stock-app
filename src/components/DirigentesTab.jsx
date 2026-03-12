@@ -13,7 +13,8 @@ import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 
-export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onFormDirtyChange }) => {
+export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onFormDirtyChange, currentUser }) => {
+  const canEdit = currentUser?.canEditDirigentes || false;
   const { alertModal, showAlert, closeAlert } = useAlertModal();
   const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
@@ -192,17 +193,19 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
             <Download className="w-4 h-4 sm:w-5 sm:h-5" />
             <span className="hidden sm:inline">Exportar</span>
           </button>
-          <button 
-            onClick={() => setShowModal({
-              title: "Agregar Nuevo Dirigente",
-              content: <DirigenteForm onSubmit={handleAdd} onDirtyChange={onFormDirtyChange} />
-            })} 
-            className="flex items-center gap-2 bg-black text-yellow-400 px-3 py-2 rounded-lg hover:bg-gray-800 text-sm"
-            title="Agregar dirigente"
-          >
-            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="hidden sm:inline">Agregar</span>
-          </button>
+          {canEdit && (
+            <button
+              onClick={() => setShowModal({
+                title: "Agregar Nuevo Dirigente",
+                content: <DirigenteForm onSubmit={handleAdd} onDirtyChange={onFormDirtyChange} />
+              })}
+              className="flex items-center gap-2 bg-black text-yellow-400 px-3 py-2 rounded-lg hover:bg-gray-800 text-sm"
+              title="Agregar dirigente"
+            >
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="hidden sm:inline">Agregar</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -320,9 +323,11 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
                   <SortIcon sortConfig={sortConfig} columnKey="celular" />
                 </div>
               </th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Acciones
-              </th>
+              {canEdit && (
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Acciones
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -352,25 +357,27 @@ export const DirigentesTab = ({ dirigentes = [], setShowModal, onDataChange, onF
                   )}
                 </td>
                 <td className="px-6 py-4 text-sm">{dirigente.celular || '-'}</td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => setShowModal({
-                        title: `Editar Dirigente: ${dirigente.name}`,
-                        content: <DirigenteForm dirigente={dirigente} onSubmit={handleEdit} onDirtyChange={onFormDirtyChange} />
-                      })} 
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(dirigente.id)} 
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
+                {canEdit && (
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowModal({
+                          title: `Editar Dirigente: ${dirigente.name}`,
+                          content: <DirigenteForm dirigente={dirigente} onSubmit={handleEdit} onDirtyChange={onFormDirtyChange} />
+                        })}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(dirigente.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
