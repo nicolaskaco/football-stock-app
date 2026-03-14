@@ -29,17 +29,19 @@ export const BirthdayWidget = ({ currentUser }) => {
   if (birthdays.length === 0) return null;
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <div className="flex items-center gap-2 mb-4">
         <Cake className="w-6 h-6 text-yellow-600" />
-        <h3 className="text-lg font-bold">Próximos Cumpleaños</h3>
+        <h3 className="text-lg font-bold dark:text-white">Próximos Cumpleaños</h3>
       </div>
       <div className="space-y-3">
         {birthdays.map((person, index) => (
-          <div 
-            key={`${person.type}-${person.id}`} 
+          <div
+            key={`${person.type}-${person.id}`}
             className={`flex items-center justify-between border-l-4 pl-3 py-2 ${
-              person.type === 'player' ? 'border-yellow-400 bg-yellow-50' : 'border-cyan-400 bg-cyan-50'
+              person.type === 'player'
+                ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20'
+                : 'border-cyan-400 bg-cyan-50 dark:bg-cyan-900/20'
             }`}
           >
             <div className="flex items-center gap-2 flex-1">
@@ -49,15 +51,15 @@ export const BirthdayWidget = ({ currentUser }) => {
                 <Shield className="w-4 h-4 text-cyan-600" />
               )}
             <div>
-              <p className="font-medium">{person.name_visual || person.name}</p>
+              <p className="font-medium dark:text-white">{person.name_visual || person.name}</p>
               <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
                   {formatBirthday(person.date_of_birth)}
                 </p>
                 <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  person.type === 'player' 
-                    ? 'bg-yellow-100 text-yellow-700' 
-                    : 'bg-cyan-100 text-gray-700'
+                  person.type === 'player'
+                    ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-800 dark:text-yellow-200'
+                    : 'bg-cyan-100 text-cyan-800 dark:bg-cyan-800 dark:text-cyan-100'
                 }`}>
                   {person.type === 'player' ? 'Jugador' : 'Dirigente'}
                 </span>
@@ -65,7 +67,7 @@ export const BirthdayWidget = ({ currentUser }) => {
               </div>
             </div>
             <span className={`text-sm font-semibold ${
-              person.type === 'player' ? 'text-yellow-600' : 'text-cyan-600'
+              person.type === 'player' ? 'text-yellow-600 dark:text-yellow-400' : 'text-cyan-600 dark:text-cyan-400'
             }`}>
               {person.daysUntilBirthday === 0 
                 ? '¡Hoy!' 
