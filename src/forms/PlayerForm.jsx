@@ -74,6 +74,17 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
+      {onRequestChange && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onRequestChange}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg text-sm"
+          >
+            Solicitar Cambio de Viáticos/Contrato
+          </button>
+        </div>
+      )}
       {/* BASIC INFORMATION */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información Básica</h3>
@@ -700,19 +711,8 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       })()}
 
       {readOnly ? (
-        <div className="space-y-3">
-          <div className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg text-center font-bold text-lg">
-            Modo Solo Lectura
-          </div>
-          {onRequestChange && (
-            <button
-              type="button"
-              onClick={onRequestChange}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg"
-            >
-              Solicitar Cambio de Viáticos/Contrato
-            </button>
-          )}
+        <div className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg text-center font-bold text-lg">
+          Modo Solo Lectura
         </div>
       ) : (
         <button 

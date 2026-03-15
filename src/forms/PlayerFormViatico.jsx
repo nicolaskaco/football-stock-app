@@ -55,6 +55,17 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {onRequestChange && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={onRequestChange}
+            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg text-sm"
+          >
+            Solicitar Cambio de Viáticos/Contrato
+          </button>
+        </div>
+      )}
       {viaticosCongelados && (
         <ViaticosCongeladosBanner contacto={appSettings['viaticos_congelados_contacto'] || 'Martín Arroyo'} />
       )}
@@ -260,19 +271,8 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
       </div>
 
       {readOnly ? (
-        <div className="space-y-3">
-          <div className="w-full bg-gray-100 text-gray-600 py-4 rounded-lg text-center font-bold text-lg">
-            Modo Solo Lectura
-          </div>
-          {onRequestChange && (
-            <button
-              type="button"
-              onClick={onRequestChange}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg"
-            >
-              Solicitar Cambio de Viáticos/Contrato
-            </button>
-          )}
+        <div className="w-full bg-gray-100 text-gray-600 py-4 rounded-lg text-center font-bold text-lg">
+          Modo Solo Lectura
         </div>
       ) : viaticosCongelados ? (
         <button
