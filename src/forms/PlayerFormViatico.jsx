@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CATEGORIAS, BANCOS } from '../utils/constants';
 import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner';
 
-export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false, onDirtyChange, appSettings = {} }) => {
+export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false, onDirtyChange, appSettings = {}, onRequestChange = null }) => {
   const [formData, setFormData] = useState(player || {
     name: '',
     gov_id: '',
@@ -260,8 +260,19 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
       </div>
 
       {readOnly ? (
-        <div className="w-full bg-gray-100 text-gray-600 py-4 rounded-lg text-center font-bold text-lg">
-          Modo Solo Lectura
+        <div className="space-y-3">
+          <div className="w-full bg-gray-100 text-gray-600 py-4 rounded-lg text-center font-bold text-lg">
+            Modo Solo Lectura
+          </div>
+          {onRequestChange && (
+            <button
+              type="button"
+              onClick={onRequestChange}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg"
+            >
+              Solicitar Cambio de Viáticos/Contrato
+            </button>
+          )}
         </div>
       ) : viaticosCongelados ? (
         <button

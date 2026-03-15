@@ -24,9 +24,12 @@ import { BulkActionModal } from './BulkActionModal';
 import { ImportPreviewModal } from './ImportPreviewModal';
 import { InjuryForm } from '../forms/InjuryForm';
 import { PlayerComparisonModal } from './PlayerComparisonModal';
+import { ChangeRequestModal } from './ChangeRequestModal';
 
 export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const isAdmin = currentUser?.role === 'admin';
+  const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
+  const [showChangeRequestModal, setShowChangeRequestModal] = useState(null);
   // Build a map: player_id -> active (open) injury
   const activeInjuryMap = {};
   injuries.forEach(inj => {
@@ -80,6 +83,17 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   const [showImportModal, setShowImportModal] = useState(false);
   const [showBulkMenu, setShowBulkMenu] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+  const handleCreateChangeRequest = (player, newValues, notes) => execute(async () => {
+    await database.createPlayerChangeRequest(
+      player.id,
+      currentUser?.email,
+      { viatico: player.viatico, complemento: player.complemento, contrato: player.contrato },
+      newValues,
+      notes
+    );
+    setShowChangeRequestModal(null);
+  }, 'Error creando solicitud', 'Solicitud enviada. Será revisada por un administrador');
 
   const handleCheckFichaMedica = async (player) => {
     if (!player.gov_id) {
@@ -970,7 +984,12 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                         className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
                         onClick={() => setShowModal({
                           title: `Ver Jugador: ${player.name}`,
-                          content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings} />
+                          content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings}
+                            onRequestChange={currentUser?.role === 'presidente_categoria' && !viaticosCongelados ? () => {
+                              setShowModal(null);
+                              setShowChangeRequestModal(player);
+                            } : null}
+                          />
                         })}
                       >
                         {player.name_visual || player.name}
@@ -1139,6 +1158,18 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
         onConfirm={handleImportConfirm}
         existingPlayers={safePlayers}
       />
+      {showChangeRequestModal && (
+        <ChangeRequestModal
+          player={showChangeRequestModal}
+          currentValues={{
+            viatico: showChangeRequestModal.viatico,
+            complemento: showChangeRequestModal.complemento,
+            contrato: showChangeRequestModal.contrato
+          }}
+          onSubmit={(newValues, notes) => handleCreateChangeRequest(showChangeRequestModal, newValues, notes)}
+          onClose={() => setShowChangeRequestModal(null)}
+        />
+      )}
       {showCategoryPicker && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full">

@@ -10,7 +10,7 @@ const SEVERITY_BADGE = {
   grave: 'bg-red-100 text-red-800',
 };
 
-export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {} }) => {
+export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {}, onRequestChange = null }) => {
   const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null } : {
     name: '',
     gov_id: '',
@@ -700,8 +700,19 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       })()}
 
       {readOnly ? (
-        <div className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg text-center font-bold text-lg">
-          Modo Solo Lectura
+        <div className="space-y-3">
+          <div className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg text-center font-bold text-lg">
+            Modo Solo Lectura
+          </div>
+          {onRequestChange && (
+            <button
+              type="button"
+              onClick={onRequestChange}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg"
+            >
+              Solicitar Cambio de Viáticos/Contrato
+            </button>
+          )}
         </div>
       ) : (
         <button 
