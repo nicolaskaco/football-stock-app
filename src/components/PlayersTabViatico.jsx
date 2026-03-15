@@ -537,7 +537,12 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                         className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
                         onClick={() => setShowModal({
                           title: `Ver Jugador: ${player.name}`,
-                          content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} appSettings={appSettings} />
+                          content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} appSettings={appSettings}
+                            onRequestChange={!canDirectEdit && !viaticosCongelados ? () => {
+                              setShowModal(null);
+                              setShowChangeRequestModal(player);
+                            } : null}
+                          />
                         })}
                       >
                         {player.name_visual || player.name}
