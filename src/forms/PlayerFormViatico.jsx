@@ -60,7 +60,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
           <button
             type="button"
             onClick={onRequestChange}
-            className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-2 px-4 rounded-lg text-sm"
+            className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-lg text-sm"
           >
             Solicitar Cambio de Viáticos/Contrato
           </button>
