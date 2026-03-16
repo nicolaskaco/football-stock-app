@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, FileText, Edit2 } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, Edit2, Trash2 } from 'lucide-react';
 import { database } from '../utils/database';
 import { CHANGE_REQUEST_STATUS } from '../utils/constants';
 import { formatDateTime, daysSince } from '../utils/dateUtils';
@@ -167,6 +167,29 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
     });
   };
 
+  // ── Delete pending solicitud (creator only) ────────────────────
+  const handleDelete = (request) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Eliminar Solicitud',
+      message: `¿Estás seguro que deseas eliminar esta solicitud para ${request.players?.name_visual || request.players?.name}? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      type: 'danger',
+      onConfirm: async () => {
+        setConfirmModal({ isOpen: false });
+        try {
+          await database.deleteChangeRequest(request.id);
+          await loadRequests();
+          showAlert('Eliminada', 'Solicitud eliminada exitosamente', 'success');
+        } catch (error) {
+          console.error('Error deleting request:', error);
+          showAlert('Error', 'Error eliminando solicitud: ' + error.message, 'error');
+        }
+      }
+    });
+  };
+
   // ── Edit pending solicitud ─────────────────────────────────────
   const handleEditSave = async (newValues, notes) => {
     try {
@@ -248,13 +271,22 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
                     <h3 className="flex items-center gap-2 text-lg font-bold">
                       {request.players?.name_visual || request.players?.name}
                       {request.status === CHANGE_REQUEST_STATUS.PENDING && request.requested_by === currentUser?.email && (
-                        <button
-                          onClick={() => setEditModal({ request })}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Editar solicitud"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
+                        <>
+                          <button
+                            onClick={() => setEditModal({ request })}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="Editar solicitud"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(request)}
+                            className="text-red-500 hover:text-red-700"
+                            title="Eliminar solicitud"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
                       )}
                     </h3>
                     <p className="text-sm text-gray-600">
