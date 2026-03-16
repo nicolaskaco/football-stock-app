@@ -425,12 +425,12 @@ export const TorneoDetailView = ({ torneo }) => {
     <div className="space-y-6 max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-gray-900 to-black text-yellow-400 p-6 rounded-lg shadow-lg">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
           <div className="flex items-center gap-3">
             <Trophy className="w-8 h-8" />
-            <h2 className="text-3xl font-bold">{torneo.name}</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">{torneo.name}</h2>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setShowExportConfig(true)}
               className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-semibold transition-colors"
