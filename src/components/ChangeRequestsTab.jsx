@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, Edit2 } from 'lucide-react';
 import { database } from '../utils/database';
 import { CHANGE_REQUEST_STATUS } from '../utils/constants';
 import { formatDateTime, daysSince } from '../utils/dateUtils';
@@ -8,6 +8,7 @@ import { PromptModal } from './PromptModal';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 import { ViaticosCongeladosBanner } from './ViaticosCongeladosBanner';
+import { ChangeRequestModal } from './ChangeRequestModal';
 
 export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
   const [requests, setRequests] = useState([]);
@@ -17,6 +18,8 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
   const { alertModal, showAlert, closeAlert } = useAlertModal();
   const [promptModal, setPromptModal] = useState({ isOpen: false });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+
+  const [editModal, setEditModal] = useState(null);
 
   const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
   const canApprove = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role) && !viaticosCongelados;
@@ -164,6 +167,18 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
     });
   };
 
+  // ── Edit pending solicitud ─────────────────────────────────────
+  const handleEditSave = async (newValues, notes) => {
+    try {
+      await database.updatePlayerChangeRequest(editModal.request.id, newValues, notes);
+      setEditModal(null);
+      await loadRequests();
+    } catch (error) {
+      console.error('Error updating request:', error);
+      showAlert('Error', 'Error actualizando solicitud: ' + error.message, 'error');
+    }
+  };
+
   // ── Derived state ──────────────────────────────────────────────
   const filteredRequests = filter === 'all'
     ? requests
@@ -230,8 +245,17 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
                     />
                   )}
                   <div>
-                    <h3 className="text-lg font-bold">
+                    <h3 className="flex items-center gap-2 text-lg font-bold">
                       {request.players?.name_visual || request.players?.name}
+                      {request.status === CHANGE_REQUEST_STATUS.PENDING && request.requested_by === currentUser?.email && (
+                        <button
+                          onClick={() => setEditModal({ request })}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Editar solicitud"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </h3>
                     <p className="text-sm text-gray-600">
                       Categoría: {request.players?.categoria}
@@ -400,6 +424,24 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
         confirmText={confirmModal.confirmText}
         type={confirmModal.type}
       />
+      {editModal && (
+        <ChangeRequestModal
+          player={editModal.request.players}
+          currentValues={{
+            viatico: editModal.request.old_viatico,
+            complemento: editModal.request.old_complemento,
+            contrato: editModal.request.old_contrato
+          }}
+          initialNewValues={{
+            viatico: editModal.request.new_viatico,
+            complemento: editModal.request.new_complemento,
+            contrato: editModal.request.new_contrato
+          }}
+          initialNotes={editModal.request.request_notes}
+          onSubmit={handleEditSave}
+          onClose={() => setEditModal(null)}
+        />
+      )}
     </div>
   );
 };
