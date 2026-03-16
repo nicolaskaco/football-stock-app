@@ -45,6 +45,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   };
   const filterCasita = searchParams.get('p_casita') === 'true';
   const filterContrato = searchParams.get('p_contrato') === 'true';
+  const filterSinFicha = searchParams.get('p_sin_ficha') === 'true';
 
   const setParam = (key, value, defaultValue) => {
     setSearchParams(prev => {
@@ -71,6 +72,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   };
   const setFilterCasita = (v) => setParam('p_casita', v, false);
   const setFilterContrato = (v) => setParam('p_contrato', v, false);
+  const setFilterSinFicha = (v) => setParam('p_sin_ficha', v, false);
 
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [selectedPlayers, setSelectedPlayers] = useState([]);
@@ -296,11 +298,15 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
 
     // Modified categoria filter
     const matchesCategoria = filterCategoria === 'all'
-      ? (is3eraOnlyUser ? true : efectivaCat !== '3era')  // Include 3era only for 3era-only users
+      ? (is3eraOnlyUser || filterSinFicha ? true : efectivaCat !== '3era')  // Include 3era only for 3era-only users or when filtering by missing ficha médica
       : efectivaCat === filterCategoria;
 
     const matchesCasita = !filterCasita || p.casita === true;
     const matchesContrato = !filterContrato || p.contrato === true;
+
+    const CATEGORIAS_CON_FICHA = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma'];
+    const matchesSinFicha = !filterSinFicha ||
+      (CATEGORIAS_CON_FICHA.includes(efectivaCat) && !p.ficha_medica_hasta);
 
     // Availability filter
     const filterDisp = searchParams.get('p_disp') || 'all';
@@ -312,7 +318,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                                   currentUser.categoria.length === 0 ||
                                   currentUser.categoria.includes(efectivaCat);
 
-    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && matchesDisp && hasAccessToCategoria;
+    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && matchesSinFicha && matchesDisp && hasAccessToCategoria;
   });
 
   const handleSelectAll = () => {
@@ -852,14 +858,25 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
             <span className="text-sm font-medium text-gray-700">Solo Residencia</span>
           </label>
           <label className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={filterContrato}
               onChange={(e) => setFilterContrato(e.target.checked)}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
             <span className="text-sm font-medium text-gray-700">Solo Contrato</span>
           </label>
+          {isAdmin && (
+            <label className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100">
+              <input
+                type="checkbox"
+                checked={filterSinFicha}
+                onChange={(e) => setFilterSinFicha(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Sin Ficha Médica</span>
+            </label>
+          )}
           {isAdmin && (
             <select
               value={searchParams.get('p_disp') || 'all'}
