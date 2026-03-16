@@ -970,7 +970,17 @@ export const database = {
         review_notes: reviewNotes
       })
       .eq('id', requestId);
-    
+
+    if (error) throw error;
+  },
+
+  // Delete a pending change request (creator only)
+  async deleteChangeRequest(requestId) {
+    const { error } = await supabase
+      .from('player_change_requests')
+      .delete()
+      .eq('id', requestId);
+
     if (error) throw error;
   },
 
