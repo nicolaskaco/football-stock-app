@@ -245,8 +245,17 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
                     />
                   )}
                   <div>
-                    <h3 className="text-lg font-bold">
+                    <h3 className="flex items-center gap-2 text-lg font-bold">
                       {request.players?.name_visual || request.players?.name}
+                      {request.status === CHANGE_REQUEST_STATUS.PENDING && request.requested_by === currentUser?.email && (
+                        <button
+                          onClick={() => setEditModal({ request })}
+                          className="text-blue-600 hover:text-blue-800"
+                          title="Editar solicitud"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </h3>
                     <p className="text-sm text-gray-600">
                       Categoría: {request.players?.categoria}
@@ -263,15 +272,6 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
                     const color = days >= 7 ? 'bg-red-100 text-red-700' : days >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700';
                     return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>{label}</span>;
                   })()}
-                  {request.status === CHANGE_REQUEST_STATUS.PENDING && request.requested_by === currentUser?.email && (
-                    <button
-                      onClick={() => setEditModal({ request })}
-                      className="text-blue-600 hover:text-blue-800 p-1"
-                      title="Editar solicitud"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                  )}
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     request.status === CHANGE_REQUEST_STATUS.PENDING ? 'bg-yellow-100 text-yellow-800' :
                     request.status === CHANGE_REQUEST_STATUS.APPROVED ? 'bg-green-100 text-green-800' :
