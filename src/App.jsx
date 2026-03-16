@@ -37,6 +37,7 @@ const App = () => {
   const [jornadas, setJornadas] = useState([]);
   const [injuries, setInjuries] = useState([]);
   const [appSettings, setAppSettings] = useState({});
+  const [pendingChangeRequests, setPendingChangeRequests] = useState([]);
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -144,6 +145,7 @@ const App = () => {
   const loadJornadas = async () => { const d = await database.getJornadas(); setJornadas(d || []); };
   const loadInjuries = async () => { const d = await database.getInjuries(); setInjuries(d || []); };
   const loadAppSettings = async () => { const d = await database.getAppSettings(); setAppSettings(d || {}); };
+  const loadPendingChangeRequests = async () => { const d = await database.getPendingChangeRequests(); setPendingChangeRequests(d || []); };
 
   const loadData = async () => {
     try {
@@ -159,6 +161,7 @@ const App = () => {
         loadJornadas(),
         loadInjuries(),
         loadAppSettings(),
+        loadPendingChangeRequests(),
       ]);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -178,6 +181,7 @@ const App = () => {
     jornadas: loadJornadas,
     injuries: loadInjuries,
     appSettings: loadAppSettings,
+    pendingChangeRequests: loadPendingChangeRequests,
   };
 
   const handleDataChange = async (...entities) => {
@@ -319,6 +323,7 @@ const App = () => {
                 jornadas={jornadas}
                 injuries={injuries}
                 appSettings={appSettings}
+                pendingChangeRequests={pendingChangeRequests}
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 onDataChange={handleDataChange}

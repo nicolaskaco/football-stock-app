@@ -42,6 +42,7 @@ export const AdminDashboard = ({
   jornadas,
   injuries = [],
   appSettings = {},
+  pendingChangeRequests = [],
   onLogout,
   onDataChange,
   currentUser
@@ -236,6 +237,7 @@ export const AdminDashboard = ({
             currentUser={currentUser}
             onFormDirtyChange={setModalIsDirty}
             appSettings={appSettings}
+            pendingChangeRequests={pendingChangeRequests}
           />
         )}
         {activeTab === 'players' && canAccessPlayers && (
@@ -248,6 +250,7 @@ export const AdminDashboard = ({
             currentUser={currentUser}
             onFormDirtyChange={setModalIsDirty}
             appSettings={appSettings}
+            pendingChangeRequests={pendingChangeRequests}
           />
         )}
         {activeTab === 'change_requests' && canViewChangeRequests && (

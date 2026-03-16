@@ -26,9 +26,10 @@ import { InjuryForm } from '../forms/InjuryForm';
 import { PlayerComparisonModal } from './PlayerComparisonModal';
 import { ChangeRequestModal } from './ChangeRequestModal';
 
-export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
+export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {}, pendingChangeRequests = [] }) => {
   const isAdmin = currentUser?.role === 'admin';
   const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
+  const pendingPlayerIds = new Set(pendingChangeRequests.map(r => r.player_id));
   const [showChangeRequestModal, setShowChangeRequestModal] = useState(null);
   // Build a map: player_id -> active (open) injury
   const activeInjuryMap = {};
@@ -85,6 +86,10 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
 
   const handleCreateChangeRequest = (player, newValues, notes) => execute(async () => {
+    const alreadyPending = await database.hasPendingChangeRequest(player.id);
+    if (alreadyPending) {
+      throw new Error('Ya existe una solicitud pendiente para este jugador. Debe ser resuelta antes de enviar una nueva.');
+    }
     await database.createPlayerChangeRequest(
       player.id,
       currentUser?.email,
@@ -93,6 +98,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
       notes
     );
     setShowChangeRequestModal(null);
+    onDataChange('pendingChangeRequests');
   }, 'Error creando solicitud', 'Solicitud enviada. Será revisada por un administrador');
 
   const handleCheckFichaMedica = async (player) => {
@@ -989,6 +995,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                               setShowModal(null);
                               setShowChangeRequestModal(player);
                             } : null}
+                            hasPendingRequest={pendingPlayerIds.has(player.id)}
                           />
                         })}
                       >

@@ -854,6 +854,19 @@ export const database = {
     return data;
   },
 
+  // Check if a player already has a pending change request
+  async hasPendingChangeRequest(playerId) {
+    const { data, error } = await supabase
+      .from('player_change_requests')
+      .select('id')
+      .eq('player_id', playerId)
+      .eq('status', CHANGE_REQUEST_STATUS.PENDING)
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    return data !== null;
+  },
+
   // Get all change requests (for history)
   async getAllChangeRequests() {
     const { data, error } = await supabase

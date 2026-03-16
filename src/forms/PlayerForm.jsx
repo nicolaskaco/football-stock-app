@@ -10,7 +10,7 @@ const SEVERITY_BADGE = {
   grave: 'bg-red-100 text-red-800',
 };
 
-export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {}, onRequestChange = null }) => {
+export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {}, onRequestChange = null, hasPendingRequest = false }) => {
   const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null } : {
     name: '',
     gov_id: '',
@@ -76,13 +76,19 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
       {onRequestChange && (
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onRequestChange}
-            className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-lg text-sm"
-          >
-            Solicitar Cambio de Viáticos/Contrato
-          </button>
+          {hasPendingRequest ? (
+            <div className="bg-gray-100 text-gray-500 font-semibold py-2 px-4 rounded-lg text-sm border border-gray-300 cursor-not-allowed">
+              Solicitud pendiente en revisión
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={onRequestChange}
+              className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold py-2 px-4 rounded-lg text-sm"
+            >
+              Solicitar Cambio de Viáticos/Contrato
+            </button>
+          )}
         </div>
       )}
       {/* BASIC INFORMATION */}
