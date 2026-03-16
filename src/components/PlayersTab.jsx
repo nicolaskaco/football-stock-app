@@ -298,7 +298,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
 
     // Modified categoria filter
     const matchesCategoria = filterCategoria === 'all'
-      ? (is3eraOnlyUser ? true : efectivaCat !== '3era')  // Include 3era only for 3era-only users
+      ? (is3eraOnlyUser || filterSinFicha ? true : efectivaCat !== '3era')  // Include 3era only for 3era-only users or when filtering by missing ficha médica
       : efectivaCat === filterCategoria;
 
     const matchesCasita = !filterCasita || p.casita === true;
