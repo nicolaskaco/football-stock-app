@@ -189,7 +189,13 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
           <tbody className="divide-y">
             {filtered.map(torneo => (
               <tr key={torneo.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">{torneo.name}</td>
+                <td
+                  className="px-6 py-4 font-medium cursor-pointer hover:text-purple-600 hover:underline"
+                  onClick={() => setShowModal({
+                    title: torneo.name,
+                    content: <TorneoDetailView torneo={torneo} />
+                  })}
+                >{torneo.name}</td>
                 <td className="px-6 py-4 text-sm">
                   {torneo.country && torneo.city ? `${torneo.country} - ${torneo.city}` : torneo.country || torneo.city || '-'}
                 </td>
