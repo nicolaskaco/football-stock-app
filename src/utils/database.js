@@ -867,6 +867,21 @@ export const database = {
     return data !== null;
   },
 
+  // Update a pending change request (only creator can call this)
+  async updatePlayerChangeRequest(requestId, newValues, notes) {
+    const { error } = await supabase
+      .from('player_change_requests')
+      .update({
+        new_viatico: newValues.viatico,
+        new_complemento: newValues.complemento,
+        new_contrato: newValues.contrato,
+        request_notes: notes
+      })
+      .eq('id', requestId)
+      .eq('status', CHANGE_REQUEST_STATUS.PENDING);
+    if (error) throw error;
+  },
+
   // Get all change requests (for history)
   async getAllChangeRequests() {
     const { data, error } = await supabase

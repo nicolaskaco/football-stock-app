@@ -3,13 +3,14 @@ import { AlertCircle, Save, X } from 'lucide-react';
 import { AlertModal } from './AlertModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 
-export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose }) => {
-  const [newValues, setNewValues] = useState({
-    viatico: currentValues.viatico || 0,
-    complemento: currentValues.complemento || 0,
-    contrato: currentValues.contrato || false
-  });
-  const [notes, setNotes] = useState('');
+export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose, initialNewValues, initialNotes }) => {
+  const isEditMode = !!initialNewValues;
+  const [newValues, setNewValues] = useState(
+    initialNewValues
+      ? { viatico: initialNewValues.viatico || 0, complemento: initialNewValues.complemento || 0, contrato: initialNewValues.contrato || false }
+      : { viatico: currentValues.viatico || 0, complemento: currentValues.complemento || 0, contrato: currentValues.contrato || false }
+  );
+  const [notes, setNotes] = useState(initialNotes || '');
   const [error, setError] = useState('');
   const { alertModal, showAlert, closeAlert } = useAlertModal();
 
@@ -23,14 +24,18 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
     }
   }, [newValues.contrato]);
 
-  const hasChanges = 
-    newValues.viatico !== currentValues.viatico ||
-    newValues.complemento !== currentValues.complemento ||
-    newValues.contrato !== currentValues.contrato;
+  const hasChanges = isEditMode
+    ? (newValues.viatico !== (initialNewValues.viatico || 0) ||
+       newValues.complemento !== (initialNewValues.complemento || 0) ||
+       newValues.contrato !== (initialNewValues.contrato || false) ||
+       notes.trim() !== (initialNotes || '').trim())
+    : (newValues.viatico !== currentValues.viatico ||
+       newValues.complemento !== currentValues.complemento ||
+       newValues.contrato !== currentValues.contrato);
 
   const handleSubmit = () => {
     if (!hasChanges) {
-      showAlert('Error', 'No hay cambios para solicitar', 'info');
+      showAlert('Error', isEditMode ? 'No hay cambios para guardar' : 'No hay cambios para solicitar', 'info');
       return;
     }
 
@@ -38,7 +43,7 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
       setError('Debes ingresar una justificación');
       return;
     }
-    
+
     onSubmit(newValues, notes);
   };
 
@@ -48,7 +53,7 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
         <div className="p-6">
           <div className="flex items-center gap-3 mb-6">
             <AlertCircle className="w-6 h-6 text-orange-600" />
-            <h3 className="text-xl font-bold">Solicitar Cambio de Valores</h3>
+            <h3 className="text-xl font-bold">{isEditMode ? 'Editar Solicitud' : 'Solicitar Cambio de Valores'}</h3>
           </div>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
@@ -156,7 +161,7 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose })
               className="flex-1 flex items-center justify-center gap-2 bg-yellow-600 text-black px-4 py-3 rounded-lg hover:bg-yellow-700 font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               <Save className="w-5 h-5" />
-              Enviar Solicitud
+              {isEditMode ? 'Guardar Cambios' : 'Enviar Solicitud'}
             </button>
             <button
               onClick={onClose}

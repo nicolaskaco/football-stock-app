@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, FileText } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, Edit2 } from 'lucide-react';
 import { database } from '../utils/database';
 import { CHANGE_REQUEST_STATUS } from '../utils/constants';
 import { formatDateTime, daysSince } from '../utils/dateUtils';
@@ -8,6 +8,7 @@ import { PromptModal } from './PromptModal';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 import { ViaticosCongeladosBanner } from './ViaticosCongeladosBanner';
+import { ChangeRequestModal } from './ChangeRequestModal';
 
 export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
   const [requests, setRequests] = useState([]);
@@ -17,6 +18,8 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
   const { alertModal, showAlert, closeAlert } = useAlertModal();
   const [promptModal, setPromptModal] = useState({ isOpen: false });
   const [confirmModal, setConfirmModal] = useState({ isOpen: false });
+
+  const [editModal, setEditModal] = useState(null);
 
   const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
   const canApprove = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role) && !viaticosCongelados;
@@ -164,6 +167,18 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
     });
   };
 
+  // ── Edit pending solicitud ─────────────────────────────────────
+  const handleEditSave = async (newValues, notes) => {
+    try {
+      await database.updatePlayerChangeRequest(editModal.request.id, newValues, notes);
+      setEditModal(null);
+      await loadRequests();
+    } catch (error) {
+      console.error('Error updating request:', error);
+      showAlert('Error', 'Error actualizando solicitud: ' + error.message, 'error');
+    }
+  };
+
   // ── Derived state ──────────────────────────────────────────────
   const filteredRequests = filter === 'all'
     ? requests
@@ -248,6 +263,15 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
                     const color = days >= 7 ? 'bg-red-100 text-red-700' : days >= 3 ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700';
                     return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${color}`}>{label}</span>;
                   })()}
+                  {request.status === CHANGE_REQUEST_STATUS.PENDING && request.requested_by === currentUser?.email && (
+                    <button
+                      onClick={() => setEditModal({ request })}
+                      className="text-blue-600 hover:text-blue-800 p-1"
+                      title="Editar solicitud"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  )}
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     request.status === CHANGE_REQUEST_STATUS.PENDING ? 'bg-yellow-100 text-yellow-800' :
                     request.status === CHANGE_REQUEST_STATUS.APPROVED ? 'bg-green-100 text-green-800' :
@@ -400,6 +424,24 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
         confirmText={confirmModal.confirmText}
         type={confirmModal.type}
       />
+      {editModal && (
+        <ChangeRequestModal
+          player={editModal.request.players}
+          currentValues={{
+            viatico: editModal.request.old_viatico,
+            complemento: editModal.request.old_complemento,
+            contrato: editModal.request.old_contrato
+          }}
+          initialNewValues={{
+            viatico: editModal.request.new_viatico,
+            complemento: editModal.request.new_complemento,
+            contrato: editModal.request.new_contrato
+          }}
+          initialNotes={editModal.request.request_notes}
+          onSubmit={handleEditSave}
+          onClose={() => setEditModal(null)}
+        />
+      )}
     </div>
   );
 };
