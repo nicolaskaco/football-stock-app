@@ -49,7 +49,7 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 ### Data Flow
 
 - All Supabase interactions go through `src/utils/database.js`
-- Global state (employees, inventory, distributions, players, dirigentes, torneos, comisiones, rivales, jornadas) is held in `App.jsx` and passed down as props
+- Global state (employees, inventory, distributions, players, dirigentes, torneos, comisiones, rivales, jornadas, pendingChangeRequests, injuries, appSettings) is held in `App.jsx` and passed down as props
 - React Context used only for cross-cutting concerns: `ToastContext` (notifications) and `DarkModeContext` (theme toggle)
 - All domain state uses pure prop drilling (no Redux)
 - On login, `loadData()` fetches all entities in parallel via `Promise.all`
@@ -308,7 +308,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
 | [TesoreroTab.jsx](src/components/TesoreroTab.jsx) | Tesorero view with two features: (1) **Congelar Viáticos** toggle (same `viaticos_congelados` app setting also shown in ConfiguracionTab) — when enabled the card turns amber and a configurable contact name input appears; (2) **Exportar Viáticos** — generates a multi-sheet Excel workbook (`Viaticos-Formativas-DD-MM-YYYY.xlsx`) with one sheet per formative category (Sub 19/17/16/15/14/13), sorted by name, excluding 3era and contracted players; each sheet includes a `TOTAL` / SUM formula row 3 rows below the last data row. |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
-| [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Gráficos; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart |
+| [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Por Cancha, Gráficos; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart |
 | [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()`. Includes a **Congelar Viáticos** toggle — when enabled, all viatico/complemento/contrato fields are disabled app-wide, solicitud creation is blocked, and approve/reject actions in ChangeRequestsTab are hidden. A configurable contact name (stored in `app_settings`) is shown in freeze banners. Also renders `UserManagementSection` for inviting and managing admin users. |
 | [UserManagementSection.jsx](src/components/UserManagementSection.jsx) | Collapsible section inside ConfiguracionTab. Displays a table of all `user_permissions` rows (email, role badge, permission count, category restrictions). Provides invite, edit-permissions, and delete actions. After a successful invite the admin sees a modal with a copyable invite link. |
 | [SetPassword.jsx](src/components/SetPassword.jsx) | Full-page password setup form shown after an invite or password-recovery link is opened. Validates minimum 6 characters and confirmation match; calls `supabase.auth.updateUser({ password })`. Styled with the black/yellow CAP theme. |
@@ -390,10 +390,17 @@ Only users with `editar_nombre_especial = true` can edit `name_visual`, via the 
 
 Applies when `currentUser.role === 'presidente_categoria'` attempts to edit `viatico`, `complemento`, or `contrato`:
 
-1. A `player_change_requests` row is inserted with `status: 'pending'`
+1. A `player_change_requests` row is inserted with `status: 'pending'`. The "Solicitar Cambio de Viáticos/Contrato" button is accessible from the read-only player modal in both **PlayersTab** and **PlayersTabViatico** — it closes the read-only view and opens `ChangeRequestModal`.
 2. A reviewer (admin / ejecutivo / presidente) sees it in the "Solicitudes" tab and via the `PendingChangeRequestsWidget`
 3. **Approve**: player's financial fields are updated, request notes appended to `comentario_viatico`, history record created
 4. **Reject**: request marked `rejected`, player unchanged
+
+#### Duplicate prevention
+
+Only **1 pending request per player** is allowed at a time:
+- `pendingChangeRequests` is loaded into global state at startup and refreshed after each new solicitud. A `pendingPlayerIds` Set derived from this data disables the "Solicitar Cambio" button for players that already have a pending request — the button is replaced by a gray "Solicitud pendiente en revisión" label.
+- In `PlayersTabViatico`'s row action area, the edit icon is similarly replaced with an "En revisión" label.
+- A submit-time check (`database.hasPendingChangeRequest(playerId)`) acts as a safety net for race conditions and throws a user-facing Spanish error if a pending request already exists.
 
 #### Change Request UX features (ChangeRequestsTab)
 
@@ -466,6 +473,7 @@ Interactive charts powered by `recharts` for match statistics and dashboard widg
 - **AgeCurveChart**: Stacked BarChart of player age distribution per category; respects `categoriaFiltro` prop for filtering.
 - **RivalPerformanceChart**: Horizontal stacked BarChart of wins/draws/losses per rival.
 - **EstadisticasTab "Gráficos" sub-tab**: Renders all 4 charts above, shares category and phase filters with the existing sub-tabs.
+- **EstadisticasTab "Por Cancha" sub-tab**: Shows win/draw/loss counts and goal effectiveness grouped by venue. Rows: Ciudad Deportiva, Las Acacias, CAR (each as Local), a Local Total summary, and Visitante (all away matches combined). Respects existing phase and category filters.
 - **CategoryDistributionWidget**: Replaced horizontal bar with a recharts donut chart (PieChart with `innerRadius`).
 - Chart components located in `src/components/charts/`.
 
