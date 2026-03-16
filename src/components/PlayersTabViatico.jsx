@@ -21,7 +21,7 @@ import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 
-export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
+export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {}, pendingChangeRequests = [] }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('v_search') || '';
   const filterCategoria = searchParams.get('v_cat') || 'all';
@@ -79,6 +79,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const categorias = CATEGORIAS;
   const canDirectEdit = ['admin', 'ejecutivo', 'presidente'].includes(currentUser?.role);
   const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
+  const pendingPlayerIds = new Set(pendingChangeRequests.map(r => r.player_id));
 
   // Add safety check
   const safePlayers = Array.isArray(players) ? players : [];
@@ -230,6 +231,10 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   };
 
   const handleCreateChangeRequest = (player, newValues, notes) => execute(async () => {
+    const alreadyPending = await database.hasPendingChangeRequest(player.id);
+    if (alreadyPending) {
+      throw new Error('Ya existe una solicitud pendiente para este jugador. Debe ser resuelta antes de enviar una nueva.');
+    }
     await database.createPlayerChangeRequest(
       player.id,
       currentUser?.email,
@@ -242,6 +247,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       notes
     );
     setShowChangeRequestModal(null);
+    onDataChange('pendingChangeRequests');
   }, 'Error creando solicitud', 'Solicitud enviada. Será revisada por un administrador');
 
   const handleDelete = (id) => setConfirmDelete(id);
@@ -542,6 +548,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                               setShowModal(null);
                               setShowChangeRequestModal(player);
                             } : null}
+                            hasPendingRequest={pendingPlayerIds.has(player.id)}
                           />
                         })}
                       >
@@ -631,13 +638,19 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                         <Edit2 className="w-4 h-4" />
                       </button>
                     ) : !viaticosCongelados && (
-                      <button
-                        onClick={() => setShowChangeRequestModal(player)}
-                        className="text-yellow-600 hover:text-yellow-800"
-                        title="Solicitar cambio"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
+                      pendingPlayerIds.has(player.id) ? (
+                        <span className="text-gray-400 text-xs" title="Solicitud pendiente en revisión">
+                          En revisión
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setShowChangeRequestModal(player)}
+                          className="text-yellow-600 hover:text-yellow-800"
+                          title="Solicitar cambio"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                      )
                     )}
                     <button 
                       onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
