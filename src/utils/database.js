@@ -664,7 +664,10 @@ export const database = {
         city: torneo.city,
         categoria: torneo.categoria,
         start_date: torneo.start_date,
-        end_date: torneo.end_date
+        end_date: torneo.end_date,
+        posicion_resultado: torneo.posicion_resultado ?? null,
+        resultado_playoff: torneo.resultado_playoff ?? null,
+        comentario_resultado: torneo.comentario_resultado ?? null,
       })
       .eq('id', id);
 
