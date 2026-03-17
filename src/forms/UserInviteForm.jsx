@@ -33,6 +33,7 @@ const PERMISSION_GROUPS = [
       { key: 'edit_torneo', label: 'Editar torneos' },
       { key: 'can_view_partidos', label: 'Ver partidos' },
       { key: 'can_edit_partidos', label: 'Editar partidos' },
+      { key: 'can_view_tarjetas', label: 'Ver tarjetas' },
     ],
   },
   {
