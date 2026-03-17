@@ -10,6 +10,7 @@ import { ViandaIcons } from './ui/ViandaIcons';
 import { SortIcon } from './ui/SortIcon';
 import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
 import { InjuryIcon } from './ui/InjuryIcon';
+import { StatusBadge } from './ui/StatusBadge';
 import { SearchInput } from './ui/SearchInput';
 import { NameVisualEditor } from '../components/NameVisualEditor';
 import { PlayerForm } from '../forms/PlayerForm';
@@ -313,12 +314,20 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
     const hasActiveInjury = !!activeInjuryMap[p.id];
     const matchesDisp = filterDisp === 'all' || (filterDisp === 'lesionados' ? hasActiveInjury : !hasActiveInjury);
 
+    // Status filter (default: only activo)
+    const filterStatus = searchParams.get('p_status') || 'activo';
+    const matchesStatus = filterStatus === 'all'
+      ? true
+      : (filterStatus === 'activo'
+          ? (!p.status || p.status === 'activo')
+          : p.status === filterStatus);
+
     // Add permission-based categoria filter (uses playing category)
     const hasAccessToCategoria = !currentUser?.categoria ||
                                   currentUser.categoria.length === 0 ||
                                   currentUser.categoria.includes(efectivaCat);
 
-    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && matchesSinFicha && matchesDisp && hasAccessToCategoria;
+    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && matchesSinFicha && matchesDisp && hasAccessToCategoria && matchesStatus;
   });
 
   const handleSelectAll = () => {
@@ -888,6 +897,20 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
               <option value="lesionados">Lesionados</option>
             </select>
           )}
+          {isAdmin && (
+            <select
+              value={searchParams.get('p_status') || 'activo'}
+              onChange={(e) => setParam('p_status', e.target.value, 'activo')}
+              className="px-4 py-2 border rounded-lg bg-gray-50 text-sm font-medium text-gray-700 focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="activo">Solo activos</option>
+              <option value="all">Todos los estados</option>
+              <option value="cedido">Cedidos</option>
+              <option value="transferido">Transferidos</option>
+              <option value="egresado">Egresados</option>
+              <option value="dado de baja">Dados de baja</option>
+            </select>
+          )}
         </div>
       </div>
 
@@ -1020,6 +1043,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                       </button>
                       <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
                       {activeInjuryMap[player.id] && <InjuryIcon injury={activeInjuryMap[player.id]} />}
+                      <StatusBadge status={player.status} />
                       <ViandaIcons count={player.vianda} />
                     </div>
                     {player.name_visual && player.name_visual !== player.name && (

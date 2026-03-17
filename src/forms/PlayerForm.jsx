@@ -11,7 +11,7 @@ const SEVERITY_BADGE = {
 };
 
 export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {}, onRequestChange = null, hasPendingRequest = false }) => {
-  const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null } : {
+  const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null, status: player.status || 'activo' } : {
     name: '',
     gov_id: '',
     date_of_birth: null,
@@ -39,6 +39,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     captador: '',
     celular: '',
     tipo_documento: 'Cédula de Identidad',
+    status: 'activo',
   });
   const initialData = useRef(JSON.stringify(player || {}));
 
@@ -224,11 +225,29 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              Estado
+            </label>
+            <select
+              value={formData.status || 'activo'}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="activo">Activo</option>
+              <option value="cedido">Cedido</option>
+              <option value="transferido">Transferido</option>
+              <option value="egresado">Egresado</option>
+              <option value="dado de baja">Dado de baja</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Departamento
             </label>
-            <select 
-              value={formData.departamento} 
-              onChange={(e) => setFormData({...formData, departamento: e.target.value})} 
+            <select
+              value={formData.departamento}
+              onChange={(e) => setFormData({...formData, departamento: e.target.value})}
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
