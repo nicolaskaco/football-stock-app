@@ -31,4 +31,4 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 - [ ] **E1. Persistencia de filtros en URL en más tabs** — Apply `useSearchParams` (already used in PlayersTab) to EstadisticasTab (category filter, active sub-tab) and TorneosTab (search).
 - [ ] **E2. Filtro por temporada / año** — Year filter dropdown (2024, 2025, 2026…) on PartidosTab, EstadisticasTab, and TorneosTab. Defaults to current year.
-- [ ] **E3. Estadísticas rápidas en modal de jugador (solo lectura)** — Compact stats row at the bottom of read-only PlayerForm: PJ | Goles | Amarillas | Rojas. Reuses `jornadas` already in global state.
+- [x] **E3. Estadísticas rápidas en modal de jugador (solo lectura)** — Compact stats row at the bottom of read-only PlayerForm: PJ | Goles | Amarillas | Rojas. Reuses `jornadas` already in global state. *(completed — 2026-03-17)*

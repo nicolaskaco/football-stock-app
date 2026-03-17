@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useFormDirty } from '../hooks/useFormDirty';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner';
@@ -58,6 +58,23 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
   const banks = BANCOS;
   const departamentos = DEPARTAMENTOS;
   const posiciones = POSICIONES_JUGADOR;
+
+  const playerStats = useMemo(() => {
+    let pj = 0, goles = 0, amarillas = 0, rojas = 0;
+    jornadas.forEach((jornada) => {
+      (jornada.partidos || []).forEach((partido) => {
+        const played = (partido.partido_players || []).some((pp) => pp.player_id === player?.id);
+        if (played) pj++;
+        (partido.partido_eventos || []).forEach((e) => {
+          if (e.player_id !== player?.id) return;
+          if (e.tipo === 'gol') goles++;
+          if (e.tipo === 'amarilla') amarillas++;
+          if (e.tipo === 'roja') rojas++;
+        });
+      });
+    });
+    return { pj, goles, amarillas, rojas };
+  }, [jornadas, player?.id]);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
@@ -720,6 +737,22 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
           </div>
         );
       })()}
+
+      {readOnly && (
+        <div className="grid grid-cols-4 gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+          {[
+            { label: 'PJ', value: playerStats.pj, color: 'text-gray-800' },
+            { label: 'Goles', value: playerStats.goles, color: 'text-green-600' },
+            { label: 'Amarillas', value: playerStats.amarillas, color: 'text-yellow-500' },
+            { label: 'Rojas', value: playerStats.rojas, color: 'text-red-600' },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="text-center">
+              <div className={`text-3xl font-bold ${color}`}>{value}</div>
+              <div className="text-xs text-gray-500 mt-0.5 uppercase tracking-wide">{label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {readOnly ? (
         <div className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg text-center font-bold text-lg">
