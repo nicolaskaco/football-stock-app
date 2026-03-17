@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useFormDirty } from '../hooks/useFormDirty';
 import { todayISO } from '../utils/dateUtils';
 
 export const DistributionForm = ({ employees, inventory, onSubmit, onDirtyChange }) => {
@@ -12,11 +13,7 @@ export const DistributionForm = ({ employees, inventory, onSubmit, onDirtyChange
     authorized_by: ''
   };
   const [formData, setFormData] = useState(defaultValues);
-  const initialData = useRef(JSON.stringify(defaultValues));
-
-  useEffect(() => {
-    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
-  }, [formData]);
+  useFormDirty(formData, defaultValues, onDirtyChange);
 
   const selectedItem = inventory.find(i => i.id === formData.item_id);
 

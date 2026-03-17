@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AlertCircle, Save, X } from 'lucide-react';
 import { AlertModal } from './AlertModal';
 import { useAlertModal } from '../hooks/useAlertModal';
@@ -14,15 +14,6 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose, i
   const [error, setError] = useState('');
   const { alertModal, showAlert, closeAlert } = useAlertModal();
 
-  useEffect(() => {
-    if (newValues.contrato) {
-      setNewValues(prev => ({
-        ...prev,
-        viatico: 0,
-        complemento: 0
-      }));
-    }
-  }, [newValues.contrato]);
 
   const hasChanges = isEditMode
     ? (newValues.viatico !== (initialNewValues.viatico || 0) ||
@@ -131,7 +122,7 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose, i
                   <input
                     type="checkbox"
                     checked={newValues.contrato}
-                    onChange={(e) => setNewValues({...newValues, contrato: e.target.checked})}
+                    onChange={(e) => setNewValues({...newValues, contrato: e.target.checked, ...(e.target.checked ? { viatico: 0, complemento: 0 } : {})})}
                     className="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
                   />
                   <span className="text-sm">Tiene Contrato</span>

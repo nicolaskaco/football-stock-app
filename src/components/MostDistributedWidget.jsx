@@ -1,14 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Package, TrendingUp } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Package } from 'lucide-react';
 
 export const MostDistributedWidget = ({ distributions, inventory }) => {
-  const [topItems, setTopItems] = useState([]);
-
-  useEffect(() => {
-    calculateTopItems();
-  }, [distributions, inventory]);
-
-  const calculateTopItems = () => {
+  const topItems = useMemo(() => {
     const itemCounts = {};
 
     distributions.forEach(dist => {
@@ -26,12 +20,10 @@ export const MostDistributedWidget = ({ distributions, inventory }) => {
       }
     });
 
-    const sorted = Object.values(itemCounts)
+    return Object.values(itemCounts)
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
-
-    setTopItems(sorted);
-  };
+  }, [distributions, inventory]);
 
   const maxCount = topItems[0]?.count || 1;
 
@@ -55,7 +47,7 @@ export const MostDistributedWidget = ({ distributions, inventory }) => {
               </div>
             </div>
             <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
-              <div 
+              <div
                 className="bg-stone-600 h-full rounded-full transition-all duration-300"
                 style={{ width: `${(item.count / maxCount) * 100}%` }}
               />

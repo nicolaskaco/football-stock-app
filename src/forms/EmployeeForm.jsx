@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useFormDirty } from '../hooks/useFormDirty';
 import { CATEGORIAS, TALLAS_ROPA } from '../utils/constants';
 
 export const EmployeeForm = ({ employee, onSubmit, onDirtyChange }) => {
@@ -12,11 +13,7 @@ export const EmployeeForm = ({ employee, onSubmit, onDirtyChange }) => {
     celular: '',
     categoria: ''
   });
-  const initialData = useRef(JSON.stringify(employee || {}));
-
-  useEffect(() => {
-    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
-  }, [formData]);
+  useFormDirty(formData, employee, onDirtyChange);
 
   const handleSubmit = (e) => {
     e.preventDefault();

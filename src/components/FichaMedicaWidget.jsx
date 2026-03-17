@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useMountEffect } from '../hooks/useMountEffect';
 import { Stethoscope, X, RefreshCw, Printer } from 'lucide-react';
 import { database } from '../utils/database';
 
@@ -18,9 +19,9 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
       .catch(() => {});
   };
 
-  useEffect(() => {
+  useMountEffect(() => {
     fetchPlayers();
-  }, []);
+  });
 
   const handleRefreshFicha = async () => {
     if (!selectedPlayer) return;

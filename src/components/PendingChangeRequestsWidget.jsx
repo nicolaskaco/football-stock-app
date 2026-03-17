@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useMountEffect } from '../hooks/useMountEffect';
 import { ClipboardList, AlertCircle, ExternalLink } from 'lucide-react';
 import { database } from '../utils/database';
 import { formatDate, daysSince } from '../utils/dateUtils';
@@ -7,9 +8,9 @@ export const PendingChangeRequestsWidget = ({ setActiveTab }) => {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  useMountEffect(() => {
     loadPendingRequests();
-  }, []);
+  });
 
   const loadPendingRequests = async () => {
     try {

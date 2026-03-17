@@ -1,25 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Calendar } from 'lucide-react';
 
+const calculateAge = (dateOfBirth) => {
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
 export const AgeDistributionWidget = ({ players }) => {
-  const [ageGroups, setAgeGroups] = useState([]);
-
-  useEffect(() => {
-    calculateAgeDistribution();
-  }, [players]);
-
-  const calculateAge = (dateOfBirth) => {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  const calculateAgeDistribution = () => {
+  const ageGroups = useMemo(() => {
     const groups = [
       { label: '13-14', min: 13, max: 14, count: 0, color: '#3B82F6' },
       { label: '15-16', min: 15, max: 16, count: 0, color: '#8B5CF6' },
@@ -35,13 +29,11 @@ export const AgeDistributionWidget = ({ players }) => {
     });
 
     const total = groups.reduce((sum, g) => sum + g.count, 0);
-    const withPercentage = groups.map(g => ({
+    return groups.map(g => ({
       ...g,
       percentage: total > 0 ? ((g.count / total) * 100).toFixed(1) : 0
     }));
-
-    setAgeGroups(withPercentage);
-  };
+  }, [players]);
 
   const maxCount = Math.max(...ageGroups.map(g => g.count), 1);
 
@@ -63,9 +55,9 @@ export const AgeDistributionWidget = ({ players }) => {
               </div>
             </div>
             <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div 
+              <div
                 className="h-full rounded-full transition-all duration-300"
-                style={{ 
+                style={{
                   width: `${(group.count / maxCount) * 100}%`,
                   backgroundColor: group.color
                 }}

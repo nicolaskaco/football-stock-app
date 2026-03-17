@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useFormDirty } from '../hooks/useFormDirty';
 
 export const RivalForm = ({ rival, onSubmit, onDirtyChange }) => {
   const [formData, setFormData] = useState(rival || { name: '' });
-  const initialData = useRef(JSON.stringify(rival || {}));
-
-  useEffect(() => {
-    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
-  }, [formData]);
+  useFormDirty(formData, rival, onDirtyChange);
 
   const handleSubmit = (e) => {
     e.preventDefault();

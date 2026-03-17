@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useFormDirty } from '../hooks/useFormDirty';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner';
 import { CATEGORIAS, BANCOS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
@@ -41,22 +42,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     tipo_documento: 'Cédula de Identidad',
     status: 'activo',
   });
-  const initialData = useRef(JSON.stringify(player || {}));
-
-  useEffect(() => {
-    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
-  }, [formData]);
-
-  // When contrato is checked, clear viatico and complemento
-  useEffect(() => {
-    if (formData.contrato) {
-      setFormData(prev => ({
-        ...prev,
-        viatico: 0,
-        complemento: 0
-      }));
-    }
-  }, [formData.contrato]);
+  useFormDirty(formData, player, onDirtyChange);
 
   const isEditingPlayer = player && player.id;
   const canEditFinancialFields = ['ejecutivo', 'admin', 'presidente'].includes(currentUser?.role);
@@ -346,7 +332,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
             <input 
               type="checkbox" 
               checked={formData.contrato} 
-              onChange={(e) => setFormData({...formData, contrato: e.target.checked})} 
+              onChange={(e) => setFormData({...formData, contrato: e.target.checked, ...(e.target.checked ? { viatico: 0, complemento: 0 } : {})})}
               disabled={readOnly || financialFieldsDisabled}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />

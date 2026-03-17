@@ -1,14 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { MapPin } from 'lucide-react';
 
 export const DepartamentoWidget = ({ players }) => {
-  const [topDepartamentos, setTopDepartamentos] = useState([]);
-
-  useEffect(() => {
-    calculateDepartamentos();
-  }, [players]);
-
-  const calculateDepartamentos = () => {
+  const topDepartamentos = useMemo(() => {
     const deptCounts = {};
 
     players.forEach(player => {
@@ -21,14 +15,12 @@ export const DepartamentoWidget = ({ players }) => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 8);
 
-    const totalPlayers = players.length; // Changed: total of ALL players
-    const withPercentage = sorted.map(d => ({
+    const totalPlayers = players.length;
+    return sorted.map(d => ({
       ...d,
       percentage: totalPlayers > 0 ? ((d.count / totalPlayers) * 100).toFixed(1) : 0
     }));
-
-    setTopDepartamentos(withPercentage);
-  };
+  }, [players]);
 
   const maxCount = topDepartamentos[0]?.count || 1;
 
@@ -50,7 +42,7 @@ export const DepartamentoWidget = ({ players }) => {
               </div>
             </div>
             <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
-              <div 
+              <div
                 className="bg-violet-800 h-full rounded-full transition-all duration-300"
                 style={{ width: `${(dept.count / maxCount) * 100}%` }}
               />
