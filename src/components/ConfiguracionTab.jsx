@@ -3,6 +3,7 @@ import { Lock } from 'lucide-react';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { UserManagementSection } from './UserManagementSection';
+import { CATEGORIAS } from '../utils/constants';
 
 const SettingToggle = ({ label, description, enabled, onToggle, loading }) => (
   <div className="flex items-center justify-between py-4">
@@ -48,6 +49,34 @@ const ContactoInput = ({ value, loading, onSave }) => {
         placeholder="Martín Arroyo"
         disabled={loading}
         className="w-full max-w-sm px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 disabled:opacity-50"
+      />
+    </div>
+  );
+};
+
+const EdadMaxInput = ({ categoria, value, loading, onSave }) => {
+  const [draft, setDraft] = useState(value);
+  const debounceRef = useRef(null);
+
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setDraft(val);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => onSave(val), 800);
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{categoria}</label>
+      <input
+        type="number"
+        value={draft}
+        onChange={handleChange}
+        min="0"
+        max="25"
+        placeholder="—"
+        disabled={loading}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500 disabled:opacity-50"
       />
     </div>
   );
@@ -161,6 +190,33 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
             loading={loading}
           />
         ))}
+      </div>
+
+      <div className="bg-white rounded-lg shadow px-6 py-4">
+        <p className="font-medium text-gray-900 mb-1">Edad máxima por categoría</p>
+        <p className="text-sm text-gray-500 mb-4">
+          Los jugadores que superen la edad máxima se mostrarán con una alerta. Dejar vacío para no controlar.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          {CATEGORIAS.map((cat) => (
+            <EdadMaxInput
+              key={cat}
+              categoria={cat}
+              value={appSettings['edad_max_' + cat] || ''}
+              loading={loading}
+              onSave={(val) =>
+                execute(
+                  async () => {
+                    await database.updateAppSetting('edad_max_' + cat, val);
+                    await onDataChange('appSettings');
+                  },
+                  'Error al guardar',
+                  'Configuración actualizada'
+                )
+              }
+            />
+          ))}
+        </div>
       </div>
 
       <UserManagementSection />

@@ -527,6 +527,15 @@ Yellow cards accumulate across the full calendar year (no Apertura/Clausura rese
 - **TarjetasTab**: "SUSPENDIDO" badge with reason shown in the Estado column.
 - **SuspensionWidget** (OverviewTab): Shows players with 2+ yellows and currently suspended players; category filter pills; requires `can_view_tarjetas`.
 
+### Age Eligibility Alerts
+
+Configurable maximum age per category, stored in `app_settings` as `edad_max_<categoria>` keys (e.g., `edad_max_4ta = 17`). Admins configure these limits in `ConfiguracionTab` → "Edad máxima por categoría" section. Leaving a category empty disables the check for that category.
+
+- **`src/utils/ageEligibility.js`**: Core logic — `getMaxAgeForCategory()` and `isPlayerOverAge()`. Uses `calculateAge(fecha_nacimiento)` from `dateUtils.js`.
+- **PlayersTab**: Amber warning triangle (`OverAgeIcon`) shown next to player name when their age exceeds the max for their effective category (`categoria_juego || categoria`).
+- **PartidoForm**: Over-age players shown with `⚠️ EXCEDE EDAD` label and orange background in lineup dropdowns. Warning only — not disabled, as coaches may have legitimate reasons to include over-age players. Checks against the **match category**, not the player's home category.
+- **ConfiguracionTab**: Grid of number inputs (one per category from `CATEGORIAS`), debounce-saved to `app_settings`.
+
 ### Player Match History
 
 Embedded section in `PlayerForm` showing all matches a player participated in.
@@ -754,6 +763,13 @@ All shared enums are centralized here — never defined inline in components:
 | `getSuspensionMap(jornadas, targetJornadaId, categoria)` | Returns `Map<playerId, { reason }>` for players suspended for a specific jornada + category. A player is suspended if in the previous jornada they received a red card or their cumulative yellow count crossed a multiple of 5. Yellow cards accumulate across the full calendar year. |
 | `getCurrentSuspensionsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, { reason }>>` for all categories. "Current" = suspended for the next upcoming jornada. If all jornadas are in the past, treats the last jornada as if there were a virtual next one. |
 
+### Age Eligibility Utilities (`src/utils/ageEligibility.js`)
+
+| Export | Description |
+|--------|-------------|
+| `getMaxAgeForCategory(categoria, appSettings)` | Returns the configured max age (integer) for a category from `appSettings['edad_max_' + categoria]`, or `null` if not configured. |
+| `isPlayerOverAge(player, categoria, appSettings)` | Returns `{ overAge: boolean, playerAge: number|null, maxAge: number|null }`. Uses `calculateAge(player.fecha_nacimiento)`. Returns `overAge: false` if no birth date or no max age configured. |
+
 ### Hooks (`src/hooks/`)
 
 | Hook | Description |
@@ -898,6 +914,7 @@ football-stock-app/
         ├── pdfExport.js           # Dashboard PDF report generation
         ├── playerUtils.js         # Player business logic (calculateTotal)
         ├── suspensions.js         # Suspension logic (red card / 5th yellow milestone)
+        ├── ageEligibility.js      # Over-age detection per category (configurable max age)
         └── storage.js             # Legacy localStorage wrapper (largely unused)
 supabase/
 └── functions/

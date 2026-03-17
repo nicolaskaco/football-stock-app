@@ -205,6 +205,7 @@ export const AdminDashboard = ({
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             onFormDirtyChange={setModalIsDirty}
+            appSettings={appSettings}
           />
         )}
         {activeTab === 'inventory' && canAccessRopa && (
@@ -313,6 +314,7 @@ export const AdminDashboard = ({
             onDataChange={onDataChange}
             currentUser={currentUser}
             onFormDirtyChange={setModalIsDirty}
+            appSettings={appSettings}
           />
         )}
         {activeTab === 'reports' && canAccessRopa && (

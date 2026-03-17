@@ -10,7 +10,7 @@ import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 
-export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
+export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const { execute } = useMutation();
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [view, setView] = useState('lista'); // 'lista' | 'calendario'
@@ -77,6 +77,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
           onDataChange={onDataChange}
           onFormDirtyChange={onFormDirtyChange}
           reopenDetail={openDetail}
+          appSettings={appSettings}
         />
       ),
     });

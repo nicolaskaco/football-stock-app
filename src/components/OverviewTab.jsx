@@ -35,6 +35,7 @@ export const OverviewTab = ({
   setShowModal,
   onDataChange,
   onFormDirtyChange,
+  appSettings = {},
 }) => {
   const canEditPartidos = currentUser?.canEditPartidos || false;
 
@@ -59,6 +60,7 @@ export const OverviewTab = ({
           onDataChange={onDataChange}
           onFormDirtyChange={onFormDirtyChange}
           reopenDetail={openDetail}
+          appSettings={appSettings}
         />
       ),
     });
