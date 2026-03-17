@@ -13,7 +13,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [ ] **A3. Alerta de edad / elegibilidad por categoría** — Configurable max age per category in ConfiguracionTab. Alert badge in PlayersTab for over-age players. Warning in PartidoForm when adding an over-age player.
 
 ### B. Partidos y Torneos
-
+- [x] **B1. Mostrar minuto de gol/tarjeta en PartidoDetailView** — PR #229 · 2026-03-16
 - [x] **B2. Resultado del torneo** — PR #230 · 2026-03-16
 - [ ] **B3. Advertencias de elegibilidad en PartidoForm** — Highlight (yellow) players whose `categoria` ≠ partido's `categoria` in lineup dropdowns. Extend to suspended players once A2 is done.
 
@@ -32,9 +32,3 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [ ] **E1. Persistencia de filtros en URL en más tabs** — Apply `useSearchParams` (already used in PlayersTab) to EstadisticasTab (category filter, active sub-tab) and TorneosTab (search).
 - [ ] **E2. Filtro por temporada / año** — Year filter dropdown (2024, 2025, 2026…) on PartidosTab, EstadisticasTab, and TorneosTab. Defaults to current year.
 - [ ] **E3. Estadísticas rápidas en modal de jugador (solo lectura)** — Compact stats row at the bottom of read-only PlayerForm: PJ | Goles | Amarillas | Rojas. Reuses `jornadas` already in global state.
-
----
-
-## Completado
-
-- [x] **B1. Mostrar minuto de gol/tarjeta en PartidoDetailView** — PR #229 · 2026-03-16
