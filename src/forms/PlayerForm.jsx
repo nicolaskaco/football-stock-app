@@ -657,8 +657,10 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
       {/* MATCH HISTORY RELATED LIST */}
       {player && player.id && jornadas.length > 0 && (() => {
+        const currentYear = new Date().getFullYear();
         const history = [];
         jornadas.forEach(jornada => {
+          if (new Date(jornada.fecha).getFullYear() !== currentYear) return;
           (jornada.partidos || []).forEach(partido => {
             const pp = (partido.partido_players || []).find(p => p.player_id === player.id);
             if (!pp) return;
@@ -695,7 +697,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
         const RESULT_LABEL = { G: 'Ganado', E: 'Empate', P: 'Perdido' };
         return (
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Historial de Partidos ({history.length})</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Historial de Partidos {currentYear} ({history.length})</h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
