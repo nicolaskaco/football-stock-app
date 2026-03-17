@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Eye, Trash2, Calendar, Pencil, List } from 'lucide-react';
 import { JornadaForm } from '../forms/JornadaForm';
 import { PartidoDetailView } from './PartidoDetailView';
@@ -113,6 +113,12 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
   )].sort((a, b) => b - a);
 
   if (!availableYears.includes(currentYear)) availableYears.unshift(currentYear);
+
+  useEffect(() => {
+    if (!availableYears.includes(yearFiltro)) {
+      setYearFiltro(availableYears[0]);
+    }
+  }, [availableYears.join(',')]);
 
   const FASES_ORDER = ['Apertura', 'Clausura'];
   const sortedJornadas = [...jornadas]
