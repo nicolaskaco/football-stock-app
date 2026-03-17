@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Menu, X, Moon, Sun, Loader2 } from 'lucide-react';
 import logo from '../logo.jpeg';
@@ -60,9 +60,6 @@ export const AdminDashboard = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const { dark, toggle: toggleDark } = useDarkMode();
 
-  useEffect(() => {
-    if (!showModal) setModalIsDirty(false);
-  }, [showModal]);
 
   const lowStockItems = inventory.filter(item => item.quantity <= item.min_stock);
   const totalEmployees = employees.length;
@@ -402,7 +399,7 @@ export const AdminDashboard = ({
 
       {showModal && (
         <Modal
-          onClose={() => setShowModal(null)}
+          onClose={() => { setShowModal(null); setModalIsDirty(false); }}
           title={showModal.title}
           isDirty={modalIsDirty}
         >

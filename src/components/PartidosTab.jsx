@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, Eye, Trash2, Calendar, Pencil, List } from 'lucide-react';
 import { JornadaForm } from '../forms/JornadaForm';
 import { PartidoDetailView } from './PartidoDetailView';
@@ -118,17 +118,13 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
 
   if (!availableYears.includes(currentYear)) availableYears.unshift(currentYear);
 
-  useEffect(() => {
-    if (!availableYears.includes(yearFiltro)) {
-      setYearFiltro(availableYears[0]);
-    }
-  }, [availableYears.join(',')]);
+  const effectiveYear = availableYears.includes(yearFiltro) ? yearFiltro : (availableYears[0] ?? currentYear);
 
   const FASES_ORDER = ['Apertura', 'Clausura'];
   const sortedJornadas = [...jornadas]
     .filter((j) => {
       const year = j.fecha ? new Date(j.fecha).getFullYear() : null;
-      return year === yearFiltro && (!faseFiltro || j.fase === faseFiltro);
+      return year === effectiveYear && (!faseFiltro || j.fase === faseFiltro);
     })
     .sort((a, b) => {
       const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
@@ -182,7 +178,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
       <div className="flex items-center gap-2">
         <label className="text-sm text-gray-500 font-medium">Año:</label>
         <select
-          value={yearFiltro}
+          value={effectiveYear}
           onChange={(e) => setYearFiltro(Number(e.target.value))}
           className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-black"
         >
@@ -201,7 +197,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
           <p className="text-gray-500 text-lg">
             {jornadas.length === 0
               ? 'No hay jornadas registradas aún.'
-              : `No hay jornadas para ${yearFiltro}${faseFiltro ? ` — ${faseFiltro}` : ''}.`}
+              : `No hay jornadas para ${effectiveYear}${faseFiltro ? ` — ${faseFiltro}` : ''}.`}
           </p>
           {canEdit && jornadas.length === 0 && (
             <p className="text-gray-400 text-sm mt-2">Usá el botón "Nueva Jornada" para comenzar.</p>

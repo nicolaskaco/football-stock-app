@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMountEffect } from '../hooks/useMountEffect';
 import { CheckCircle, XCircle, Clock, FileText, Edit2, Trash2 } from 'lucide-react';
 import { database } from '../utils/database';
@@ -29,10 +29,10 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
     loadRequests();
   });
 
-  const loadRequests = async () => {
+  const loadRequests = async (activeFilter = filter) => {
     try {
       setLoading(true);
-      const data = filter === 'pending'
+      const data = activeFilter === 'pending'
         ? await database.getPendingChangeRequests()
         : await database.getAllChangeRequests();
 
@@ -51,10 +51,11 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
     }
   };
 
-  useEffect(() => {
+  const handleFilterChange = (newFilter) => {
+    setFilter(newFilter);
     setSelectedIds(new Set());
-    loadRequests();
-  }, [filter]);
+    loadRequests(newFilter);
+  };
 
   // ── Selection helpers ──────────────────────────────────────────
   const pendingInView = filteredRequests => filteredRequests.filter(r => r.status === CHANGE_REQUEST_STATUS.PENDING);
@@ -235,7 +236,7 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
         </div>
         <select
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
+          onChange={(e) => handleFilterChange(e.target.value)}
           className="px-4 py-2 border rounded-lg"
         >
           <option value={CHANGE_REQUEST_STATUS.PENDING}>Pendientes</option>
