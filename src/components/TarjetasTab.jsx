@@ -62,7 +62,11 @@ const exportToExcel = (allRows) => {
     XLSX.utils.book_append_sheet(wb, ws, cat);
   });
 
-  XLSX.writeFile(wb, `tarjetas_${year}.xlsx`);
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, '0');
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const yyyy = today.getFullYear();
+  XLSX.writeFile(wb, `Tarjetas_${dd}-${mm}-${yyyy}.xlsx`);
 };
 
 export const TarjetasTab = ({ jornadas = [], players = [], currentUser }) => {
