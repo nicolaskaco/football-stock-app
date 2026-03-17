@@ -2,7 +2,7 @@
 
 Internal management system for Club Atlético Peñarol (CAP) formative divisions.
 
----
+--- 
 
 ## 1. Project Overview
 
