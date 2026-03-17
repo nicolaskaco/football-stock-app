@@ -8,32 +8,39 @@ import { getCurrentSuspensionsByCategory } from '../utils/suspensions';
 
 const buildCardStats = (jornadas, players) => {
   const currentYear = new Date().getFullYear();
-  const map = {};
-
+  const playerMap = {};
   players.forEach((p) => {
-    map[p.id] = {
-      name: p.name_visual || p.name,
-      categoria: p.categoria,
-      amarillas: 0,
-      rojas: 0,
-    };
+    playerMap[p.id] = { name: p.name_visual || p.name };
   });
+
+  // Key by "playerId::categoria" so cross-category cards show under the partido's category
+  const map = {};
 
   jornadas
     .filter((j) => new Date(j.fecha).getFullYear() === currentYear)
     .forEach((jornada) => {
       (jornada.partidos || []).forEach((partido) => {
+        const cat = partido.categoria;
         (partido.partido_eventos || []).forEach((e) => {
-          if (!e.player_id || !map[e.player_id]) return;
-          if (e.tipo === 'amarilla') map[e.player_id].amarillas++;
-          if (e.tipo === 'roja') map[e.player_id].rojas++;
+          if (!e.player_id || !playerMap[e.player_id]) return;
+          if (e.tipo !== 'amarilla' && e.tipo !== 'roja') return;
+          const key = `${e.player_id}::${cat}`;
+          if (!map[key]) {
+            map[key] = {
+              id: e.player_id,
+              name: playerMap[e.player_id].name,
+              categoria: cat,
+              amarillas: 0,
+              rojas: 0,
+            };
+          }
+          if (e.tipo === 'amarilla') map[key].amarillas++;
+          if (e.tipo === 'roja') map[key].rojas++;
         });
       });
     });
 
-  return Object.entries(map)
-    .map(([id, s]) => ({ id, ...s }))
-    .filter((s) => s.amarillas > 0 || s.rojas > 0)
+  return Object.values(map)
     .sort((a, b) => b.amarillas - a.amarillas || b.rojas - a.rojas);
 };
 
