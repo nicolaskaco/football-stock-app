@@ -14,7 +14,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 ### B. Partidos y Torneos
 
-- [ ] **B2. Resultado del torneo** — Add `resultado` (campeón / subcampeón / fase de grupos / etc.) and optional `comentario_resultado` to `torneos`. Shown as badge in TorneosTab row and TorneoDetailView header.
+- [x] **B2. Resultado del torneo** — PR #230 · 2026-03-16
 - [ ] **B3. Advertencias de elegibilidad en PartidoForm** — Highlight (yellow) players whose `categoria` ≠ partido's `categoria` in lineup dropdowns. Extend to suspended players once A2 is done.
 
 ### C. Inventario y Equipamiento

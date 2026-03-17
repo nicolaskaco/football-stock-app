@@ -7,7 +7,10 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
     city: '',
     categoria: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
+    posicion_resultado: '',
+    resultado_playoff: '',
+    comentario_resultado: '',
   });
   const initialData = useRef(JSON.stringify(torneo || {}));
 
@@ -307,6 +310,70 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
         )}
       </div>
       
+
+      {/* RESULTADO DEL TORNEO */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">
+          Resultado del Torneo
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Posición Final
+            </label>
+            <select
+              value={String(formData.posicion_resultado || '')}
+              onChange={(e) => {
+                const pos = e.target.value;
+                setFormData({
+                  ...formData,
+                  posicion_resultado: pos ? parseInt(pos, 10) : null,
+                  resultado_playoff: pos === '1' ? formData.resultado_playoff : '',
+                });
+              }}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Sin resultado</option>
+              {Array.from({ length: 16 }, (_, i) => i + 1).map(n => (
+                <option key={n} value={n}>{n}°</option>
+              ))}
+            </select>
+          </div>
+
+          {formData.posicion_resultado == 1 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Resultado Playoff
+              </label>
+              <select
+                value={formData.resultado_playoff || ''}
+                onChange={(e) => setFormData({ ...formData, resultado_playoff: e.target.value || null })}
+                disabled={readOnly}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">Sin resultado playoff</option>
+                <option value="campeon">Campeón</option>
+                <option value="subcampeon">Subcampeón</option>
+              </select>
+            </div>
+          )}
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Comentario (opcional)
+            </label>
+            <textarea
+              value={formData.comentario_resultado || ''}
+              onChange={(e) => setFormData({ ...formData, comentario_resultado: e.target.value || null })}
+              disabled={readOnly}
+              rows={2}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              placeholder="Ej: Final disputada en Durazno, victoria por penales"
+            />
+          </div>
+        </div>
+      </div>
 
       {readOnly ? (
         <div className="w-full bg-gray-100 text-gray-600 py-4 rounded-lg text-center font-bold text-lg">

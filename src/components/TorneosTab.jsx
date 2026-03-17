@@ -13,6 +13,20 @@ import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
 
+const ORDINALS = ['1er','2do','3er','4to','5to','6to','7mo','8vo','9no','10mo','11vo','12vo','13vo','14vo','15vo','16vo'];
+function getOrdinal(pos) {
+  return ORDINALS[parseInt(pos, 10) - 1] ?? `${pos}°`;
+}
+function ResultadoBadge({ torneo }) {
+  if (torneo.resultado_playoff === 'campeon')
+    return <span className="px-2 py-0.5 text-xs font-bold bg-yellow-400 text-gray-900 rounded-full border border-yellow-500">Campeón</span>;
+  if (torneo.resultado_playoff === 'subcampeon')
+    return <span className="px-2 py-0.5 text-xs font-bold bg-gray-200 text-gray-700 rounded-full border border-gray-400">Subcampeón</span>;
+  if (torneo.posicion_resultado)
+    return <span className="px-2 py-0.5 text-xs font-semibold bg-blue-50 text-blue-700 rounded-full border border-blue-200">{getOrdinal(torneo.posicion_resultado)}</span>;
+  return <span className="text-gray-400 text-xs">-</span>;
+}
+
 export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employees = [], setShowModal, onDataChange, currentUser, onFormDirtyChange }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('t_search') || '';
@@ -52,7 +66,10 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
       city: torneo.city,
       categoria: torneo.categoria,
       start_date: torneo.start_date,
-      end_date: torneo.end_date
+      end_date: torneo.end_date,
+      posicion_resultado: torneo.posicion_resultado || null,
+      resultado_playoff: torneo.resultado_playoff || null,
+      comentario_resultado: torneo.comentario_resultado || null,
     };
     await database.updateTorneo(torneo.id, torneoData, dirigenteIds, playerIds, employeeIds);
     await onDataChange('torneos');
@@ -75,7 +92,10 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
       'Fecha Fin': torneo.end_date || '-',
       'Dirigentes': torneo.torneo_dirigentes?.map(td => td.dirigentes?.name).join(', ') || '-',
       'Jugadores': torneo.torneo_players?.length || 0,
-      'Funcionarios': torneo.torneo_funcionarios?.map(tf => tf.employees?.name).join(', ') || '-'
+      'Funcionarios': torneo.torneo_funcionarios?.map(tf => tf.employees?.name).join(', ') || '-',
+      'Posición': torneo.posicion_resultado ? getOrdinal(torneo.posicion_resultado) : '-',
+      'Resultado Playoff': torneo.resultado_playoff === 'campeon' ? 'Campeón' : torneo.resultado_playoff === 'subcampeon' ? 'Subcampeón' : '-',
+      'Comentario': torneo.comentario_resultado || '-'
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -181,6 +201,9 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Funcionarios
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Resultado
+              </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Acciones
               </th>
@@ -251,6 +274,9 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
                   ) : (
                     <span className="text-gray-400">-</span>
                   )}
+                </td>
+                <td className="px-6 py-4">
+                  <ResultadoBadge torneo={torneo} />
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
