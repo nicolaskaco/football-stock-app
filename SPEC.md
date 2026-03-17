@@ -402,6 +402,13 @@ Only **1 pending request per player** is allowed at a time:
 - In `PlayersTabViatico`'s row action area, the edit icon is similarly replaced with an "En revisión" label.
 - A submit-time check (`database.hasPendingChangeRequest(playerId)`) acts as a safety net for race conditions and throws a user-facing Spanish error if a pending request already exists.
 
+#### Edit & delete own pending solicitudes
+
+`presidente_categoria` users can edit or delete their own pending solicitudes before they are reviewed:
+- **Edit**: An inline edit button appears next to the player name on each pending card in `ChangeRequestsTab` (only for cards created by the current user, while still `pending`). Clicking it re-opens `ChangeRequestModal` pre-populated with the original values. On submit, the existing row is overwritten via `database.updateChangeRequest()`.
+- **Delete**: A delete (trash) button appears on cards owned by the current user. Clicking it triggers a confirmation modal; on confirm, the row is removed via `database.deleteChangeRequest()` and global state is refreshed.
+- Reviewers (admin / ejecutivo / presidente) do not see the edit/delete buttons — only the creator can use them.
+
 #### Change Request UX features (ChangeRequestsTab)
 
 - **SLA age badge**: each pending card shows a colored age pill — green (< 3 days), yellow (3–6 days), red (≥ 7 days) — calculated via `daysSince()` from `dateUtils.js`
@@ -442,7 +449,7 @@ Players have a `ficha_medica_hasta` (date) column that records when their SND sp
 - **`database.checkFichaMedica(cedula, tipoDocumento)`** — calls the `check-ficha-medica` Supabase Edge Function (proxy to SND). Returns a `fichas` array of license records, each with `deporte` and `hasta` (DD/MM/YYYY).
 - The app always filters for an **exact FÚTBOL match**: `['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase())` — no fallback to other sports.
 - **`database.saveFichaMedicaHasta(playerId, hastaStr)`** — converts `hastaStr` from DD/MM/YYYY to YYYY-MM-DD and writes it to `players.ficha_medica_hasta`.
-- **PlayersTab** supports individual and bulk ficha checks for all filtered players.
+- **PlayersTab** supports individual and bulk ficha checks for all filtered players. Admins have an additional filter option **"Sin ficha médica"** that shows all players across every category (including 3era) whose `ficha_medica_hasta` is null or in the past.
 - **FichaMedicaWidget** (home page) shows expired / expiring-soon players and lets admins trigger a per-player refresh directly from the modal.
 
 ### Bulk Operations
@@ -539,6 +546,8 @@ Optimized layouts for small screens across tabs, modals, and forms.
 - **PlayersTab / PlayersTabViatico**: Sticky Nombre column on horizontal scroll.
 - **DirigentesTab / ComisionesTab**: Sticky Nombre column with text truncation on mobile; tap to expand.
 - **PartidosTab**: "Nueva Jornada" button label collapses to "Nueva" on small screens.
+- **TorneoDetailView**: "Excel Jugadores" and "Exportar PDF" buttons stack below the torneo title on mobile (`flex-col sm:flex-row`); title scales to `text-2xl` on mobile, `text-3xl` on sm+.
+- **TorneosTab**: Clicking the torneo name in the table opens `TorneoDetailView` (same as the info icon), with hover underline + purple color to indicate the link.
 - **Forms and modals**: Responsive padding (`px-4 sm:px-6 lg:px-8`), vertical scroll within modals.
 
 ### Low-Stock Alerts
