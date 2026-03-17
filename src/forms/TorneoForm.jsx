@@ -8,8 +8,8 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
     categoria: '',
     start_date: '',
     end_date: '',
-    posicion_resultado: '',
-    resultado_playoff: '',
+    posicion_resultado: null,
+    resultado_playoff: null,
     comentario_resultado: '',
   });
   const initialData = useRef(JSON.stringify(torneo || {}));
@@ -36,7 +36,13 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData, selectedDirigentes, selectedPlayers, selectedEmployees);
+    const normalized = {
+      ...formData,
+      posicion_resultado: formData.posicion_resultado ? Number(formData.posicion_resultado) : null,
+      resultado_playoff: formData.resultado_playoff || null,
+      comentario_resultado: formData.comentario_resultado || null,
+    };
+    onSubmit(normalized, selectedDirigentes, selectedPlayers, selectedEmployees);
   };
 
   const toggleDirigente = (dirigenteId) => {
@@ -328,7 +334,7 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
                 setFormData({
                   ...formData,
                   posicion_resultado: pos ? parseInt(pos, 10) : null,
-                  resultado_playoff: pos === '1' ? formData.resultado_playoff : '',
+                  resultado_playoff: pos === '1' ? formData.resultado_playoff : null,
                 });
               }}
               disabled={readOnly}

@@ -601,9 +601,16 @@ export const database = {
 
   // Update addTorneo to include funcionarios
   async addTorneo(torneo, dirigenteIds, playerIds, employeeIds = []) {
+    const torneoPayload = {
+      ...torneo,
+      posicion_resultado: torneo.posicion_resultado ?? null,
+      resultado_playoff: torneo.resultado_playoff || null,
+      comentario_resultado: torneo.comentario_resultado || null,
+    };
+
     const { data: torneoData, error: torneoError } = await supabase
       .from('torneos')
-      .insert([torneo])
+      .insert([torneoPayload])
       .select()
       .single();
 
