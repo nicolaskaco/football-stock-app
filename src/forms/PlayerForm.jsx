@@ -61,7 +61,10 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
   const playerStats = useMemo(() => {
     let pj = 0, goles = 0, amarillas = 0, rojas = 0;
-    jornadas.forEach((jornada) => {
+    const currentYear = new Date().getFullYear();
+    jornadas
+      .filter((jornada) => new Date(jornada.fecha).getFullYear() === currentYear)
+      .forEach((jornada) => {
       (jornada.partidos || []).forEach((partido) => {
         const played = (partido.partido_players || []).some((pp) => pp.player_id === player?.id);
         if (played) pj++;
