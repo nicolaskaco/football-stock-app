@@ -62,7 +62,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
   const [suplentes, setSuplentes] = useState(buildInitialSuplentes);
 
   // Eventos: mapa player_id → { goles, goles_minutos, amarilla, amarilla_minuto, roja, roja_minuto }
-  const emptyEvento = () => ({ goles: 0, goles_minutos: [], amarilla: false, amarilla_minuto: null, roja: false, roja_minuto: null });
+  const emptyEvento = () => ({ goles: 0, goles_minutos: [], amarilla: false, amarilla_minuto: null, roja: false, roja_minuto: null, roja_fechas: 1 });
 
   const buildInitialEventos = () => {
     const map = {};
@@ -73,7 +73,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
         map[e.player_id].goles_minutos.push(e.minuto ?? null);
       }
       if (e.tipo === 'amarilla') { map[e.player_id].amarilla = true; map[e.player_id].amarilla_minuto = e.minuto ?? null; }
-      if (e.tipo === 'roja')     { map[e.player_id].roja = true;     map[e.player_id].roja_minuto = e.minuto ?? null; }
+      if (e.tipo === 'roja')     { map[e.player_id].roja = true;     map[e.player_id].roja_minuto = e.minuto ?? null; map[e.player_id].roja_fechas = e.fechas_suspension ?? 1; }
     });
     return map;
   };
@@ -174,7 +174,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
         eventosData.push({ player_id, tipo: 'gol', minuto: min ? Number(min) : null });
       }
       if (stats.amarilla) eventosData.push({ player_id, tipo: 'amarilla', minuto: stats.amarilla_minuto ? Number(stats.amarilla_minuto) : null });
-      if (stats.roja)     eventosData.push({ player_id, tipo: 'roja',     minuto: stats.roja_minuto    ? Number(stats.roja_minuto)    : null });
+      if (stats.roja)     eventosData.push({ player_id, tipo: 'roja',     minuto: stats.roja_minuto    ? Number(stats.roja_minuto)    : null, fechas_suspension: stats.roja_fechas || 1 });
     });
 
     onSubmit(data, titularesData, suplentesData, eventosData);
@@ -558,15 +558,28 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                             className="w-4 h-4 accent-red-500 cursor-pointer"
                           />
                           {ev.roja && (
-                            <input
-                              type="number"
-                              min="1"
-                              max="120"
-                              placeholder="min"
-                              value={ev.roja_minuto ?? ''}
-                              onChange={(e) => updateEvento(player_id, 'roja_minuto', e.target.value === '' ? null : Number(e.target.value))}
-                              className="w-14 px-1 py-0.5 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-red-400"
-                            />
+                            <>
+                              <input
+                                type="number"
+                                min="1"
+                                max="120"
+                                placeholder="min"
+                                value={ev.roja_minuto ?? ''}
+                                onChange={(e) => updateEvento(player_id, 'roja_minuto', e.target.value === '' ? null : Number(e.target.value))}
+                                className="w-14 px-1 py-0.5 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-red-400"
+                              />
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="10"
+                                  value={ev.roja_fechas ?? 1}
+                                  onChange={(e) => updateEvento(player_id, 'roja_fechas', e.target.value === '' ? 1 : Math.max(1, Number(e.target.value)))}
+                                  className="w-14 px-1 py-0.5 border border-red-300 rounded text-xs text-center focus:ring-1 focus:ring-red-400 bg-red-50"
+                                />
+                                <span className="text-[10px] text-red-500 whitespace-nowrap">fechas</span>
+                              </div>
+                            </>
                           )}
                         </div>
                       </td>

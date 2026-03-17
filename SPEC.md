@@ -234,6 +234,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `player_id` | uuid FK → players | ON DELETE CASCADE |
 | `tipo` | text | `'gol'` \| `'amarilla'` \| `'roja'` |
 | `minuto` | integer | nullable — minute the event occurred |
+| `fechas_suspension` | integer | default 1 — number of games suspended (only for `'roja'`) |
 
 Used by `EstadisticasTab` to compute per-player totals (goals, cards) and standings.
 
@@ -517,15 +518,15 @@ Players have a `status` field that tracks their current state: `activo` (default
 
 ### Suspension Logic
 
-Automatic suspension tracking based on card accumulation. A player is suspended for the next jornada if:
-- They received a **red card** in the previous jornada, OR
-- Their cumulative yellow card count crossed a **multiple of 5** (5th, 10th, 15th, etc.)
+Automatic suspension tracking based on card accumulation. A player is suspended for jornada J if:
+- They received a **red card** in a prior jornada and the suspension still covers J. Red cards carry a `fechas_suspension` count (default 1). A red card at jornada index `i` with `fechas_suspension=N` suspends the player for jornadas `i+1` through `i+N`. The reason shows remaining games (e.g., "Roja (3 fechas)", "Roja (última fecha)").
+- Their cumulative yellow card count crossed a **multiple of 5** (5th, 10th, 15th, etc.) in the immediately previous jornada.
 
 Yellow cards accumulate across the full calendar year (no Apertura/Clausura reset). Cards count toward the match's category, not the player's home category.
 
 - **`src/utils/suspensions.js`**: Core logic — `getSuspensionMap()` for a specific jornada, `getCurrentSuspensionsByCategory()` for all categories.
-- **PartidoForm**: Suspended players are disabled in lineup dropdowns with 🚫 prefix, red background, and "SUSPENDIDO (reason)" label.
-- **TarjetasTab**: "SUSPENDIDO" badge with reason shown in the Estado column.
+- **PartidoForm**: Suspended players are disabled in lineup dropdowns with 🚫 prefix, red background, and "SUSPENDIDO (reason)" label. When recording a red card, a "fechas" input lets coaches set the suspension length (default 1).
+- **TarjetasTab**: "SUSPENDIDO" badge with reason shown in the Estado column (includes remaining game count for multi-game suspensions).
 - **SuspensionWidget** (OverviewTab): Shows players with 2+ yellows and currently suspended players; category filter pills; requires `can_view_tarjetas`.
 
 ### Age Eligibility Alerts
@@ -761,7 +762,7 @@ All shared enums are centralized here — never defined inline in components:
 
 | Export | Description |
 |--------|-------------|
-| `getSuspensionMap(jornadas, targetJornadaId, categoria)` | Returns `Map<playerId, { reason }>` for players suspended for a specific jornada + category. A player is suspended if in the previous jornada they received a red card or their cumulative yellow count crossed a multiple of 5. Yellow cards accumulate across the full calendar year. |
+| `getSuspensionMap(jornadas, targetJornadaId, categoria)` | Returns `Map<playerId, { reason }>` for players suspended for a specific jornada + category. A player is suspended if a prior red card's `fechas_suspension` range still covers this jornada, or their cumulative yellow count crossed a multiple of 5 in the previous jornada. Yellow cards accumulate across the full calendar year. Reason includes remaining games for multi-game suspensions. |
 | `getCurrentSuspensionsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, { reason }>>` for all categories. "Current" = suspended for the next upcoming jornada. If all jornadas are in the past, treats the last jornada as if there were a virtual next one. |
 
 ### Age Eligibility Utilities (`src/utils/ageEligibility.js`)
