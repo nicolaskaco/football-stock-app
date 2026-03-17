@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS } from '../utils/constants';
 import { getSuspensionMap } from '../utils/suspensions';
+import { isPlayerOverAge } from '../utils/ageEligibility';
 
 const MAX_TITULARES = 11;
 const MAX_SUPLENTES = 10;
 
 const emptySlot = () => ({ player_id: '', posicion: '' });
 
-export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [], jornadaId, onSubmit }) => {
+export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [], jornadaId, appSettings = {}, onSubmit }) => {
   const categoria = partido?.categoria || '';
 
   // Build active injury map
@@ -379,14 +380,15 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                   const efectiva = p.categoria_juego || p.categoria;
                   const mismatch = efectiva !== categoria;
                   const suspended = suspendedMap.has(p.id);
+                  const age = isPlayerOverAge(p, categoria, appSettings);
                   return (
                     <option
                       key={p.id}
                       value={p.id}
                       disabled={(usedIds.has(p.id) && t.player_id !== p.id) || suspended}
-                      style={suspended ? { backgroundColor: '#fee2e2' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
+                      style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
                     >
-                      {suspended ? '🚫 ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                      {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                     </option>
                   );
                 })}
@@ -437,14 +439,15 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                   const efectiva = p.categoria_juego || p.categoria;
                   const mismatch = efectiva !== categoria;
                   const suspended = suspendedMap.has(p.id);
+                  const age = isPlayerOverAge(p, categoria, appSettings);
                   return (
                     <option
                       key={p.id}
                       value={p.id}
                       disabled={(usedIds.has(p.id) && s.player_id !== p.id) || suspended}
-                      style={suspended ? { backgroundColor: '#fee2e2' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
+                      style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
                     >
-                      {suspended ? '🚫 ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                      {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                     </option>
                   );
                 })}

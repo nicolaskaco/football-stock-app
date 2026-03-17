@@ -6,12 +6,14 @@ import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
 import { getCurrentSuspensionsByCategory } from '../utils/suspensions';
+import { isPlayerOverAge } from '../utils/ageEligibility';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type, Stethoscope, Upload, Settings2 } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { SortIcon } from './ui/SortIcon';
 import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
 import { InjuryIcon } from './ui/InjuryIcon';
 import { SuspensionIcon } from './ui/SuspensionIcon';
+import { OverAgeIcon } from './ui/OverAgeIcon';
 import { StatusBadge } from './ui/StatusBadge';
 import { SearchInput } from './ui/SearchInput';
 import { NameVisualEditor } from '../components/NameVisualEditor';
@@ -1047,6 +1049,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                       <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
                       {activeInjuryMap[player.id] && <InjuryIcon injury={activeInjuryMap[player.id]} />}
                       <SuspensionIcon suspension={suspensionsMap.get(player.categoria_juego || player.categoria)?.get(player.id)} />
+                      {(() => { const cat = player.categoria_juego || player.categoria; const r = isPlayerOverAge(player, cat, appSettings); return r.overAge ? <OverAgeIcon birthYear={r.birthYear} minYear={r.minYear} /> : null; })()}
                       <StatusBadge status={player.status} />
                       <ViandaIcons count={player.vianda} />
                     </div>

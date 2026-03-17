@@ -6,7 +6,7 @@ import { useMutation } from '../hooks/useMutation';
 import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 
-export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null }) => {
+export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {} }) => {
   const { execute } = useMutation();
 
   const handleEditPartido = (partido, partidoData, titulares, suplentes, eventos) => execute(async () => {
@@ -41,6 +41,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
           injuries={injuries}
           jornadas={jornadas}
           jornadaId={jornada.id}
+          appSettings={appSettings}
           onSubmit={(data, titulares, suplentes, eventos) =>
             handleEditPartido(partido, data, titulares, suplentes, eventos)
           }

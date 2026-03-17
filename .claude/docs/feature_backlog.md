@@ -10,7 +10,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 - [x] **A1. Estado del jugador (activo / cedido / transferido / egresado / dado de baja)** — Add `status` field to `players`. PlayersTab filter by status; inactive hidden by default. Badge next to name (like injury icon). *(implemented incrementally — 2026-03-17)*
 - [x] **A2. Seguimiento de suspensiones** — Track automatic suspensions per player (games suspended, reason, expiry jornada). Show suspension badge in PlayersTab and PartidoForm dropdowns alongside injury 🏥. *(completed — 2026-03-17)*
-- [ ] **A3. Alerta de edad / elegibilidad por categoría** — Configurable max age per category in ConfiguracionTab. Alert badge in PlayersTab for over-age players. Warning in PartidoForm when adding an over-age player.
+- [x] **A3. Alerta de edad / elegibilidad por categoría** — Configurable max age per category in ConfiguracionTab. Alert badge in PlayersTab for over-age players. Warning in PartidoForm when adding an over-age player. *(completed — 2026-03-17)*
 
 ### B. Partidos y Torneos
 - [x] **B1. Mostrar minuto de gol/tarjeta en PartidoDetailView** — PR #229 · 2026-03-16
