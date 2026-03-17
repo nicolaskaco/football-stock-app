@@ -23,6 +23,7 @@ const PartidosTab = lazy(() => import('./PartidosTab').then(m => ({ default: m.P
 const ConfiguracionTab = lazy(() => import('./ConfiguracionTab').then(m => ({ default: m.ConfiguracionTab })));
 const EstadisticasTab = lazy(() => import('./EstadisticasTab').then(m => ({ default: m.EstadisticasTab })));
 const TesoreroTab = lazy(() => import('./TesoreroTab').then(m => ({ default: m.TesoreroTab })));
+const TarjetasTab = lazy(() => import('./TarjetasTab').then(m => ({ default: m.TarjetasTab })));
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-24">
@@ -81,6 +82,7 @@ export const AdminDashboard = ({
   const canSeeRopaWidgets = currentUser?.canSeeRopaWidgets || false;
   const canViewPartidos = currentUser?.canViewPartidos || false;
   const canAccessTesorero = currentUser?.canAccessTesorero || false;
+  const canViewTarjetas = currentUser?.canViewTarjetas || false;
   const isAdmin = currentUser?.role === 'admin';
   const tabEnabled = (key) => appSettings[key] === 'true';
 
@@ -101,6 +103,7 @@ export const AdminDashboard = ({
     { id: 'partidos',       label: 'Partidos',        show: canViewPartidos },
     { id: 'reports',        label: 'Reportes',        show: canAccessRopa && tabEnabled('reportes_tab_enabled') },
     { id: 'estadisticas',   label: 'Estadísticas',   show: canViewPartidos && tabEnabled('estadisticas_tab_enabled') },
+    { id: 'tarjetas',       label: 'Tarjetas',        show: canViewTarjetas },
     { id: 'configuracion',  label: 'Configuración',  show: isAdmin },
   ];
 
@@ -329,6 +332,13 @@ export const AdminDashboard = ({
             players={players}
             appSettings={appSettings}
             onDataChange={onDataChange}
+            currentUser={currentUser}
+          />
+        )}
+        {activeTab === 'tarjetas' && canViewTarjetas && (
+          <TarjetasTab
+            jornadas={jornadas}
+            players={players}
             currentUser={currentUser}
           />
         )}
