@@ -371,15 +371,20 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
                 className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Jugador —</option>
-                {getOptionsForSlot(t.player_id).map((p) => (
-                  <option
-                    key={p.id}
-                    value={p.id}
-                    disabled={usedIds.has(p.id) && t.player_id !== p.id}
-                  >
-                    {activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{(p.categoria_juego || p.categoria) !== categoria ? ` (${p.categoria_juego || p.categoria})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
-                  </option>
-                ))}
+                {getOptionsForSlot(t.player_id).map((p) => {
+                  const efectiva = p.categoria_juego || p.categoria;
+                  const mismatch = efectiva !== categoria;
+                  return (
+                    <option
+                      key={p.id}
+                      value={p.id}
+                      disabled={usedIds.has(p.id) && t.player_id !== p.id}
+                      style={mismatch ? { backgroundColor: '#fef3c7' } : undefined}
+                    >
+                      {mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                    </option>
+                  );
+                })}
               </select>
               <select
                 value={t.posicion}
@@ -423,15 +428,20 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
                 className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Jugador —</option>
-                {getOptionsForSlot(s.player_id).map((p) => (
-                  <option
-                    key={p.id}
-                    value={p.id}
-                    disabled={usedIds.has(p.id) && s.player_id !== p.id}
-                  >
-                    {activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{(p.categoria_juego || p.categoria) !== categoria ? ` (${p.categoria_juego || p.categoria})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
-                  </option>
-                ))}
+                {getOptionsForSlot(s.player_id).map((p) => {
+                  const efectiva = p.categoria_juego || p.categoria;
+                  const mismatch = efectiva !== categoria;
+                  return (
+                    <option
+                      key={p.id}
+                      value={p.id}
+                      disabled={usedIds.has(p.id) && s.player_id !== p.id}
+                      style={mismatch ? { backgroundColor: '#fef3c7' } : undefined}
+                    >
+                      {mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                    </option>
+                  );
+                })}
               </select>
               {s.player_id && (
                 <button
