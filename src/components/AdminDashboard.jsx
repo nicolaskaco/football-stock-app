@@ -201,6 +201,7 @@ export const AdminDashboard = ({
             jornadas={jornadas}
             injuries={injuries}
             canViewPartidos={canViewPartidos}
+            canViewTarjetas={canViewTarjetas}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             onFormDirtyChange={setModalIsDirty}
