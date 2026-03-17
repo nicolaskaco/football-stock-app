@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const TIPOS_LESION = [
   'Lesión muscular',
@@ -14,7 +14,14 @@ const TIPOS_LESION = [
 const SEVERIDADES = ['leve', 'moderada', 'grave'];
 
 export const InjuryForm = ({ injury, playerId, playerName, onSubmit, readOnly = false }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => injury ? {
+    tipo: injury.tipo || '',
+    severidad: injury.severidad || 'leve',
+    descripcion: injury.descripcion || '',
+    fecha_inicio: injury.fecha_inicio || '',
+    fecha_retorno_estimada: injury.fecha_retorno_estimada || '',
+    fecha_alta: injury.fecha_alta || '',
+  } : {
     tipo: '',
     severidad: 'leve',
     descripcion: '',
@@ -22,19 +29,6 @@ export const InjuryForm = ({ injury, playerId, playerName, onSubmit, readOnly = 
     fecha_retorno_estimada: '',
     fecha_alta: '',
   });
-
-  useEffect(() => {
-    if (injury) {
-      setFormData({
-        tipo: injury.tipo || '',
-        severidad: injury.severidad || 'leve',
-        descripcion: injury.descripcion || '',
-        fecha_inicio: injury.fecha_inicio || '',
-        fecha_retorno_estimada: injury.fecha_retorno_estimada || '',
-        fecha_alta: injury.fecha_alta || '',
-      });
-    }
-  }, [injury]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

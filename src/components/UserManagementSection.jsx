@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useMountEffect } from '../hooks/useMountEffect';
 import { UserPlus, Pencil, Trash2, Shield, ChevronDown, ChevronUp, Copy, Check, Link } from 'lucide-react';
 import { database } from '../utils/database';
 import { Modal } from './Modal';
@@ -46,7 +47,7 @@ export const UserManagementSection = () => {
     setLoadingUsers(false);
   };
 
-  useEffect(() => {
+  useMountEffect(() => {
     let cancelled = false;
     database.listUserPermissions().then(data => {
       if (!cancelled) {
@@ -58,7 +59,7 @@ export const UserManagementSection = () => {
       if (!cancelled) setLoadingUsers(false);
     });
     return () => { cancelled = true; };
-  }, []);
+  });
 
   const handleInvite = async ({ email, role, permissions }) => {
     await execute(

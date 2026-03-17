@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useMountEffect } from '../hooks/useMountEffect';
 import { Cake, Users, Shield } from 'lucide-react';
 import { database } from '../utils/database';
 import { formatBirthday } from '../utils/dateUtils';
@@ -22,9 +23,9 @@ export const BirthdayWidget = ({ currentUser }) => {
     setBirthdays(combined);
   };
 
-  useEffect(() => {
+  useMountEffect(() => {
     loadBirthdays();
-  }, []);
+  });
 
   if (birthdays.length === 0) return null;
 

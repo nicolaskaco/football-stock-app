@@ -1,21 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Type, Save } from 'lucide-react';
 
 export const NameVisualEditor = ({ player, onSave, onClose }) => {
   const [selectedParts, setSelectedParts] = useState([]);
-  const [customText, setCustomText] = useState('');
-  const [useCustom, setUseCustom] = useState(false);
+  const [customText, setCustomText] = useState(player.name_visual || '');
+  const [useCustom, setUseCustom] = useState(!!player.name_visual);
 
   // Split name into parts (words)
   const nameParts = player.name.split(' ').filter(part => part.trim() !== '');
-
-  useEffect(() => {
-    // Initialize with current name_visual if it exists
-    if (player.name_visual) {
-      setCustomText(player.name_visual);
-      setUseCustom(true);
-    }
-  }, [player.name_visual]);
 
   const toggleNamePart = (index) => {
     setSelectedParts(prev => 

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useFormDirty } from '../hooks/useFormDirty';
 
 export const DirigenteForm = ({ dirigente, onSubmit, onDirtyChange }) => {
   const [formData, setFormData] = useState(dirigente || {
@@ -10,11 +11,7 @@ export const DirigenteForm = ({ dirigente, onSubmit, onDirtyChange }) => {
     cedula: '',
     matricula_auto: ''
   });
-  const initialData = useRef(JSON.stringify(dirigente || {}));
-
-  useEffect(() => {
-    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
-  }, [formData]);
+  useFormDirty(formData, dirigente, onDirtyChange);
 
   const handleSubmit = (e) => {
     e.preventDefault();

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useFormDirty } from '../hooks/useFormDirty';
 import { CATEGORIAS, BANCOS } from '../utils/constants';
 import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner';
 
@@ -17,27 +18,10 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
     complemento_override: null,
     complemento_override_expira: null,
   });
-  const initialData = useRef(JSON.stringify(player || {}));
+  useFormDirty(formData, player, onDirtyChange);
   const isPresidenteCategoria = currentUser?.role === 'presidente_categoria';
   const canEditOverride = ['presidente', 'ejecutivo', 'admin'].includes(currentUser?.role);
   const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
-
-  useEffect(() => {
-    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
-  }, [formData]);
-
-  // When contrato is checked, clear viatico, complemento, and override
-  useEffect(() => {
-    if (formData.contrato) {
-      setFormData(prev => ({
-        ...prev,
-        viatico: 0,
-        complemento: 0,
-        complemento_override: null,
-        complemento_override_expira: null,
-      }));
-    }
-  }, [formData.contrato]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -170,7 +154,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
           <input
             type="checkbox"
             checked={formData.contrato}
-            onChange={(e) => setFormData({...formData, contrato: e.target.checked})}
+            onChange={(e) => setFormData({...formData, contrato: e.target.checked, ...(e.target.checked ? { viatico: 0, complemento: 0, complemento_override: null, complemento_override_expira: null } : {})})}
             disabled={readOnly || isPresidenteCategoria || viaticosCongelados}
             className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />

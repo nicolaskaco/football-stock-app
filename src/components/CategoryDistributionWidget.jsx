@@ -1,15 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { Users } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 export const CategoryDistributionWidget = ({ players }) => {
-  const [categoryData, setCategoryData] = useState([]);
-
-  useEffect(() => {
-    calculateCategoryDistribution();
-  }, [players]);
-
-  const calculateCategoryDistribution = () => {
+  const categoryData = useMemo(() => {
     const categorias = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
     const colors = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444', '#EC4899', '#605259'];
 
@@ -20,13 +14,11 @@ export const CategoryDistributionWidget = ({ players }) => {
     }));
 
     const total = counts.reduce((sum, c) => sum + c.count, 0);
-    const withPercentage = counts.map(c => ({
+    return counts.map(c => ({
       ...c,
       percentage: total > 0 ? ((c.count / total) * 100).toFixed(1) : 0
     }));
-
-    setCategoryData(withPercentage);
-  };
+  }, [players]);
 
   const total = categoryData.reduce((sum, c) => sum + c.count, 0);
 
@@ -63,7 +55,7 @@ export const CategoryDistributionWidget = ({ players }) => {
         {categoryData.map((cat, index) => (
           <div key={index} className="flex items-center justify-between p-2 border rounded">
             <div className="flex items-center gap-2">
-              <div 
+              <div
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: cat.color }}
               />

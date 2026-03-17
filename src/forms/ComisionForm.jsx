@@ -1,15 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useFormDirty } from '../hooks/useFormDirty';
 
 export const ComisionForm = ({ comision, onSubmit, dirigentes = [], readOnly = false, onDirtyChange }) => {
   const [formData, setFormData] = useState(comision || {
     name: '',
     description: ''
   });
-  const initialData = useRef(JSON.stringify(comision || {}));
-
-  useEffect(() => {
-    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
-  }, [formData]);
+  useFormDirty(formData, comision, onDirtyChange);
 
   const [selectedDirigentes, setSelectedDirigentes] = useState(
     comision?.comision_dirigentes?.map(cd => cd.dirigente_id) || []

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
+import { useFormDirty } from '../hooks/useFormDirty';
 import { CATEGORIAS_INVENTARIO, TALLAS_ROPA } from '../utils/constants';
 
 export const InventoryForm = ({ item, onSubmit, onDirtyChange }) => {
@@ -9,11 +10,7 @@ export const InventoryForm = ({ item, onSubmit, onDirtyChange }) => {
     quantity: 0,
     min_stock: 0
   });
-  const initialData = useRef(JSON.stringify(item || {}));
-
-  useEffect(() => {
-    onDirtyChange?.(JSON.stringify(formData) !== initialData.current);
-  }, [formData]);
+  useFormDirty(formData, item, onDirtyChange);
 
   const handleSubmit = (e) => {
     e.preventDefault();
