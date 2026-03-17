@@ -529,12 +529,12 @@ Yellow cards accumulate across the full calendar year (no Apertura/Clausura rese
 
 ### Age Eligibility Alerts
 
-Configurable maximum age per category, stored in `app_settings` as `edad_max_<categoria>` keys (e.g., `edad_max_4ta = 17`). Admins configure these limits in `ConfiguracionTab` → "Edad máxima por categoría" section. Leaving a category empty disables the check for that category.
+Configurable minimum birth year per category, stored in `app_settings` as `ano_min_<categoria>` keys (e.g., `ano_min_4ta = 2007` means only players born in 2007 or later are eligible). Admins configure these in `ConfiguracionTab` → "Año mínimo de nacimiento por categoría". Leaving a category empty disables the check.
 
-- **`src/utils/ageEligibility.js`**: Core logic — `getMaxAgeForCategory()` and `isPlayerOverAge()`. Uses `calculateAge(fecha_nacimiento)` from `dateUtils.js`.
-- **PlayersTab**: Amber warning triangle (`OverAgeIcon`) shown next to player name when their age exceeds the max for their effective category (`categoria_juego || categoria`).
+- **`src/utils/ageEligibility.js`**: Core logic — `getMinBirthYearForCategory()` and `isPlayerOverAge()`. Compares `player.date_of_birth` year against the configured minimum.
+- **PlayersTab**: Amber warning triangle (`OverAgeIcon`) shown next to player name when their birth year is before the minimum for their effective category (`categoria_juego || categoria`).
 - **PartidoForm**: Over-age players shown with `⚠️ EXCEDE EDAD` label and orange background in lineup dropdowns. Warning only — not disabled, as coaches may have legitimate reasons to include over-age players. Checks against the **match category**, not the player's home category.
-- **ConfiguracionTab**: Grid of number inputs (one per category from `CATEGORIAS`), debounce-saved to `app_settings`.
+- **ConfiguracionTab**: Grid of year inputs (one per category from `CATEGORIAS`), debounce-saved to `app_settings`.
 
 ### Player Match History
 
@@ -767,8 +767,8 @@ All shared enums are centralized here — never defined inline in components:
 
 | Export | Description |
 |--------|-------------|
-| `getMaxAgeForCategory(categoria, appSettings)` | Returns the configured max age (integer) for a category from `appSettings['edad_max_' + categoria]`, or `null` if not configured. |
-| `isPlayerOverAge(player, categoria, appSettings)` | Returns `{ overAge: boolean, playerAge: number|null, maxAge: number|null }`. Uses `calculateAge(player.fecha_nacimiento)`. Returns `overAge: false` if no birth date or no max age configured. |
+| `getMinBirthYearForCategory(categoria, appSettings)` | Returns the configured minimum birth year (integer) for a category from `appSettings['ano_min_' + categoria]`, or `null` if not configured. |
+| `isPlayerOverAge(player, categoria, appSettings)` | Returns `{ overAge: boolean, birthYear: number|null, minYear: number|null }`. Compares `player.date_of_birth` year against min year. Returns `overAge: false` if no birth date or no min year configured. |
 
 ### Hooks (`src/hooks/`)
 

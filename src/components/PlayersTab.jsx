@@ -1049,7 +1049,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                       <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
                       {activeInjuryMap[player.id] && <InjuryIcon injury={activeInjuryMap[player.id]} />}
                       <SuspensionIcon suspension={suspensionsMap.get(player.categoria_juego || player.categoria)?.get(player.id)} />
-                      {(() => { const cat = player.categoria_juego || player.categoria; const r = isPlayerOverAge(player, cat, appSettings); return r.overAge ? <OverAgeIcon playerAge={r.playerAge} maxAge={r.maxAge} /> : null; })()}
+                      {(() => { const cat = player.categoria_juego || player.categoria; const r = isPlayerOverAge(player, cat, appSettings); return r.overAge ? <OverAgeIcon birthYear={r.birthYear} minYear={r.minYear} /> : null; })()}
                       <StatusBadge status={player.status} />
                       <ViandaIcons count={player.vianda} />
                     </div>

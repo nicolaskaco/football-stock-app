@@ -388,7 +388,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                       disabled={(usedIds.has(p.id) && t.player_id !== p.id) || suspended}
                       style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
                     >
-                      {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (${age.playerAge}, máx: ${age.maxAge})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                      {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                     </option>
                   );
                 })}
@@ -447,7 +447,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                       disabled={(usedIds.has(p.id) && s.player_id !== p.id) || suspended}
                       style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
                     >
-                      {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (${age.playerAge}, máx: ${age.maxAge})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                      {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                     </option>
                   );
                 })}

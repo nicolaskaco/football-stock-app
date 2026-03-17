@@ -1,7 +1,7 @@
-export function OverAgeIcon({ playerAge, maxAge }) {
-  if (playerAge == null || maxAge == null || playerAge <= maxAge) return null;
+export function OverAgeIcon({ birthYear, minYear }) {
+  if (birthYear == null || minYear == null || birthYear >= minYear) return null;
 
-  const label = `Excede edad máxima (${playerAge} años, máx: ${maxAge})`;
+  const label = `Excede edad: nacido en ${birthYear}, mínimo ${minYear}`;
 
   return (
     <span title={label} className="inline-flex">
