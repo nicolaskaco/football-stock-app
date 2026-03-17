@@ -1136,7 +1136,7 @@ export const database = {
             id, player_id, tipo, posicion, orden,
             players(id, name, name_visual, categoria)
           ),
-          partido_eventos(id, tipo, player_id, minuto)
+          partido_eventos(id, tipo, player_id, minuto, fechas_suspension)
         )
       `)
       .order('fecha', { ascending: false });
@@ -1265,6 +1265,7 @@ export const database = {
         player_id: e.player_id,
         tipo: e.tipo,
         minuto: e.minuto ?? null,
+        fechas_suspension: e.fechas_suspension ?? null,
       }));
       const { error: evError } = await supabase
         .from('partido_eventos')
