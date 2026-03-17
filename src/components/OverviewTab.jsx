@@ -49,6 +49,7 @@ export const OverviewTab = ({
       content: (
         <PartidoDetailView
           jornada={jornada}
+          jornadas={jornadas}
           players={players}
           injuries={injuries}
           canEdit={canEditPartidos}

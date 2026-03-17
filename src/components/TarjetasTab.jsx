@@ -4,41 +4,47 @@ import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
-
-const isSuspended = (amarillas) => amarillas > 0 && amarillas % 5 === 0;
+import { getCurrentSuspensionsByCategory } from '../utils/suspensions';
 
 const buildCardStats = (jornadas, players) => {
   const currentYear = new Date().getFullYear();
-  const map = {};
-
+  const playerMap = {};
   players.forEach((p) => {
-    map[p.id] = {
-      name: p.name_visual || p.name,
-      categoria: p.categoria,
-      amarillas: 0,
-      rojas: 0,
-    };
+    playerMap[p.id] = { name: p.name_visual || p.name };
   });
+
+  // Key by "playerId::categoria" so cross-category cards show under the partido's category
+  const map = {};
 
   jornadas
     .filter((j) => new Date(j.fecha).getFullYear() === currentYear)
     .forEach((jornada) => {
       (jornada.partidos || []).forEach((partido) => {
+        const cat = partido.categoria;
         (partido.partido_eventos || []).forEach((e) => {
-          if (!e.player_id || !map[e.player_id]) return;
-          if (e.tipo === 'amarilla') map[e.player_id].amarillas++;
-          if (e.tipo === 'roja') map[e.player_id].rojas++;
+          if (!e.player_id || !playerMap[e.player_id]) return;
+          if (e.tipo !== 'amarilla' && e.tipo !== 'roja') return;
+          const key = `${e.player_id}::${cat}`;
+          if (!map[key]) {
+            map[key] = {
+              id: e.player_id,
+              name: playerMap[e.player_id].name,
+              categoria: cat,
+              amarillas: 0,
+              rojas: 0,
+            };
+          }
+          if (e.tipo === 'amarilla') map[key].amarillas++;
+          if (e.tipo === 'roja') map[key].rojas++;
         });
       });
     });
 
-  return Object.entries(map)
-    .map(([id, s]) => ({ id, ...s }))
-    .filter((s) => s.amarillas > 0 || s.rojas > 0)
+  return Object.values(map)
     .sort((a, b) => b.amarillas - a.amarillas || b.rojas - a.rojas);
 };
 
-const exportToExcel = (allRows) => {
+const exportToExcel = (allRows, suspensionsMap) => {
   const wb = XLSX.utils.book_new();
   const year = new Date().getFullYear();
 
@@ -46,15 +52,19 @@ const exportToExcel = (allRows) => {
     const rows = allRows
       .filter((r) => r.categoria === cat)
       .sort((a, b) => b.amarillas - a.amarillas || b.rojas - a.rojas);
+    const catSuspensions = suspensionsMap.get(cat);
 
     const wsData = [
       ['Jugador', 'Amarillas', 'Rojas', 'Estado'],
-      ...rows.map((r) => [
-        r.name,
-        r.amarillas,
-        r.rojas,
-        isSuspended(r.amarillas) ? 'SUSPENDIDO' : '',
-      ]),
+      ...rows.map((r) => {
+        const susp = catSuspensions?.get(r.id);
+        return [
+          r.name,
+          r.amarillas,
+          r.rojas,
+          susp ? `SUSPENDIDO - ${susp.reason}` : '',
+        ];
+      }),
     ];
 
     const ws = XLSX.utils.aoa_to_sheet(wsData);
@@ -83,6 +93,8 @@ export const TarjetasTab = ({ jornadas = [], players = [], currentUser }) => {
   };
 
   const allRows = useMemo(() => buildCardStats(jornadas, players), [jornadas, players]);
+
+  const suspensions = useMemo(() => getCurrentSuspensionsByCategory(jornadas), [jornadas]);
 
   const visibleCats = useMemo(() => {
     if (!currentUser?.categoria || currentUser.categoria.length === 0) {
@@ -114,7 +126,7 @@ export const TarjetasTab = ({ jornadas = [], players = [], currentUser }) => {
           </p>
         </div>
         <button
-          onClick={() => exportToExcel(exportRows)}
+          onClick={() => exportToExcel(exportRows, suspensions)}
           className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition"
         >
           <Download className="w-4 h-4" />
@@ -177,10 +189,15 @@ export const TarjetasTab = ({ jornadas = [], players = [], currentUser }) => {
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {isSuspended(row.amarillas) ? (
-                      <span className="inline-block px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold tracking-wide">
-                        SUSPENDIDO
-                      </span>
+                    {suspensions.get(row.categoria)?.get(row.id) ? (
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="inline-block px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-bold tracking-wide">
+                          SUSPENDIDO
+                        </span>
+                        <span className="text-[10px] text-red-500 font-medium">
+                          {suspensions.get(row.categoria).get(row.id).reason}
+                        </span>
+                      </div>
                     ) : (
                       <span className="text-gray-300 dark:text-gray-600">—</span>
                     )}
