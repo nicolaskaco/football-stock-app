@@ -15,7 +15,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 ### B. Partidos y Torneos
 - [x] **B1. Mostrar minuto de gol/tarjeta en PartidoDetailView** — PR #229 · 2026-03-16
 - [x] **B2. Resultado del torneo** — PR #230 · 2026-03-16
-- [ ] **B3. Advertencias de elegibilidad en PartidoForm** — Highlight (yellow) players whose `categoria` ≠ partido's `categoria` in lineup dropdowns. Extend to suspended players once A2 is done.
+- [x] **B3. Advertencias de elegibilidad en PartidoForm** — PR #233 · 2026-03-16
 
 ### C. Inventario y Equipamiento
 
