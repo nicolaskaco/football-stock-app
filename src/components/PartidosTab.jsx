@@ -10,7 +10,7 @@ import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 
-export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
+export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], torneos = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const { execute } = useMutation();
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [view, setView] = useState('lista'); // 'lista' | 'calendario'
@@ -37,6 +37,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
       content: (
         <JornadaForm
           rivales={rivales}
+          torneos={torneos}
           jornada={jornada}
           onSubmit={handleEditJornada}
         />
@@ -57,6 +58,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
       content: (
         <JornadaForm
           rivales={rivales}
+          torneos={torneos}
           onSubmit={handleAddJornada}
         />
       ),
@@ -216,6 +218,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fase</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rival</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Torneo</th>
                 {CATEGORIAS_PARTIDO.map((cat) => (
                   <th key={cat} className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {cat}
@@ -241,6 +244,13 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">{formatDate(jornada.fecha)}</td>
                   <td className="px-6 py-4 font-medium text-gray-900">{jornada.rivales?.name || '—'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {jornada.torneos?.name ? (
+                      <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">
+                        {jornada.torneos.name}
+                      </span>
+                    ) : '—'}
+                  </td>
                   {CATEGORIAS_PARTIDO.map((cat) => {
                     const partido = getPartidoForCategoria(jornada, cat);
                     const esc = partido?.escenario || '—';

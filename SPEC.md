@@ -194,6 +194,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 |--------|------|-------|
 | `id` | uuid PK | |
 | `rival_id` | uuid FK → rivales | ON DELETE RESTRICT |
+| `torneo_id` | uuid FK → torneos | nullable — ON DELETE SET NULL |
 | `fecha` | date | Match date |
 | `fase` | text | `'Apertura'` \| `'Clausura'` |
 | `numero_jornada` | text | nullable — `'1'`–`'15'`, `'Semifinal'`, `'Final'` |

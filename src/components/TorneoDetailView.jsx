@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Users, Trophy, Shield, Download } from 'lucide-react';
+import { Calendar, MapPin, Users, Trophy, Shield, Download, CircleDot } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
 import { formatDate, formatDateLong, todayISO } from '../utils/dateUtils';
+import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { useAlertModal } from '../hooks/useAlertModal';
 
 export const TorneoDetailView = ({ torneo }) => {
@@ -24,6 +25,31 @@ export const TorneoDetailView = ({ torneo }) => {
   };
 
 
+
+  // Helpers para resultado de partidos
+  const getResultado = (partido) => {
+    if (!partido || partido.goles_local == null || partido.goles_visitante == null) return null;
+    const capGoles = partido.escenario === 'Local' ? partido.goles_local : partido.goles_visitante;
+    const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+    if (capGoles > rivalGoles) return 'win';
+    if (capGoles < rivalGoles) return 'loss';
+    return 'draw';
+  };
+  const RESULT_DOT = { win: 'bg-green-500', loss: 'bg-red-500', draw: 'bg-gray-400' };
+  const RESULT_LABEL = { win: 'G', loss: 'P', draw: 'E' };
+
+  const getPartidoForCategoria = (jornada, categoria) =>
+    (jornada.partidos || []).find((p) => p.categoria === categoria) || null;
+
+  const FASES_ORDER = ['Apertura', 'Clausura'];
+  const sortedJornadas = [...(torneo.jornadas || [])].sort((a, b) => {
+    const faseA = FASES_ORDER.indexOf(a.fase);
+    const faseB = FASES_ORDER.indexOf(b.fase);
+    if (faseA !== faseB) return faseA - faseB;
+    const numA = parseInt(a.numero_jornada) || 99;
+    const numB = parseInt(b.numero_jornada) || 99;
+    return numA - numB;
+  });
 
   const getDuration = (startDate, endDate) => {
     if (!startDate || !endDate) return '-';
@@ -609,6 +635,73 @@ export const TorneoDetailView = ({ torneo }) => {
           </div>
         ) : (
           <p className="text-gray-500 text-center py-8">No hay jugadores asignados</p>
+        )}
+      </div>
+
+      {/* Jornadas del Torneo */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="flex items-center gap-2 mb-4 pb-3 border-b-2 border-yellow-400">
+          <Calendar className="w-6 h-6 text-purple-600" />
+          <h3 className="text-xl font-bold text-gray-900">
+            Jornadas del Torneo ({torneo.jornadas?.length || 0})
+          </h3>
+        </div>
+        {sortedJornadas.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Jornada</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fase</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rival</th>
+                  {CATEGORIAS_PARTIDO.map((cat) => (
+                    <th key={cat} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase">{cat}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {sortedJornadas.map((jornada) => (
+                  <tr key={jornada.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      {jornada.numero_jornada ? (
+                        <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">
+                          {jornada.numero_jornada}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">
+                        {jornada.fase}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">{formatDate(jornada.fecha)}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{jornada.rivales?.name || '—'}</td>
+                    {CATEGORIAS_PARTIDO.map((cat) => {
+                      const partido = getPartidoForCategoria(jornada, cat);
+                      const resultado = getResultado(partido);
+                      return (
+                        <td key={cat} className="px-2 py-3 text-center">
+                          {resultado ? (
+                            <span
+                              className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold ${RESULT_DOT[resultado]}`}
+                              title={resultado === 'win' ? 'Ganamos' : resultado === 'loss' ? 'Perdimos' : 'Empate'}
+                            >
+                              {RESULT_LABEL[resultado]}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-200" />
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-gray-500 text-center py-8">No hay jornadas vinculadas a este torneo</p>
         )}
       </div>
 
