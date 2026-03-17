@@ -69,6 +69,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
       content: (
         <PartidoDetailView
           jornada={jornada}
+          jornadas={jornadas}
           players={players}
           injuries={injuries}
           canEdit={canEdit}

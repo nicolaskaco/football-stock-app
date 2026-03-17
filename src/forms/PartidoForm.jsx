@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS } from '../utils/constants';
+import { getSuspensionMap } from '../utils/suspensions';
 
 const MAX_TITULARES = 11;
 const MAX_SUPLENTES = 10;
 
 const emptySlot = () => ({ player_id: '', posicion: '' });
 
-export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) => {
+export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [], jornadaId, onSubmit }) => {
   const categoria = partido?.categoria || '';
 
   // Build active injury map
@@ -15,6 +16,9 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
   injuries.forEach(inj => {
     if (!inj.fecha_alta && !activeInjuryMap[inj.player_id]) activeInjuryMap[inj.player_id] = inj;
   });
+
+  // Build suspension map for this jornada + category
+  const suspendedMap = jornadaId ? getSuspensionMap(jornadas, jornadaId, categoria) : new Map();
 
   // Datos básicos del partido
   const [formData, setFormData] = useState({
@@ -374,14 +378,15 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
                 {getOptionsForSlot(t.player_id).map((p) => {
                   const efectiva = p.categoria_juego || p.categoria;
                   const mismatch = efectiva !== categoria;
+                  const suspended = suspendedMap.has(p.id);
                   return (
                     <option
                       key={p.id}
                       value={p.id}
-                      disabled={usedIds.has(p.id) && t.player_id !== p.id}
-                      style={mismatch ? { backgroundColor: '#fef3c7' } : undefined}
+                      disabled={(usedIds.has(p.id) && t.player_id !== p.id) || suspended}
+                      style={suspended ? { backgroundColor: '#fee2e2' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
                     >
-                      {mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                      {suspended ? '🚫 ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                     </option>
                   );
                 })}
@@ -431,14 +436,15 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
                 {getOptionsForSlot(s.player_id).map((p) => {
                   const efectiva = p.categoria_juego || p.categoria;
                   const mismatch = efectiva !== categoria;
+                  const suspended = suspendedMap.has(p.id);
                   return (
                     <option
                       key={p.id}
                       value={p.id}
-                      disabled={usedIds.has(p.id) && s.player_id !== p.id}
-                      style={mismatch ? { backgroundColor: '#fef3c7' } : undefined}
+                      disabled={(usedIds.has(p.id) && s.player_id !== p.id) || suspended}
+                      style={suspended ? { backgroundColor: '#fee2e2' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
                     >
-                      {mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+                      {suspended ? '🚫 ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
                     </option>
                   );
                 })}
