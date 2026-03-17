@@ -103,7 +103,9 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                                   currentUser.categoria.length === 0 ||
                                   currentUser.categoria.includes(p.categoria);
 
-    return matchesSearch && matchesCategoria && hasAccessToCategoria;
+    const matchesStatus = !p.status || p.status === 'activo';
+
+    return matchesSearch && matchesCategoria && hasAccessToCategoria && matchesStatus;
   });
 
   const handleSelectAll = () => {
