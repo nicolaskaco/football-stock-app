@@ -56,14 +56,19 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
   const [titulares, setTitulares] = useState(buildInitialTitulares);
   const [suplentes, setSuplentes] = useState(buildInitialSuplentes);
 
-  // Eventos: mapa player_id → { goles, amarilla, roja }
+  // Eventos: mapa player_id → { goles, goles_minutos, amarilla, amarilla_minuto, roja, roja_minuto }
+  const emptyEvento = () => ({ goles: 0, goles_minutos: [], amarilla: false, amarilla_minuto: null, roja: false, roja_minuto: null });
+
   const buildInitialEventos = () => {
     const map = {};
     (partido?.partido_eventos || []).forEach((e) => {
-      if (!map[e.player_id]) map[e.player_id] = { goles: 0, amarilla: false, roja: false };
-      if (e.tipo === 'gol')      map[e.player_id].goles++;
-      if (e.tipo === 'amarilla') map[e.player_id].amarilla = true;
-      if (e.tipo === 'roja')     map[e.player_id].roja = true;
+      if (!map[e.player_id]) map[e.player_id] = emptyEvento();
+      if (e.tipo === 'gol') {
+        map[e.player_id].goles++;
+        map[e.player_id].goles_minutos.push(e.minuto ?? null);
+      }
+      if (e.tipo === 'amarilla') { map[e.player_id].amarilla = true; map[e.player_id].amarilla_minuto = e.minuto ?? null; }
+      if (e.tipo === 'roja')     { map[e.player_id].roja = true;     map[e.player_id].roja_minuto = e.minuto ?? null; }
     });
     return map;
   };
@@ -72,8 +77,25 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
   const updateEvento = (player_id, field, value) =>
     setEventosState((prev) => ({
       ...prev,
-      [player_id]: { goles: 0, amarilla: false, roja: false, ...prev[player_id], [field]: value },
+      [player_id]: { ...emptyEvento(), ...prev[player_id], [field]: value },
     }));
+
+  const changeGoles = (player_id, delta) =>
+    setEventosState((prev) => {
+      const existing = prev[player_id] || emptyEvento();
+      const newGoles = Math.max(0, (existing.goles || 0) + delta);
+      const newMinutos = (existing.goles_minutos || []).slice(0, newGoles);
+      return { ...prev, [player_id]: { ...existing, goles: newGoles, goles_minutos: newMinutos } };
+    });
+
+  const updateGoalMinuto = (player_id, index, value) =>
+    setEventosState((prev) => {
+      const existing = prev[player_id] || emptyEvento();
+      const newMinutos = [...(existing.goles_minutos || [])];
+      while (newMinutos.length <= index) newMinutos.push(null);
+      newMinutos[index] = value === '' ? null : Number(value);
+      return { ...prev, [player_id]: { ...existing, goles_minutos: newMinutos } };
+    });
 
   // Filtro de categorías: por defecto solo la del partido
   const [categoriasActivas, setCategoriasActivas] = useState([categoria]);
@@ -142,10 +164,12 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
     const eventosData = [];
     Object.entries(eventosState).forEach(([player_id, stats]) => {
       if (!lineupIds.has(player_id)) return;
-      for (let i = 0; i < (stats.goles || 0); i++)
-        eventosData.push({ player_id, tipo: 'gol' });
-      if (stats.amarilla) eventosData.push({ player_id, tipo: 'amarilla' });
-      if (stats.roja)     eventosData.push({ player_id, tipo: 'roja' });
+      for (let i = 0; i < (stats.goles || 0); i++) {
+        const min = stats.goles_minutos?.[i];
+        eventosData.push({ player_id, tipo: 'gol', minuto: min ? Number(min) : null });
+      }
+      if (stats.amarilla) eventosData.push({ player_id, tipo: 'amarilla', minuto: stats.amarilla_minuto ? Number(stats.amarilla_minuto) : null });
+      if (stats.roja)     eventosData.push({ player_id, tipo: 'roja',     minuto: stats.roja_minuto    ? Number(stats.roja_minuto)    : null });
     });
 
     onSubmit(data, titularesData, suplentesData, eventosData);
@@ -443,7 +467,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {convocados.map(({ player_id, tipo }) => {
-                  const ev = eventosState[player_id] || { goles: 0, amarilla: false, roja: false };
+                  const ev = eventosState[player_id] || emptyEvento();
                   return (
                     <tr key={player_id} className="hover:bg-gray-50">
                       <td className="px-3 py-2">
@@ -453,35 +477,79 @@ export const PartidoForm = ({ partido, players = [], injuries = [], onSubmit }) 
                         </span>
                       </td>
                       <td className="px-3 py-2">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => updateEvento(player_id, 'goles', Math.max(0, ev.goles - 1))}
-                            className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center"
-                          >−</button>
-                          <span className="w-4 text-center font-semibold text-gray-800">{ev.goles}</span>
-                          <button
-                            type="button"
-                            onClick={() => updateEvento(player_id, 'goles', ev.goles + 1)}
-                            className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center"
-                          >+</button>
+                        <div className="flex flex-col items-center gap-1">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => changeGoles(player_id, -1)}
+                              className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center"
+                            >−</button>
+                            <span className="w-4 text-center font-semibold text-gray-800">{ev.goles}</span>
+                            <button
+                              type="button"
+                              onClick={() => changeGoles(player_id, +1)}
+                              className="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-sm flex items-center justify-center"
+                            >+</button>
+                          </div>
+                          {ev.goles > 0 && (
+                            <div className="flex flex-wrap gap-1 justify-center">
+                              {Array.from({ length: ev.goles }).map((_, i) => (
+                                <input
+                                  key={i}
+                                  type="number"
+                                  min="1"
+                                  max="120"
+                                  placeholder="min"
+                                  value={ev.goles_minutos?.[i] ?? ''}
+                                  onChange={(e) => updateGoalMinuto(player_id, i, e.target.value)}
+                                  className="w-14 px-1 py-0.5 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-blue-400"
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={ev.amarilla}
-                          onChange={(e) => updateEvento(player_id, 'amarilla', e.target.checked)}
-                          className="w-4 h-4 accent-yellow-400 cursor-pointer"
-                        />
+                        <div className="flex flex-col items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={ev.amarilla}
+                            onChange={(e) => updateEvento(player_id, 'amarilla', e.target.checked)}
+                            className="w-4 h-4 accent-yellow-400 cursor-pointer"
+                          />
+                          {ev.amarilla && (
+                            <input
+                              type="number"
+                              min="1"
+                              max="120"
+                              placeholder="min"
+                              value={ev.amarilla_minuto ?? ''}
+                              onChange={(e) => updateEvento(player_id, 'amarilla_minuto', e.target.value === '' ? null : Number(e.target.value))}
+                              className="w-14 px-1 py-0.5 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-yellow-400"
+                            />
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={ev.roja}
-                          onChange={(e) => updateEvento(player_id, 'roja', e.target.checked)}
-                          className="w-4 h-4 accent-red-500 cursor-pointer"
-                        />
+                        <div className="flex flex-col items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={ev.roja}
+                            onChange={(e) => updateEvento(player_id, 'roja', e.target.checked)}
+                            className="w-4 h-4 accent-red-500 cursor-pointer"
+                          />
+                          {ev.roja && (
+                            <input
+                              type="number"
+                              min="1"
+                              max="120"
+                              placeholder="min"
+                              value={ev.roja_minuto ?? ''}
+                              onChange={(e) => updateEvento(player_id, 'roja_minuto', e.target.value === '' ? null : Number(e.target.value))}
+                              className="w-14 px-1 py-0.5 border border-gray-300 rounded text-xs text-center focus:ring-1 focus:ring-red-400"
+                            />
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

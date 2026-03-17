@@ -14,7 +14,6 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 ### B. Partidos y Torneos
 
-- [ ] **B1. Mostrar minuto de gol/tarjeta en PartidoDetailView** — `partido_eventos` already stores `minuto` (optional) but it's never displayed. Show `45'` next to goal/card in match summary. Add optional minute input in PartidoForm when registering an event.
 - [ ] **B2. Resultado del torneo** — Add `resultado` (campeón / subcampeón / fase de grupos / etc.) and optional `comentario_resultado` to `torneos`. Shown as badge in TorneosTab row and TorneoDetailView header.
 - [ ] **B3. Advertencias de elegibilidad en PartidoForm** — Highlight (yellow) players whose `categoria` ≠ partido's `categoria` in lineup dropdowns. Extend to suspended players once A2 is done.
 
@@ -38,4 +37,4 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 ## Completado
 
-<!-- Move items here with - [x] and PR # + date when shipped -->
+- [x] **B1. Mostrar minuto de gol/tarjeta en PartidoDetailView** — PR #229 · 2026-03-16

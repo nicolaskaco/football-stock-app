@@ -75,12 +75,16 @@ export const PartidoDetailView = ({ jornada, players = [], injuries = [], canEdi
     return `${cap ?? '—'} - ${rival ?? '—'}`;
   };
 
-  const golesCount = (partido, playerId) =>
-    (partido.partido_eventos || []).filter((e) => e.player_id === playerId && e.tipo === 'gol').length;
+  const golesEventos = (partido, playerId) =>
+    (partido.partido_eventos || []).filter((e) => e.player_id === playerId && e.tipo === 'gol');
   const tieneAmarilla = (partido, playerId) =>
     (partido.partido_eventos || []).some((e) => e.player_id === playerId && e.tipo === 'amarilla');
   const tieneRoja = (partido, playerId) =>
     (partido.partido_eventos || []).some((e) => e.player_id === playerId && e.tipo === 'roja');
+  const amarillaMinuto = (partido, playerId) =>
+    (partido.partido_eventos || []).find((e) => e.player_id === playerId && e.tipo === 'amarilla')?.minuto ?? null;
+  const rojaMinuto = (partido, playerId) =>
+    (partido.partido_eventos || []).find((e) => e.player_id === playerId && e.tipo === 'roja')?.minuto ?? null;
 
   const resultadoBadgeClass = (p) => {
     if (p.goles_local == null || p.goles_visitante == null) return 'bg-gray-900 text-yellow-400';
@@ -164,9 +168,12 @@ export const PartidoDetailView = ({ jornada, players = [], injuries = [], canEdi
                   <div className="space-y-1">
                     {titulares.map((pp, i) => {
                       const pid = pp.player_id;
-                      const goles = golesCount(partido, pid);
+                      const golesList = golesEventos(partido, pid);
+                      const anyGoalMinuto = golesList.some((e) => e.minuto != null);
+                      const amMin = amarillaMinuto(partido, pid);
+                      const roMin = rojaMinuto(partido, pid);
                       return (
-                        <div key={pp.id} className="flex items-center gap-2 text-sm">
+                        <div key={pp.id} className="flex items-center gap-2 text-sm flex-wrap">
                           <span className="w-5 text-right text-gray-400 shrink-0 text-xs">{pp.orden || i + 1}</span>
                           <span className="font-medium text-gray-800">
                             {pp.players?.name_visual || pp.players?.name || '—'}
@@ -174,11 +181,15 @@ export const PartidoDetailView = ({ jornada, players = [], injuries = [], canEdi
                           {pp.posicion && (
                             <span className="text-xs text-gray-500">({pp.posicion})</span>
                           )}
-                          {goles > 0 && (
-                            <span className="text-xs font-semibold text-green-700">⚽×{goles}</span>
+                          {golesList.length > 0 && (
+                            <span className="text-xs font-semibold text-green-700">
+                              {anyGoalMinuto
+                                ? golesList.map((e, gi) => <span key={gi}>{gi > 0 ? ' ' : ''}⚽{e.minuto != null ? `${e.minuto}'` : ''}</span>)
+                                : `⚽×${golesList.length}`}
+                            </span>
                           )}
-                          {tieneAmarilla(partido, pid) && <span title="Amarilla">🟨</span>}
-                          {tieneRoja(partido, pid) && <span title="Roja">🟥</span>}
+                          {tieneAmarilla(partido, pid) && <span title="Amarilla">🟨{amMin != null ? `${amMin}'` : ''}</span>}
+                          {tieneRoja(partido, pid) && <span title="Roja">🟥{roMin != null ? `${roMin}'` : ''}</span>}
                         </div>
                       );
                     })}
@@ -197,18 +208,25 @@ export const PartidoDetailView = ({ jornada, players = [], injuries = [], canEdi
                   <div className="space-y-1">
                     {suplentes.map((pp, i) => {
                       const pid = pp.player_id;
-                      const goles = golesCount(partido, pid);
+                      const golesList = golesEventos(partido, pid);
+                      const anyGoalMinuto = golesList.some((e) => e.minuto != null);
+                      const amMin = amarillaMinuto(partido, pid);
+                      const roMin = rojaMinuto(partido, pid);
                       return (
-                        <div key={pp.id} className="flex items-center gap-2 text-sm">
+                        <div key={pp.id} className="flex items-center gap-2 text-sm flex-wrap">
                           <span className="w-5 text-right text-gray-400 shrink-0 text-xs">{pp.orden || i + 1}</span>
                           <span className="font-medium text-gray-800">
                             {pp.players?.name_visual || pp.players?.name || '—'}
                           </span>
-                          {goles > 0 && (
-                            <span className="text-xs font-semibold text-green-700">⚽×{goles}</span>
+                          {golesList.length > 0 && (
+                            <span className="text-xs font-semibold text-green-700">
+                              {anyGoalMinuto
+                                ? golesList.map((e, gi) => <span key={gi}>{gi > 0 ? ' ' : ''}⚽{e.minuto != null ? `${e.minuto}'` : ''}</span>)
+                                : `⚽×${golesList.length}`}
+                            </span>
                           )}
-                          {tieneAmarilla(partido, pid) && <span title="Amarilla">🟨</span>}
-                          {tieneRoja(partido, pid) && <span title="Roja">🟥</span>}
+                          {tieneAmarilla(partido, pid) && <span title="Amarilla">🟨{amMin != null ? `${amMin}'` : ''}</span>}
+                          {tieneRoja(partido, pid) && <span title="Roja">🟥{roMin != null ? `${roMin}'` : ''}</span>}
                         </div>
                       );
                     })}
