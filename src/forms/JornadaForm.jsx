@@ -6,7 +6,7 @@ import { todayISO } from '../utils/dateUtils';
  * Formulario de jornada — funciona tanto para crear (sin `jornada`) como para editar (con `jornada`).
  * En modo edición no se muestra el selector de escenario (los partidos ya existen).
  */
-export const JornadaForm = ({ rivales = [], onSubmit, jornada = null }) => {
+export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = null }) => {
   const isEdit = !!jornada;
 
   const [formData, setFormData] = useState({
@@ -14,6 +14,7 @@ export const JornadaForm = ({ rivales = [], onSubmit, jornada = null }) => {
     fecha: jornada?.fecha || todayISO(),
     fase: jornada?.fase || '',
     numero_jornada: jornada?.numero_jornada || '',
+    torneo_id: jornada?.torneo_id || '',
   });
   const [escenarioBase, setEscenarioBase] = useState('');
 
@@ -58,6 +59,21 @@ export const JornadaForm = ({ rivales = [], onSubmit, jornada = null }) => {
           <option value="">Seleccione un rival</option>
           {rivales.map((r) => (
             <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Torneo (opcional) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Torneo (opcional)</label>
+        <select
+          value={formData.torneo_id}
+          onChange={(e) => setFormData({ ...formData, torneo_id: e.target.value || null })}
+          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Sin torneo</option>
+          {[...torneos].sort((a, b) => (b.start_date || '').localeCompare(a.start_date || '')).map((t) => (
+            <option key={t.id} value={t.id}>{t.name}</option>
           ))}
         </select>
       </div>

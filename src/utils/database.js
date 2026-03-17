@@ -590,7 +590,8 @@ export const database = {
         *,
         torneo_dirigentes(dirigente_id, dirigentes(id, name, rol, categoria)),
         torneo_players(player_id, players(id, name, categoria, posicion, gov_id, date_of_birth)),
-        torneo_funcionarios(employee_id, employees(id, name, role, categoria))
+        torneo_funcionarios(employee_id, employees(id, name, role, categoria)),
+        jornadas(id, fecha, numero_jornada, fase, rival_id, rivales(id, name), partidos(id, categoria, escenario, goles_local, goles_visitante))
       `)
       .order('start_date', { ascending: false });
     
@@ -1121,6 +1122,7 @@ export const database = {
       .select(`
         *,
         rivales(id, name),
+        torneos(id, name),
         partidos(
           *,
           partido_players(

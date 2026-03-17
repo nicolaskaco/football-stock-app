@@ -310,6 +310,7 @@ export const AdminDashboard = ({
             rivales={rivales}
             players={players}
             injuries={injuries}
+            torneos={torneos}
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             currentUser={currentUser}
