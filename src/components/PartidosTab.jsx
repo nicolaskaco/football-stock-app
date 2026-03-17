@@ -103,9 +103,23 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
   const RESULT_DOT = { win: 'bg-green-500', loss: 'bg-red-500', draw: 'bg-gray-400' };
   const RESULT_LABEL = { win: 'G', loss: 'P', draw: 'E' };
 
+  const currentYear = new Date().getFullYear();
+  const [yearFiltro, setYearFiltro] = useState(currentYear);
+
+  const availableYears = [...new Set(
+    jornadas
+      .map((j) => j.fecha ? new Date(j.fecha).getFullYear() : null)
+      .filter(Boolean)
+  )].sort((a, b) => b - a);
+
+  if (!availableYears.includes(currentYear)) availableYears.unshift(currentYear);
+
   const FASES_ORDER = ['Apertura', 'Clausura'];
   const sortedJornadas = [...jornadas]
-    .filter((j) => !faseFiltro || j.fase === faseFiltro)
+    .filter((j) => {
+      const year = j.fecha ? new Date(j.fecha).getFullYear() : null;
+      return year === yearFiltro && (!faseFiltro || j.fase === faseFiltro);
+    })
     .sort((a, b) => {
       const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
       if (faseDiff !== 0) return faseDiff;
@@ -154,6 +168,20 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
         </div>
       </div>
 
+      {/* Year filter */}
+      <div className="flex items-center gap-2">
+        <label className="text-sm text-gray-500 font-medium">Año:</label>
+        <select
+          value={yearFiltro}
+          onChange={(e) => setYearFiltro(Number(e.target.value))}
+          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-black"
+        >
+          {availableYears.map((year) => (
+            <option key={year} value={year}>{year}</option>
+          ))}
+        </select>
+      </div>
+
       {/* Fase filter */}
       <FilterButtonGroup options={FASES_CAMPEONATO} value={faseFiltro} onChange={setFaseFiltro} />
 
@@ -161,7 +189,9 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
         <div className="text-center py-16 bg-white rounded-lg shadow">
           <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg">
-            {jornadas.length === 0 ? 'No hay jornadas registradas aún.' : 'No hay jornadas para esta fase.'}
+            {jornadas.length === 0
+              ? 'No hay jornadas registradas aún.'
+              : `No hay jornadas para ${yearFiltro}${faseFiltro ? ` — ${faseFiltro}` : ''}.`}
           </p>
           {canEdit && jornadas.length === 0 && (
             <p className="text-gray-400 text-sm mt-2">Usá el botón "Nueva Jornada" para comenzar.</p>
