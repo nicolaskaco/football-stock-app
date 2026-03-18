@@ -53,11 +53,25 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
 
   const togglePlayer = (playerId) => {
     if (readOnly) return;
-    setSelectedPlayers(prev => 
+    setSelectedPlayers(prev =>
       prev.includes(playerId)
         ? prev.filter(id => id !== playerId)
         : [...prev, playerId]
     );
+  };
+
+  const toggleAllPlayers = () => {
+    if (readOnly) return;
+    const allFilteredSelected =
+      filteredPlayers.length > 0 &&
+      filteredPlayers.every(p => selectedPlayers.includes(p.id));
+    if (allFilteredSelected) {
+      const filteredIds = new Set(filteredPlayers.map(p => p.id));
+      setSelectedPlayers(prev => prev.filter(id => !filteredIds.has(id)));
+    } else {
+      const filteredIds = filteredPlayers.map(p => p.id);
+      setSelectedPlayers(prev => [...new Set([...prev, ...filteredIds])]);
+    }
   };
 
   const toggleEmployee = (employeeId) => {
@@ -257,20 +271,33 @@ export const TorneoForm = ({ torneo, onSubmit, dirigentes = [], players = [], em
           Jugadores
         </h3>
         
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Filtrar por Categoría
-          </label>
-          <select
-            value={filterCategoria}
-            onChange={(e) => setFilterCategoria(e.target.value)}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">Todas las Categorías</option>
-            {categorias.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
+        <div className="mb-4 flex flex-wrap items-end gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filtrar por Categoría
+            </label>
+            <select
+              value={filterCategoria}
+              onChange={(e) => setFilterCategoria(e.target.value)}
+              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">Todas las Categorías</option>
+              {categorias.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          {!readOnly && filteredPlayers.length > 0 && (
+            <button
+              type="button"
+              onClick={toggleAllPlayers}
+              className="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50"
+            >
+              {filteredPlayers.every(p => selectedPlayers.includes(p.id))
+                ? 'Deseleccionar todos'
+                : 'Seleccionar todos'}
+            </button>
+          )}
         </div>
 
         <div className="max-h-96 overflow-y-auto space-y-2">
