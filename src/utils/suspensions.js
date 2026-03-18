@@ -65,7 +65,7 @@ export function getSuspensionMap(jornadas, targetJornadaId, categoria) {
       const milestone = Math.floor(total / 5) * 5;
       // Only set yellow suspension if no red card suspension already active
       if (!suspensions.has(playerId)) {
-        suspensions.set(playerId, { reason: `${milestone}ta Amarilla` });
+        suspensions.set(playerId, { reason: `${milestone}ª Amarilla` });
       }
     }
   }
@@ -145,7 +145,7 @@ export function getCurrentSuspensionsByCategory(jornadas) {
         if (Math.floor(total / 5) > Math.floor(prior / 5)) {
           const milestone = Math.floor(total / 5) * 5;
           if (!suspensions.has(playerId)) {
-            suspensions.set(playerId, { reason: `${milestone}ta Amarilla` });
+            suspensions.set(playerId, { reason: `${milestone}ª Amarilla` });
           }
         }
       }
