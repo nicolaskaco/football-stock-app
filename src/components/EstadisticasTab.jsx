@@ -555,6 +555,22 @@ const CanchaStatsTable = ({ data }) => {
 export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
   const [subTab, setSubTab] = useState('general');
 
+  // Year filter
+  const currentYear = new Date().getFullYear();
+  const availableYears = useMemo(() => {
+    const years = [...new Set(
+      jornadas.map((j) => j.fecha ? new Date(j.fecha).getFullYear() : null).filter(Boolean)
+    )].sort((a, b) => b - a);
+    if (!years.includes(currentYear)) years.unshift(currentYear);
+    return years;
+  }, [jornadas]);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
+  const filteredJornadas = useMemo(
+    () => jornadas.filter((j) => j.fecha && new Date(j.fecha).getFullYear() === selectedYear),
+    [jornadas, selectedYear]
+  );
+
   // Jugadores filters
   const [categoriaFiltro, setCategoriaFiltro] = useState(null);
   const [search, setSearch] = useState('');
@@ -564,8 +580,8 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
   const [categoriaFiltroRivales, setCategoriaFiltroRivales] = useState(null);
 
   const allStats = useMemo(
-    () => buildStats(jornadas, players, categoriaFiltro),
-    [jornadas, players, categoriaFiltro]
+    () => buildStats(filteredJornadas, players, categoriaFiltro),
+    [filteredJornadas, players, categoriaFiltro]
   );
 
   const filtered = useMemo(() => {
@@ -574,8 +590,8 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
   }, [allStats, search]);
 
   const partidoRows = useMemo(
-    () => buildPartidoRows(jornadas, categoriaFiltroRivales, faseFiltro),
-    [jornadas, categoriaFiltroRivales, faseFiltro]
+    () => buildPartidoRows(filteredJornadas, categoriaFiltroRivales, faseFiltro),
+    [filteredJornadas, categoriaFiltroRivales, faseFiltro]
   );
 
   const isJugadoresTab = ['general', 'goleadores', 'tarjetas'].includes(subTab);
@@ -595,9 +611,23 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Estadísticas</h2>
-        <p className="text-sm text-gray-500 mt-1">Rendimiento de jugadores y resultados frente a rivales.</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Estadísticas</h2>
+          <p className="text-sm text-gray-500 mt-1">Rendimiento de jugadores y resultados frente a rivales.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500 font-medium">Año:</span>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          >
+            {availableYears.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Sub-tabs */}
@@ -641,9 +671,9 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {/* Charts tab */}
       {isGraficosTab && (
         <div className="space-y-6">
-          <GoalTrendChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
-          <CardDistributionChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
-          <RivalPerformanceChart jornadas={jornadas} categoriaFiltro={categoriaFiltroRivales} />
+          <GoalTrendChart jornadas={filteredJornadas} categoriaFiltro={categoriaFiltroRivales} />
+          <CardDistributionChart jornadas={filteredJornadas} categoriaFiltro={categoriaFiltroRivales} />
+          <RivalPerformanceChart jornadas={filteredJornadas} categoriaFiltro={categoriaFiltroRivales} />
           <AgeCurveChart players={players} categoriaFiltro={categoriaFiltroRivales} />
         </div>
       )}
