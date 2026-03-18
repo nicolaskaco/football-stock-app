@@ -40,8 +40,25 @@ const buildCardStats = (jornadas, players) => {
       });
     });
 
-  return Object.values(map)
-    .sort((a, b) => b.amarillas - a.amarillas || b.rojas - a.rojas);
+  return Object.values(map);
+};
+
+const sortByPriority = (a, b, suspensionsMap) => {
+  const aRed = a.rojas > 0;
+  const bRed = b.rojas > 0;
+  const aSusp = !!suspensionsMap.get(a.categoria)?.get(a.id);
+  const bSusp = !!suspensionsMap.get(b.categoria)?.get(b.id);
+
+  const rank = (hasRed, isSusp) => {
+    if (hasRed && isSusp) return 0;
+    if (!hasRed && isSusp) return 1;
+    if (hasRed && !isSusp) return 2;
+    return 3;
+  };
+
+  const diff = rank(aRed, aSusp) - rank(bRed, bSusp);
+  if (diff !== 0) return diff;
+  return b.rojas - a.rojas || b.amarillas - a.amarillas;
 };
 
 const exportToExcel = (allRows, suspensionsMap) => {
@@ -51,7 +68,7 @@ const exportToExcel = (allRows, suspensionsMap) => {
   CATEGORIAS_PARTIDO.forEach((cat) => {
     const rows = allRows
       .filter((r) => r.categoria === cat)
-      .sort((a, b) => b.amarillas - a.amarillas || b.rojas - a.rojas);
+      .sort((a, b) => sortByPriority(a, b, suspensionsMap));
     const catSuspensions = suspensionsMap.get(cat);
 
     const wsData = [
@@ -104,11 +121,13 @@ export const TarjetasTab = ({ jornadas = [], players = [], currentUser }) => {
   }, [currentUser]);
 
   const rows = useMemo(() => {
-    return allRows.filter((r) => {
-      const matchesCat = filterCat ? r.categoria === filterCat : visibleCats.includes(r.categoria);
-      return matchesCat;
-    });
-  }, [allRows, filterCat, visibleCats]);
+    return allRows
+      .filter((r) => {
+        const matchesCat = filterCat ? r.categoria === filterCat : visibleCats.includes(r.categoria);
+        return matchesCat;
+      })
+      .sort((a, b) => sortByPriority(a, b, suspensions));
+  }, [allRows, filterCat, visibleCats, suspensions]);
 
   const exportRows = useMemo(() => {
     return allRows.filter((r) => visibleCats.includes(r.categoria));
