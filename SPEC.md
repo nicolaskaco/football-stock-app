@@ -347,7 +347,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [InventoryForm.jsx](src/forms/InventoryForm.jsx) | Inventory item add/edit |
 | [DistributionForm.jsx](src/forms/DistributionForm.jsx) | Distribution record add/edit |
 | [DirigenteForm.jsx](src/forms/DirigenteForm.jsx) | Board member add/edit |
-| [TorneoForm.jsx](src/forms/TorneoForm.jsx) | Tournament add/edit (multi-select players/dirigentes/staff). "Resultado del Torneo" section: position (1–16), playoff result (Campeón/Subcampeón, only when position = 1), and optional result comment. |
+| [TorneoForm.jsx](src/forms/TorneoForm.jsx) | Tournament add/edit (multi-select players/dirigentes/staff). Player list has a category filter and a "Seleccionar todos / Deseleccionar todos" button that bulk-selects/deselects all currently visible (filtered) players. "Resultado del Torneo" section: position (1–16), playoff result (Campeón/Subcampeón, only when position = 1), and optional result comment. |
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
 | [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit (name only) |
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
