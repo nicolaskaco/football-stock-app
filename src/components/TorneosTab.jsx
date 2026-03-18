@@ -55,7 +55,12 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
     if (!years.includes(currentYear)) years.unshift(currentYear);
     return years;
   }, [safeTorneos]);
-  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const selectedYear = Number(searchParams.get('t_year')) || currentYear;
+  const setSelectedYear = (v) => setSearchParams(prev => {
+    const p = new URLSearchParams(prev);
+    v === currentYear ? p.delete('t_year') : p.set('t_year', String(v));
+    return p;
+  });
 
   // Filter torneos
   const filtered = safeTorneos

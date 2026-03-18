@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
@@ -553,7 +554,22 @@ const CanchaStatsTable = ({ data }) => {
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
-  const [subTab, setSubTab] = useState('general');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const setParam = (key, value, defaultValue) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (value === null || value === undefined || value === defaultValue || value === '') {
+        p.delete(key);
+      } else {
+        p.set(key, String(value));
+      }
+      return p;
+    });
+  };
+
+  const subTab = searchParams.get('e_tab') || 'general';
+  const setSubTab = (v) => setParam('e_tab', v, 'general');
 
   // Year filter
   const currentYear = new Date().getFullYear();
@@ -564,7 +580,8 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
     if (!years.includes(currentYear)) years.unshift(currentYear);
     return years;
   }, [jornadas]);
-  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const selectedYear = Number(searchParams.get('e_year')) || currentYear;
+  const setSelectedYear = (v) => setParam('e_year', v, currentYear);
 
   const filteredJornadas = useMemo(
     () => jornadas.filter((j) => j.fecha && new Date(j.fecha).getFullYear() === selectedYear),
@@ -572,7 +589,8 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
   );
 
   // Jugadores filters
-  const [categoriaFiltro, setCategoriaFiltro] = useState(null);
+  const categoriaFiltro = searchParams.get('e_cat') || null;
+  const setCategoriaFiltro = (v) => setParam('e_cat', v, null);
   const [search, setSearch] = useState('');
 
   // Rivales filters
