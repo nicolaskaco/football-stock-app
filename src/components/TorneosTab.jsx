@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, Edit2, Trash2, Trophy, Download, Eye, Info } from 'lucide-react';
 import { formatDate, todayISO } from '../utils/dateUtils';
@@ -46,12 +46,25 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
   // Safety check
   const safeTorneos = Array.isArray(torneos) ? torneos : [];
 
+  // Year filter
+  const currentYear = new Date().getFullYear();
+  const availableYears = useMemo(() => {
+    const years = [...new Set(
+      safeTorneos.map((t) => t.start_date ? new Date(t.start_date).getFullYear() : null).filter(Boolean)
+    )].sort((a, b) => b - a);
+    if (!years.includes(currentYear)) years.unshift(currentYear);
+    return years;
+  }, [safeTorneos]);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+
   // Filter torneos
-  const filtered = safeTorneos.filter(t =>
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (t.city && t.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (t.country && t.country.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filtered = safeTorneos
+    .filter((t) => t.start_date && new Date(t.start_date).getFullYear() === selectedYear)
+    .filter((t) =>
+      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.city && t.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (t.country && t.country.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
 
   const handleAdd = (torneo, dirigenteIds, playerIds, employeeIds) => execute(async () => {
     const torneoData = {
@@ -179,13 +192,25 @@ export const TorneosTab = ({ torneos = [], dirigentes = [], players = [], employ
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow mb-6 p-4">
+      <div className="bg-white rounded-lg shadow mb-6 p-4 flex flex-col sm:flex-row gap-3 items-center">
         <SearchInput
           value={inputValue}
           onChange={setInputValue}
           placeholder="Buscar por nombre, ciudad o país..."
           className="w-full"
         />
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-sm text-gray-500 font-medium">Año:</span>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(Number(e.target.value))}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          >
+            {availableYears.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
