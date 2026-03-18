@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useMountEffect } from '../hooks/useMountEffect';
 import { UserPlus, Pencil, Trash2, Shield, ChevronDown, ChevronUp, Copy, Check, Link } from 'lucide-react';
 import { database } from '../utils/database';
+import { ALL_PERMISSION_KEYS } from '../forms/UserInviteForm';
 import { Modal } from './Modal';
 import { ConfirmModal } from './ConfirmModal';
 import { UserInviteForm } from '../forms/UserInviteForm';
@@ -124,16 +125,8 @@ export const UserManagementSection = () => {
     );
   };
 
-  const enabledCount = (user) => {
-    const flags = [
-      'can_access_players', 'can_edit_players', 'can_access_viatico',
-      'can_access_widgets', 'can_access_dirigentes', 'can_access_ropa',
-      'editar_nombre_especial', 'view_torneo', 'edit_torneo',
-      'can_view_comisiones', 'can_edit_comisiones', 'can_view_partidos',
-      'can_edit_partidos', 'can_see_ropa_widgets', 'can_access_tesorero',
-    ];
-    return flags.filter(f => user[f]).length;
-  };
+  const enabledCount = (user) =>
+    ALL_PERMISSION_KEYS.filter(f => user[f]).length;
 
   return (
     <div className="space-y-4">
@@ -194,7 +187,7 @@ export const UserManagementSection = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-gray-600">
-                          {enabledCount(user)} / 15
+                          {enabledCount(user)} / {ALL_PERMISSION_KEYS.length}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-600">
                           {user.categoria && user.categoria.length > 0
