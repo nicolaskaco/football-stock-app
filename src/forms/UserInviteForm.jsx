@@ -60,7 +60,7 @@ const PERMISSION_GROUPS = [
   },
 ];
 
-const ALL_PERMISSION_KEYS = PERMISSION_GROUPS.flatMap(g =>
+export const ALL_PERMISSION_KEYS = PERMISSION_GROUPS.flatMap(g =>
   g.permissions.map(p => p.key)
 );
 
