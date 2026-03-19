@@ -82,6 +82,15 @@ export const ReportsTab = ({ distributions, employees, inventory, players = [] }
     return { categoria: cat, cantidad: activos.length, conContrato, totalViatico, totalComplemento, totalGeneral };
   }).filter(g => g.cantidad > 0);
 
+  // Jugadores con Vianda
+  const jugadoresVianda = players
+    .filter(p => p.vianda > 0)
+    .sort((a, b) => {
+      const catDiff = CATEGORIAS.indexOf(a.categoria) - CATEGORIAS.indexOf(b.categoria);
+      if (catDiff !== 0) return catDiff;
+      return (a.name_visual || a.name).localeCompare(b.name_visual || b.name);
+    });
+
   // Jugadores con Casita
   const jugadoresCasita = players
     .filter(p => p.casita)
@@ -182,6 +191,19 @@ export const ReportsTab = ({ distributions, employees, inventory, players = [] }
     XLSX.writeFile(wb, `viaticos_categorias_${todayISO()}.xlsx`);
   };
 
+  const exportVianda = () => {
+    const data = jugadoresVianda.map(p => ({
+      'Nombre': p.name_visual || p.name,
+      'Categoría': p.categoria,
+      'Vianda': p.vianda,
+      'Estado': p.status,
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Vianda');
+    XLSX.writeFile(wb, `jugadores_vianda_${todayISO()}.xlsx`);
+  };
+
   const exportCasita = () => {
     const data = jugadoresCasita.map(p => ({
       'Nombre': p.name_visual || p.name,
@@ -212,6 +234,7 @@ export const ReportsTab = ({ distributions, employees, inventory, players = [] }
           <option value="plantel_categoria">Plantel por Categoría</option>
           <option value="viaticos_categoria">Viáticos por Categoría</option>
           <option value="casita">Jugadores con Casita</option>
+          <option value="vianda">Jugadores con Vianda</option>
         </select>
       </div>
 
@@ -459,6 +482,38 @@ export const ReportsTab = ({ distributions, employees, inventory, players = [] }
           )}
           {jugadoresCasita.length > 0 && (
             <p className="mt-3 text-sm text-gray-600 font-medium">Total: {jugadoresCasita.length} jugadores</p>
+          )}
+        </div>
+      )}
+
+      {reportType === 'vianda' && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <ReportHeader title="Jugadores con Vianda" onExport={exportVianda} />
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Nombre</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Categoría</th>
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">Vianda</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Estado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {jugadoresVianda.map(p => (
+                <tr key={p.id}>
+                  <td className="px-4 py-2 text-sm font-medium">{p.name_visual || p.name}</td>
+                  <td className="px-4 py-2 text-sm">{p.categoria}</td>
+                  <td className="px-4 py-2 text-sm text-center">{p.vianda}</td>
+                  <td className="px-4 py-2 text-sm">{STATUS_LABELS[p.status] || p.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {jugadoresVianda.length === 0 && (
+            <p className="text-gray-500 text-sm">No hay jugadores con vianda.</p>
+          )}
+          {jugadoresVianda.length > 0 && (
+            <p className="mt-3 text-sm text-gray-600 font-medium">Total: {jugadoresVianda.length} jugadores</p>
           )}
         </div>
       )}
