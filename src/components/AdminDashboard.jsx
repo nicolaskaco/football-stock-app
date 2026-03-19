@@ -320,6 +320,7 @@ export const AdminDashboard = ({
             distributions={distributions}
             employees={employees}
             inventory={inventory}
+            players={players}
           />
         )}
         {activeTab === 'estadisticas' && canViewPartidos && (
