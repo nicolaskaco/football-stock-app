@@ -85,7 +85,11 @@ export const ReportsTab = ({ distributions, employees, inventory, players = [] }
   // Jugadores con Casita
   const jugadoresCasita = players
     .filter(p => p.casita)
-    .sort((a, b) => (a.name_visual || a.name).localeCompare(b.name_visual || b.name));
+    .sort((a, b) => {
+      const catDiff = CATEGORIAS.indexOf(a.categoria) - CATEGORIAS.indexOf(b.categoria);
+      if (catDiff !== 0) return catDiff;
+      return (a.name_visual || a.name).localeCompare(b.name_visual || b.name);
+    });
 
   // ── Excel exports ──────────────────────────────────────────────────────────
 
