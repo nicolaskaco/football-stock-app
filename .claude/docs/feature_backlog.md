@@ -23,7 +23,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 ### D. Analíticas y Reportes
 
-- [ ] **D1. Reparar y expandir ReportsTab** — Translate all labels to Spanish. Add Excel export buttons per report. Add player-focused report: roster by category, viático + complemento totals per category, players with casita.
+- [x] **D1. Reparar y expandir ReportsTab** — Translate all labels to Spanish. Add Excel export buttons per report. Add player-focused report: roster by category, viático + complemento totals per category, players with casita. *(completed — PR #257 · 2026-03-19)*
 - [ ] **D2. Analítica de lesiones** — Historical injury analysis: most common injury types (bar chart), average recovery time per severity, players with most injury history. New sub-section in EstadisticasTab or OverviewTab.
 - [ ] **D3. Frecuencia de convocatoria del jugador** — Add "Torneos" count column to EstadisticasTab General table. Show torneo callup count in player read-only modal.
 
