@@ -403,9 +403,12 @@ export const TareasTab = ({
 
       {confirmDelete && (
         <ConfirmModal
+          isOpen={true}
+          title="Eliminar tarea"
           message="¿Eliminar esta tarea? Esta acción no se puede deshacer."
           onConfirm={handleConfirmDelete}
-          onCancel={() => setConfirmDelete(null)}
+          onClose={() => setConfirmDelete(null)}
+          type="danger"
         />
       )}
     </div>
