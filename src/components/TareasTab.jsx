@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Plus, LayoutGrid, List, Edit2, Trash2, ChevronDown, ChevronUp, Calendar, ArrowRight } from 'lucide-react';
 import { database } from '../utils/database';
@@ -143,9 +143,10 @@ export const TareasTab = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filterSprint = searchParams.get('tk_sprint') || '';
-  const viewMode    = searchParams.get('tk_view')   || 'kanban';
-  const searchTerm  = searchParams.get('tk_search') || '';
+  const filterSprint   = searchParams.get('tk_sprint')   || '';
+  const viewMode       = searchParams.get('tk_view')     || 'kanban';
+  const searchTerm     = searchParams.get('tk_search')   || '';
+  const filterAsignado = searchParams.get('tk_asignado') || '';
 
   const setParam = (key, value) => {
     setSearchParams(prev => {
@@ -163,13 +164,38 @@ export const TareasTab = ({
   const incompleteCount = (sprintId) =>
     localTareas.filter(t => t.sprint_id === sprintId && t.estado !== 'Completado').length;
 
-  const filtered = localTareas.filter(t => {
-    const matchesSprint = !filterSprint || t.sprint_id === filterSprint;
+  // Sprint-filtered list — used to derive assignee options and as base for final filter
+  const { sprintFilteredTareas, assigneeOptions } = useMemo(() => {
+    const sprintFiltered = localTareas.filter(t => !filterSprint || t.sprint_id === filterSprint);
+    const seen = new Map();
+    let hasSinAsignar = false;
+    for (const t of sprintFiltered) {
+      if (!t.asignado_id) hasSinAsignar = true;
+      else seen.set(t.asignado_id, t.asignado_nombre);
+    }
+    const people = [...seen.entries()]
+      .map(([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es-UY'));
+    if (hasSinAsignar) people.unshift({ id: '__sin_asignar__', nombre: 'Sin Asignar' });
+    return { sprintFilteredTareas: sprintFiltered, assigneeOptions: people };
+  }, [localTareas, filterSprint]);
+
+  // Reset assignee filter when switching sprints if the selected person has no tasks there
+  useEffect(() => {
+    if (!filterAsignado) return;
+    const ids = new Set(assigneeOptions.map(a => a.id));
+    if (!ids.has(filterAsignado)) setParam('tk_asignado', '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterSprint]);
+
+  const filtered = sprintFilteredTareas.filter(t => {
     const matchesSearch = !searchTerm
       || t.titulo.toLowerCase().includes(searchTerm.toLowerCase())
       || (t.descripcion || '').toLowerCase().includes(searchTerm.toLowerCase())
       || (t.asignado_nombre || '').toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSprint && matchesSearch;
+    const matchesAsignado = !filterAsignado
+      || (filterAsignado === '__sin_asignar__' ? !t.asignado_id : t.asignado_id === filterAsignado);
+    return matchesSearch && matchesAsignado;
   });
 
   // ── Tarea handlers ──────────────────────────────────────────────────────────
@@ -315,6 +341,18 @@ export const TareasTab = ({
               <option key={s.id} value={s.id}>
                 {s.nombre}{s.id === activeSprint?.id ? ' ★' : ''}
               </option>
+            ))}
+          </select>
+
+          {/* Assignee filter */}
+          <select
+            value={filterAsignado}
+            onChange={(e) => setParam('tk_asignado', e.target.value)}
+            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+          >
+            <option value="">Todos los asignados</option>
+            {assigneeOptions.map(a => (
+              <option key={a.id} value={a.id}>{a.nombre}</option>
             ))}
           </select>
 
