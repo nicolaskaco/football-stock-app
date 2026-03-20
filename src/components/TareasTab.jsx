@@ -8,7 +8,7 @@ import { AlertModal } from './AlertModal';
 import { ConfirmModal } from './ConfirmModal';
 import { TareaForm } from '../forms/TareaForm';
 
-const ESTADOS = ['Sin Asignar', 'Aprobado', 'En Progreso', 'Completado'];
+const ESTADOS = ['Sin Asignar', 'Aprobado', 'Sin Comenzar', 'En Progreso', 'Completado'];
 
 const PRIORIDAD_CONFIG = {
   Alta:  { badge: 'bg-red-100 text-red-700 border-red-200',    dot: 'bg-red-500'    },
@@ -17,10 +17,11 @@ const PRIORIDAD_CONFIG = {
 };
 
 const ESTADO_HEADER = {
-  'Sin Asignar': 'bg-gray-100 border-gray-300 text-gray-700',
-  'Aprobado':    'bg-blue-50 border-blue-300 text-blue-700',
-  'En Progreso': 'bg-amber-50 border-amber-300 text-amber-700',
-  'Completado':  'bg-green-50 border-green-300 text-green-700',
+  'Sin Asignar':  'bg-gray-100 border-gray-300 text-gray-700',
+  'Aprobado':     'bg-blue-50 border-blue-300 text-blue-700',
+  'Sin Comenzar': 'bg-purple-50 border-purple-300 text-purple-700',
+  'En Progreso':  'bg-amber-50 border-amber-300 text-amber-700',
+  'Completado':   'bg-green-50 border-green-300 text-green-700',
 };
 
 const PriorityBadge = ({ prioridad }) => {

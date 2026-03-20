@@ -1387,17 +1387,9 @@ export const database = {
     const endLabel = sunday.toLocaleDateString('es-UY', opts);
     const nombre = `Semana ${startLabel} – ${endLabel}`;
 
-    const { data: existing, error: findErr } = await supabase
-      .from('sprints')
-      .select('*')
-      .eq('fecha_inicio', fechaInicio)
-      .maybeSingle();
-    if (findErr) throw findErr;
-    if (existing) return existing;
-
     const { data, error } = await supabase
       .from('sprints')
-      .insert([{ nombre, fecha_inicio: fechaInicio, fecha_fin: fechaFin }])
+      .upsert([{ nombre, fecha_inicio: fechaInicio, fecha_fin: fechaFin }], { onConflict: 'fecha_inicio' })
       .select()
       .single();
     if (error) throw error;
