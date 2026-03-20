@@ -38,6 +38,8 @@ const App = () => {
   const [injuries, setInjuries] = useState([]);
   const [appSettings, setAppSettings] = useState({});
   const [pendingChangeRequests, setPendingChangeRequests] = useState([]);
+  const [tareas, setTareas] = useState([]);
+  const [sprints, setSprints] = useState([]);
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -124,6 +126,7 @@ const App = () => {
             canEditDirigentes: permissions?.can_edit_dirigentes || false,
             canAccessTesorero: permissions?.can_access_tesorero || false,
             canViewTarjetas: permissions?.can_view_tarjetas || false,
+            canAccessTareas: permissions?.can_access_tareas || false,
           });
           await loadData();
           setCurrentView('dashboard');
@@ -147,6 +150,8 @@ const App = () => {
   const loadInjuries = async () => { const d = await database.getInjuries(); setInjuries(d || []); };
   const loadAppSettings = async () => { const d = await database.getAppSettings(); setAppSettings(d || {}); };
   const loadPendingChangeRequests = async () => { const d = await database.getPendingChangeRequests(); setPendingChangeRequests(d || []); };
+  const loadTareas = async () => { const d = await database.getTareas(); setTareas(d || []); };
+  const loadSprints = async () => { const d = await database.getSprints(); setSprints(d || []); };
 
   const loadData = async () => {
     try {
@@ -163,6 +168,8 @@ const App = () => {
         loadInjuries(),
         loadAppSettings(),
         loadPendingChangeRequests(),
+        loadTareas(),
+        loadSprints(),
       ]);
     } catch (error) {
       console.error('Error loading data:', error);
@@ -183,6 +190,8 @@ const App = () => {
     injuries: loadInjuries,
     appSettings: loadAppSettings,
     pendingChangeRequests: loadPendingChangeRequests,
+    tareas: loadTareas,
+    sprints: loadSprints,
   };
 
   const handleDataChange = async (...entities) => {
@@ -244,6 +253,7 @@ const App = () => {
           canEditDirigentes: permissions?.can_edit_dirigentes || false,
           canAccessTesorero: permissions?.can_access_tesorero || false,
           canViewTarjetas: permissions?.can_view_tarjetas || false,
+          canAccessTareas: permissions?.can_access_tareas || false,
         });
 
         await loadData();
@@ -326,6 +336,8 @@ const App = () => {
                 injuries={injuries}
                 appSettings={appSettings}
                 pendingChangeRequests={pendingChangeRequests}
+                tareas={tareas}
+                sprints={sprints}
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 onDataChange={handleDataChange}
