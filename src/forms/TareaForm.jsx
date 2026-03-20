@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useFormDirty } from '../hooks/useFormDirty';
 
 const PRIORIDADES = ['Alta', 'Media', 'Baja'];
-const ESTADOS = ['Sin Asignar', 'Aprobado', 'Sin Comenzar', 'En Progreso', 'Completado'];
+const ESTADOS = ['Sin Asignar', 'Sin Comenzar', 'En Progreso', 'Completado'];
 
 const empty = {
   titulo: '',
@@ -37,12 +37,24 @@ export const TareaForm = ({
     }
     const dirigente = dirigentes.find(d => d.id === selectedId);
     if (dirigente) {
-      setFormData(prev => ({ ...prev, asignado_id: dirigente.id, asignado_tipo: 'dirigente', asignado_nombre: dirigente.name }));
+      setFormData(prev => ({
+        ...prev,
+        asignado_id: dirigente.id,
+        asignado_tipo: 'dirigente',
+        asignado_nombre: dirigente.name,
+        estado: prev.estado === 'Sin Asignar' ? 'Sin Comenzar' : prev.estado,
+      }));
       return;
     }
-    const employee = employees.find(e => e.id === selectedId);
+    const employee = employees.find(emp => emp.id === selectedId);
     if (employee) {
-      setFormData(prev => ({ ...prev, asignado_id: employee.id, asignado_tipo: 'funcionario', asignado_nombre: employee.name }));
+      setFormData(prev => ({
+        ...prev,
+        asignado_id: employee.id,
+        asignado_tipo: 'funcionario',
+        asignado_nombre: employee.name,
+        estado: prev.estado === 'Sin Asignar' ? 'Sin Comenzar' : prev.estado,
+      }));
     }
   };
 
