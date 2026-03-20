@@ -9,7 +9,8 @@ const fieldNames = {
   viatico: 'Viático',
   complemento: 'Complemento',
   vianda: 'Vianda',
-  casita: 'Residencia'
+  casita: 'Residencia',
+  ficha_medica_hasta: 'Ficha Médica',
 };
 
 const fieldKeyMap = Object.fromEntries(Object.entries(fieldNames).map(([k, v]) => [v, k]));
@@ -40,6 +41,10 @@ export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
     if (fieldName === 'contrato' || fieldName === 'casita') return value === 'true' ? 'Sí' : 'No';
     if (fieldName === 'viatico' || fieldName === 'complemento') return `$${parseInt(value).toLocaleString()}`;
     if (fieldName === 'vianda') return value;
+    if (fieldName === 'ficha_medica_hasta') {
+      const [y, m, d] = value.split('-');
+      return `${d}/${m}/${y}`;
+    }
     return value;
   };
 
