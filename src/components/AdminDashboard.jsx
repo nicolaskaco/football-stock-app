@@ -96,8 +96,9 @@ export const AdminDashboard = ({
     { id: 'players_viatico',label: 'Viáticos',       show: canAccessViaticos },
     { id: 'tesorero',       label: 'Tesorero',       show: canAccessTesorero },
     { id: 'change_requests',label: 'Solicitudes',    show: canViewChangeRequests },
-    { id: 'distributions',  label: 'Distribuciones', show: canAccessRopa && tabEnabled('distribuciones_tab_enabled') },
+    { id: 'tareas',         label: 'Tareas',          show: canAccessTareas },
     { id: 'dirigentes',     label: 'Dirigentes',     show: canAccessDirigentes },
+    { id: 'distributions',  label: 'Distribuciones', show: canAccessRopa && tabEnabled('distribuciones_tab_enabled') },
     { id: 'torneos',        label: 'Torneos',         show: canViewTorneo },
     { id: 'comisiones',     label: 'Comisiones',     show: canViewComisiones },
     { id: 'rivales',        label: 'Rivales',         show: canViewPartidos && tabEnabled('rivales_tab_enabled') },
@@ -105,7 +106,6 @@ export const AdminDashboard = ({
     { id: 'reports',        label: 'Reportes',        show: canAccessRopa && tabEnabled('reportes_tab_enabled') },
     { id: 'estadisticas',   label: 'Estadísticas',   show: canViewPartidos && tabEnabled('estadisticas_tab_enabled') },
     { id: 'tarjetas',       label: 'Tarjetas',        show: canViewTarjetas },
-    { id: 'tareas',         label: 'Tareas',          show: canAccessTareas },
     { id: 'configuracion',  label: 'Configuración',  show: isAdmin },
   ];
 
