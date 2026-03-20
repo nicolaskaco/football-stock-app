@@ -144,6 +144,7 @@ Stored as `user_permissions.role`:
 | `can_see_ropa_widgets` | Inventory/distribution widgets on OverviewTab |
 | `can_view_tarjetas` | Tarjetas tab + Suspensiones widget on OverviewTab |
 | `can_access_tesorero` | Tesorero tab (Congelar Viáticos toggle + viático Excel export) |
+| `can_access_tareas` | Tareas tab (full read + write access) |
 | `categoria[]` | Array — restricts access to specific player categories |
 
 The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision` (read-only for the last two — approve/reject/create buttons hidden).
@@ -178,6 +179,8 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `partido_eventos` | Match events (goals, yellow/red cards) per partido |
 | `app_settings` | Global key-value feature flags toggled via ConfiguracionTab |
 | `player_injuries` | Injury log per player: tipo, severidad, dates (inicio, retorno estimado, alta) |
+| `sprints` | Weekly time-boxes for task management. `fecha_inicio` has a UNIQUE constraint — upsert-safe. |
+| `tareas` | Tasks for the Tareas module (see §6 Tareas). FK `sprint_id → sprints.id ON DELETE SET NULL`. |
 | `user_permissions` | Role and permission flags per user email (RLS disabled — access controlled via Edge Function caller verification) |
 
 ### Campeonato Juvenil Tables Detail
@@ -281,6 +284,7 @@ Bucket: `player-documents` (private)
 | `rivales` | Rivales | `can_view_partidos` **and** `rivales_tab_enabled` app setting |
 | `partidos` | Partidos | `can_view_partidos` |
 | `tarjetas` | Tarjetas | `can_view_tarjetas` |
+| `tareas` | Tareas | `can_access_tareas` |
 | `estadisticas` | Estadísticas | `can_view_partidos` **and** `estadisticas_tab_enabled` app setting |
 | `tesorero` | Tesorero | `can_access_tesorero` |
 | `reports` | Reportes | `can_access_ropa` **and** `reportes_tab_enabled` app setting |
@@ -313,6 +317,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [TesoreroTab.jsx](src/components/TesoreroTab.jsx) | Tesorero view with two features: (1) **Congelar Viáticos** toggle (same `viaticos_congelados` app setting also shown in ConfiguracionTab) — when enabled the card turns amber and a configurable contact name input appears; (2) **Exportar Viáticos** — generates a multi-sheet Excel workbook (`Viaticos-Formativas-DD-MM-YYYY.xlsx`) with one sheet per formative category (Sub 19/17/16/15/14/13), sorted by name, excluding 3era and contracted players; each sheet includes a `TOTAL` / SUM formula row 3 rows below the last data row. |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
 | [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Por Cancha, Gráficos; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart |
+| [TareasTab.jsx](src/components/TareasTab.jsx) | Task management (see §6 Tareas). Kanban and list views. Sprint management panel (create, rollover). Requires `can_access_tareas`. |
 | [TarjetasTab.jsx](src/components/TarjetasTab.jsx) | Accumulated yellow and red cards per player for the current calendar year, grouped by match category. Category filter (URL param `t_cat`). SUSPENDIDO badge when a player has a red card in the last jornada or crosses a yellow card milestone (every 5th). Excel export with one sheet per category. Requires `can_view_tarjetas` permission. Rows sorted by priority: red card + suspended first, yellow card + suspended second, red card not suspended third, yellow card not suspended last; within each group sorted by card count descending. |
 | [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()`. Includes a **Congelar Viáticos** toggle — when enabled, all viatico/complemento/contrato fields are disabled app-wide, solicitud creation is blocked, and approve/reject actions in ChangeRequestsTab are hidden. A configurable contact name (stored in `app_settings`) is shown in freeze banners. Also renders `UserManagementSection` for inviting and managing admin users. |
 | [UserManagementSection.jsx](src/components/UserManagementSection.jsx) | Collapsible section inside ConfiguracionTab. Displays a table of all `user_permissions` rows (email, role badge, permission count, category restrictions). Provides invite, edit-permissions, and delete actions. After a successful invite the admin sees a modal with a copyable invite link. |
@@ -353,7 +358,8 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
 | [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (red card in previous jornada or 5th yellow milestone) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. |
 | [InjuryForm.jsx](src/forms/InjuryForm.jsx) | Injury registration/editing: tipo (Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro), severidad (leve/moderada/grave), descripción, fecha_inicio, fecha_retorno_estimada, fecha_alta. Admin-only. |
-| [UserInviteForm.jsx](src/forms/UserInviteForm.jsx) | Invite / edit-permissions form. Fields: email (disabled in edit mode), role dropdown, 17 grouped permission checkboxes with select-all/none per group, and category chip multi-select. Used by `UserManagementSection` for both invite and edit flows. |
+| [TareaForm.jsx](src/forms/TareaForm.jsx) | Task add/edit. Fields: título (required), descripción (textarea), prioridad (Alta/Media/Baja), estado (Sin Asignar/Sin Comenzar/En Progreso/Completado), asignado a (Dirigente or Funcionario — combined `<optgroup>` select; auto-advances estado from "Sin Asignar" to "Sin Comenzar" when an assignee is chosen), sprint (defaults to active sprint via `defaultSprintId` prop), fecha estimada. |
+| [UserInviteForm.jsx](src/forms/UserInviteForm.jsx) | Invite / edit-permissions form. Fields: email (disabled in edit mode), role dropdown, 18 grouped permission checkboxes with select-all/none per group, and category chip multi-select. Used by `UserManagementSection` for both invite and edit flows. |
 
 #### Modals & Utilities
 | Component | Description |
@@ -705,6 +711,94 @@ Each category cell displays:
 
 ---
 
+### Tareas (Task Management)
+
+A JIRA-like task management module gated behind the `can_access_tareas` permission. All users with the permission have full read + write access.
+
+#### Data model
+
+**`sprints` table**
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `nombre` | text | Auto-generated label, e.g. `"Semana 24 Mar – 30 Mar"` |
+| `fecha_inicio` | date | UNIQUE constraint — used as upsert conflict key |
+| `fecha_fin` | date | |
+| `created_at` | timestamptz | |
+
+**`tareas` table**
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `titulo` | text NOT NULL | |
+| `descripcion` | text | nullable |
+| `prioridad` | text | `'Alta'` \| `'Media'` \| `'Baja'` (default `'Media'`) |
+| `estado` | text | `'Sin Asignar'` \| `'Sin Comenzar'` \| `'En Progreso'` \| `'Completado'` (default `'Sin Asignar'`) |
+| `asignado_tipo` | text | `'dirigente'` \| `'funcionario'` \| NULL |
+| `asignado_id` | uuid | FK to `dirigentes.id` or `employees.id` (denormalized — no DB FK constraint) |
+| `asignado_nombre` | text | Denormalized name for display performance |
+| `fecha_estimada_completo` | date | nullable |
+| `sprint_id` | uuid FK → sprints | ON DELETE SET NULL |
+| `created_at` | timestamptz | |
+| `updated_at` | timestamptz | Auto-updated by `tareas_updated_at` trigger |
+
+Both tables have RLS enabled with permissive read + write policies for `authenticated` users.
+
+#### Sprints
+
+- **Active sprint** — the sprint whose `fecha_inicio ≤ today ≤ fecha_fin`. Computed client-side; no `is_active` DB column.
+- **Auto-creation** — on `TareasTab` mount, `database.getOrCreateCurrentSprint()` upserts the sprint for the current Monday–Sunday week (locale label in `es-UY`). Because `fecha_inicio` has a UNIQUE constraint, concurrent calls are idempotent.
+- **Manual creation** — via the "Gestionar Sprints" panel: user picks a date range; the name is auto-generated from the dates.
+- **Rollover** — per-sprint button in the sprint panel. Moves all non-`Completado` tasks from a sprint to the next sprint chronologically. If no next sprint exists, one is auto-created for the week following the source sprint's `fecha_fin`.
+- Sprint selector in the tab header marks the active sprint with ★.
+
+#### Views
+
+**Kanban** (default)
+- 4 columns in left-to-right order: Sin Asignar · Sin Comenzar · En Progreso · Completado
+- Column header colors: gray / purple / amber / green
+- HTML5 drag & drop (`draggable` + `onDragStart`/`onDragOver`/`onDrop`) — no library
+- Optimistic UI: status updates locally before the DB write; rolls back on error
+
+**List**
+- Table columns: Título · Prioridad · Estado · Asignado a · Fecha estimada · Sprint · Acciones
+- Overdue tasks (fecha_estimada < today and not Completado) shown in red
+
+#### Task cards (Kanban)
+- Title, truncated description (2 lines max), priority badge (Alta=red, Media=yellow, Baja=green), assignee name, due date
+- Overdue date shown in red with "— vencida" suffix
+- Edit (pencil) and Delete (trash) icon buttons
+
+#### Filter & state persistence
+URL params (prefix `tk_`) survive navigation:
+| Param | Values | Default |
+|-------|--------|---------|
+| `tk_sprint` | sprint UUID | auto-set to active sprint on mount |
+| `tk_view` | `kanban` \| `list` | `kanban` |
+| `tk_search` | string | — |
+
+Search matches on título, descripción, and asignado_nombre.
+
+#### Sprint management panel
+Toggled by the "Sprints ▾" button in the header. Shows:
+- List of all sprints (newest first) with: active indicator, date range, incomplete task count, Rollover button (only when incomplete > 0)
+- Inline "Crear nuevo Sprint" form with fecha_inicio + fecha_fin date pickers
+
+#### Key database functions
+
+| Function | Description |
+|----------|-------------|
+| `database.getTareas()` | Fetch all tareas with nested sprint data |
+| `database.addTarea(tarea)` | Insert tarea |
+| `database.updateTarea(id, updates)` | Partial update |
+| `database.deleteTarea(id)` | Delete |
+| `database.getSprints()` | All sprints ordered by fecha_inicio DESC |
+| `database.getOrCreateCurrentSprint()` | Upsert sprint for current calendar week |
+| `database.addSprint({ fecha_inicio, fecha_fin })` | Create sprint from date range (auto-named) |
+| `database.rolloverIncompleteTareas(fromId, toId)` | Bulk-move non-Completado tasks between sprints |
+
+---
+
 ## 7. Data Export
 
 - Format: Excel (`.xlsx`) via the `xlsx` library
@@ -857,6 +951,7 @@ football-stock-app/
     │   ├── CalendarioView.jsx
     │   ├── ReportsTab.jsx
     │   ├── EstadisticasTab.jsx
+    │   ├── TareasTab.jsx               # Task management (Kanban + list, sprint panel)
     │   ├── TarjetasTab.jsx
     │   ├── ConfiguracionTab.jsx
     │   ├── BirthdayWidget.jsx
@@ -900,6 +995,7 @@ football-stock-app/
     │   ├── JornadaForm.jsx
     │   ├── PartidoForm.jsx
     │   ├── InjuryForm.jsx
+    │   ├── TareaForm.jsx              # Task add/edit form
     │   └── UserInviteForm.jsx         # Invite / permission form for admin user management
     ├── context/
     │   ├── ToastContext.jsx       # Toast notification context + provider

@@ -1396,6 +1396,29 @@ export const database = {
     return data;
   },
 
+  async addSprint({ fecha_inicio, fecha_fin }) {
+    const start = new Date(fecha_inicio + 'T00:00:00');
+    const end = new Date(fecha_fin + 'T00:00:00');
+    const opts = { day: 'numeric', month: 'short' };
+    const nombre = `Semana ${start.toLocaleDateString('es-UY', opts)} – ${end.toLocaleDateString('es-UY', opts)}`;
+    const { data, error } = await supabase
+      .from('sprints')
+      .upsert([{ nombre, fecha_inicio, fecha_fin }], { onConflict: 'fecha_inicio' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async rolloverIncompleteTareas(fromSprintId, toSprintId) {
+    const { error } = await supabase
+      .from('tareas')
+      .update({ sprint_id: toSprintId })
+      .eq('sprint_id', fromSprintId)
+      .neq('estado', 'Completado');
+    if (error) throw error;
+  },
+
   // ============================================================
   // TAREAS
   // ============================================================

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, LayoutGrid, List, Edit2, Trash2 } from 'lucide-react';
+import { Plus, LayoutGrid, List, Edit2, Trash2, ChevronDown, ChevronUp, Calendar, ArrowRight } from 'lucide-react';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { useAlertModal } from '../hooks/useAlertModal';
@@ -52,18 +52,10 @@ const TareaCard = ({ tarea, onEdit, onDelete, onDragStart }) => {
       <div className="flex items-start justify-between gap-2 mb-2">
         <p className="text-sm font-medium text-gray-900 leading-snug break-words min-w-0">{tarea.titulo}</p>
         <div className="flex gap-0.5 flex-shrink-0">
-          <button
-            onClick={() => onEdit(tarea)}
-            className="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors"
-            title="Editar"
-          >
+          <button onClick={() => onEdit(tarea)} className="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors" title="Editar">
             <Edit2 className="w-3.5 h-3.5" />
           </button>
-          <button
-            onClick={() => onDelete(tarea.id)}
-            className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
-            title="Eliminar"
-          >
+          <button onClick={() => onDelete(tarea.id)} className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors" title="Eliminar">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -104,13 +96,7 @@ const KanbanColumn = ({ estado, tareas, onEdit, onDelete, onDragStart, onDragOve
     </div>
     <div className="flex-1 bg-gray-50 border-x-2 border-b-2 border-gray-200 rounded-b-lg p-2 space-y-2 min-h-[160px]">
       {tareas.map(t => (
-        <TareaCard
-          key={t.id}
-          tarea={t}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onDragStart={onDragStart}
-        />
+        <TareaCard key={t.id} tarea={t} onEdit={onEdit} onDelete={onDelete} onDragStart={onDragStart} />
       ))}
     </div>
   </div>
@@ -128,6 +114,9 @@ export const TareasTab = ({
   const { alertModal, showAlert, closeAlert } = useAlertModal();
   const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [rolloverConfirm, setRolloverConfirm] = useState(null); // { fromSprint, nextSprint, count }
+  const [showSprintPanel, setShowSprintPanel] = useState(false);
+  const [newSprintDates, setNewSprintDates] = useState({ fecha_inicio: '', fecha_fin: '' });
   const [searchParams, setSearchParams] = useSearchParams();
   const [localTareas, setLocalTareas] = useState(tareasProp);
   const dragIdRef = useRef(null);
@@ -166,6 +155,14 @@ export const TareasTab = ({
     });
   };
 
+  // Derive active sprint (covers today's date)
+  const today = new Date().toISOString().slice(0, 10);
+  const activeSprint = sprints.find(s => s.fecha_inicio <= today && s.fecha_fin >= today);
+
+  // Count incomplete tareas per sprint
+  const incompleteCount = (sprintId) =>
+    localTareas.filter(t => t.sprint_id === sprintId && t.estado !== 'Completado').length;
+
   const filtered = localTareas.filter(t => {
     const matchesSprint = !filterSprint || t.sprint_id === filterSprint;
     const matchesSearch = !searchTerm
@@ -174,6 +171,8 @@ export const TareasTab = ({
       || (t.asignado_nombre || '').toLowerCase().includes(searchTerm.toLowerCase());
     return matchesSprint && matchesSearch;
   });
+
+  // ── Tarea handlers ──────────────────────────────────────────────────────────
 
   const handleAdd = (payload) => execute(async () => {
     await database.addTarea(payload);
@@ -198,6 +197,7 @@ export const TareasTab = ({
       title: 'Nueva Tarea',
       content: (
         <TareaForm
+          defaultSprintId={activeSprint?.id || ''}
           sprints={sprints}
           dirigentes={dirigentes}
           employees={employees}
@@ -224,7 +224,44 @@ export const TareasTab = ({
     });
   };
 
-  // Drag and drop
+  // ── Sprint handlers ─────────────────────────────────────────────────────────
+
+  const handleCreateSprint = () => execute(async () => {
+    if (!newSprintDates.fecha_inicio || !newSprintDates.fecha_fin) throw new Error('Completá ambas fechas');
+    if (newSprintDates.fecha_inicio > newSprintDates.fecha_fin) throw new Error('La fecha de inicio debe ser anterior a la fecha de fin');
+    await database.addSprint(newSprintDates);
+    await onDataChange('sprints');
+    setNewSprintDates({ fecha_inicio: '', fecha_fin: '' });
+  }, 'Error creando sprint', 'Sprint creado');
+
+  const handleRolloverClick = (sprint) => {
+    const sorted = [...sprints].sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio));
+    const nextSprint = sorted.find(s => s.fecha_inicio > sprint.fecha_fin) || null;
+    setRolloverConfirm({ fromSprint: sprint, nextSprint, count: incompleteCount(sprint.id) });
+  };
+
+  const handleRolloverConfirm = () => execute(async () => {
+    let toSprint = rolloverConfirm.nextSprint;
+    if (!toSprint) {
+      // Auto-create the week after the source sprint ends
+      const nextDay = new Date(rolloverConfirm.fromSprint.fecha_fin + 'T00:00:00');
+      nextDay.setDate(nextDay.getDate() + 1);
+      const dow = nextDay.getDay();
+      const diffToMon = dow === 0 ? -6 : 1 - dow;
+      const monday = new Date(nextDay);
+      monday.setDate(nextDay.getDate() + diffToMon);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      toSprint = await database.addSprint({ fecha_inicio: toISO(monday), fecha_fin: toISO(sunday) });
+    }
+    await database.rolloverIncompleteTareas(rolloverConfirm.fromSprint.id, toSprint.id);
+    await onDataChange('tareas', 'sprints');
+    setRolloverConfirm(null);
+  }, 'Error en rollover', `${rolloverConfirm?.count} tarea${rolloverConfirm?.count !== 1 ? 's' : ''} movida${rolloverConfirm?.count !== 1 ? 's' : ''}`);
+
+  // ── Drag and drop ───────────────────────────────────────────────────────────
+
   const handleDragStart = (e, tareaId) => {
     dragIdRef.current = tareaId;
     e.dataTransfer.effectAllowed = 'move';
@@ -241,25 +278,22 @@ export const TareasTab = ({
     if (!tareaId) return;
 
     const tarea = localTareas.find(t => t.id === tareaId);
-    if (!tarea || tarea.estado === nuevoEstado) {
-      dragIdRef.current = null;
-      return;
-    }
+    if (!tarea || tarea.estado === nuevoEstado) { dragIdRef.current = null; return; }
 
-    // Optimistic update
     setLocalTareas(prev => prev.map(t => t.id === tareaId ? { ...t, estado: nuevoEstado } : t));
-
     try {
       await database.updateTarea(tareaId, { estado: nuevoEstado });
       await onDataChange('tareas');
     } catch (err) {
-      // Rollback
       setLocalTareas(prev => prev.map(t => t.id === tareaId ? { ...t, estado: tarea.estado } : t));
       showAlert('Error', 'No se pudo mover la tarea: ' + err.message, 'error');
     }
-
     dragIdRef.current = null;
   };
+
+  // ── Render ──────────────────────────────────────────────────────────────────
+
+  const sortedSprints = [...sprints].sort((a, b) => b.fecha_inicio.localeCompare(a.fecha_inicio));
 
   return (
     <div className="space-y-4">
@@ -277,8 +311,10 @@ export const TareasTab = ({
             className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
           >
             <option value="">Todos los sprints</option>
-            {sprints.map(s => (
-              <option key={s.id} value={s.id}>{s.nombre}</option>
+            {sortedSprints.map(s => (
+              <option key={s.id} value={s.id}>
+                {s.nombre}{s.id === activeSprint?.id ? ' ★' : ''}
+              </option>
             ))}
           </select>
 
@@ -309,6 +345,16 @@ export const TareasTab = ({
             </button>
           </div>
 
+          {/* Sprints panel toggle */}
+          <button
+            onClick={() => setShowSprintPanel(v => !v)}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 bg-white text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
+          >
+            <Calendar className="w-4 h-4" />
+            Sprints
+            {showSprintPanel ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+
           <button
             onClick={openAddModal}
             className="flex items-center gap-2 px-4 py-2 bg-black text-yellow-400 rounded-lg hover:bg-gray-800 text-sm font-medium transition-colors"
@@ -318,6 +364,89 @@ export const TareasTab = ({
           </button>
         </div>
       </div>
+
+      {/* Sprint Management Panel */}
+      {showSprintPanel && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-4">
+          <h3 className="font-semibold text-gray-800 text-sm">Gestionar Sprints</h3>
+
+          {/* Sprint list */}
+          <div className="divide-y divide-gray-100">
+            {sortedSprints.length === 0 && (
+              <p className="text-sm text-gray-400 py-2">No hay sprints todavía.</p>
+            )}
+            {sortedSprints.map(s => {
+              const isActive = s.id === activeSprint?.id;
+              const incomplete = incompleteCount(s.id);
+              return (
+                <div key={s.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-800">{s.nombre}</span>
+                        {isActive && (
+                          <span className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-1.5 py-0.5">
+                            Activo
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400">
+                        {formatFecha(s.fecha_inicio)} – {formatFecha(s.fecha_fin)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-xs text-gray-500">{incomplete} incompleta{incomplete !== 1 ? 's' : ''}</span>
+                    {incomplete > 0 && (
+                      <button
+                        onClick={() => handleRolloverClick(s)}
+                        className="flex items-center gap-1 text-xs px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition-colors font-medium"
+                      >
+                        <ArrowRight className="w-3 h-3" />
+                        Rollover
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Create Sprint */}
+          <div className="border-t border-gray-200 pt-4">
+            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3">Crear nuevo Sprint</p>
+            <div className="flex items-end gap-2 flex-wrap">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Inicio</label>
+                <input
+                  type="date"
+                  value={newSprintDates.fecha_inicio}
+                  onChange={(e) => setNewSprintDates(p => ({ ...p, fecha_inicio: e.target.value }))}
+                  className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Fin</label>
+                <input
+                  type="date"
+                  value={newSprintDates.fecha_fin}
+                  onChange={(e) => setNewSprintDates(p => ({ ...p, fecha_fin: e.target.value }))}
+                  className="px-2.5 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                />
+              </div>
+              <button
+                onClick={handleCreateSprint}
+                disabled={!newSprintDates.fecha_inicio || !newSprintDates.fecha_fin}
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-black text-yellow-400 rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-40 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Crear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Kanban View */}
       {viewMode === 'kanban' && (
@@ -348,9 +477,7 @@ export const TareasTab = ({
                 <thead className="bg-gray-50">
                   <tr>
                     {['Título', 'Prioridad', 'Estado', 'Asignado a', 'Fecha estimada', 'Sprint', 'Acciones'].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {h}
-                      </th>
+                      <th key={h} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -371,18 +498,10 @@ export const TareasTab = ({
                         <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{t.sprints?.nombre || '—'}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-1">
-                            <button
-                              onClick={() => openEditModal(t)}
-                              className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors"
-                              title="Editar"
-                            >
+                            <button onClick={() => openEditModal(t)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors" title="Editar">
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={() => setConfirmDelete(t.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors"
-                              title="Eliminar"
-                            >
+                            <button onClick={() => setConfirmDelete(t.id)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors" title="Eliminar">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -409,6 +528,18 @@ export const TareasTab = ({
           onConfirm={handleConfirmDelete}
           onClose={() => setConfirmDelete(null)}
           type="danger"
+        />
+      )}
+
+      {rolloverConfirm && (
+        <ConfirmModal
+          isOpen={true}
+          title="Rollover de Sprint"
+          message={`Mover ${rolloverConfirm.count} tarea${rolloverConfirm.count !== 1 ? 's' : ''} incompleta${rolloverConfirm.count !== 1 ? 's' : ''} de "${rolloverConfirm.fromSprint.nombre}" al sprint "${rolloverConfirm.nextSprint?.nombre ?? 'siguiente (se creará automáticamente)'}".\n\n¿Confirmar?`}
+          onConfirm={handleRolloverConfirm}
+          onClose={() => setRolloverConfirm(null)}
+          confirmText="Mover tareas"
+          type="primary"
         />
       )}
     </div>
