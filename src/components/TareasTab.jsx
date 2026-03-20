@@ -11,18 +11,18 @@ import { TareaForm } from '../forms/TareaForm';
 const ESTADOS = ['Sin Asignar', 'Sin Comenzar', 'En Progreso', 'Completado'];
 
 const PRIORIDAD_CONFIG = {
-  Alta:  { badge: 'bg-red-100 text-red-700 border-red-200',    dot: 'bg-red-500'    },
-  Media: { badge: 'bg-yellow-100 text-yellow-700 border-yellow-200', dot: 'bg-yellow-500' },
-  Baja:  { badge: 'bg-green-100 text-green-700 border-green-200',  dot: 'bg-green-500'  },
+  Alta:  { badge: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700',             dot: 'bg-red-500'    },
+  Media: { badge: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-700', dot: 'bg-yellow-500' },
+  Baja:  { badge: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700',   dot: 'bg-green-500'  },
 };
 
 const PRIORIDAD_ORDER = { Alta: 0, Media: 1, Baja: 2 };
 
 const ESTADO_HEADER = {
-  'Sin Asignar':  'bg-gray-100 border-gray-300 text-gray-700',
-  'Sin Comenzar': 'bg-purple-50 border-purple-300 text-purple-700',
-  'En Progreso':  'bg-amber-50 border-amber-300 text-amber-700',
-  'Completado':   'bg-green-50 border-green-300 text-green-700',
+  'Sin Asignar':  'bg-gray-100 border-gray-300 text-gray-700 dark:bg-gray-700 dark:border-gray-500 dark:text-gray-200',
+  'Sin Comenzar': 'bg-purple-50 border-purple-300 text-purple-700 dark:bg-purple-900/40 dark:border-purple-500 dark:text-purple-300',
+  'En Progreso':  'bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-900/40 dark:border-amber-500 dark:text-amber-300',
+  'Completado':   'bg-green-50 border-green-300 text-green-700 dark:bg-green-900/40 dark:border-green-500 dark:text-green-300',
 };
 
 const PriorityBadge = ({ prioridad }) => {
@@ -49,35 +49,35 @@ const TareaCard = ({ tarea, onEdit, onDelete, onDragStart }) => {
     <div
       draggable
       onDragStart={(e) => onDragStart(e, tarea.id)}
-      className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none"
+      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-sm font-medium text-gray-900 leading-snug break-words min-w-0">{tarea.titulo}</p>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug break-words min-w-0">{tarea.titulo}</p>
         <div className="flex gap-0.5 flex-shrink-0">
-          <button onClick={() => onEdit(tarea)} className="p-1 text-gray-400 hover:text-blue-600 rounded transition-colors" title="Editar">
+          <button onClick={() => onEdit(tarea)} className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors" title="Editar">
             <Edit2 className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => onDelete(tarea.id)} className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors" title="Eliminar">
+          <button onClick={() => onDelete(tarea.id)} className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded transition-colors" title="Eliminar">
             <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
       {tarea.descripcion && (
-        <p className="text-xs text-gray-500 mb-2 line-clamp-2">{tarea.descripcion}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2">{tarea.descripcion}</p>
       )}
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <PriorityBadge prioridad={tarea.prioridad} />
         {tarea.asignado_nombre && (
-          <span className="text-xs text-gray-500 truncate max-w-[100px]" title={tarea.asignado_nombre}>
+          <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[100px]" title={tarea.asignado_nombre}>
             {tarea.asignado_nombre}
           </span>
         )}
       </div>
 
       {tarea.fecha_estimada_completo && (
-        <p className={`text-xs mt-1.5 ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-400'}`}>
+        <p className={`text-xs mt-1.5 ${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>
           {formatFecha(tarea.fecha_estimada_completo)}
           {isOverdue ? ' — vencida' : ''}
         </p>
@@ -94,9 +94,9 @@ const KanbanColumn = ({ estado, tareas, onEdit, onDelete, onDragStart, onDragOve
   >
     <div className={`flex items-center justify-between px-3 py-2 rounded-t-lg border-2 ${ESTADO_HEADER[estado]}`}>
       <span className="font-semibold text-sm">{estado}</span>
-      <span className="text-xs font-medium opacity-60 bg-white/60 rounded-full px-1.5">{tareas.length}</span>
+      <span className="text-xs font-medium bg-black/10 dark:bg-white/20 dark:text-white rounded-full px-1.5">{tareas.length}</span>
     </div>
-    <div className="flex-1 bg-gray-50 border-x-2 border-b-2 border-gray-200 rounded-b-lg p-2 space-y-2 min-h-[160px]">
+    <div className="flex-1 bg-gray-50 dark:bg-gray-900/50 border-x-2 border-b-2 border-gray-200 dark:border-gray-700 rounded-b-lg p-2 space-y-2 min-h-[160px]">
       {tareas.map(t => (
         <TareaCard key={t.id} tarea={t} onEdit={onEdit} onDelete={onDelete} onDragStart={onDragStart} />
       ))}
