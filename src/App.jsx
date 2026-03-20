@@ -12,7 +12,7 @@ import { Toast } from './components/Toast';
 
 const HeaderComponent = () => (
   <div className="bg-black text-yellow-400 p-4 text-center">
-    App interna CAP v3
+    App interna CAP v4
   </div>
 );
 
