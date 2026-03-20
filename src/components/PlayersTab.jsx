@@ -122,7 +122,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
       } else {
         const fichaFutbol = result.fichas.find(f => ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase()));
         if (fichaFutbol) {
-          await database.saveFichaMedicaHasta(player.id, fichaFutbol.hasta);
+          await database.saveFichaMedicaHasta(player.id, fichaFutbol.hasta, currentUser?.email);
           onDataChange('players');
         }
         const alertType = fichaFutbol ? (fichaFutbol.vencido ? 'error' : 'success') : 'info';
@@ -219,7 +219,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
         } else if (result.fichas.length > 0) {
           const fichaFutbol = result.fichas.find(f => ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase()));
           if (fichaFutbol) {
-            await database.saveFichaMedicaHasta(player.id, fichaFutbol.hasta);
+            await database.saveFichaMedicaHasta(player.id, fichaFutbol.hasta, currentUser?.email);
             results.updated.push(player.name_visual || player.name);
           } else {
             results.notFound.push(player.name_visual || player.name);

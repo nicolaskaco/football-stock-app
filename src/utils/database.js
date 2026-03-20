@@ -312,15 +312,37 @@ export const database = {
     return data;
   },
 
-  async saveFichaMedicaHasta(playerId, hastaStr) {
+  async saveFichaMedicaHasta(playerId, hastaStr, currentUserEmail) {
     // hastaStr is DD/MM/YYYY — convert to YYYY-MM-DD for PostgreSQL
     const [d, m, y] = hastaStr.split('/');
     const isoDate = `${y}-${m}-${d}`;
+
+    // Fetch old value for history
+    const { data: old } = await supabase
+      .from('players')
+      .select('ficha_medica_hasta')
+      .eq('id', playerId)
+      .single();
+
     const { error } = await supabase
       .from('players')
       .update({ ficha_medica_hasta: isoDate })
       .eq('id', playerId);
     if (error) throw error;
+
+    // Record history only if value changed
+    if (old?.ficha_medica_hasta !== isoDate) {
+      const { error: historyError } = await supabase
+        .from('player_history')
+        .insert([{
+          player_id: playerId,
+          field_name: 'ficha_medica_hasta',
+          old_value: old?.ficha_medica_hasta ?? null,
+          new_value: isoDate,
+          changed_by: currentUserEmail || 'Unknown',
+        }]);
+      if (historyError) console.error('Error saving ficha médica history:', historyError);
+    }
   },
 
   // Validate employee credentials via Edge Function

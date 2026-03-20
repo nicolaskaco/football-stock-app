@@ -36,7 +36,7 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
         setRefreshResult({ ok: false, msg: 'No se encontró ficha de FÚTBOL en SND.' });
         return;
       }
-      await database.saveFichaMedicaHasta(selectedPlayer.id, fichaFutbol.hasta);
+      await database.saveFichaMedicaHasta(selectedPlayer.id, fichaFutbol.hasta, currentUser?.email);
       if (onDataChange) onDataChange('players');
       fetchPlayers();
       // fichaFutbol.hasta is DD/MM/YYYY — convert to YYYY-MM-DD for display
@@ -73,7 +73,7 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
           (f) => f.deporte && ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase())
         );
         if (fichaFutbol) {
-          await database.saveFichaMedicaHasta(p.id, fichaFutbol.hasta);
+          await database.saveFichaMedicaHasta(p.id, fichaFutbol.hasta, currentUser?.email);
           updated++;
         } else {
           errors++;
