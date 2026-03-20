@@ -16,6 +16,8 @@ const PRIORIDAD_CONFIG = {
   Baja:  { badge: 'bg-green-100 text-green-700 border-green-200',  dot: 'bg-green-500'  },
 };
 
+const PRIORIDAD_ORDER = { Alta: 0, Media: 1, Baja: 2 };
+
 const ESTADO_HEADER = {
   'Sin Asignar':  'bg-gray-100 border-gray-300 text-gray-700',
   'Sin Comenzar': 'bg-purple-50 border-purple-300 text-purple-700',
@@ -493,7 +495,10 @@ export const TareasTab = ({
             <KanbanColumn
               key={estado}
               estado={estado}
-              tareas={filtered.filter(t => t.estado === estado)}
+              tareas={filtered
+                .filter(t => t.estado === estado)
+                .sort((a, b) => (PRIORIDAD_ORDER[a.prioridad] ?? 1) - (PRIORIDAD_ORDER[b.prioridad] ?? 1))
+              }
               onEdit={openEditModal}
               onDelete={(id) => setConfirmDelete(id)}
               onDragStart={handleDragStart}
