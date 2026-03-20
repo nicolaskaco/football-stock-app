@@ -1355,4 +1355,86 @@ export const database = {
     if (error) throw error;
     return data[0];
   },
+
+  // ============================================================
+  // SPRINTS
+  // ============================================================
+
+  async getSprints() {
+    const { data, error } = await supabase
+      .from('sprints')
+      .select('*')
+      .order('fecha_inicio', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getOrCreateCurrentSprint() {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0=Dom, 1=Lun, ..., 6=Sab
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const toISO = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const fechaInicio = toISO(monday);
+    const fechaFin = toISO(sunday);
+
+    const opts = { day: 'numeric', month: 'short' };
+    const startLabel = monday.toLocaleDateString('es-UY', opts);
+    const endLabel = sunday.toLocaleDateString('es-UY', opts);
+    const nombre = `Semana ${startLabel} – ${endLabel}`;
+
+    const { data, error } = await supabase
+      .from('sprints')
+      .upsert([{ nombre, fecha_inicio: fechaInicio, fecha_fin: fechaFin }], { onConflict: 'fecha_inicio' })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  // ============================================================
+  // TAREAS
+  // ============================================================
+
+  async getTareas() {
+    const { data, error } = await supabase
+      .from('tareas')
+      .select('*, sprints(id, nombre, fecha_inicio, fecha_fin)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  async addTarea(tarea) {
+    const { data, error } = await supabase
+      .from('tareas')
+      .insert([tarea])
+      .select('*, sprints(id, nombre, fecha_inicio, fecha_fin)')
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateTarea(id, updates) {
+    const { data, error } = await supabase
+      .from('tareas')
+      .update(updates)
+      .eq('id', id)
+      .select('*, sprints(id, nombre, fecha_inicio, fecha_fin)')
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteTarea(id) {
+    const { error } = await supabase
+      .from('tareas')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+  },
 };

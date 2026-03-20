@@ -24,6 +24,7 @@ const ConfiguracionTab = lazy(() => import('./ConfiguracionTab').then(m => ({ de
 const EstadisticasTab = lazy(() => import('./EstadisticasTab').then(m => ({ default: m.EstadisticasTab })));
 const TesoreroTab = lazy(() => import('./TesoreroTab').then(m => ({ default: m.TesoreroTab })));
 const TarjetasTab = lazy(() => import('./TarjetasTab').then(m => ({ default: m.TarjetasTab })));
+const TareasTab = lazy(() => import('./TareasTab').then(m => ({ default: m.TareasTab })));
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-24">
@@ -44,6 +45,8 @@ export const AdminDashboard = ({
   injuries = [],
   appSettings = {},
   pendingChangeRequests = [],
+  tareas = [],
+  sprints = [],
   onLogout,
   onDataChange,
   currentUser
@@ -80,6 +83,7 @@ export const AdminDashboard = ({
   const canViewPartidos = currentUser?.canViewPartidos || false;
   const canAccessTesorero = currentUser?.canAccessTesorero || false;
   const canViewTarjetas = currentUser?.canViewTarjetas || false;
+  const canAccessTareas = currentUser?.canAccessTareas || false;
   const isAdmin = currentUser?.role === 'admin';
   const tabEnabled = (key) => appSettings[key] === 'true';
 
@@ -101,6 +105,7 @@ export const AdminDashboard = ({
     { id: 'reports',        label: 'Reportes',        show: canAccessRopa && tabEnabled('reportes_tab_enabled') },
     { id: 'estadisticas',   label: 'Estadísticas',   show: canViewPartidos && tabEnabled('estadisticas_tab_enabled') },
     { id: 'tarjetas',       label: 'Tarjetas',        show: canViewTarjetas },
+    { id: 'tareas',         label: 'Tareas',          show: canAccessTareas },
     { id: 'configuracion',  label: 'Configuración',  show: isAdmin },
   ];
 
@@ -341,6 +346,18 @@ export const AdminDashboard = ({
           <TarjetasTab
             jornadas={jornadas}
             players={players}
+            currentUser={currentUser}
+          />
+        )}
+        {activeTab === 'tareas' && canAccessTareas && (
+          <TareasTab
+            tareas={tareas}
+            sprints={sprints}
+            dirigentes={dirigentes}
+            employees={employees}
+            setShowModal={setShowModal}
+            onDataChange={onDataChange}
+            onFormDirtyChange={setModalIsDirty}
             currentUser={currentUser}
           />
         )}
