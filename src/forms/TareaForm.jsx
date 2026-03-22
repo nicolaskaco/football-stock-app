@@ -25,8 +25,9 @@ export const TareaForm = ({
   onSubmit,
   onDirtyChange,
 }) => {
-  const [formData, setFormData] = useState(tarea ? { ...empty, ...tarea } : { ...empty, sprint_id: defaultSprintId });
-  useFormDirty(formData, tarea, onDirtyChange);
+  const initialFormData = tarea ? { ...empty, ...tarea } : { ...empty, sprint_id: defaultSprintId };
+  const [formData, setFormData] = useState(initialFormData);
+  useFormDirty(formData, initialFormData, onDirtyChange);
 
   const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
