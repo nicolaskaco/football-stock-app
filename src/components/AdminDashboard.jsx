@@ -84,6 +84,7 @@ export const AdminDashboard = ({
   const canAccessTesorero = currentUser?.canAccessTesorero || false;
   const canViewTarjetas = currentUser?.canViewTarjetas || false;
   const canAccessTareas = currentUser?.canAccessTareas || false;
+  const canDeleteTareas = currentUser?.canDeleteTareas || false;
   const isAdmin = currentUser?.role === 'admin';
   const tabEnabled = (key) => appSettings[key] === 'true';
 
@@ -359,6 +360,7 @@ export const AdminDashboard = ({
             onDataChange={onDataChange}
             onFormDirtyChange={setModalIsDirty}
             currentUser={currentUser}
+            canDeleteTareas={canDeleteTareas}
           />
         )}
         {activeTab === 'configuracion' && isAdmin && (

@@ -127,6 +127,7 @@ const App = () => {
             canAccessTesorero: permissions?.can_access_tesorero || false,
             canViewTarjetas: permissions?.can_view_tarjetas || false,
             canAccessTareas: permissions?.can_access_tareas || false,
+            canDeleteTareas: permissions?.can_delete_tareas || false,
           });
           await loadData();
           setCurrentView('dashboard');
@@ -254,6 +255,7 @@ const App = () => {
           canAccessTesorero: permissions?.can_access_tesorero || false,
           canViewTarjetas: permissions?.can_view_tarjetas || false,
           canAccessTareas: permissions?.can_access_tareas || false,
+          canDeleteTareas: permissions?.can_delete_tareas || false,
         });
 
         await loadData();
