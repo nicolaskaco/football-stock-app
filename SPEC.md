@@ -277,18 +277,18 @@ Bucket: `player-documents` (private)
 | `employees` | Funcionarios | `can_access_ropa` |
 | `players` | Jugadores | `can_access_players` |
 | `players_viatico` | Viáticos | `can_access_viatico` |
+| `tesorero` | Tesorero | `can_access_tesorero` |
 | `change_requests` | Solicitudes | role in `[admin, ejecutivo, presidente, presidente_categoria]` |
-| `distributions` | Distribuciones | `can_access_ropa` **and** `distribuciones_tab_enabled` app setting |
+| `tareas` | Tareas | `can_access_tareas` |
 | `dirigentes` | Dirigentes | `can_access_dirigentes` |
+| `distributions` | Distribuciones | `can_access_ropa` **and** `distribuciones_tab_enabled` app setting |
 | `torneos` | Torneos | `view_torneo` |
 | `comisiones` | Comisiones | `can_view_comisiones` |
 | `rivales` | Rivales | `can_view_partidos` **and** `rivales_tab_enabled` app setting |
 | `partidos` | Partidos | `can_view_partidos` |
-| `tarjetas` | Tarjetas | `can_view_tarjetas` |
-| `tareas` | Tareas | `can_access_tareas` |
-| `estadisticas` | Estadísticas | `can_view_partidos` **and** `estadisticas_tab_enabled` app setting |
-| `tesorero` | Tesorero | `can_access_tesorero` |
 | `reports` | Reportes | `can_access_ropa` **and** `reportes_tab_enabled` app setting |
+| `estadisticas` | Estadísticas | `can_view_partidos` **and** `estadisticas_tab_enabled` app setting |
+| `tarjetas` | Tarjetas | `can_view_tarjetas` |
 | `configuracion` | Configuración (includes User Management) | `role = 'admin'` only |
 
 App settings (`app_settings` table) are loaded at login into `appSettings` global state in `App.jsx`. Admins toggle them via `ConfiguracionTab`. The `tabEnabled(key)` helper in `AdminDashboard` checks `appSettings[key] === 'true'`.
@@ -462,9 +462,10 @@ Players have a `ficha_medica_hasta` (date) column that records when their SND sp
 
 - **`database.checkFichaMedica(cedula, tipoDocumento)`** — calls the `check-ficha-medica` Supabase Edge Function (proxy to SND). Returns a `fichas` array of license records, each with `deporte` and `hasta` (DD/MM/YYYY).
 - The app always filters for an **exact FÚTBOL match**: `['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase())` — no fallback to other sports.
-- **`database.saveFichaMedicaHasta(playerId, hastaStr)`** — converts `hastaStr` from DD/MM/YYYY to YYYY-MM-DD and writes it to `players.ficha_medica_hasta`.
+- **`database.saveFichaMedicaHasta(playerId, hastaStr, currentUserEmail)`** — converts `hastaStr` from DD/MM/YYYY to YYYY-MM-DD and writes it to `players.ficha_medica_hasta`. Before writing, it fetches the existing value; if the new date differs, it inserts a `player_history` audit record showing the old → new date. If the value is unchanged, no history record is created.
 - **PlayersTab** supports individual and bulk ficha checks for all filtered players. Admins have an additional filter option **"Sin ficha médica"** that shows all players across every category (including 3era) whose `ficha_medica_hasta` is null or in the past.
 - **FichaMedicaWidget** (home page) shows expired / expiring-soon players and lets admins trigger a per-player refresh directly from the modal.
+- **PlayerHistoryModal** displays "Ficha Médica" field changes with dates formatted as DD/MM/YYYY. A "Ficha Médica" filter button appears in the per-field filter row when ficha history entries exist.
 
 ### Bulk Operations
 
@@ -758,6 +759,7 @@ Both tables have RLS enabled with permissive read + write policies for `authenti
 **Kanban** (default)
 - 4 columns in left-to-right order: Sin Asignar · Sin Comenzar · En Progreso · Completado
 - Column header colors: gray / purple / amber / green
+- Within each column, tasks sort by priority descending: Urgente → Muy Alta → Alta → Media → Baja
 - HTML5 drag & drop (`draggable` + `onDragStart`/`onDragOver`/`onDrop`) — no library
 - Optimistic UI: status updates locally before the DB write; rolls back on error
 
@@ -766,7 +768,8 @@ Both tables have RLS enabled with permissive read + write policies for `authenti
 - Overdue tasks (fecha_estimada < today and not Completado) shown in red
 
 #### Task cards (Kanban)
-- Title, truncated description (2 lines max), priority badge (Alta=red, Media=yellow, Baja=green), assignee name, due date
+- Title, truncated description (2 lines max), priority badge (Urgente=purple, Muy Alta=orange, Alta=red, Media=yellow, Baja=green), assignee name, due date
+- Clicking the task title opens the TareaForm edit modal (same UX as clicking a player name in PlayersTab)
 - Overdue date shown in red with "— vencida" suffix
 - Edit (pencil) and Delete (trash) icon buttons
 
