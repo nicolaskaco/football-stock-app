@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useFormDirty } from '../hooks/useFormDirty';
 
-const PRIORIDADES = ['Alta', 'Media', 'Baja'];
+const PRIORIDADES = ['Urgente', 'Muy Alta', 'Alta', 'Media', 'Baja'];
 const ESTADOS = ['Sin Asignar', 'Sin Comenzar', 'En Progreso', 'Completado'];
 
 const empty = {

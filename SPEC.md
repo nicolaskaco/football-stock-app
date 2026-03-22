@@ -358,7 +358,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
 | [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (red card in previous jornada or 5th yellow milestone) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. |
 | [InjuryForm.jsx](src/forms/InjuryForm.jsx) | Injury registration/editing: tipo (Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro), severidad (leve/moderada/grave), descripción, fecha_inicio, fecha_retorno_estimada, fecha_alta. Admin-only. |
-| [TareaForm.jsx](src/forms/TareaForm.jsx) | Task add/edit. Fields: título (required), descripción (textarea), prioridad (Alta/Media/Baja), estado (Sin Asignar/Sin Comenzar/En Progreso/Completado), asignado a (Dirigente or Funcionario — combined `<optgroup>` select; auto-advances estado from "Sin Asignar" to "Sin Comenzar" when an assignee is chosen), sprint (defaults to active sprint via `defaultSprintId` prop), fecha estimada. |
+| [TareaForm.jsx](src/forms/TareaForm.jsx) | Task add/edit. Fields: título (required), descripción (textarea), prioridad (Urgente/Muy Alta/Alta/Media/Baja), estado (Sin Asignar/Sin Comenzar/En Progreso/Completado), asignado a (Dirigente or Funcionario — combined `<optgroup>` select; auto-advances estado from "Sin Asignar" to "Sin Comenzar" when an assignee is chosen), sprint (defaults to active sprint via `defaultSprintId` prop), fecha estimada. |
 | [UserInviteForm.jsx](src/forms/UserInviteForm.jsx) | Invite / edit-permissions form. Fields: email (disabled in edit mode), role dropdown, 18 grouped permission checkboxes with select-all/none per group, and category chip multi-select. Used by `UserManagementSection` for both invite and edit flows. |
 
 #### Modals & Utilities
@@ -732,7 +732,7 @@ A JIRA-like task management module gated behind the `can_access_tareas` permissi
 | `id` | uuid PK | |
 | `titulo` | text NOT NULL | |
 | `descripcion` | text | nullable |
-| `prioridad` | text | `'Alta'` \| `'Media'` \| `'Baja'` (default `'Media'`) |
+| `prioridad` | text | `'Urgente'` \| `'Muy Alta'` \| `'Alta'` \| `'Media'` \| `'Baja'` (default `'Media'`) |
 | `estado` | text | `'Sin Asignar'` \| `'Sin Comenzar'` \| `'En Progreso'` \| `'Completado'` (default `'Sin Asignar'`) |
 | `asignado_tipo` | text | `'dirigente'` \| `'funcionario'` \| NULL |
 | `asignado_id` | uuid | FK to `dirigentes.id` or `employees.id` (denormalized — no DB FK constraint) |
