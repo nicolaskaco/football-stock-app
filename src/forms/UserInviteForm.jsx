@@ -57,6 +57,7 @@ const PERMISSION_GROUPS = [
       { key: 'can_access_dirigentes', label: 'Ver dirigentes' },
       { key: 'can_edit_dirigentes', label: 'Editar dirigentes' },
       { key: 'can_access_tareas', label: 'Acceder a Tareas' },
+      { key: 'can_delete_tareas', label: 'Eliminar Tareas' },
     ],
   },
 ];

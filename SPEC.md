@@ -145,6 +145,7 @@ Stored as `user_permissions.role`:
 | `can_view_tarjetas` | Tarjetas tab + Suspensiones widget on OverviewTab |
 | `can_access_tesorero` | Tesorero tab (Congelar Viáticos toggle + viático Excel export) |
 | `can_access_tareas` | Tareas tab (full read + write access) |
+| `can_delete_tareas` | Show delete button on Tareas cards and list view (default: false) |
 | `categoria[]` | Array — restricts access to specific player categories |
 
 The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision` (read-only for the last two — approve/reject/create buttons hidden).
@@ -713,7 +714,7 @@ Each category cell displays:
 
 ### Tareas (Task Management)
 
-A JIRA-like task management module gated behind the `can_access_tareas` permission. All users with the permission have full read + write access.
+A JIRA-like task management module gated behind the `can_access_tareas` permission. All users with the permission have full read + write access. Deleting tasks additionally requires the `can_delete_tareas` permission (default: false) — the trash icon is hidden when absent.
 
 #### Data model
 

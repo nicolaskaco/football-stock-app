@@ -42,7 +42,7 @@ const formatFecha = (dateStr) => {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('es-UY', { day: 'numeric', month: 'short' });
 };
 
-const TareaCard = ({ tarea, onEdit, onDelete, onDragStart }) => {
+const TareaCard = ({ tarea, onEdit, onDelete, onDragStart, canDeleteTareas }) => {
   const isOverdue = tarea.fecha_estimada_completo
     && new Date(tarea.fecha_estimada_completo) < new Date()
     && tarea.estado !== 'Completado';
@@ -59,9 +59,11 @@ const TareaCard = ({ tarea, onEdit, onDelete, onDragStart }) => {
           <button onClick={() => onEdit(tarea)} className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors" title="Editar">
             <Edit2 className="w-3.5 h-3.5" />
           </button>
-          <button onClick={() => onDelete(tarea.id)} className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded transition-colors" title="Eliminar">
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          {canDeleteTareas && (
+            <button onClick={() => onDelete(tarea.id)} className="p-1 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 rounded transition-colors" title="Eliminar">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -88,7 +90,7 @@ const TareaCard = ({ tarea, onEdit, onDelete, onDragStart }) => {
   );
 };
 
-const KanbanColumn = ({ estado, tareas, onEdit, onDelete, onDragStart, onDragOver, onDrop }) => (
+const KanbanColumn = ({ estado, tareas, onEdit, onDelete, onDragStart, onDragOver, onDrop, canDeleteTareas }) => (
   <div
     className="flex flex-col min-w-[240px] flex-1"
     onDragOver={onDragOver}
@@ -100,7 +102,7 @@ const KanbanColumn = ({ estado, tareas, onEdit, onDelete, onDragStart, onDragOve
     </div>
     <div className="flex-1 bg-gray-50 dark:bg-gray-900/50 border-x-2 border-b-2 border-gray-200 dark:border-gray-700 rounded-b-lg p-2 space-y-2 min-h-[160px]">
       {tareas.map(t => (
-        <TareaCard key={t.id} tarea={t} onEdit={onEdit} onDelete={onDelete} onDragStart={onDragStart} />
+        <TareaCard key={t.id} tarea={t} onEdit={onEdit} onDelete={onDelete} onDragStart={onDragStart} canDeleteTareas={canDeleteTareas} />
       ))}
     </div>
   </div>
@@ -114,6 +116,7 @@ export const TareasTab = ({
   setShowModal,
   onDataChange,
   onFormDirtyChange,
+  canDeleteTareas = false,
 }) => {
   const { alertModal, showAlert, closeAlert } = useAlertModal();
   const { execute } = useMutation((msg) => showAlert('Error', msg, 'error'));
@@ -506,6 +509,7 @@ export const TareasTab = ({
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
+              canDeleteTareas={canDeleteTareas}
             />
           ))}
         </div>
@@ -548,9 +552,11 @@ export const TareasTab = ({
                             <button onClick={() => openEditModal(t)} className="p-1.5 text-gray-400 hover:text-blue-600 rounded transition-colors" title="Editar">
                               <Edit2 className="w-4 h-4" />
                             </button>
-                            <button onClick={() => setConfirmDelete(t.id)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors" title="Eliminar">
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {canDeleteTareas && (
+                              <button onClick={() => setConfirmDelete(t.id)} className="p-1.5 text-gray-400 hover:text-red-600 rounded transition-colors" title="Eliminar">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
