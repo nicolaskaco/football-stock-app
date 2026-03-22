@@ -54,7 +54,7 @@ const TareaCard = ({ tarea, onEdit, onDelete, onDragStart }) => {
       className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none"
     >
       <div className="flex items-start justify-between gap-2 mb-2">
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug break-words min-w-0">{tarea.titulo}</p>
+        <button className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-snug break-words min-w-0 text-left hover:text-blue-700 dark:hover:text-blue-400 hover:underline cursor-pointer" onClick={() => onEdit(tarea)}>{tarea.titulo}</button>
         <div className="flex gap-0.5 flex-shrink-0">
           <button onClick={() => onEdit(tarea)} className="p-1 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors" title="Editar">
             <Edit2 className="w-3.5 h-3.5" />
@@ -533,7 +533,9 @@ export const TareasTab = ({
                       && t.estado !== 'Completado';
                     return (
                       <tr key={t.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm font-medium text-gray-900 max-w-[200px] truncate">{t.titulo}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-gray-900 max-w-[200px] truncate">
+                          <button className="text-left truncate hover:text-blue-700 hover:underline cursor-pointer" onClick={() => openEditModal(t)}>{t.titulo}</button>
+                        </td>
                         <td className="px-4 py-3"><PriorityBadge prioridad={t.prioridad} /></td>
                         <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">{t.estado}</td>
                         <td className="px-4 py-3 text-sm text-gray-600">{t.asignado_nombre || '—'}</td>
