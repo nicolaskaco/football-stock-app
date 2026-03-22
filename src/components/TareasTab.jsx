@@ -11,12 +11,14 @@ import { TareaForm } from '../forms/TareaForm';
 const ESTADOS = ['Sin Asignar', 'Sin Comenzar', 'En Progreso', 'Completado'];
 
 const PRIORIDAD_CONFIG = {
-  Alta:  { badge: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700',             dot: 'bg-red-500'    },
-  Media: { badge: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-700', dot: 'bg-yellow-500' },
-  Baja:  { badge: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700',   dot: 'bg-green-500'  },
+  Urgente:    { badge: 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-700', dot: 'bg-purple-500'  },
+  'Muy Alta': { badge: 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700', dot: 'bg-orange-500'  },
+  Alta:       { badge: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700',                   dot: 'bg-red-500'     },
+  Media:      { badge: 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-700',  dot: 'bg-yellow-500'  },
+  Baja:       { badge: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-700',        dot: 'bg-green-500'   },
 };
 
-const PRIORIDAD_ORDER = { Alta: 0, Media: 1, Baja: 2 };
+const PRIORIDAD_ORDER = { Urgente: 0, 'Muy Alta': 1, Alta: 2, Media: 3, Baja: 4 };
 
 const ESTADO_HEADER = {
   'Sin Asignar':  'bg-gray-100 border-gray-300 text-gray-700 dark:bg-gray-700 dark:border-gray-500 dark:text-gray-200',
