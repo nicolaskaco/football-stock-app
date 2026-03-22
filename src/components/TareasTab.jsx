@@ -43,8 +43,10 @@ const formatFecha = (dateStr) => {
 };
 
 const TareaCard = ({ tarea, onEdit, onDelete, onDragStart, canDeleteTareas }) => {
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const isOverdue = tarea.fecha_estimada_completo
-    && new Date(tarea.fecha_estimada_completo) < new Date()
+    && tarea.fecha_estimada_completo < todayStr
     && tarea.estado !== 'Completado';
 
   return (
@@ -532,8 +534,10 @@ export const TareasTab = ({
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {filtered.map(t => {
+                    const today = new Date();
+                    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
                     const isOverdue = t.fecha_estimada_completo
-                      && new Date(t.fecha_estimada_completo) < new Date()
+                      && t.fecha_estimada_completo < todayStr
                       && t.estado !== 'Completado';
                     return (
                       <tr key={t.id} className="hover:bg-gray-50">
