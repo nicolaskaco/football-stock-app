@@ -497,13 +497,13 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Número de Buzo
             </label>
-            <input type="text" inputMode="numeric" pattern="[0-9]*"
+            <input
+              type="number"
               name="numero-buzo"
-              autoComplete="off"
               value={formData.numero_buzo || ''}
               onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
 
@@ -512,15 +512,12 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               Número de Pantalón
             </label>
             <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
+              type="number"
               name="numero-pantalon"
-              autoComplete="off"
               value={formData.numero_pantalon || ''}
               onChange={(e) => setFormData({...formData, numero_pantalon: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
 
@@ -529,15 +526,12 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               Número de Buzo de Entrenamiento
             </label>
             <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
+              type="number"
               name="numero-buzo-entrenamiento"
-              autoComplete="off"
               value={formData.numero_buzo_entrenamiento || ''}
               onChange={(e) => setFormData({...formData, numero_buzo_entrenamiento: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
         </div>
