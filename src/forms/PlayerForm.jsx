@@ -495,13 +495,14 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Número de Buzo
+              Buzo
             </label>
             <input
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              autoComplete="off"
+              id="jersey-top-number"
+              autoComplete="one-time-code"
               value={formData.numero_buzo || ''}
               onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
@@ -511,13 +512,14 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Número de Pantalón
+              Pantalón
             </label>
             <input
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              autoComplete="off"
+              id="jersey-shorts-number"
+              autoComplete="one-time-code"
               value={formData.numero_pantalon || ''}
               onChange={(e) => setFormData({...formData, numero_pantalon: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
@@ -527,13 +529,14 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Número de Buzo de Entrenamiento
+              Buzo de Entrenamiento
             </label>
             <input
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              autoComplete="off"
+              id="training-top-number"
+              autoComplete="one-time-code"
               value={formData.numero_buzo_entrenamiento || ''}
               onChange={(e) => setFormData({...formData, numero_buzo_entrenamiento: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
