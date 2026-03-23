@@ -10,7 +10,7 @@ import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 
-export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], torneos = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
+export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], dirigentes = [], torneos = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const { execute } = useMutation();
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [view, setView] = useState('lista'); // 'lista' | 'calendario'
@@ -204,7 +204,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
           )}
         </div>
       ) : view === 'calendario' ? (
-        <CalendarioView jornadas={sortedJornadas} onJornadaClick={openDetail} />
+        <CalendarioView jornadas={sortedJornadas} onJornadaClick={openDetail} players={players} dirigentes={dirigentes} injuries={injuries} />
       ) : (
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="w-full">

@@ -32,3 +32,15 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [x] **E1. Persistencia de filtros en URL en más tabs** — Apply `useSearchParams` (already used in PlayersTab) to EstadisticasTab (category filter, active sub-tab) and TorneosTab (search). *(completed — PR #254 · 2026-03-18)*
 - [x] **E2. Filtro por temporada / año** — Year filter dropdown (2024, 2025, 2026…) on PartidosTab, EstadisticasTab, and TorneosTab. Defaults to current year. *(completed — 2026-03-18)*
 - [x] **E3. Estadísticas rápidas en modal de jugador (solo lectura)** — Compact stats row at the bottom of read-only PlayerForm: PJ | Goles | Amarillas | Rojas. Reuses `jornadas` already in global state. *(completed — 2026-03-17)*
+
+### F. Datos de Familia
+
+- [ ] **F1. Padres/Tutores en tabla de jugadores** — Add columns to `players` table: `madre_nombre`, `madre_telefono`, `padre_nombre`, `padre_telefono`. New section in PlayerForm to edit these fields. Planning to integrate with external Office Form for data collection.
+
+### G. Calendario y Vistas
+
+- [ ] **G1. Calendario Unificado** — Enhance existing CalendarioView to show multiple event types beyond matches: birthdays (players + dirigentes), ficha médica expirations, active injuries/estimated returns. Toggle filters per event type. Color-coded indicators per event type.
+
+### H. Auditoría
+
+- [ ] **H1. Log de Actividad Global** — App-wide audit trail: logins, permission changes, approval/rejection of change requests, bulk operations. New `activity_log` table + ActivityLogTab (admin only).
