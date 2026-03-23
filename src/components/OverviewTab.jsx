@@ -30,6 +30,7 @@ export const OverviewTab = ({
   currentUser,
   jornadas = [],
   injuries = [],
+  dirigentes = [],
   canViewPartidos = false,
   canViewTarjetas = false,
   setShowModal,
@@ -122,7 +123,7 @@ export const OverviewTab = ({
               Ver todos →
             </button>
           </div>
-          <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} />
+          <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} players={players} dirigentes={dirigentes} injuries={injuries} />
         </div>
       )}
 

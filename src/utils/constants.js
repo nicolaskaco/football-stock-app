@@ -103,3 +103,11 @@ export const CHANGE_REQUEST_STATUS = {
   APPROVED: 'approved',
   REJECTED: 'rejected',
 };
+
+/** Tipos de evento del calendario unificado */
+export const CALENDAR_EVENT_TYPES = {
+  PARTIDOS: 'partidos',
+  CUMPLEANOS: 'cumpleanos',
+  FICHA_MEDICA: 'ficha_medica',
+  LESIONES: 'lesiones',
+};
