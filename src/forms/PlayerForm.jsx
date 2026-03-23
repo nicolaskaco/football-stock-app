@@ -529,6 +529,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
+              autoComplete="off"
               value={formData.numero_buzo_entrenamiento || ''}
               onChange={(e) => setFormData({...formData, numero_buzo_entrenamiento: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
