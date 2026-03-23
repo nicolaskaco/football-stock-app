@@ -94,7 +94,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
   }, [jornadas, player?.id]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
+    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
       {onRequestChange && (
         <div className="flex justify-end">
           {hasPendingRequest ? (
