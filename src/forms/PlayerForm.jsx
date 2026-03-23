@@ -26,6 +26,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     categoria_juego: null,
     numero_buzo: null,
     numero_pantalon: null,
+    numero_buzo_entrenamiento: null,
     hide_player: false,
     representante: '',
     casita: false,
@@ -93,7 +94,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
   }, [jornadas, player?.id]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
+    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
       {onRequestChange && (
         <div className="flex justify-end">
           {hasPendingRequest ? (
@@ -497,10 +498,12 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               Número de Buzo
             </label>
             <input type="text" inputMode="numeric" pattern="[0-9]*"
-              value={formData.numero_buzo || ''} 
-              onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})} 
+              name="numero-buzo"
+              autoComplete="off"
+              value={formData.numero_buzo || ''}
+              onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -508,15 +511,33 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Número de Pantalón
             </label>
-            <input 
-              type="text" 
-              inputMode="numeric" 
+            <input
+              type="text"
+              inputMode="numeric"
               pattern="[0-9]*"
-              name="pantalon"
-              value={formData.numero_pantalon || ''} 
-              onChange={(e) => setFormData({...formData, numero_pantalon: e.target.value ? parseInt(e.target.value) : null})} 
+              name="numero-pantalon"
+              autoComplete="off"
+              value={formData.numero_pantalon || ''}
+              onChange={(e) => setFormData({...formData, numero_pantalon: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Número de Buzo de Entrenamiento
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              name="numero-buzo-entrenamiento"
+              autoComplete="off"
+              value={formData.numero_buzo_entrenamiento || ''}
+              onChange={(e) => setFormData({...formData, numero_buzo_entrenamiento: e.target.value ? parseInt(e.target.value) : null})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
