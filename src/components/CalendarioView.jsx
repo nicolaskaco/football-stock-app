@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Cake, ShieldAlert, HeartPulse, Trophy } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Cake, ShieldAlert, HeartPulse, Trophy, X } from 'lucide-react';
 import { CATEGORIAS_PARTIDO, CALENDAR_EVENT_TYPES } from '../utils/constants';
 
 /**
@@ -183,25 +183,105 @@ const EVENT_STYLES = {
   },
 };
 
-function EventPill({ event }) {
+function EventPill({ event, onClick }) {
   const style = EVENT_STYLES[event.type];
   if (!style) return null;
   const { bg, text, Icon } = style;
   return (
-    <div
+    <button
+      onClick={onClick}
       title={`${event.label} — ${event.detail}`}
-      className={`flex items-center gap-0.5 rounded px-1 py-0.5 ${bg} ${text} text-[9px] sm:text-[10px] leading-tight truncate`}
+      className={`w-full text-left flex items-center gap-0.5 rounded px-1 py-0.5 ${bg} ${text} text-[9px] sm:text-[10px] leading-tight truncate hover:brightness-95 transition`}
     >
       <Icon className="w-2.5 h-2.5 flex-shrink-0" />
       <span className="truncate">{event.label}</span>
-    </div>
+    </button>
   );
 }
 
-/** When too many events in a cell, show a summary count */
-function EventOverflow({ count }) {
+/** When too many events in a cell, show a clickable "more" indicator */
+function EventOverflow({ count, onClick }) {
   return (
-    <span className="text-[9px] text-gray-400 dark:text-gray-500 pl-1">+{count} más</span>
+    <button
+      onClick={onClick}
+      className="text-[9px] text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 pl-1 text-left"
+    >
+      +{count} más
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Day events modal (lightweight, inline)
+// ─────────────────────────────────────────────
+
+const MONTHS_ES_LONG = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+];
+
+const EVENT_TYPE_LABELS = {
+  [CALENDAR_EVENT_TYPES.CUMPLEANOS]: 'Cumpleaños',
+  [CALENDAR_EVENT_TYPES.FICHA_MEDICA]: 'Fichas Médicas',
+  [CALENDAR_EVENT_TYPES.LESIONES]: 'Lesiones',
+};
+
+function DayEventsModal({ dateKey, events, onClose }) {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  const dateLabel = `${d} de ${MONTHS_ES_LONG[m - 1]} de ${y}`;
+
+  // Group events by type
+  const grouped = events.reduce((acc, evt) => {
+    if (!acc[evt.type]) acc[evt.type] = [];
+    acc[evt.type].push(evt);
+    return acc;
+  }, {});
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 capitalize">{dateLabel}</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Event groups */}
+        <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+          {Object.entries(grouped).map(([type, evts]) => {
+            const style = EVENT_STYLES[type];
+            if (!style) return null;
+            const { bg, text, Icon } = style;
+            return (
+              <div key={type}>
+                <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${text}`}>
+                  {EVENT_TYPE_LABELS[type]}
+                </p>
+                <ul className="space-y-1.5">
+                  {evts.map((evt, i) => (
+                    <li key={i} className={`flex items-center gap-2 rounded-lg px-3 py-2 ${bg}`}>
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${text}`} />
+                      <div className="min-w-0">
+                        <p className={`text-sm font-medium truncate ${text}`}>{evt.label}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{evt.detail}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -211,7 +291,7 @@ function EventOverflow({ count }) {
 
 const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
-function MonthView({ year, month, jornadasByDate, eventsByDate, onJornadaClick, showPartidos, maxEventsPerCell }) {
+function MonthView({ year, month, jornadasByDate, eventsByDate, onJornadaClick, onDayEventsClick, showPartidos, maxEventsPerCell }) {
   const firstDow = new Date(year, month, 1).getDay();
   const offset = (firstDow + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -263,9 +343,9 @@ function MonthView({ year, month, jornadasByDate, eventsByDate, onJornadaClick, 
               {events.map((evt, i) => {
                 if (shown >= maxShow) return null;
                 shown++;
-                return <EventPill key={`${evt.type}-${i}`} event={evt} />;
+                return <EventPill key={`${evt.type}-${i}`} event={evt} onClick={() => onDayEventsClick(dateKey, eventsByDate[dateKey] || [])} />;
               })}
-              {overflow > 0 && <EventOverflow count={overflow} />}
+              {overflow > 0 && <EventOverflow count={overflow} onClick={() => onDayEventsClick(dateKey, eventsByDate[dateKey] || [])} />}
             </div>
           );
         })}
@@ -287,7 +367,7 @@ function getMonday(date) {
   return d;
 }
 
-function WeekView({ weekStart, jornadasByDate, eventsByDate, onJornadaClick, showPartidos }) {
+function WeekView({ weekStart, jornadasByDate, eventsByDate, onJornadaClick, onDayEventsClick, showPartidos }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -325,7 +405,7 @@ function WeekView({ weekStart, jornadasByDate, eventsByDate, onJornadaClick, sho
                 <JornadaCard key={j.id} jornada={j} onClick={onJornadaClick} />
               ))}
               {events.map((evt, i) => (
-                <EventPill key={`${evt.type}-${i}`} event={evt} />
+                <EventPill key={`${evt.type}-${i}`} event={evt} onClick={() => onDayEventsClick(dateKey, events)} />
               ))}
             </div>
           );
@@ -380,6 +460,13 @@ export const CalendarioView = ({
   const [calView, setCalView] = useState('week');
   const [currentDate, setCurrentDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
   const [weekStart, setWeekStart] = useState(getMonday(today));
+
+  // Day events modal state
+  const [dayModal, setDayModal] = useState(null); // { dateKey, events } | null
+
+  const openDayModal = (dateKey, events) => {
+    if (events.length > 0) setDayModal({ dateKey, events });
+  };
 
   // Event type filters — all on by default
   const [filters, setFilters] = useState({
@@ -566,6 +653,7 @@ export const CalendarioView = ({
           jornadasByDate={jornadasByDate}
           eventsByDate={eventsByDate}
           onJornadaClick={onJornadaClick}
+          onDayEventsClick={openDayModal}
           showPartidos={filters[CALENDAR_EVENT_TYPES.PARTIDOS]}
           maxEventsPerCell={3}
         />
@@ -575,7 +663,17 @@ export const CalendarioView = ({
           jornadasByDate={jornadasByDate}
           eventsByDate={eventsByDate}
           onJornadaClick={onJornadaClick}
+          onDayEventsClick={openDayModal}
           showPartidos={filters[CALENDAR_EVENT_TYPES.PARTIDOS]}
+        />
+      )}
+
+      {/* Day events modal */}
+      {dayModal && (
+        <DayEventsModal
+          dateKey={dayModal.dateKey}
+          events={dayModal.events}
+          onClose={() => setDayModal(null)}
         />
       )}
     </div>
