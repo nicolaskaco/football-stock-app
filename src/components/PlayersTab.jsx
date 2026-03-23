@@ -52,6 +52,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   const filterCasita = searchParams.get('p_casita') === 'true';
   const filterContrato = searchParams.get('p_contrato') === 'true';
   const filterSinFicha = searchParams.get('p_sin_ficha') === 'true';
+  const filterSinBuzo = searchParams.get('p_sin_buzo') === 'true';
 
   const setParam = (key, value, defaultValue) => {
     setSearchParams(prev => {
@@ -79,6 +80,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   const setFilterCasita = (v) => setParam('p_casita', v, false);
   const setFilterContrato = (v) => setParam('p_contrato', v, false);
   const setFilterSinFicha = (v) => setParam('p_sin_ficha', v, false);
+  const setFilterSinBuzo = (v) => setParam('p_sin_buzo', v, false);
 
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [selectedPlayers, setSelectedPlayers] = useState([]);
@@ -314,6 +316,8 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
     const matchesSinFicha = !filterSinFicha ||
       (CATEGORIAS_CON_FICHA.includes(efectivaCat) && !p.ficha_medica_hasta);
 
+    const matchesSinBuzo = !filterSinBuzo || p.numero_buzo_entrenamiento == null;
+
     // Availability filter
     const filterDisp = searchParams.get('p_disp') || 'all';
     const hasActiveInjury = !!activeInjuryMap[p.id];
@@ -332,7 +336,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                                   currentUser.categoria.length === 0 ||
                                   currentUser.categoria.includes(efectivaCat);
 
-    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && matchesSinFicha && matchesDisp && hasAccessToCategoria && matchesStatus;
+    return matchesSearch && matchesCategoria && matchesCasita && matchesContrato && matchesSinFicha && matchesSinBuzo && matchesDisp && hasAccessToCategoria && matchesStatus;
   });
 
   const handleSelectAll = () => {
@@ -889,6 +893,17 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
               <span className="text-sm font-medium text-gray-700">Sin Ficha Médica</span>
+            </label>
+          )}
+          {isAdmin && (
+            <label className="flex items-center gap-2 px-4 py-2 border rounded-lg bg-gray-50 cursor-pointer hover:bg-gray-100">
+              <input
+                type="checkbox"
+                checked={filterSinBuzo}
+                onChange={(e) => setFilterSinBuzo(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm font-medium text-gray-700">Sin Buzo Entren.</span>
             </label>
           )}
           {isAdmin && (
