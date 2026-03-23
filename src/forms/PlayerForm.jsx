@@ -498,12 +498,15 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               Número de Buzo
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               name="numero-buzo"
+              autoComplete="new-password"
               value={formData.numero_buzo || ''}
               onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -512,12 +515,15 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               Número de Pantalón
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               name="numero-pantalon"
+              autoComplete="new-password"
               value={formData.numero_pantalon || ''}
               onChange={(e) => setFormData({...formData, numero_pantalon: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -526,12 +532,15 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               Número de Buzo de Entrenamiento
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               name="numero-buzo-entrenamiento"
+              autoComplete="new-password"
               value={formData.numero_buzo_entrenamiento || ''}
               onChange={(e) => setFormData({...formData, numero_buzo_entrenamiento: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
