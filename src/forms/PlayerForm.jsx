@@ -498,10 +498,12 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               Número de Buzo
             </label>
             <input type="text" inputMode="numeric" pattern="[0-9]*"
-              value={formData.numero_buzo || ''} 
-              onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})} 
+              name="numero-buzo"
+              autoComplete="off"
+              value={formData.numero_buzo || ''}
+              onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -513,7 +515,8 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              name="pantalon"
+              name="numero-pantalon"
+              autoComplete="off"
               value={formData.numero_pantalon || ''}
               onChange={(e) => setFormData({...formData, numero_pantalon: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
@@ -529,6 +532,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
+              name="numero-buzo-entrenamiento"
               autoComplete="off"
               value={formData.numero_buzo_entrenamiento || ''}
               onChange={(e) => setFormData({...formData, numero_buzo_entrenamiento: e.target.value ? parseInt(e.target.value) : null})}
