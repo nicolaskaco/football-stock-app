@@ -72,6 +72,28 @@ const buildStats = (jornadas, players, categoriaFiltro) => {
     .filter((s) => s.pj > 0 || s.goles > 0 || s.amarillas > 0 || s.rojas > 0);
 };
 
+// ─── Convocatorias by year helper ────────────────────────────────────────────
+
+const buildConvocatoriasByYear = (jornadas, categoriaFiltro) => {
+  const result = {}; // { player_id: { year: { total, titular, suplente } } }
+  jornadas.forEach((jornada) => {
+    if (!jornada.fecha) return;
+    const year = new Date(jornada.fecha).getFullYear();
+    (jornada.partidos || []).forEach((partido) => {
+      if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
+      (partido.partido_players || []).forEach((pp) => {
+        if (!pp.player_id) return;
+        if (!result[pp.player_id]) result[pp.player_id] = {};
+        if (!result[pp.player_id][year]) result[pp.player_id][year] = { total: 0, titular: 0, suplente: 0 };
+        result[pp.player_id][year].total++;
+        if (pp.tipo === 'titular') result[pp.player_id][year].titular++;
+        else result[pp.player_id][year].suplente++;
+      });
+    });
+  });
+  return result;
+};
+
 // ─── Rivales stats helpers ───────────────────────────────────────────────────
 
 const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
@@ -228,9 +250,16 @@ const TopGoleadores = ({ stats }) => {
   );
 };
 
-const GeneralTable = ({ data }) => {
+const GeneralTable = ({ data, convocatoriasByYear = {}, availableYears = [] }) => {
   const { handleSort, sortFn, SortIcon } = useTableSort('pj');
-  const sorted = sortFn(data);
+  const enriched = data.map((s) => {
+    const row = { ...s };
+    availableYears.forEach((year) => {
+      row[`conv_${year}`] = convocatoriasByYear[s.id]?.[year]?.total ?? 0;
+    });
+    return row;
+  });
+  const sorted = sortFn(enriched);
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -250,6 +279,11 @@ const GeneralTable = ({ data }) => {
                 <th className={`${thClass} text-center`} onClick={() => handleSort('amarillas')}>🟨 <SortIcon col="amarillas" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('rojas')}>🟥 <SortIcon col="rojas" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('golesRatio')}>G/PJ <SortIcon col="golesRatio" /></th>
+                {availableYears.map((year) => (
+                  <th key={year} className={`${thClass} text-center whitespace-nowrap`} onClick={() => handleSort(`conv_${year}`)}>
+                    Conv {String(year).slice(2)} <SortIcon col={`conv_${year}`} />
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -264,6 +298,17 @@ const GeneralTable = ({ data }) => {
                   <td className="px-3 py-2 text-center text-gray-700">{s.amarillas > 0 ? s.amarillas : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.rojas > 0 ? s.rojas : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.goles > 0 ? s.golesRatio : <span className="text-gray-300">—</span>}</td>
+                  {availableYears.map((year) => {
+                    const ydata = convocatoriasByYear[s.id]?.[year];
+                    return (
+                      <td key={year} className="px-3 py-2 text-center text-xs whitespace-nowrap">
+                        {ydata
+                          ? <span className="text-gray-800">{ydata.total} <span className="text-gray-400">({ydata.titular}T/{ydata.suplente}S)</span></span>
+                          : <span className="text-gray-300">—</span>
+                        }
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -602,6 +647,11 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
     [filteredJornadas, players, categoriaFiltro]
   );
 
+  const convocatoriasByYear = useMemo(
+    () => buildConvocatoriasByYear(jornadas, categoriaFiltro),
+    [jornadas, categoriaFiltro]
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return allStats.filter((s) => !q || s.name_visual.toLowerCase().includes(q));
@@ -680,7 +730,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       )}
 
       {/* Tables */}
-      {subTab === 'general'      && <GeneralTable          data={filtered} />}
+      {subTab === 'general'      && <GeneralTable          data={filtered} convocatoriasByYear={convocatoriasByYear} availableYears={availableYears} />}
       {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
       {subTab === 'rivales' && <RivalesTable data={partidoRows} faseFiltro={faseFiltro} />}
