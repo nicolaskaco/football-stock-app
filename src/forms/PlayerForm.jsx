@@ -501,8 +501,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              name="numero-buzo"
-              autoComplete="new-password"
+              autoComplete="off"
               value={formData.numero_buzo || ''}
               onChange={(e) => setFormData({...formData, numero_buzo: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
@@ -518,8 +517,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              name="numero-pantalon"
-              autoComplete="new-password"
+              autoComplete="off"
               value={formData.numero_pantalon || ''}
               onChange={(e) => setFormData({...formData, numero_pantalon: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
@@ -535,8 +533,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              name="numero-buzo-entrenamiento"
-              autoComplete="new-password"
+              autoComplete="off"
               value={formData.numero_buzo_entrenamiento || ''}
               onChange={(e) => setFormData({...formData, numero_buzo_entrenamiento: e.target.value ? parseInt(e.target.value) : null})}
               disabled={readOnly}
