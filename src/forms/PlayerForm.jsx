@@ -62,21 +62,32 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
   const playerStats = useMemo(() => {
     let pj = 0, goles = 0, amarillas = 0, rojas = 0;
     const currentYear = new Date().getFullYear();
-    jornadas
-      .filter((jornada) => new Date(jornada.fecha).getFullYear() === currentYear)
-      .forEach((jornada) => {
+    const convocatoriasMap = {}; // { year: { total, titular, suplente } }
+
+    jornadas.forEach((jornada) => {
+      const year = jornada.fecha ? new Date(jornada.fecha).getFullYear() : null;
+      const isCurrentYear = year === currentYear;
       (jornada.partidos || []).forEach((partido) => {
-        const played = (partido.partido_players || []).some((pp) => pp.player_id === player?.id);
-        if (played) pj++;
-        (partido.partido_eventos || []).forEach((e) => {
-          if (e.player_id !== player?.id) return;
-          if (e.tipo === 'gol') goles++;
-          if (e.tipo === 'amarilla') amarillas++;
-          if (e.tipo === 'roja') rojas++;
-        });
+        const pp = (partido.partido_players || []).find((p) => p.player_id === player?.id);
+        if (pp && year) {
+          if (!convocatoriasMap[year]) convocatoriasMap[year] = { total: 0, titular: 0, suplente: 0 };
+          convocatoriasMap[year].total++;
+          if (pp.tipo === 'titular') convocatoriasMap[year].titular++;
+          else convocatoriasMap[year].suplente++;
+        }
+        if (isCurrentYear) {
+          if (pp) pj++;
+          (partido.partido_eventos || []).forEach((e) => {
+            if (e.player_id !== player?.id) return;
+            if (e.tipo === 'gol') goles++;
+            if (e.tipo === 'amarilla') amarillas++;
+            if (e.tipo === 'roja') rojas++;
+          });
+        }
       });
     });
-    return { pj, goles, amarillas, rojas };
+
+    return { pj, goles, amarillas, rojas, convocatoriasMap };
   }, [jornadas, player?.id]);
 
   return (
@@ -744,18 +755,37 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       })()}
 
       {readOnly && (
-        <div className="grid grid-cols-4 gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-          {[
-            { label: 'PJ', value: playerStats.pj, color: 'text-gray-800' },
-            { label: 'Goles', value: playerStats.goles, color: 'text-green-600' },
-            { label: 'Amarillas', value: playerStats.amarillas, color: 'text-yellow-500' },
-            { label: 'Rojas', value: playerStats.rojas, color: 'text-red-600' },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="text-center">
-              <div className={`text-3xl font-bold ${color}`}>{value}</div>
-              <div className="text-xs text-gray-500 mt-0.5 uppercase tracking-wide">{label}</div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-4 gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+            {[
+              { label: 'PJ', value: playerStats.pj, color: 'text-gray-800' },
+              { label: 'Goles', value: playerStats.goles, color: 'text-green-600' },
+              { label: 'Amarillas', value: playerStats.amarillas, color: 'text-yellow-500' },
+              { label: 'Rojas', value: playerStats.rojas, color: 'text-red-600' },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="text-center">
+                <div className={`text-3xl font-bold ${color}`}>{value}</div>
+                <div className="text-xs text-gray-500 mt-0.5 uppercase tracking-wide">{label}</div>
+              </div>
+            ))}
+          </div>
+          {Object.keys(playerStats.convocatoriasMap).length > 0 && (
+            <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="text-xs text-gray-500 uppercase tracking-wide mb-2 font-medium">Convocatorias por año</div>
+              <div className="flex flex-wrap gap-3">
+                {Object.keys(playerStats.convocatoriasMap).sort().map((year) => {
+                  const { total, titular, suplente } = playerStats.convocatoriasMap[year];
+                  return (
+                    <div key={year} className="text-sm text-gray-800">
+                      <span className="font-semibold">{year}:</span>{' '}
+                      {total}{' '}
+                      <span className="text-gray-400 text-xs">({titular}T / {suplente}S)</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          ))}
+          )}
         </div>
       )}
 
