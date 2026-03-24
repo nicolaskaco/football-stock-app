@@ -21,6 +21,7 @@ const ChangeRequestsTab = lazy(() => import('./ChangeRequestsTab').then(m => ({ 
 const RivalesTab = lazy(() => import('./RivalesTab').then(m => ({ default: m.RivalesTab })));
 const PartidosTab = lazy(() => import('./PartidosTab').then(m => ({ default: m.PartidosTab })));
 const ConfiguracionTab = lazy(() => import('./ConfiguracionTab').then(m => ({ default: m.ConfiguracionTab })));
+const ActivityLogTab = lazy(() => import('./ActivityLogTab').then(m => ({ default: m.ActivityLogTab })));
 const EstadisticasTab = lazy(() => import('./EstadisticasTab').then(m => ({ default: m.EstadisticasTab })));
 const TesoreroTab = lazy(() => import('./TesoreroTab').then(m => ({ default: m.TesoreroTab })));
 const TarjetasTab = lazy(() => import('./TarjetasTab').then(m => ({ default: m.TarjetasTab })));
@@ -108,6 +109,7 @@ export const AdminDashboard = ({
     { id: 'estadisticas',   label: 'Estadísticas',   show: canViewPartidos && tabEnabled('estadisticas_tab_enabled') },
     { id: 'tarjetas',       label: 'Tarjetas',        show: canViewTarjetas },
     { id: 'configuracion',  label: 'Configuración',  show: isAdmin },
+    { id: 'activity_log',   label: 'Actividad',      show: isAdmin },
   ];
 
   // Filter visible tabs
@@ -370,6 +372,9 @@ export const AdminDashboard = ({
             appSettings={appSettings}
             onDataChange={onDataChange}
           />
+        )}
+        {activeTab === 'activity_log' && isAdmin && (
+          <ActivityLogTab currentUser={currentUser} />
         )}
         {/* Show access denied message if trying to access restricted tab */}
         {activeTab === 'players' && !canAccessPlayers && (
