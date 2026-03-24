@@ -260,6 +260,8 @@ const App = () => {
 
         await loadData();
         setCurrentView('dashboard');
+        // Fire-and-forget — don't block login on logging failure
+        database.logActivity('login', emailOrGovId, null, null, { role: permissions?.role || 'user' });
       } catch (error) {
         throw new Error('Credenciales inválidas: ' + error.message);
       }

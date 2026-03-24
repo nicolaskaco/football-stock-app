@@ -1131,6 +1131,13 @@ export const database = {
       .update(updates)
       .eq('email', email);
     if (error) throw error;
+    // Log silently — fetch session to identify who made the change
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        await this.logActivity('permission_change', session.user.email, 'user', null, { target_email: email, changes: updates });
+      }
+    } catch (_) { /* non-blocking */ }
   },
 
   async deleteUserPermissions(email) {
@@ -1481,5 +1488,64 @@ export const database = {
       .delete()
       .eq('id', id);
     if (error) throw error;
+  },
+
+  // ============================================================
+  // ACTIVITY LOG
+  // ============================================================
+
+  async logActivity(actionType, performedBy, targetType, targetId, details) {
+    try {
+      const { error } = await supabase.from('activity_log').insert([{
+        action_type: actionType,
+        performed_by: performedBy,
+        target_type: targetType || null,
+        target_id: targetId || null,
+        details: details || null,
+      }]);
+      if (error) console.error('logActivity error:', error);
+    } catch (err) {
+      console.error('logActivity unexpected error:', err);
+    }
+  },
+
+  async getActivityLog({ limit = 200, offset = 0, fromDate, toDate } = {}) {
+    let query = supabase
+      .from('activity_log')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (fromDate) query = query.gte('created_at', fromDate);
+    if (toDate) query = query.lte('created_at', toDate);
+    const { data, error } = await query;
+    if (error) throw error;
+    return data;
+  },
+
+  async getPlayerHistoryAll({ limit = 200, offset = 0 } = {}) {
+    const { data, error } = await supabase
+      .from('player_history')
+      .select(`
+        *,
+        players ( name, name_visual, categoria )
+      `)
+      .order('changed_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    return data;
+  },
+
+  async getResolvedChangeRequests({ limit = 200, offset = 0 } = {}) {
+    const { data, error } = await supabase
+      .from('player_change_requests')
+      .select(`
+        *,
+        players ( name, name_visual, categoria )
+      `)
+      .neq('status', 'pending')
+      .order('review_date', { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    return data;
   },
 };

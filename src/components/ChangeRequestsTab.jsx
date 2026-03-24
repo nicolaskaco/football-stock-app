@@ -136,6 +136,7 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
           setSelectedIds(new Set());
           await loadRequests();
           showAlert('Éxito', `${count} solicitud${count !== 1 ? 'es aprobadas' : ' aprobada'} exitosamente`, 'success');
+          database.logActivity('bulk_approve', currentUser.email, 'change_request', null, { count });
         } catch (error) {
           console.error('Error bulk approving:', error);
           showAlert('Error', 'Error aprobando solicitudes: ' + error.message, 'error');
@@ -161,6 +162,7 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
           setSelectedIds(new Set());
           await loadRequests();
           showAlert('Rechazadas', `${count} solicitud${count !== 1 ? 'es rechazadas' : ' rechazada'} exitosamente`, 'success');
+          database.logActivity('bulk_reject', currentUser.email, 'change_request', null, { count });
         } catch (error) {
           console.error('Error bulk rejecting:', error);
           showAlert('Error', 'Error rechazando solicitudes: ' + error.message, 'error');
