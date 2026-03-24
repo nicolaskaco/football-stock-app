@@ -47,6 +47,9 @@ export const OverviewTab = ({
     ? players.filter(p => currentUser.categoria.includes(p.categoria_juego || p.categoria))
     : players;
 
+  const visiblePlayerIds = new Set(visiblePlayers.map(p => p.id));
+  const visibleInjuries = injuries.filter(i => visiblePlayerIds.has(i.jugador_id));
+
   const openDetail = (jornada) => {
     setShowModal({
       title: `${jornada.rivales?.name || 'Rival'} — ${formatDate(jornada.fecha)}`,
@@ -123,7 +126,7 @@ export const OverviewTab = ({
               Ver todos →
             </button>
           </div>
-          <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} players={players} dirigentes={dirigentes} injuries={injuries} />
+          <CalendarioView jornadas={jornadas} onJornadaClick={openDetail} players={visiblePlayers} dirigentes={dirigentes} injuries={visibleInjuries} />
         </div>
       )}
 
