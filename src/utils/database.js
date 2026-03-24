@@ -1542,7 +1542,7 @@ export const database = {
         *,
         players ( name, name_visual, categoria )
       `)
-      .neq('status', 'PENDING')
+      .neq('status', 'pending')
       .order('review_date', { ascending: false })
       .range(offset, offset + limit - 1);
     if (error) throw error;

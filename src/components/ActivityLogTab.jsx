@@ -77,7 +77,7 @@ function normalisePlayerHistory(rows) {
 function normaliseChangeRequests(rows) {
   return rows.map(r => {
     const playerName = r.players?.name_visual || r.players?.name || '—';
-    const isApproved = r.status === 'APPROVED';
+    const isApproved = r.status === 'approved';
     const parts = [];
     if (r.new_viatico != null) parts.push(`viático $${r.new_viatico}`);
     if (r.new_complemento != null) parts.push(`complemento $${r.new_complemento}`);
