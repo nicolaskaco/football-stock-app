@@ -39,7 +39,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 ### G. Calendario y Vistas
 
-- [ ] **G1. Calendario Unificado** — Enhance existing CalendarioView to show multiple event types beyond matches: birthdays (players + dirigentes), ficha médica expirations, active injuries/estimated returns. Toggle filters per event type. Color-coded indicators per event type.
+- [x] **G1. Calendario Unificado** — Enhance existing CalendarioView to show multiple event types beyond matches: birthdays (players + dirigentes), ficha médica expirations, active injuries/estimated returns. Toggle filters per event type. Color-coded indicators per event type. *(completed — PR #273 · 2026-03-23)*
 
 ### H. Auditoría
 
