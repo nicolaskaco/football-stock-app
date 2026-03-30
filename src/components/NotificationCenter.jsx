@@ -163,9 +163,10 @@ export const NotificationCenter = ({ currentUser, players = [], injuries = [], s
     let [upcomingPlayers, upcomingDirigentes, fichas, pendingRequests] = await Promise.all(promises);
 
     if (currentUser?.role === 'presidente_categoria' && categorias?.length > 0) {
-      pendingRequests = pendingRequests.filter(req =>
-        req.players?.categoria && categorias.includes(req.players.categoria)
-      );
+      pendingRequests = pendingRequests.filter(req => {
+        const efectivaCat = req.players?.categoria_juego || req.players?.categoria;
+        return efectivaCat && categorias.includes(efectivaCat);
+      });
     }
 
     const birthdays = [

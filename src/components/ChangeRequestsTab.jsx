@@ -38,9 +38,10 @@ export const ChangeRequestsTab = ({ currentUser, appSettings = {} }) => {
 
       let filteredData = data;
       if (currentUser?.role === 'presidente_categoria' && currentUser?.categoria?.length > 0) {
-        filteredData = data.filter(request =>
-          request.players?.categoria && currentUser.categoria.includes(request.players.categoria)
-        );
+        filteredData = data.filter(request => {
+          const efectivaCat = request.players?.categoria_juego || request.players?.categoria;
+          return efectivaCat && currentUser.categoria.includes(efectivaCat);
+        });
       }
 
       setRequests(filteredData);
