@@ -42,6 +42,10 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     celular: '',
     tipo_documento: 'Cédula de Identidad',
     status: 'activo',
+    madre_nombre: '',
+    madre_telefono: '',
+    padre_nombre: '',
+    padre_telefono: '',
   });
   useFormDirty(formData, player, onDirtyChange);
 
@@ -338,6 +342,57 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder={readOnly ? "" : "Nombre del que lo trajo al club"}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* FAMILY DATA */}
+      <div className="bg-white p-6 rounded-lg shadow-md">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Datos de Familia</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Madre</label>
+            <input
+              type="text"
+              value={formData.madre_nombre || ''}
+              onChange={(e) => setFormData({...formData, madre_nombre: e.target.value})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder={readOnly ? "" : "Nombre completo"}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono de la Madre</label>
+            <input
+              type="tel"
+              value={formData.madre_telefono || ''}
+              onChange={(e) => setFormData({...formData, madre_telefono: e.target.value})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder={readOnly ? "" : "Número de teléfono"}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Padre</label>
+            <input
+              type="text"
+              value={formData.padre_nombre || ''}
+              onChange={(e) => setFormData({...formData, padre_nombre: e.target.value})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder={readOnly ? "" : "Nombre completo"}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono del Padre</label>
+            <input
+              type="tel"
+              value={formData.padre_telefono || ''}
+              onChange={(e) => setFormData({...formData, padre_telefono: e.target.value})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder={readOnly ? "" : "Número de teléfono"}
             />
           </div>
         </div>
