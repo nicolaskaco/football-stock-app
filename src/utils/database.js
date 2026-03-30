@@ -1340,6 +1340,17 @@ export const database = {
     return data;
   },
 
+  async bulkUpdatePlayerFields(updates) {
+    // updates: [{ id, ...fields }]
+    for (const { id, ...fields } of updates) {
+      const { error } = await supabase
+        .from('players')
+        .update(fields)
+        .eq('id', id);
+      if (error) throw error;
+    }
+  },
+
   // ── Injuries ──────────────────────────────────────────
   async getInjuries() {
     const { data, error } = await supabase
