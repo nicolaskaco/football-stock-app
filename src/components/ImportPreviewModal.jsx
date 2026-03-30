@@ -143,9 +143,9 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
             }
           });
 
-          const errors = validateRow(player);
           const normId = player.gov_id ? String(player.gov_id).trim().toLowerCase() : null;
           const existingId = normId ? existingMap.get(normId) : undefined;
+          const errors = existingId ? [] : validateRow(player);
 
           return { index: i + 2, player, errors, existingId };
         });
