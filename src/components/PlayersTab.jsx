@@ -274,7 +274,8 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
     total: true,
     contrato: false,
     bank: false,
-    bank_account: false
+    bank_account: false,
+    numero_buzo_entrenamiento: false
   };
   const [exportFields, setExportFields] = useState(() => {
     try {
@@ -609,7 +610,8 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
       total: 'Total',
       contrato: 'Contrato',
       bank: 'Banco',
-      bank_account: 'Cuenta Bancaria'
+      bank_account: 'Cuenta Bancaria',
+      numero_buzo_entrenamiento: 'N° Buzo Entrenamiento'
     };
 
     const playersToExport = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
@@ -675,6 +677,9 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
               break;
             case 'bank_account':
               row[label] = player.bank_account || '';
+              break;
+            case 'numero_buzo_entrenamiento':
+              row[label] = player.numero_buzo_entrenamiento || '';
               break;
             default:
               break;

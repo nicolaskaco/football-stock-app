@@ -66,6 +66,12 @@ function parseBool(val) {
   return ['true', 'si', 'sí', '1', 'yes', '✓', 'x'].includes(s);
 }
 
+function formatCellValue(value, dbField) {
+  if (value === null || value === undefined || value === '') return '—';
+  if (['casita', 'contrato'].includes(dbField)) return value ? 'Sí' : 'No';
+  return String(value);
+}
+
 function validateRow(row) {
   const errors = [];
   if (!row.name || !String(row.name).trim()) errors.push('Falta nombre');
@@ -161,6 +167,17 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
   const newRows = preview?.rows?.filter(r => r.errors.length === 0 && !r.existingId) || [];
   const updateRows = preview?.rows?.filter(r => r.errors.length === 0 && r.existingId) || [];
   const invalidRows = preview?.rows?.filter(r => r.errors.length > 0) || [];
+
+  const detectedColumns = (preview?.headers ?? [])
+    .filter(h => preview?.mappedFields?.[h])
+    .reduce((acc, h) => {
+      const dbField = preview.mappedFields[h];
+      if (!acc.seen.has(dbField)) {
+        acc.seen.add(dbField);
+        acc.cols.push({ excelHeader: h, dbField });
+      }
+      return acc;
+    }, { seen: new Set(), cols: [] }).cols;
 
   const handleConfirm = async () => {
     if (newRows.length === 0 && updateRows.length === 0) return;
@@ -259,20 +276,26 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 text-gray-700 sticky top-0">
                     <tr>
-                      <th className="px-3 py-2 text-left font-medium">Fila</th>
-                      <th className="px-3 py-2 text-left font-medium">Nombre</th>
-                      <th className="px-3 py-2 text-left font-medium">Documento</th>
-                      <th className="px-3 py-2 text-left font-medium">Categoría</th>
-                      <th className="px-3 py-2 text-left font-medium">Estado</th>
+                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Fila</th>
+                      {detectedColumns.map(({ excelHeader, dbField }) => (
+                        <th key={dbField} className="px-3 py-2 text-left font-medium whitespace-nowrap">
+                          <span className="text-gray-400 font-normal">{excelHeader}</span>
+                          <span className="text-gray-300 mx-1">→</span>
+                          <span>{dbField}</span>
+                        </th>
+                      ))}
+                      <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Estado</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {preview.rows.map((row) => (
                       <tr key={row.index} className={row.errors.length > 0 ? 'bg-red-50' : row.existingId ? 'bg-blue-50' : 'bg-green-50'}>
                         <td className="px-3 py-2 text-gray-500">{row.index}</td>
-                        <td className="px-3 py-2 font-medium">{row.player.name || '—'}</td>
-                        <td className="px-3 py-2">{row.player.gov_id || '—'}</td>
-                        <td className="px-3 py-2">{row.player.categoria || '—'}</td>
+                        {detectedColumns.map(({ dbField }) => (
+                          <td key={dbField} className="px-3 py-2 whitespace-nowrap">
+                            {formatCellValue(row.player[dbField], dbField)}
+                          </td>
+                        ))}
                         <td className="px-3 py-2">
                           {row.errors.length > 0 ? (
                             <span className="text-red-600 text-xs">{row.errors.join(', ')}</span>

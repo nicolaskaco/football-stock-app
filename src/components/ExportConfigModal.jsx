@@ -26,7 +26,8 @@ export const ExportConfigModal = ({
     total: 'Total Viático',
     contrato: 'Contrato',
     bank: 'Banco',
-    bank_account: 'Cuenta Bancaria'
+    bank_account: 'Cuenta Bancaria',
+    numero_buzo_entrenamiento: 'N° Buzo Entrenamiento'
   };
 
   return (
