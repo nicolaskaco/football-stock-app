@@ -29,6 +29,12 @@ const FIELD_MAP = {
   'viático': 'viatico',
   'complemento': 'complemento',
   'contrato': 'contrato',
+  'numero buzo': 'numero_buzo',
+  'número buzo': 'numero_buzo',
+  'buzo': 'numero_buzo',
+  'numero buzo entrenamiento': 'numero_buzo_entrenamiento',
+  'número buzo entrenamiento': 'numero_buzo_entrenamiento',
+  'buzo entrenamiento': 'numero_buzo_entrenamiento',
 };
 
 const REQUIRED_FIELDS = ['name', 'gov_id', 'categoria'];
@@ -191,7 +197,7 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
                 Seleccioná un archivo Excel (.xlsx, .xls) con los datos de los jugadores.
               </p>
               <p className="text-xs text-gray-400">
-                Columnas reconocidas: Nombre, Cédula, Categoría, Fecha de Nacimiento, Posición, Departamento, Celular, Email, Representante, Banco, Cuenta Bancaria, Casita, Vianda, Viático, Complemento, Contrato.
+                Columnas reconocidas: Nombre, Cédula, Categoría, Fecha de Nacimiento, Posición, Departamento, Celular, Email, Representante, Banco, Cuenta Bancaria, Casita, Vianda, Viático, Complemento, Contrato, Numero Buzo, Buzo Entrenamiento.
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
