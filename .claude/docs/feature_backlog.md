@@ -35,7 +35,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 ### F. Datos de Familia
 
-- [ ] **F1. Padres/Tutores en tabla de jugadores** — Add columns to `players` table: `madre_nombre`, `madre_telefono`, `padre_nombre`, `padre_telefono`. New section in PlayerForm to edit these fields. Planning to integrate with external Office Form for data collection.
+- [x] **F1. Padres/Tutores en tabla de jugadores** — Add columns to `players` table: `madre_nombre`, `madre_telefono`, `padre_nombre`, `padre_telefono`. New section in PlayerForm to edit these fields. Planning to integrate with external Office Form for data collection.
 
 ### G. Calendario y Vistas
 
