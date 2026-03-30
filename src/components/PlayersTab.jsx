@@ -551,12 +551,14 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
     setShowBulkAction({ action: 'categoria', changes, columns });
   };
 
-  const handleImportConfirm = async (players) => {
+  const handleImportConfirm = async ({ toInsert, toUpdate }) => {
+    const total = toInsert.length + toUpdate.length;
     await execute(async () => {
-      await database.bulkAddPlayers(players);
+      if (toInsert.length > 0) await database.bulkAddPlayers(toInsert);
+      if (toUpdate.length > 0) await database.bulkUpdatePlayerFields(toUpdate);
       await onDataChange('players');
       setShowImportModal(false);
-    }, 'Error importando jugadores', `${players.length} jugador${players.length !== 1 ? 'es' : ''} importado${players.length !== 1 ? 's' : ''} correctamente`);
+    }, 'Error importando jugadores', `${total} jugador${total !== 1 ? 'es' : ''} procesado${total !== 1 ? 's' : ''} correctamente`);
   };
 
   const handleEditNameVisual = async (player) => {

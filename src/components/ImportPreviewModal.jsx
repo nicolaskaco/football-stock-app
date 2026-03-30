@@ -29,6 +29,12 @@ const FIELD_MAP = {
   'viático': 'viatico',
   'complemento': 'complemento',
   'contrato': 'contrato',
+  'numero buzo': 'numero_buzo',
+  'número buzo': 'numero_buzo',
+  'buzo': 'numero_buzo',
+  'numero buzo entrenamiento': 'numero_buzo_entrenamiento',
+  'número buzo entrenamiento': 'numero_buzo_entrenamiento',
+  'buzo entrenamiento': 'numero_buzo_entrenamiento',
 };
 
 const REQUIRED_FIELDS = ['name', 'gov_id', 'categoria'];
@@ -85,7 +91,7 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
 
   if (!isOpen) return null;
 
-  const existingIds = new Set(existingPlayers.map(p => String(p.gov_id).trim().toLowerCase()));
+  const existingMap = new Map(existingPlayers.map(p => [String(p.gov_id).trim().toLowerCase(), p.id]));
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -137,11 +143,11 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
             }
           });
 
-          const errors = validateRow(player);
-          const duplicate = player.gov_id && existingIds.has(String(player.gov_id).trim().toLowerCase());
-          if (duplicate) errors.push('Documento ya existe');
+          const normId = player.gov_id ? String(player.gov_id).trim().toLowerCase() : null;
+          const existingId = normId ? existingMap.get(normId) : undefined;
+          const errors = existingId ? [] : validateRow(player);
 
-          return { index: i + 2, player, errors, duplicate };
+          return { index: i + 2, player, errors, existingId };
         });
 
         setPreview({ rows, headers: rawHeaders, mappedFields });
@@ -152,14 +158,18 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
     reader.readAsArrayBuffer(file);
   };
 
-  const validRows = preview?.rows?.filter(r => r.errors.length === 0) || [];
+  const newRows = preview?.rows?.filter(r => r.errors.length === 0 && !r.existingId) || [];
+  const updateRows = preview?.rows?.filter(r => r.errors.length === 0 && r.existingId) || [];
   const invalidRows = preview?.rows?.filter(r => r.errors.length > 0) || [];
 
   const handleConfirm = async () => {
-    if (validRows.length === 0) return;
+    if (newRows.length === 0 && updateRows.length === 0) return;
     setImporting(true);
     try {
-      await onConfirm(validRows.map(r => r.player));
+      await onConfirm({
+        toInsert: newRows.map(r => r.player),
+        toUpdate: updateRows.map(r => ({ id: r.existingId, ...r.player })),
+      });
       setPreview(null);
     } finally {
       setImporting(false);
@@ -191,7 +201,7 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
                 Seleccioná un archivo Excel (.xlsx, .xls) con los datos de los jugadores.
               </p>
               <p className="text-xs text-gray-400">
-                Columnas reconocidas: Nombre, Cédula, Categoría, Fecha de Nacimiento, Posición, Departamento, Celular, Email, Representante, Banco, Cuenta Bancaria, Casita, Vianda, Viático, Complemento, Contrato.
+                Columnas reconocidas: Nombre, Cédula, Categoría, Fecha de Nacimiento, Posición, Departamento, Celular, Email, Representante, Banco, Cuenta Bancaria, Casita, Vianda, Viático, Complemento, Contrato, Numero Buzo, Buzo Entrenamiento.
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
@@ -225,11 +235,18 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
 
           {preview?.rows && !preview.error && (
             <div className="space-y-4">
-              <div className="flex gap-4 text-sm">
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium">
-                  <Check className="w-3 h-3 inline mr-1" />
-                  {validRows.length} válido{validRows.length !== 1 ? 's' : ''}
-                </span>
+              <div className="flex gap-4 text-sm flex-wrap">
+                {newRows.length > 0 && (
+                  <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full font-medium">
+                    <Check className="w-3 h-3 inline mr-1" />
+                    {newRows.length} nuevo{newRows.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {updateRows.length > 0 && (
+                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">
+                    ↻ {updateRows.length} a actualizar
+                  </span>
+                )}
                 {invalidRows.length > 0 && (
                   <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full font-medium">
                     <AlertTriangle className="w-3 h-3 inline mr-1" />
@@ -251,16 +268,18 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
                   </thead>
                   <tbody className="divide-y">
                     {preview.rows.map((row) => (
-                      <tr key={row.index} className={row.errors.length > 0 ? 'bg-red-50' : 'bg-green-50'}>
+                      <tr key={row.index} className={row.errors.length > 0 ? 'bg-red-50' : row.existingId ? 'bg-blue-50' : 'bg-green-50'}>
                         <td className="px-3 py-2 text-gray-500">{row.index}</td>
                         <td className="px-3 py-2 font-medium">{row.player.name || '—'}</td>
                         <td className="px-3 py-2">{row.player.gov_id || '—'}</td>
                         <td className="px-3 py-2">{row.player.categoria || '—'}</td>
                         <td className="px-3 py-2">
-                          {row.errors.length === 0 ? (
-                            <span className="text-green-700 font-medium">✓ OK</span>
-                          ) : (
+                          {row.errors.length > 0 ? (
                             <span className="text-red-600 text-xs">{row.errors.join(', ')}</span>
+                          ) : row.existingId ? (
+                            <span className="text-blue-700 font-medium">↻ Actualizar</span>
+                          ) : (
+                            <span className="text-green-700 font-medium">✓ Nuevo</span>
                           )}
                         </td>
                       </tr>
@@ -285,10 +304,10 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
                   </button>
                   <button
                     onClick={handleConfirm}
-                    disabled={validRows.length === 0 || importing}
+                    disabled={(newRows.length === 0 && updateRows.length === 0) || importing}
                     className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-semibold"
                   >
-                    {importing ? 'Importando...' : `Importar ${validRows.length} jugador${validRows.length !== 1 ? 'es' : ''}`}
+                    {importing ? 'Importando...' : `Confirmar (${newRows.length + updateRows.length})`}
                   </button>
                 </div>
               </div>
