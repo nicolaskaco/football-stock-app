@@ -185,7 +185,14 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
     try {
       await onConfirm({
         toInsert: newRows.map(r => r.player),
-        toUpdate: updateRows.map(r => ({ id: r.existingId, ...r.player })),
+        toUpdate: updateRows.map(r => {
+          const mappedDbFields = new Set(Object.values(preview.mappedFields));
+          const fieldsToUpdate = {};
+          for (const [key, val] of Object.entries(r.player)) {
+            if (mappedDbFields.has(key)) fieldsToUpdate[key] = val;
+          }
+          return { id: r.existingId, ...fieldsToUpdate };
+        }),
       });
       setPreview(null);
     } finally {
