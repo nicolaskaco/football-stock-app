@@ -8,6 +8,7 @@ import { GoalTrendChart } from './charts/GoalTrendChart';
 import { CardDistributionChart } from './charts/CardDistributionChart';
 import { AgeCurveChart } from './charts/AgeCurveChart';
 import { RivalPerformanceChart } from './charts/RivalPerformanceChart';
+import { ArbitroPerformanceChart } from './charts/ArbitroPerformanceChart';
 
 // ─── Player stats helpers ────────────────────────────────────────────────────
 
@@ -179,6 +180,41 @@ const buildCanchaStats = (rows) => {
   );
 
   return [...localRows, localTotal, map['Visitante']];
+};
+
+// ─── Árbitro stats helper ─────────────────────────────────────────────────────
+
+const buildArbitroStats = (jornadas, categoriaFiltro) => {
+  const map = {};
+
+  jornadas.forEach((jornada) => {
+    (jornada.partidos || []).forEach((partido) => {
+      if (!partido.arbitro) return;
+      if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
+
+      const key = partido.arbitro.trim();
+      if (!map[key]) map[key] = { arbitro: key, pj: 0, g: 0, e: 0, p: 0, amarillas: 0, rojas: 0 };
+
+      const s = map[key];
+      s.pj++;
+
+      const capGoles   = partido.escenario === 'Local' ? partido.goles_local    : partido.goles_visitante;
+      const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+
+      if (capGoles != null && rivalGoles != null) {
+        if (capGoles > rivalGoles) s.g++;
+        else if (capGoles < rivalGoles) s.p++;
+        else s.e++;
+      }
+
+      (partido.partido_eventos || []).forEach((e) => {
+        if (e.tipo === 'amarilla') s.amarillas++;
+        if (e.tipo === 'roja') s.rojas++;
+      });
+    });
+  });
+
+  return Object.values(map).filter((d) => d.pj > 0).sort((a, b) => b.pj - a.pj);
 };
 
 // ─── Player filter ───────────────────────────────────────────────────────────
@@ -596,6 +632,55 @@ const CanchaStatsTable = ({ data }) => {
   );
 };
 
+// ─── Árbitro stats table ──────────────────────────────────────────────────────
+
+const ArbitroStatsTable = ({ data }) => {
+  const { handleSort, sortFn, SortIcon } = useTableSort('pj');
+  const sorted = sortFn(data);
+
+  const efect = (r) =>
+    r.pj > 0 ? (((r.g + r.e * 0.5) / r.pj) * 100).toFixed(1) + '%' : '—';
+
+  return (
+    <div className="bg-white rounded-lg shadow overflow-hidden">
+      {sorted.length === 0 ? (
+        <p className="text-center text-gray-500 py-12">No hay datos de árbitros.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className={thClass} onClick={() => handleSort('arbitro')}>Árbitro <SortIcon col="arbitro" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('pj')}>PJ <SortIcon col="pj" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('g')}>G <SortIcon col="g" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('e')}>E <SortIcon col="e" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('p')}>P <SortIcon col="p" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('amarillas')}>🟨 <SortIcon col="amarillas" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('rojas')}>🟥 <SortIcon col="rojas" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('pj')}>Efect. <SortIcon col="pj" /></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sorted.map((row) => (
+                <tr key={row.arbitro} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 font-medium text-gray-900">{row.arbitro}</td>
+                  <td className="px-3 py-2 text-center font-semibold text-gray-800">{row.pj}</td>
+                  <td className="px-3 py-2 text-center font-bold text-green-700">{row.g > 0 ? row.g : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-600">{row.e > 0 ? row.e : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center font-bold text-red-600">{row.p > 0 ? row.p : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{row.amarillas > 0 ? row.amarillas : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{row.rojas > 0 ? row.rojas : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-700 font-medium">{efect(row)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
@@ -662,10 +747,16 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
     [filteredJornadas, categoriaFiltroRivales, faseFiltro]
   );
 
+  const arbitroStats = useMemo(
+    () => buildArbitroStats(filteredJornadas, categoriaFiltroRivales),
+    [filteredJornadas, categoriaFiltroRivales]
+  );
+
   const isJugadoresTab = ['general', 'goleadores', 'tarjetas'].includes(subTab);
   const isRivalesTab   = subTab === 'rivales';
   const isCanchaTab    = subTab === 'cancha';
   const isGraficosTab  = subTab === 'graficos';
+  const isArbitrosTab  = subTab === 'arbitros';
 
   const subTabBtn = (id, label) => (
     <button
@@ -705,6 +796,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
         {subTabBtn('tarjetas',    'Tarjetas')}
         {subTabBtn('rivales',     'Por Rival')}
         {subTabBtn('cancha',      'Por Cancha')}
+        {subTabBtn('arbitros',    'Árbitros')}
         {subTabBtn('graficos',    'Gráficos')}
       </div>
 
@@ -728,6 +820,14 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
           onCategoriaFiltro={setCategoriaFiltroRivales}
         />
       )}
+      {isArbitrosTab && (
+        <FilterButtonGroup
+          options={CATEGORIAS_PARTIDO}
+          value={categoriaFiltroRivales}
+          onChange={setCategoriaFiltroRivales}
+          label="Cat:"
+        />
+      )}
 
       {/* Tables */}
       {subTab === 'general'      && <GeneralTable          data={filtered} convocatoriasByYear={convocatoriasByYear} availableYears={availableYears} />}
@@ -735,6 +835,12 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
       {subTab === 'rivales' && <RivalesTable data={partidoRows} faseFiltro={faseFiltro} />}
       {subTab === 'cancha'  && <CanchaStatsTable data={buildCanchaStats(partidoRows)} />}
+      {isArbitrosTab && (
+        <div className="space-y-6">
+          <ArbitroPerformanceChart jornadas={filteredJornadas} categoriaFiltro={categoriaFiltroRivales} />
+          <ArbitroStatsTable data={arbitroStats} />
+        </div>
+      )}
 
       {/* Charts tab */}
       {isGraficosTab && (
