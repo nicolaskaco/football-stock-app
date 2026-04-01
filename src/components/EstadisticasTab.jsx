@@ -193,18 +193,19 @@ const buildArbitroStats = (jornadas, categoriaFiltro) => {
       if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
 
       const key = partido.arbitro.trim();
-      if (!map[key]) map[key] = { arbitro: key, pj: 0, g: 0, e: 0, p: 0, amarillas: 0, rojas: 0 };
+      if (!map[key]) map[key] = { arbitro: key, pj: 0, g: 0, e: 0, p: 0, amarillas: 0, rojas: 0, g_rivals: [], e_rivals: [], p_rivals: [] };
 
       const s = map[key];
       s.pj++;
 
       const capGoles   = partido.escenario === 'Local' ? partido.goles_local    : partido.goles_visitante;
       const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+      const rivalName  = jornada.rivales?.name || null;
 
       if (capGoles != null && rivalGoles != null) {
-        if (capGoles > rivalGoles) s.g++;
-        else if (capGoles < rivalGoles) s.p++;
-        else s.e++;
+        if (capGoles > rivalGoles) { s.g++; if (rivalName) s.g_rivals.push(rivalName); }
+        else if (capGoles < rivalGoles) { s.p++; if (rivalName) s.p_rivals.push(rivalName); }
+        else { s.e++; if (rivalName) s.e_rivals.push(rivalName); }
       }
 
       (partido.partido_eventos || []).forEach((e) => {
@@ -665,9 +666,36 @@ const ArbitroStatsTable = ({ data }) => {
                 <tr key={row.arbitro} className="hover:bg-gray-50">
                   <td className="px-3 py-2 font-medium text-gray-900">{row.arbitro}</td>
                   <td className="px-3 py-2 text-center font-semibold text-gray-800">{row.pj}</td>
-                  <td className="px-3 py-2 text-center font-bold text-green-700">{row.g > 0 ? row.g : <span className="text-gray-300">—</span>}</td>
-                  <td className="px-3 py-2 text-center text-gray-600">{row.e > 0 ? row.e : <span className="text-gray-300">—</span>}</td>
-                  <td className="px-3 py-2 text-center font-bold text-red-600">{row.p > 0 ? row.p : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center font-bold text-green-700">
+                    {row.g > 0 ? (
+                      <div>
+                        <span>{row.g}</span>
+                        {row.g_rivals?.length > 0 && (
+                          <div className="text-xs font-normal text-green-600 whitespace-normal leading-tight mt-0.5">{row.g_rivals.join(', ')}</div>
+                        )}
+                      </div>
+                    ) : <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-3 py-2 text-center text-gray-600">
+                    {row.e > 0 ? (
+                      <div>
+                        <span>{row.e}</span>
+                        {row.e_rivals?.length > 0 && (
+                          <div className="text-xs font-normal text-gray-500 whitespace-normal leading-tight mt-0.5">{row.e_rivals.join(', ')}</div>
+                        )}
+                      </div>
+                    ) : <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-3 py-2 text-center font-bold text-red-600">
+                    {row.p > 0 ? (
+                      <div>
+                        <span>{row.p}</span>
+                        {row.p_rivals?.length > 0 && (
+                          <div className="text-xs font-normal text-red-400 whitespace-normal leading-tight mt-0.5">{row.p_rivals.join(', ')}</div>
+                        )}
+                      </div>
+                    ) : <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="px-3 py-2 text-center text-gray-700">{row.amarillas > 0 ? row.amarillas : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{row.rojas > 0 ? row.rojas : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-700 font-medium">{efect(row)}</td>
