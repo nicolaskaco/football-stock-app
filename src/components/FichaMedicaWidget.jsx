@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMountEffect } from '../hooks/useMountEffect';
-import { Stethoscope, X, RefreshCw, Printer } from 'lucide-react';
+import { Stethoscope, X, RefreshCw, Printer, CheckCircle, XCircle, AlertCircle, MinusCircle } from 'lucide-react';
 import { database } from '../utils/database';
 
 export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
@@ -11,6 +11,7 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
   const [refreshResult, setRefreshResult] = useState(null);
   const [bulkRefreshing, setBulkRefreshing] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(null); // { done, total, updated, errors }
+  const [bulkResults, setBulkResults] = useState(null); // { updated:[{name,oldDate,newDate}], sinCambios:[{name,date}], sinFicha:[{name}], errors:[{name}] }
 
   const fetchPlayers = () => {
     const categorias = currentUser?.categoria?.length > 0 ? currentUser.categoria : null;
@@ -64,28 +65,45 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
     if (targets.length === 0) return;
     setBulkRefreshing(true);
     setBulkProgress({ done: 0, total: targets.length, updated: 0, errors: 0 });
+
+    const resultUpdated = [];
+    const resultSinCambios = [];
+    const resultSinFicha = [];
+    const resultErrors = [];
     let updated = 0, errors = 0;
+
     for (let i = 0; i < targets.length; i++) {
       const p = targets[i];
+      const playerName = p.name_visual || p.name;
       try {
         const result = await database.checkFichaMedica(p.gov_id, p.tipo_documento);
         const fichaFutbol = (result?.fichas || []).find(
           (f) => f.deporte && ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase())
         );
         if (fichaFutbol) {
-          await database.saveFichaMedicaHasta(p.id, fichaFutbol.hasta, currentUser?.email);
-          updated++;
+          const [d, m, y] = fichaFutbol.hasta.split('/');
+          const newDateISO = `${y}-${m}-${d}`;
+          if (p.ficha_medica_hasta !== newDateISO) {
+            await database.saveFichaMedicaHasta(p.id, fichaFutbol.hasta, currentUser?.email);
+            updated++;
+            resultUpdated.push({ name: playerName, oldDate: p.ficha_medica_hasta ?? null, newDate: fichaFutbol.hasta });
+          } else {
+            resultSinCambios.push({ name: playerName, date: fichaFutbol.hasta });
+          }
         } else {
           errors++;
+          resultSinFicha.push({ name: playerName });
         }
       } catch {
         errors++;
+        resultErrors.push({ name: playerName });
       }
       setBulkProgress({ done: i + 1, total: targets.length, updated, errors });
     }
     if (onDataChange) onDataChange('players');
     fetchPlayers();
     setBulkRefreshing(false);
+    setBulkResults({ updated: resultUpdated, sinCambios: resultSinCambios, sinFicha: resultSinFicha, errors: resultErrors });
   };
 
   const handlePrint = () => {
@@ -155,6 +173,16 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
   const filtered = catFiltro ? players.filter((p) => p.categoria === catFiltro) : players;
   const expiredCount = players.filter((p) => p.expired).length;
   const soonCount = players.filter((p) => p.expiringSoon).length;
+
+  const fmtOldDate = (iso) => {
+    if (!iso) return 'Sin fecha';
+    return new Date(iso + 'T00:00:00').toLocaleDateString('es-UY');
+  };
+  const fmtNewDate = (ddmmyyyy) => {
+    if (!ddmmyyyy) return '—';
+    const [d, m, y] = ddmmyyyy.split('/');
+    return new Date(`${y}-${m}-${d}T00:00:00`).toLocaleDateString('es-UY');
+  };
 
   return (
     <>
@@ -295,6 +323,110 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
                   {refreshing ? 'Consultando SND...' : 'Actualizar Ficha Médica'}
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk results modal */}
+      {bulkResults && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col max-h-[80vh]">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
+              <h3 className="font-bold text-gray-800">Resultados — Actualización Masiva</h3>
+              <button onClick={() => setBulkResults(null)} className="p-1 rounded hover:bg-gray-100">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="overflow-y-auto flex-1 px-5 py-4 space-y-5">
+
+              {/* ACTUALIZADOS */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                  Actualizados ({bulkResults.updated.length})
+                </p>
+                {bulkResults.updated.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">Ninguno</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {bulkResults.updated.map((r, idx) => (
+                      <li key={idx} className="flex items-center gap-2 bg-green-50 rounded px-3 py-1.5">
+                        <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                        <span className="text-sm text-gray-800 flex-1">{r.name}</span>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          {fmtOldDate(r.oldDate)} → {fmtNewDate(r.newDate)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* SIN CAMBIOS */}
+              {bulkResults.sinCambios.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                    Sin Cambios ({bulkResults.sinCambios.length})
+                  </p>
+                  <ul className="space-y-1">
+                    {bulkResults.sinCambios.map((r, idx) => (
+                      <li key={idx} className="flex items-center gap-2 bg-gray-50 rounded px-3 py-1.5">
+                        <MinusCircle className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span className="text-sm text-gray-700 flex-1">{r.name}</span>
+                        <span className="text-xs text-gray-400 whitespace-nowrap">{fmtNewDate(r.date)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* SIN FICHA FÚTBOL */}
+              {bulkResults.sinFicha.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                    Sin Ficha Fútbol ({bulkResults.sinFicha.length})
+                  </p>
+                  <ul className="space-y-1">
+                    {bulkResults.sinFicha.map((r, idx) => (
+                      <li key={idx} className="flex items-center gap-2 bg-orange-50 rounded px-3 py-1.5">
+                        <XCircle className="w-4 h-4 text-orange-500 shrink-0" />
+                        <span className="text-sm text-gray-800">{r.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* ERRORES */}
+              {bulkResults.errors.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                    Errores ({bulkResults.errors.length})
+                  </p>
+                  <ul className="space-y-1">
+                    {bulkResults.errors.map((r, idx) => (
+                      <li key={idx} className="flex items-center gap-2 bg-red-50 rounded px-3 py-1.5">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                        <span className="text-sm text-gray-800">{r.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="px-5 py-3 border-t shrink-0">
+              <button
+                onClick={() => setBulkResults(null)}
+                className="w-full bg-black text-yellow-400 font-semibold text-sm py-2 rounded-lg hover:bg-gray-900 transition"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>
