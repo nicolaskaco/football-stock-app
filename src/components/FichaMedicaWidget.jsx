@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMountEffect } from '../hooks/useMountEffect';
-import { Stethoscope, X, RefreshCw, Printer, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Stethoscope, X, RefreshCw, Printer, CheckCircle, XCircle, AlertCircle, MinusCircle } from 'lucide-react';
 import { database } from '../utils/database';
 
 export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
@@ -11,7 +11,7 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
   const [refreshResult, setRefreshResult] = useState(null);
   const [bulkRefreshing, setBulkRefreshing] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(null); // { done, total, updated, errors }
-  const [bulkResults, setBulkResults] = useState(null); // { updated:[{name,oldDate,newDate}], sinFicha:[{name}], errors:[{name}] }
+  const [bulkResults, setBulkResults] = useState(null); // { updated:[{name,oldDate,newDate}], sinCambios:[{name,date}], sinFicha:[{name}], errors:[{name}] }
 
   const fetchPlayers = () => {
     const categorias = currentUser?.categoria?.length > 0 ? currentUser.categoria : null;
@@ -67,6 +67,7 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
     setBulkProgress({ done: 0, total: targets.length, updated: 0, errors: 0 });
 
     const resultUpdated = [];
+    const resultSinCambios = [];
     const resultSinFicha = [];
     const resultErrors = [];
     let updated = 0, errors = 0;
@@ -80,9 +81,15 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
           (f) => f.deporte && ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase())
         );
         if (fichaFutbol) {
-          await database.saveFichaMedicaHasta(p.id, fichaFutbol.hasta, currentUser?.email);
-          updated++;
-          resultUpdated.push({ name: playerName, oldDate: p.ficha_medica_hasta ?? null, newDate: fichaFutbol.hasta });
+          const [d, m, y] = fichaFutbol.hasta.split('/');
+          const newDateISO = `${y}-${m}-${d}`;
+          if (p.ficha_medica_hasta !== newDateISO) {
+            await database.saveFichaMedicaHasta(p.id, fichaFutbol.hasta, currentUser?.email);
+            updated++;
+            resultUpdated.push({ name: playerName, oldDate: p.ficha_medica_hasta ?? null, newDate: fichaFutbol.hasta });
+          } else {
+            resultSinCambios.push({ name: playerName, date: fichaFutbol.hasta });
+          }
         } else {
           errors++;
           resultSinFicha.push({ name: playerName });
@@ -96,7 +103,7 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
     if (onDataChange) onDataChange('players');
     fetchPlayers();
     setBulkRefreshing(false);
-    setBulkResults({ updated: resultUpdated, sinFicha: resultSinFicha, errors: resultErrors });
+    setBulkResults({ updated: resultUpdated, sinCambios: resultSinCambios, sinFicha: resultSinFicha, errors: resultErrors });
   };
 
   const handlePrint = () => {
@@ -358,6 +365,24 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
                   </ul>
                 )}
               </div>
+
+              {/* SIN CAMBIOS */}
+              {bulkResults.sinCambios.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">
+                    Sin Cambios ({bulkResults.sinCambios.length})
+                  </p>
+                  <ul className="space-y-1">
+                    {bulkResults.sinCambios.map((r, idx) => (
+                      <li key={idx} className="flex items-center gap-2 bg-gray-50 rounded px-3 py-1.5">
+                        <MinusCircle className="w-4 h-4 text-gray-400 shrink-0" />
+                        <span className="text-sm text-gray-700 flex-1">{r.name}</span>
+                        <span className="text-xs text-gray-400 whitespace-nowrap">{fmtNewDate(r.date)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* SIN FICHA FÚTBOL */}
               {bulkResults.sinFicha.length > 0 && (
