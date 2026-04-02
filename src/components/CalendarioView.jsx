@@ -118,8 +118,6 @@ function buildFichaMedicaEvents(players) {
     const expDate = new Date(p.ficha_medica_hasta + 'T00:00:00');
     const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
     const expired = diffDays < 0;
-    const expiringSoon = !expired && diffDays <= 30;
-    if (!expired && !expiringSoon) return;
     events.push({
       dateKey: p.ficha_medica_hasta,
       type: CALENDAR_EVENT_TYPES.FICHA_MEDICA,
