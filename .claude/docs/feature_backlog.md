@@ -19,7 +19,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 ### C. Inventario y Equipamiento
 
-- [ ] **C1. Asignación individual de equipamiento por jugador** — New `player_distributions` table (player_id, item_id, size, quantity, fecha, condicion). Section in PlayerForm ("Equipamiento") to record kit given to each player. Deducts stock from inventory (same pattern as employee distributions).
+- [x] **C1. Asignación individual de equipamiento por jugador** — New `player_distributions` table (player_id, item_id, size, quantity, fecha, condicion). Section in PlayerForm ("Equipamiento") to record kit given to each player. Deducts stock from inventory (same pattern as employee distributions).
 
 ### D. Analíticas y Reportes
 
