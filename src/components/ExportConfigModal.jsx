@@ -27,7 +27,8 @@ export const ExportConfigModal = ({
     contrato: 'Contrato',
     bank: 'Banco',
     bank_account: 'Cuenta Bancaria',
-    numero_buzo_entrenamiento: 'N° Buzo Entrenamiento'
+    numero_buzo_entrenamiento: 'N° Buzo Entrenamiento',
+    ficha_medica_hasta: 'Vencimiento Ficha Medica'
   };
 
   return (

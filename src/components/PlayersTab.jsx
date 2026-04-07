@@ -275,7 +275,8 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
     contrato: false,
     bank: false,
     bank_account: false,
-    numero_buzo_entrenamiento: false
+    numero_buzo_entrenamiento: false,
+    ficha_medica_hasta: false
   };
   const [exportFields, setExportFields] = useState(() => {
     try {
@@ -611,7 +612,8 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
       contrato: 'Contrato',
       bank: 'Banco',
       bank_account: 'Cuenta Bancaria',
-      numero_buzo_entrenamiento: 'N° Buzo Entrenamiento'
+      numero_buzo_entrenamiento: 'N° Buzo Entrenamiento',
+      ficha_medica_hasta: 'Vencimiento Ficha Medica'
     };
 
     const playersToExport = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
@@ -680,6 +682,14 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
               break;
             case 'numero_buzo_entrenamiento':
               row[label] = player.numero_buzo_entrenamiento || '';
+              break;
+            case 'ficha_medica_hasta':
+              if (player.ficha_medica_hasta) {
+                const [year, month, day] = player.ficha_medica_hasta.split('-');
+                row[label] = `${day}/${month}/${year}`;
+              } else {
+                row[label] = '';
+              }
               break;
             default:
               break;
