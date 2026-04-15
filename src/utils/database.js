@@ -351,11 +351,32 @@ export const database = {
     const { data, error } = await supabase.functions.invoke('validate-employee', {
       body: { gov_id: govId, employee_id: employeeId }
     });
-    
+
     if (error) throw error;
     if (data.error) throw new Error(data.error);
-    
+
     return data.employee;
+  },
+
+  // Validate player credentials via Edge Function (gov_id as credential)
+  async validatePlayer(govId) {
+    const { data, error } = await supabase.functions.invoke('validate-player', {
+      body: { gov_id: govId }
+    });
+
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
+
+    return data; // { player, already_submitted }
+  },
+
+  // Submit the player questionnaire (one-time)
+  async submitPlayerQuestionnaire(playerId, answers) {
+    const { error } = await supabase
+      .from('player_questionnaire')
+      .insert({ player_id: playerId, ...answers });
+
+    if (error) throw error;
   },
 
   async uploadDocument(playerId, file, documentType) {

@@ -5,6 +5,8 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { EmployeeView } from './components/EmployeeView';
 import { SetPassword } from './components/SetPassword';
 import { PlayerFormPublic } from './forms/PlayerFormPublic';
+import PlayerLoginView from './components/PlayerLoginView';
+import PlayerQuestionnaire from './forms/PlayerQuestionnaire';
 import { database } from './utils/database';
 import { supabase } from './supabaseClient';
 import { ToastProvider } from './context/ToastContext';
@@ -21,6 +23,43 @@ const FooterComponent = () => (
     Todos los derechos reservados
   </div>
 );
+
+// ── Player portal: login → questionnaire → thank-you ─────────────────────
+const PlayerPortal = () => {
+  const [player, setPlayer] = useState(null);
+  const [alreadySubmitted, setAlreadySubmitted] = useState(false);
+  const [completed, setCompleted] = useState(false);
+
+  const handleLogin = (playerData, submitted) => {
+    setPlayer(playerData);
+    setAlreadySubmitted(submitted);
+  };
+
+  if (!player) {
+    return <PlayerLoginView onLogin={handleLogin} />;
+  }
+
+  if (alreadySubmitted || completed) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 max-w-md w-full text-center">
+          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">¡Formulario completado!</h2>
+          <p className="text-gray-500 text-sm">
+            Gracias, <span className="font-medium text-gray-700">{player.name}</span>.<br />
+            Tus respuestas han sido registradas correctamente. Ya podés cerrar esta página.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return <PlayerQuestionnaire player={player} onComplete={() => setCompleted(true)} />;
+};
 
 const App = () => {
   const [currentView, setCurrentView] = useState('login');
@@ -318,6 +357,9 @@ const App = () => {
       <Routes>
         {/* Public form route - no header/footer */}
         <Route path="/formulario" element={<PlayerFormPublic />} />
+
+        {/* Player self-service questionnaire - standalone, no header/footer */}
+        <Route path="/jugador" element={<PlayerPortal />} />
         
         {/* Main app routes - with header/footer */}
         <Route path="/*" element={
