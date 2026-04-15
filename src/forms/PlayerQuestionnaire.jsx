@@ -48,7 +48,7 @@ const ACCESO_HOGAR_OPTIONS = [
 
 function SectionTitle({ children }) {
   return (
-    <h3 className="text-base font-semibold text-blue-700 border-b border-blue-100 pb-2 mb-4 mt-6 first:mt-0">
+    <h3 className="text-base font-semibold text-yellow-400 border-b border-gray-700 pb-2 mb-4 mt-6 first:mt-0">
       {children}
     </h3>
   );
@@ -57,9 +57,9 @@ function SectionTitle({ children }) {
 function Field({ label, required, children }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-sm font-medium text-gray-700">
+      <label className="text-sm font-medium text-gray-300">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-red-400 ml-1">*</span>}
       </label>
       {children}
     </div>
@@ -74,7 +74,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', disabled }) {
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50"
+      className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent disabled:opacity-50"
     />
   );
 }
@@ -86,14 +86,14 @@ function SelectInput({ value, onChange, options, placeholder = 'Seleccioná una 
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none disabled:bg-gray-50 bg-white"
+        className="w-full bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent appearance-none disabled:opacity-50"
       >
         <option value="">{placeholder}</option>
         {options.map((o) => (
           <option key={o} value={o}>{o}</option>
         ))}
       </select>
-      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
     </div>
   );
 }
@@ -102,14 +102,14 @@ function YesNo({ value, onChange, disabled }) {
   return (
     <div className="flex gap-4">
       {['Sí', 'No'].map((opt) => (
-        <label key={opt} className="flex items-center gap-2 cursor-pointer text-sm">
+        <label key={opt} className="flex items-center gap-2 cursor-pointer text-sm text-gray-300">
           <input
             type="radio"
             value={opt}
             checked={value === opt}
             onChange={() => onChange(opt)}
             disabled={disabled}
-            className="accent-blue-600"
+            className="accent-yellow-400"
           />
           {opt}
         </label>
@@ -137,8 +137,8 @@ function MultiSelect({ options, selected, onChange, disabled }) {
           disabled={disabled}
           className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
             selected.includes(opt)
-              ? 'bg-blue-600 text-white border-blue-600'
-              : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'
+              ? 'bg-yellow-400 text-black border-yellow-400'
+              : 'bg-gray-800 text-gray-300 border-gray-600 hover:border-yellow-400'
           } disabled:opacity-50`}
         >
           {opt}
@@ -171,7 +171,7 @@ function FileUploadField({ label, docType, playerId, uploading, setUploading, up
 
   return (
     <Field label={label}>
-      <label className="flex items-center gap-3 border border-dashed border-gray-300 rounded-lg px-4 py-3 cursor-pointer hover:border-blue-400 transition-colors bg-white">
+      <label className="flex items-center gap-3 border border-dashed border-gray-600 rounded-lg px-4 py-3 cursor-pointer hover:border-yellow-400 transition-colors bg-gray-800">
         <input
           type="file"
           multiple
@@ -181,15 +181,15 @@ function FileUploadField({ label, docType, playerId, uploading, setUploading, up
           disabled={isUploading}
         />
         {isUploading ? (
-          <span className="text-sm text-gray-500">Subiendo...</span>
+          <span className="text-sm text-gray-400">Subiendo...</span>
         ) : count > 0 ? (
-          <span className="flex items-center gap-2 text-sm text-green-700">
+          <span className="flex items-center gap-2 text-sm text-yellow-400">
             <CheckCircle className="w-4 h-4" />
             {count} archivo{count !== 1 ? 's' : ''} subido{count !== 1 ? 's' : ''}
-            <span className="text-gray-400">(podés agregar más)</span>
+            <span className="text-gray-500">(podés agregar más)</span>
           </span>
         ) : (
-          <span className="flex items-center gap-2 text-sm text-gray-500">
+          <span className="flex items-center gap-2 text-sm text-gray-400">
             <Upload className="w-4 h-4" />
             Seleccioná uno o más archivos
           </span>
@@ -328,18 +328,18 @@ export default function PlayerQuestionnaire({ player, onComplete }) {
   const fileProps = { playerId: player.id, uploading, setUploading, uploaded, setUploaded };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-black py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Formulario del jugador</h1>
-          <p className="text-gray-500 mt-1">Bienvenido, <span className="font-medium text-gray-700">{player.name}</span></p>
-          <p className="text-sm text-gray-400 mt-1">
+          <h1 className="text-2xl font-bold text-yellow-400">Formulario del jugador</h1>
+          <p className="text-gray-400 mt-1">Bienvenido, <span className="font-medium text-white">{player.name}</span></p>
+          <p className="text-sm text-gray-600 mt-1">
             Completá el formulario una sola vez. Una vez enviado, no podrá modificarse.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-2">
+        <form onSubmit={handleSubmit} className="bg-gray-900 rounded-xl border border-gray-700 p-6 space-y-2">
 
           {/* ── Contacto ──────────────────────────────────────────── */}
           <SectionTitle>Contacto</SectionTitle>
@@ -536,7 +536,7 @@ export default function PlayerQuestionnaire({ player, onComplete }) {
               placeholder="Ej: Vivo con mi madre, mi abuela y dos hermanos menores."
               rows={3}
               disabled={submitting}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-50"
+              className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent resize-none disabled:opacity-50"
             />
           </Field>
 
@@ -705,13 +705,13 @@ export default function PlayerQuestionnaire({ player, onComplete }) {
               placeholder="Cualquier información adicional que quieras compartir con el club."
               rows={4}
               disabled={submitting}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-50"
+              className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent resize-none disabled:opacity-50"
             />
           </Field>
 
           {/* ── Error + submit ────────────────────────────────────── */}
           {submitError && (
-            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+            <div className="bg-red-900/40 border border-red-700 rounded-lg px-4 py-3 text-sm text-red-300">
               {submitError}
             </div>
           )}
@@ -720,11 +720,11 @@ export default function PlayerQuestionnaire({ player, onComplete }) {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
+              className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:bg-yellow-400/40 disabled:text-black/40 text-black font-semibold py-3 rounded-lg transition-colors text-sm"
             >
               {submitting ? 'Enviando...' : 'Enviar formulario'}
             </button>
-            <p className="text-center text-xs text-gray-400 mt-3">
+            <p className="text-center text-xs text-gray-600 mt-3">
               Una vez enviado, no podrá modificarse. Revisá tus respuestas antes de enviar.
             </p>
           </div>
