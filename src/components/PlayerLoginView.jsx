@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Shield } from 'lucide-react';
 import { database } from '../utils/database.js';
 
 export default function PlayerLoginView({ onLogin }) {
@@ -29,9 +28,7 @@ export default function PlayerLoginView({ onLogin }) {
       <div className="w-full max-w-md">
         {/* Logo / header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-400 rounded-full mb-4">
-            <Shield className="w-8 h-8 text-black" />
-          </div>
+          <img src="/logo.jpeg" alt="Club Atlético Peñarol" className="w-24 h-24 object-contain mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-yellow-400">Club Atlético Peñarol</h1>
           <p className="text-gray-400 mt-1">Formulario de jugadores</p>
         </div>
