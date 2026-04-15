@@ -44,6 +44,7 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
   employee-view → EmployeeView (staff self-service)
   set-password  → SetPassword (invite & password-recovery flow)
 /formulario     → PlayerFormPublic (public, no auth)
+/jugador        → PlayerPortal → PlayerLoginView → PlayerQuestionnaire (public, no auth)
 ```
 
 ### Data Flow
@@ -74,7 +75,7 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 
 ## 3. Authentication & User Roles
 
-### Two Login Modes
+### Three Login Modes
 
 **Admin login** (email + password):
 1. `supabase.auth.signInWithPassword()` against Supabase Auth
@@ -85,6 +86,13 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 1. Calls Supabase Edge Function `validate-employee`
 2. Only loads that employee's distributions and inventory items
 3. Routes to `EmployeeView`
+
+**Player login** (gov ID as credential) — route `/jugador`:
+1. Calls Supabase Edge Function `validate-player` with `gov_id`
+2. If player not found → error message
+3. If found and questionnaire already submitted → shows confirmation screen
+4. If found and not yet submitted → routes to `PlayerQuestionnaire`
+5. This is a standalone `PlayerPortal` component at the `/jugador` public route — entirely separate from the admin login UI
 
 ### Admin User Invite Flow
 
@@ -163,6 +171,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `player_change_requests` | Approval workflow for financial field modifications |
 | `player_documents` | Document metadata — file paths in `player-documents` storage bucket |
 | `player_responses` | Public form submissions from `/formulario` |
+| `player_questionnaire` | One-time player self-service questionnaire answers (family, housing, education, health, transport, documents). `unique(player_id)` enforces one submission per player. |
 | `employees` | Staff members (funcionarios) |
 | `inventory` | Clothing items: name, category, size, quantity, min_stock |
 | `distributions` | Clothing distribution records per employee |
@@ -326,6 +335,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [NotificationCenter.jsx](src/components/NotificationCenter.jsx) | Bell icon with unread-count badge in the nav bar. Opens a dropdown panel listing notifications by type: cumpleaños (players & dirigentes within 7 days), fichas médicas vencidas/por vencer, solicitudes de cambio pendientes, and lesiones activas. Unread state persisted to `localStorage`. Clicking a notification navigates to the relevant tab. Admins see all four types (filtered by `categoria`); Funcionarios only see cumpleaños. |
 | [EmployeeView.jsx](src/components/EmployeeView.jsx) | Staff self-service: view own clothing distributions |
 | [LoginView.jsx](src/components/LoginView.jsx) | Dual-mode login (admin / funcionario) |
+| [PlayerLoginView.jsx](src/components/PlayerLoginView.jsx) | Player login screen at `/jugador` — single gov_id input, calls `validate-player` Edge Function. Black/yellow CAP theme. |
 
 #### Dashboard Widgets (OverviewTab — requires `can_access_widgets`)
 | Widget | Description |
@@ -349,6 +359,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PlayerForm.jsx](src/forms/PlayerForm.jsx) | Full player add/edit (admin). Layout: row 1 = Nombre \| Categoría; row 2 = Tipo Documento dropdown (Cédula de Identidad / Pasaporte / Otro, stored as `tipo_documento`) \| Número de Documento. Status dropdown (activo/cedido/transferido/egresado/dado de baja) in Información Básica section. Shows "Override Temporal de Complemento" section in read-only mode (edit from Viático tab). Includes a "Lesiones" related list at the bottom showing all injuries for the player (oldest first) with tipo, severidad badge, dates, and description. Includes a "Historial de Partidos" related list showing all matches the player participated in: fecha, rival, resultado, titular/suplente, goles and tarjetas. |
 | [PlayerFormViatico.jsx](src/forms/PlayerFormViatico.jsx) | Financial fields form for viatico tab. Includes "Override Temporal de Complemento" section: editable only by `admin`, `ejecutivo`, `presidente`; other roles see it read-only. Override auto-clears when `contrato` is activated. |
 | [PlayerFormPublic.jsx](src/forms/PlayerFormPublic.jsx) | Public-facing player registration at `/formulario` |
+| [PlayerQuestionnaire.jsx](src/forms/PlayerQuestionnaire.jsx) | One-time self-service questionnaire at `/jugador`. ~40 questions across 9 sections: Contacto, Documentos, Salud, Llegada al club, Transporte al entrenamiento, Centro educativo, Entorno familiar y social, Padre/Madre, Vivienda. Includes file uploads for cedula, pasaportes, and foto carnet (reuses `database.uploadDocument()`). Multiselect chips for `comparte_tiempo_con` and `acceso_hogar`. Submission blocked after first save via `unique(player_id)` DB constraint. |
 | [EmployeeForm.jsx](src/forms/EmployeeForm.jsx) | Staff add/edit |
 | [InventoryForm.jsx](src/forms/InventoryForm.jsx) | Inventory item add/edit |
 | [DistributionForm.jsx](src/forms/DistributionForm.jsx) | Distribution record add/edit |
@@ -435,6 +446,34 @@ Only **1 pending request per player** is allowed at a time:
 - Metadata saved to `player_documents` table
 - Downloads via signed URLs with 1-hour expiry
 - Types: any document type string (e.g. cedula, contrato, foto)
+
+### Player Self-Service Questionnaire
+
+- Route: `/jugador` (no authentication required — standalone public route)
+- Styled with black/yellow CAP colors; club logo (`public/logo.jpeg`) on login screen
+- Players log in using their `gov_id` (cedula) as the sole credential
+- After login, the `PlayerPortal` state machine (in `App.jsx`) manages three states: login → form → thank-you
+- Questionnaire is **one-time only** — enforced by `unique(player_id)` on `player_questionnaire` table; attempting to re-submit shows a "Ya completaste el formulario" screen
+- File uploads (cedula photo, pasaporte UY, pasaporte EXT, foto carnet) reuse the existing `database.uploadDocument()` → `player-documents` bucket → `player_documents` table. Multiple files per type are supported (timestamped paths). Uploaded files appear in the admin's `DocumentUpload` component alongside existing files.
+- Questionnaire sections and data stored in `player_questionnaire`:
+
+| Section | Key fields |
+|---------|-----------|
+| Contacto | `email`, `telefono` |
+| Documentos | `tiene_pasaporte_uy`, `tiene_pasaporte_ext`, `pais_pasaporte_ext`; file uploads: `gov_id`, `passport_uy`, `passport_ext`, `foto_carnet` |
+| Salud | `tiene_prestador_salud`, `prestador_salud_cual`, `tiene_emergencia_movil`, `emergencia_movil_cual` |
+| Llegada al club | `anio_llegada_club`, `liga_proviene`, `club_proviene`, `mediante_quien_llego`, `quien_capto`, `tiene_agente`, `agente_info` |
+| Transporte al entrenamiento | `transporte_entrenamiento`, `transporte_entrenamiento_otro`, `tiempo_entrenamiento` |
+| Centro educativo | `centro_educativo_tipo`, `centro_educativo_nombre`, `transporte_educativo`, `transporte_educativo_otro`, `tiempo_educativo`, `nivel_educativo`, `repitio_anio`, `repitio_nivel` |
+| Entorno familiar y social | `antecedentes_adiciones`, `composicion_familiar`, `convivencia_descripcion`, `comparte_tiempo_con` (semicolon-separated multiselect) |
+| Padre / tutor | `padre_nombre`, `padre_celular`, `padre_ocupacion`, `padre_nivel_educativo`, `padre_edad` |
+| Madre / tutora | `madre_nombre`, `madre_celular`, `madre_ocupacion`, `madre_nivel_educativo`, `madre_edad` |
+| Vivienda | `departamento`, `barrio`, `direccion`, `tenencia_vivienda`, `condiciones_habitabilidad`, `material_techo`, `material_paredes`, `material_piso`, `num_habitaciones`, `acceso_hogar` (semicolon-separated multiselect) |
+| Comentarios | `comentario_extra` |
+
+**Database methods:**
+- `database.validatePlayer(govId)` — invokes `validate-player` Edge Function
+- `database.submitPlayerQuestionnaire(playerId, answers)` — inserts into `player_questionnaire`
 
 ### Public Player Registration Form
 
@@ -636,6 +675,7 @@ Full CRUD for admin-level users managed from `ConfiguracionTab`. See [Admin User
 |----------|-------------|
 | `invite-user` | Verifies caller is admin, calls `auth.admin.generateLink({ type: 'invite' })`, upserts `user_permissions`, returns `invite_link` |
 | `validate-employee` | Validates funcionario credentials and returns the employee record |
+| `validate-player` | Looks up player by `gov_id`, returns player record + `already_submitted` flag (checks `player_questionnaire` table). Deployed with `--no-verify-jwt`. |
 | `check-ficha-medica` | Proxies to SND API to retrieve sports medical license records by document number |
 
 ### Campeonato Juvenil — Partidos Module
@@ -941,6 +981,7 @@ football-stock-app/
     │   │   └── RivalPerformanceChart.jsx # W/D/L per rival horizontal bar chart
     │   ├── AdminDashboard.jsx
     │   ├── LoginView.jsx
+    │   ├── PlayerLoginView.jsx          # Player login screen for /jugador
     │   ├── EmployeeView.jsx
     │   ├── OverviewTab.jsx
     │   ├── PlayersTab.jsx
@@ -994,6 +1035,7 @@ football-stock-app/
     │   ├── PlayerForm.jsx
     │   ├── PlayerFormViatico.jsx
     │   ├── PlayerFormPublic.jsx
+    │   ├── PlayerQuestionnaire.jsx      # One-time player self-service questionnaire
     │   ├── EmployeeForm.jsx
     │   ├── InventoryForm.jsx
     │   ├── DistributionForm.jsx
@@ -1028,5 +1070,6 @@ supabase/
     ├── invite-user/               # Generate invite link + upsert user_permissions (no email sent)
     │   └── index.ts
     ├── validate-employee/         # Funcionario credential validation
+    ├── validate-player/           # Player credential validation + already_submitted check
     └── check-ficha-medica/        # SND API proxy for sports medical license lookup
 ```
