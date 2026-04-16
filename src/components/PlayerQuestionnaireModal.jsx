@@ -1,5 +1,6 @@
-import React from 'react';
-import { X, ClipboardList } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ClipboardList, RefreshCw } from 'lucide-react';
+import { QuestionnaireFieldSync } from './QuestionnaireFieldSync';
 
 const SECTIONS = [
   {
@@ -141,7 +142,11 @@ function FieldValue({ value, type }) {
   return <span>{String(value)}</span>;
 }
 
-export function PlayerQuestionnaireModal({ questionnaire, playerName, onClose }) {
+export function PlayerQuestionnaireModal({ questionnaire, playerName, player, onClose, onSync }) {
+  const [showSync, setShowSync] = useState(false);
+  const [syncSuccess, setSyncSuccess] = useState(false);
+  const canSync = player && onSync;
+
   const completedAt = questionnaire.completed_at
     ? new Date(questionnaire.completed_at).toLocaleDateString('es-UY', {
         day: '2-digit',
@@ -149,6 +154,12 @@ export function PlayerQuestionnaireModal({ questionnaire, playerName, onClose })
         year: 'numeric',
       })
     : null;
+
+  const handleSyncDone = (syncedFields) => {
+    setSyncSuccess(true);
+    setShowSync(false);
+    onSync(syncedFields);
+  };
 
   return (
     <div
@@ -167,10 +178,40 @@ export function PlayerQuestionnaireModal({ questionnaire, playerName, onClose })
               Cuestionario — {playerName}
             </h3>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 flex-shrink-0 ml-2">
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            {canSync && !showSync && (
+              <button
+                onClick={() => setShowSync(true)}
+                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-yellow-700 bg-yellow-100 rounded-lg hover:bg-yellow-200 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Sincronizar datos
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
+
+        {/* Sync success banner */}
+        {syncSuccess && (
+          <div className="mx-4 mt-4 sm:mx-6 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700 font-medium">
+            Datos sincronizados correctamente.
+          </div>
+        )}
+
+        {/* Sync panel */}
+        {showSync && canSync && (
+          <div className="p-4 sm:p-6 border-b">
+            <QuestionnaireFieldSync
+              questionnaire={questionnaire}
+              player={player}
+              onSync={handleSyncDone}
+              onCancel={() => setShowSync(false)}
+            />
+          </div>
+        )}
 
         {/* Body */}
         <div className="p-4 sm:p-6 space-y-6">

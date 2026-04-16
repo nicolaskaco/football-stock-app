@@ -1129,7 +1129,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                         <button 
                           onClick={() => setShowModal({
                             title: `Editar Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings} />
+                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings} onDataChange={onDataChange} />
                           })} 
                           className="text-blue-600 hover:text-blue-800"
                           title="Editar"
