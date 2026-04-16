@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Check, AlertTriangle } from 'lucide-react';
+import { ArrowRight, Check, AlertTriangle, CheckCircle } from 'lucide-react';
 import { database } from '../utils/database';
 
 const FIELD_MAPPING = [
@@ -32,7 +32,12 @@ export function QuestionnaireFieldSync({ questionnaire, player, onSync, onCancel
   const mappableFields = FIELD_MAPPING.filter(({ qKey }) => !isEmpty(questionnaire[qKey]));
 
   const noConflict = mappableFields.filter(({ playerCol }) => isEmpty(player[playerCol]));
-  const withConflict = mappableFields.filter(({ playerCol }) => !isEmpty(player[playerCol]));
+  const alreadyMatch = mappableFields.filter(({ qKey, playerCol, type }) =>
+    !isEmpty(player[playerCol]) && formatValue(questionnaire[qKey], type) === formatValue(player[playerCol], type)
+  );
+  const withConflict = mappableFields.filter(({ qKey, playerCol, type }) =>
+    !isEmpty(player[playerCol]) && formatValue(questionnaire[qKey], type) !== formatValue(player[playerCol], type)
+  );
 
   const [selected, setSelected] = useState(() => {
     const initial = {};
@@ -135,6 +140,36 @@ export function QuestionnaireFieldSync({ questionnaire, player, onSync, onCancel
           </p>
           <div className="space-y-2">
             {withConflict.map((f) => renderRow(f, true))}
+          </div>
+        </div>
+      )}
+
+      {alreadyMatch.length > 0 && (
+        <div>
+          <h5 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 flex items-center gap-1">
+            <CheckCircle className="w-3.5 h-3.5" />
+            Campos ya sincronizados ({alreadyMatch.length})
+          </h5>
+          <div className="space-y-2">
+            {alreadyMatch.map(({ qKey, playerCol, label, type }) => (
+              <label
+                key={qKey}
+                className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200 cursor-not-allowed opacity-60"
+              >
+                <input
+                  type="checkbox"
+                  checked={false}
+                  disabled
+                  className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-400"
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-gray-400">{label}</span>
+                  <div className="mt-1 text-sm text-gray-400 truncate">
+                    {formatValue(player[playerCol], type)}
+                  </div>
+                </div>
+              </label>
+            ))}
           </div>
         </div>
       )}
