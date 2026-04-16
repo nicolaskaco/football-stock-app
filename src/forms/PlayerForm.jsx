@@ -301,7 +301,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
       {/* CONTACT INFORMATION */}
       <div className="bg-white p-6 rounded-lg shadow-md">
-        <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Contacto y Representante</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Contacto y Captación</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -357,6 +357,22 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               disabled={readOnly}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
               placeholder={readOnly ? "" : "Nombre del que lo trajo al club"}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fecha de Llegada (año)
+            </label>
+            <input
+              type="number"
+              min="2000"
+              max="2100"
+              value={formData.fecha_llegada || ''}
+              onChange={(e) => setFormData({...formData, fecha_llegada: e.target.value ? parseInt(e.target.value) : null})}
+              disabled={readOnly}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder={readOnly ? "" : "2024"}
             />
           </div>
         </div>
@@ -695,21 +711,6 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
             </div>
           )}
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha de Llegada (año)
-            </label>
-            <input 
-              type="number" 
-              min="2000"
-              max="2100"
-              value={formData.fecha_llegada || ''} 
-              onChange={(e) => setFormData({...formData, fecha_llegada: e.target.value ? parseInt(e.target.value) : null})} 
-              disabled={readOnly}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-              placeholder={readOnly ? "" : "2024"}
-            />
-          </div>
         </div>
       </div>
 
