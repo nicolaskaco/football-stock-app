@@ -461,6 +461,7 @@ Only **1 pending request per player** is allowed at a time:
 
 | Section | Key fields |
 |---------|-----------|
+| Datos personales | `fecha_nacimiento` (DATE, dd/mm/yyyy display) |
 | Contacto | `email`, `telefono` |
 | Documentos | `tiene_pasaporte_uy`, `tiene_pasaporte_ext`, `pais_pasaporte_ext`; file uploads: `gov_id`, `passport_uy`, `passport_ext`, `foto_carnet` |
 | Salud | `tiene_prestador_salud`, `prestador_salud_cual`, `tiene_emergencia_movil`, `emergencia_movil_cual` |
@@ -495,6 +496,7 @@ Only **1 pending request per player** is allowed at a time:
 
 | Questionnaire Key | Player Column | Label |
 |---|---|---|
+| `fecha_nacimiento` | `date_of_birth` | Fecha de nacimiento |
 | `email` | `email` | Email |
 | `telefono` | `celular` | Celular |
 | `padre_nombre` | `padre_nombre` | Nombre del padre |

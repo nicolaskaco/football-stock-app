@@ -3,6 +3,7 @@ import { ArrowRight, Check, AlertTriangle, CheckCircle } from 'lucide-react';
 import { database } from '../utils/database';
 
 const FIELD_MAPPING = [
+  { qKey: 'fecha_nacimiento', playerCol: 'date_of_birth', label: 'Fecha de nacimiento', type: 'date' },
   { qKey: 'email', playerCol: 'email', label: 'Email' },
   { qKey: 'telefono', playerCol: 'celular', label: 'Celular' },
   { qKey: 'padre_nombre', playerCol: 'padre_nombre', label: 'Nombre del padre' },
@@ -25,6 +26,11 @@ function isEmpty(val) {
 function formatValue(val, type) {
   if (isEmpty(val)) return '—';
   if (type === 'bool') return val === true || val === 'true' ? 'Si' : 'No';
+  if (type === 'date') {
+    const d = new Date(val + 'T00:00:00');
+    if (isNaN(d)) return String(val);
+    return d.toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
   return String(val);
 }
 
