@@ -853,6 +853,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       {player?.id && (
         <div className="text-center">
           <button
+            type="button"
             onClick={() => setShowQuestionnaireModal(true)}
             disabled={questionnaireLoading || !questionnaire}
             className={`text-sm underline ${
