@@ -382,7 +382,8 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PromptModal.jsx](src/components/PromptModal.jsx) | Text input prompt dialog |
 | [ChangeRequestModal.jsx](src/components/ChangeRequestModal.jsx) | Financial change request submission form |
 | [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes; includes per-field filter buttons when history spans multiple fields |
-| [PlayerQuestionnaireModal.jsx](src/components/PlayerQuestionnaireModal.jsx) | Read-only viewer for a player's questionnaire responses, opened from the read-only player detail modal. Groups all answers into 11 sections; booleans show Sí/No badges; semicolon-separated multiselects display as comma-joined lists. |
+| [PlayerQuestionnaireModal.jsx](src/components/PlayerQuestionnaireModal.jsx) | Viewer for a player's questionnaire responses, opened from both read-only and edit player modals. Groups all answers into 11 sections; booleans show Sí/No badges; semicolon-separated multiselects display as comma-joined lists. In edit mode, includes a "Sincronizar datos" button that opens `QuestionnaireFieldSync` for selectively syncing answers into the player record. |
+| [QuestionnaireFieldSync.jsx](src/components/QuestionnaireFieldSync.jsx) | Review-and-confirm UI for syncing questionnaire answers into player fields. Shows mappable fields split into two groups: empty player fields (pre-checked) and conflicts with existing values (unchecked, shows both values side-by-side). |
 | [BulkActionModal.jsx](src/components/BulkActionModal.jsx) | Generic before→after preview modal for bulk player/inventory operations |
 | [ImportPreviewModal.jsx](src/components/ImportPreviewModal.jsx) | XLSX import with field auto-mapping, row validation (required fields, category/position checks, duplicate detection), green/red preview rows |
 | [PlayerComparisonModal.jsx](src/components/PlayerComparisonModal.jsx) | Side-by-side comparison for 2-3 players: Datos Personales, Estado, Financiero, Estadísticas de Partido, goal timeline LineChart. Best values highlighted in green via `getBest()` helper. Export to Excel (`.xlsx`) or copy to clipboard as tab-separated text |
@@ -476,11 +477,37 @@ Only **1 pending request per player** is allowed at a time:
 - `database.validatePlayer(govId)` — invokes `validate-player` Edge Function
 - `database.submitPlayerQuestionnaire(playerId, answers)` — inserts into `player_questionnaire`
 - `database.getPlayerQuestionnaire(playerId)` — fetches the questionnaire row for a player (returns `null` if not submitted)
+- `database.syncQuestionnaireToPlayer(playerId, fieldsToUpdate)` — updates the `players` row with a subset of mapped questionnaire values
 
-**Admin read-only player modal:**
-- A link "Ver respuestas del cuestionario" appears below the **Historial de Partidos** section in the read-only player detail view (`PlayerForm.jsx` in `readOnly` mode)
+**Admin player modal (read-only and edit):**
+- A link "Ver respuestas del cuestionario" appears below the **Historial de Partidos** section in `PlayerForm.jsx` (both read-only and edit modes)
 - The link is grayed out / disabled with text "Sin cuestionario completado" if the player hasn't submitted
 - Clicking opens `PlayerQuestionnaireModal` — groups all responses into the same 11 sections listed above; booleans render as Sí/No badges; semicolon-separated multiselects are displayed as comma-joined lists; empty fields show "—"
+
+**Questionnaire-to-player field sync (edit mode only):**
+- A "Sincronizar datos" button appears in the questionnaire modal header when viewing in edit mode
+- Clicking opens `QuestionnaireFieldSync`, a review-and-confirm panel with checkboxes for each mappable field
+- Fields where the player record is empty are pre-checked; fields with existing values show both the questionnaire value (green) and current player value (strikethrough) side-by-side, unchecked by default
+- Admin selects which fields to apply and clicks "Aplicar seleccionados"
+- After sync, the player form updates locally and the players list refreshes via `onDataChange`
+
+**Field mapping (questionnaire → players):**
+
+| Questionnaire Key | Player Column | Label |
+|---|---|---|
+| `email` | `email` | Email |
+| `telefono` | `celular` | Celular |
+| `padre_nombre` | `padre_nombre` | Nombre del padre |
+| `padre_celular` | `padre_telefono` | Celular del padre |
+| `madre_nombre` | `madre_nombre` | Nombre de la madre |
+| `madre_celular` | `madre_telefono` | Celular de la madre |
+| `tiene_pasaporte_uy` | `pasaporte_uy` | Pasaporte uruguayo |
+| `tiene_pasaporte_ext` | `pasaporte_ext` | Pasaporte extranjero |
+| `pais_pasaporte_ext` | `tipo_pasaporte_ext` | Pais pasaporte extranjero |
+| `anio_llegada_club` | `fecha_llegada` | Fecha de llegada (año) |
+| `departamento` | `departamento` | Departamento |
+| `agente_info` | `representante` | Representante |
+| `quien_capto` | `captador` | Captador |
 
 ### Public Player Registration Form
 
@@ -1031,6 +1058,7 @@ football-stock-app/
     │   ├── ChangeRequestModal.jsx
     │   ├── PlayerHistoryModal.jsx
     │   ├── PlayerQuestionnaireModal.jsx
+    │   ├── QuestionnaireFieldSync.jsx
     │   ├── BulkActionModal.jsx
     │   ├── ImportPreviewModal.jsx
     │   ├── ExportConfigModal.jsx
