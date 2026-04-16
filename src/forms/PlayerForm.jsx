@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useFormDirty } from '../hooks/useFormDirty';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner';
+import { PlayerQuestionnaireModal } from '../components/PlayerQuestionnaireModal';
 import { CATEGORIAS, BANCOS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
+import { database } from '../utils/database';
 
 const SEVERITY_BADGE = {
   leve: 'bg-yellow-100 text-yellow-800',
@@ -48,6 +50,19 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     padre_telefono: '',
   });
   useFormDirty(formData, player, onDirtyChange);
+
+  const [questionnaire, setQuestionnaire] = useState(null);
+  const [questionnaireLoading, setQuestionnaireLoading] = useState(false);
+  const [showQuestionnaireModal, setShowQuestionnaireModal] = useState(false);
+
+  useEffect(() => {
+    if (!readOnly || !player?.id) return;
+    setQuestionnaireLoading(true);
+    database.getPlayerQuestionnaire(player.id)
+      .then(setQuestionnaire)
+      .catch(() => setQuestionnaire(null))
+      .finally(() => setQuestionnaireLoading(false));
+  }, [readOnly, player?.id]);
 
   const isEditingPlayer = player && player.id;
   const canEditFinancialFields = ['ejecutivo', 'admin', 'presidente'].includes(currentUser?.role);
@@ -836,6 +851,26 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       })()}
 
       {readOnly && (
+        <div className="text-center">
+          <button
+            onClick={() => setShowQuestionnaireModal(true)}
+            disabled={questionnaireLoading || !questionnaire}
+            className={`text-sm underline ${
+              questionnaire
+                ? 'text-yellow-600 hover:text-yellow-800 cursor-pointer'
+                : 'text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            {questionnaireLoading
+              ? 'Cargando cuestionario...'
+              : questionnaire
+              ? 'Ver respuestas del cuestionario'
+              : 'Sin cuestionario completado'}
+          </button>
+        </div>
+      )}
+
+      {readOnly && (
         <div className="space-y-3">
           <div className="grid grid-cols-4 gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
             {[
@@ -894,12 +929,20 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       )}
 
       {/*}
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         className="w-full bg-black text-yellow-400 py-3 rounded-lg hover:bg-gray-800 font-medium transition-colors duration-200 mt-8"
       >
         {player ? 'Actualizar' : 'Agregar'} Jugador
       </button>*/}
+
+      {showQuestionnaireModal && questionnaire && (
+        <PlayerQuestionnaireModal
+          questionnaire={questionnaire}
+          playerName={player.name_visual || player.name}
+          onClose={() => setShowQuestionnaireModal(false)}
+        />
+      )}
     </form>
   );
 };

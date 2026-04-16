@@ -379,6 +379,17 @@ export const database = {
     if (error) throw error;
   },
 
+  // Fetch the player questionnaire response (returns null if not submitted)
+  async getPlayerQuestionnaire(playerId) {
+    const { data, error } = await supabase
+      .from('player_questionnaire')
+      .select('*')
+      .eq('player_id', playerId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+
   async uploadDocument(playerId, file, documentType) {
     try {
       const fileExt = file.name.split('.').pop();
