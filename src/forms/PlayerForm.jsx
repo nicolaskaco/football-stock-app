@@ -13,7 +13,7 @@ const SEVERITY_BADGE = {
   grave: 'bg-red-100 text-red-800',
 };
 
-export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {}, onRequestChange = null, hasPendingRequest = false }) => {
+export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {}, onRequestChange = null, hasPendingRequest = false, onDataChange = null }) => {
   const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null, status: player.status || 'activo' } : {
     name: '',
     gov_id: '',
@@ -56,13 +56,13 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
   const [showQuestionnaireModal, setShowQuestionnaireModal] = useState(false);
 
   useEffect(() => {
-    if (!readOnly || !player?.id) return;
+    if (!player?.id) return;
     setQuestionnaireLoading(true);
     database.getPlayerQuestionnaire(player.id)
       .then(setQuestionnaire)
       .catch(() => setQuestionnaire(null))
       .finally(() => setQuestionnaireLoading(false));
-  }, [readOnly, player?.id]);
+  }, [player?.id]);
 
   const isEditingPlayer = player && player.id;
   const canEditFinancialFields = ['ejecutivo', 'admin', 'presidente'].includes(currentUser?.role);
@@ -850,7 +850,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
         );
       })()}
 
-      {readOnly && (
+      {player?.id && (
         <div className="text-center">
           <button
             onClick={() => setShowQuestionnaireModal(true)}
@@ -940,7 +940,12 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
         <PlayerQuestionnaireModal
           questionnaire={questionnaire}
           playerName={player.name_visual || player.name}
+          player={!readOnly ? formData : undefined}
           onClose={() => setShowQuestionnaireModal(false)}
+          onSync={!readOnly ? (syncedFields) => {
+            setFormData((prev) => ({ ...prev, ...syncedFields }));
+            if (onDataChange) onDataChange('players');
+          } : undefined}
         />
       )}
     </form>

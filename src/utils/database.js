@@ -390,6 +390,14 @@ export const database = {
     return data;
   },
 
+  async syncQuestionnaireToPlayer(playerId, fieldsToUpdate) {
+    const { error } = await supabase
+      .from('players')
+      .update(fieldsToUpdate)
+      .eq('id', playerId);
+    if (error) throw error;
+  },
+
   async uploadDocument(playerId, file, documentType) {
     try {
       const fileExt = file.name.split('.').pop();
