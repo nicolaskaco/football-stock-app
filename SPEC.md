@@ -382,6 +382,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PromptModal.jsx](src/components/PromptModal.jsx) | Text input prompt dialog |
 | [ChangeRequestModal.jsx](src/components/ChangeRequestModal.jsx) | Financial change request submission form |
 | [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes; includes per-field filter buttons when history spans multiple fields |
+| [PlayerQuestionnaireModal.jsx](src/components/PlayerQuestionnaireModal.jsx) | Read-only viewer for a player's questionnaire responses, opened from the read-only player detail modal. Groups all answers into 11 sections; booleans show Sí/No badges; semicolon-separated multiselects display as comma-joined lists. |
 | [BulkActionModal.jsx](src/components/BulkActionModal.jsx) | Generic before→after preview modal for bulk player/inventory operations |
 | [ImportPreviewModal.jsx](src/components/ImportPreviewModal.jsx) | XLSX import with field auto-mapping, row validation (required fields, category/position checks, duplicate detection), green/red preview rows |
 | [PlayerComparisonModal.jsx](src/components/PlayerComparisonModal.jsx) | Side-by-side comparison for 2-3 players: Datos Personales, Estado, Financiero, Estadísticas de Partido, goal timeline LineChart. Best values highlighted in green via `getBest()` helper. Export to Excel (`.xlsx`) or copy to clipboard as tab-separated text |
@@ -474,6 +475,12 @@ Only **1 pending request per player** is allowed at a time:
 **Database methods:**
 - `database.validatePlayer(govId)` — invokes `validate-player` Edge Function
 - `database.submitPlayerQuestionnaire(playerId, answers)` — inserts into `player_questionnaire`
+- `database.getPlayerQuestionnaire(playerId)` — fetches the questionnaire row for a player (returns `null` if not submitted)
+
+**Admin read-only player modal:**
+- A link "Ver respuestas del cuestionario" appears below the **Historial de Partidos** section in the read-only player detail view (`PlayerForm.jsx` in `readOnly` mode)
+- The link is grayed out / disabled with text "Sin cuestionario completado" if the player hasn't submitted
+- Clicking opens `PlayerQuestionnaireModal` — groups all responses into the same 11 sections listed above; booleans render as Sí/No badges; semicolon-separated multiselects are displayed as comma-joined lists; empty fields show "—"
 
 ### Public Player Registration Form
 
@@ -1023,6 +1030,7 @@ football-stock-app/
     │   ├── PromptModal.jsx
     │   ├── ChangeRequestModal.jsx
     │   ├── PlayerHistoryModal.jsx
+    │   ├── PlayerQuestionnaireModal.jsx
     │   ├── BulkActionModal.jsx
     │   ├── ImportPreviewModal.jsx
     │   ├── ExportConfigModal.jsx
