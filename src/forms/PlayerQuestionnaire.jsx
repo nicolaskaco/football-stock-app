@@ -202,6 +202,9 @@ function FileUploadField({ label, docType, playerId, uploading, setUploading, up
 // ── Componente principal ───────────────────────────────────────────────────
 
 const EMPTY = {
+  // Datos personales
+  fecha_nacimiento: '',
+
   // Contacto
   email: '',
   telefono: '',
@@ -340,6 +343,13 @@ export default function PlayerQuestionnaire({ player, onComplete }) {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-gray-900 rounded-xl border border-gray-700 p-6 space-y-2">
+
+          {/* ── Datos personales ─────────────────────────────────── */}
+          <SectionTitle>Datos personales</SectionTitle>
+
+          <Field label="Fecha de nacimiento">
+            <TextInput type="date" value={form.fecha_nacimiento} onChange={set('fecha_nacimiento')} disabled={submitting} />
+          </Field>
 
           {/* ── Contacto ──────────────────────────────────────────── */}
           <SectionTitle>Contacto</SectionTitle>
