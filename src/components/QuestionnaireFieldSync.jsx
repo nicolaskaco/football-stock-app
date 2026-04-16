@@ -12,6 +12,7 @@ const FIELD_MAPPING = [
   { qKey: 'tiene_pasaporte_uy', playerCol: 'pasaporte_uy', label: 'Pasaporte uruguayo', type: 'bool' },
   { qKey: 'tiene_pasaporte_ext', playerCol: 'pasaporte_ext', label: 'Pasaporte extranjero', type: 'bool' },
   { qKey: 'pais_pasaporte_ext', playerCol: 'tipo_pasaporte_ext', label: 'Pais pasaporte extranjero' },
+  { qKey: 'anio_llegada_club', playerCol: 'fecha_llegada', label: 'Fecha de llegada (año)' },
   { qKey: 'departamento', playerCol: 'departamento', label: 'Departamento' },
   { qKey: 'agente_info', playerCol: 'representante', label: 'Representante' },
   { qKey: 'quien_capto', playerCol: 'captador', label: 'Captador' },
