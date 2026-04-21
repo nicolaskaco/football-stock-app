@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMutation } from '../hooks/useMutation';
 import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
-import { CATEGORIAS, POSICIONES_JUGADOR } from '../utils/constants';
+import { CATEGORIAS, POSICIONES_JUGADOR, DEPARTAMENTOS } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal } from '../utils/playerUtils';
 import { getCurrentSuspensionsByCategory } from '../utils/suspensions';
@@ -28,6 +28,7 @@ import { useAlertModal } from '../hooks/useAlertModal';
 import { BulkActionModal } from './BulkActionModal';
 import { ImportPreviewModal } from './ImportPreviewModal';
 import { InjuryForm } from '../forms/InjuryForm';
+import { InlineEditCell } from './ui/InlineEditCell';
 import { PlayerComparisonModal } from './PlayerComparisonModal';
 import { ChangeRequestModal } from './ChangeRequestModal';
 
@@ -94,6 +95,13 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   const [showImportModal, setShowImportModal] = useState(false);
   const [showBulkMenu, setShowBulkMenu] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+  const [editingCell, setEditingCell] = useState(null);
+
+  const handleInlineSave = (playerId, field, newValue) => execute(async () => {
+    await database.updatePlayer(playerId, { [field]: newValue }, currentUser?.email);
+    setEditingCell(null);
+    await onDataChange('players');
+  });
 
   const handleCreateChangeRequest = (player, newValues, notes) => execute(async () => {
     const alreadyPending = await database.hasPendingChangeRequest(player.id);
@@ -1090,24 +1098,64 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                     )}
                   </div>
                 </td>
-                <td className="px-3 py-4 text-sm">{player.celular}</td>
-                <td className="px-3 py-4 text-sm">{player.posicion}</td>
-                <td className="px-3 py-4">
-                  <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
-                    {player.categoria_juego || player.categoria}
-                  </span>
-                  {player.categoria_juego && player.categoria_juego !== player.categoria && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full whitespace-nowrap" title="Categoría de cobro">
-                      💰 {player.categoria}
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-sm">{player.departamento || '-'}</td>
-                <td className="px-3 py-4">
-                  <span className={`text-xl font-bold ${player.casita ? 'text-green-600' : 'text-gray-400'}`}>
-                    {player.casita ? '✓' : '☐'}
-                  </span>
-                </td>
+                <InlineEditCell
+                  value={player.celular}
+                  type="text"
+                  canEdit={canEditPlayers}
+                  isEditing={editingCell?.playerId === player.id && editingCell?.field === 'celular'}
+                  onStartEdit={() => setEditingCell({ playerId: player.id, field: 'celular' })}
+                  onSave={(v) => handleInlineSave(player.id, 'celular', v)}
+                  onCancel={() => setEditingCell(null)}
+                />
+                <InlineEditCell
+                  value={player.posicion}
+                  type="select"
+                  options={POSICIONES_JUGADOR}
+                  canEdit={canEditPlayers}
+                  isEditing={editingCell?.playerId === player.id && editingCell?.field === 'posicion'}
+                  onStartEdit={() => setEditingCell({ playerId: player.id, field: 'posicion' })}
+                  onSave={(v) => handleInlineSave(player.id, 'posicion', v)}
+                  onCancel={() => setEditingCell(null)}
+                />
+                <InlineEditCell
+                  value={player.categoria}
+                  type="select"
+                  options={CATEGORIAS}
+                  canEdit={canEditPlayers}
+                  isEditing={editingCell?.playerId === player.id && editingCell?.field === 'categoria'}
+                  onStartEdit={() => setEditingCell({ playerId: player.id, field: 'categoria' })}
+                  onSave={(v) => handleInlineSave(player.id, 'categoria', v)}
+                  onCancel={() => setEditingCell(null)}
+                  displayValue={
+                    <>
+                      <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+                        {player.categoria_juego || player.categoria}
+                      </span>
+                      {player.categoria_juego && player.categoria_juego !== player.categoria && (
+                        <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full whitespace-nowrap" title="Categoría de cobro">
+                          💰 {player.categoria}
+                        </span>
+                      )}
+                    </>
+                  }
+                />
+                <InlineEditCell
+                  value={player.departamento}
+                  type="select"
+                  options={DEPARTAMENTOS}
+                  canEdit={canEditPlayers}
+                  isEditing={editingCell?.playerId === player.id && editingCell?.field === 'departamento'}
+                  onStartEdit={() => setEditingCell({ playerId: player.id, field: 'departamento' })}
+                  onSave={(v) => handleInlineSave(player.id, 'departamento', v)}
+                  onCancel={() => setEditingCell(null)}
+                />
+                <InlineEditCell
+                  value={player.casita}
+                  type="boolean"
+                  canEdit={canEditPlayers}
+                  onSave={(v) => handleInlineSave(player.id, 'casita', v)}
+                  onCancel={() => setEditingCell(null)}
+                />
                 {/*<td className="px-6 py-4">
                   <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
                     {player.vianda}
@@ -1122,7 +1170,15 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                     <span className="font-semibold">${calculateTotal(player).toLocaleString()}</span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-sm">{player.representante || '-'}</td>
+                <InlineEditCell
+                  value={player.representante}
+                  type="text"
+                  canEdit={canEditPlayers}
+                  isEditing={editingCell?.playerId === player.id && editingCell?.field === 'representante'}
+                  onStartEdit={() => setEditingCell({ playerId: player.id, field: 'representante' })}
+                  onSave={(v) => handleInlineSave(player.id, 'representante', v)}
+                  onCancel={() => setEditingCell(null)}
+                />
                   <td className="px-3 py-4">
                     <div className="flex gap-2">
                       {canEditPlayers ? (
