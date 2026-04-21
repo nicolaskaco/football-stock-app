@@ -965,7 +965,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
               <option value="dado de baja">Dados de baja</option>
             </select>
           )}
-          {canEditPlayers && (
+          {isAdmin && (
             <button
               onClick={toggleInlineEdit}
               title={inlineEditEnabled ? 'Desactivar edición inline' : 'Activar edición inline'}
