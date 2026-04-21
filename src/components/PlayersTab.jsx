@@ -971,7 +971,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
               title={inlineEditEnabled ? 'Desactivar edición inline' : 'Activar edición inline'}
               className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
                 inlineEditEnabled
-                  ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-black border-black text-yellow-400 hover:bg-gray-800'
                   : 'bg-gray-50 border-gray-300 text-gray-500 hover:bg-gray-100'
               }`}
             >
