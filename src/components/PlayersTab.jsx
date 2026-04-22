@@ -1124,7 +1124,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                 <InlineEditCell
                   value={player.celular}
                   type="text"
-                  canEdit={canEditPlayers && inlineEditEnabled}
+                  canEdit={isAdmin && inlineEditEnabled}
                   isEditing={editingCell?.playerId === player.id && editingCell?.field === 'celular'}
                   onStartEdit={() => setEditingCell({ playerId: player.id, field: 'celular' })}
                   onSave={(v) => handleInlineSave(player.id, 'celular', v)}
@@ -1134,7 +1134,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                   value={player.posicion}
                   type="select"
                   options={POSICIONES_JUGADOR}
-                  canEdit={canEditPlayers && inlineEditEnabled}
+                  canEdit={isAdmin && inlineEditEnabled}
                   isEditing={editingCell?.playerId === player.id && editingCell?.field === 'posicion'}
                   onStartEdit={() => setEditingCell({ playerId: player.id, field: 'posicion' })}
                   onSave={(v) => handleInlineSave(player.id, 'posicion', v)}
@@ -1144,7 +1144,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                   value={player.categoria}
                   type="select"
                   options={CATEGORIAS}
-                  canEdit={canEditPlayers && inlineEditEnabled}
+                  canEdit={isAdmin && inlineEditEnabled}
                   isEditing={editingCell?.playerId === player.id && editingCell?.field === 'categoria'}
                   onStartEdit={() => setEditingCell({ playerId: player.id, field: 'categoria' })}
                   onSave={(v) => handleInlineSave(player.id, 'categoria', v)}
@@ -1166,7 +1166,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                   value={player.departamento}
                   type="select"
                   options={DEPARTAMENTOS}
-                  canEdit={canEditPlayers && inlineEditEnabled}
+                  canEdit={isAdmin && inlineEditEnabled}
                   isEditing={editingCell?.playerId === player.id && editingCell?.field === 'departamento'}
                   onStartEdit={() => setEditingCell({ playerId: player.id, field: 'departamento' })}
                   onSave={(v) => handleInlineSave(player.id, 'departamento', v)}
@@ -1175,7 +1175,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                 <InlineEditCell
                   value={player.casita}
                   type="boolean"
-                  canEdit={canEditPlayers && inlineEditEnabled}
+                  canEdit={isAdmin && inlineEditEnabled}
                   onSave={(v) => handleInlineSave(player.id, 'casita', v)}
                   onCancel={() => setEditingCell(null)}
                 />
@@ -1196,7 +1196,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                 <InlineEditCell
                   value={player.representante}
                   type="text"
-                  canEdit={canEditPlayers && inlineEditEnabled}
+                  canEdit={isAdmin && inlineEditEnabled}
                   isEditing={editingCell?.playerId === player.id && editingCell?.field === 'representante'}
                   onStartEdit={() => setEditingCell({ playerId: player.id, field: 'representante' })}
                   onSave={(v) => handleInlineSave(player.id, 'representante', v)}
