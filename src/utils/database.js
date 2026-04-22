@@ -210,6 +210,9 @@ export const database = {
     const historyRecords = [];
 
     trackedFields.forEach(field => {
+      // Skip fields not included in this update (partial updates should not create false history entries)
+      if (!(field in player)) return;
+
       const oldValue = oldPlayer[field];
       const newValue = player[field];
 
