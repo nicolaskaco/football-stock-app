@@ -217,7 +217,7 @@ const buildArbitroStats = (jornadas, categoriaFiltro) => {
 
   return Object.values(map)
     .filter((d) => d.pj > 0)
-    .map((d) => ({ ...d, efectividad: ((d.g + d.e * 0.5) / d.pj) * 100 }))
+    .map((d) => ({ ...d, efectividad: ((d.g * 3 + d.e) / (d.pj * 3)) * 100 }))
     .sort((a, b) => b.pj - a.pj);
 };
 
@@ -548,7 +548,7 @@ const CanchaStatsTable = ({ data }) => {
   }
 
   const efect = (r) =>
-    r.pj > 0 ? (((r.g + r.e * 0.5) / r.pj) * 100).toFixed(1) + '%' : '—';
+    r.pj > 0 ? (((r.g * 3 + r.e) / (r.pj * 3)) * 100).toFixed(1) + '%' : '—';
   const dif = (r) => {
     const d = r.gf - r.gc;
     return d > 0 ? `+${d}` : `${d}`;
@@ -625,7 +625,7 @@ const CanchaStatsTable = ({ data }) => {
             <tfoot className="border-t-2 border-gray-300 bg-gray-50">
               <tr>
                 <td colSpan={9} className="px-4 py-2 text-xs text-gray-400 italic">
-                  Efect. = (Ganados + Empates×0.5) / PJ × 100
+                  Efect. = (Victorias×3 + Empates) / (PJ×3) × 100
                 </td>
               </tr>
             </tfoot>
@@ -643,7 +643,7 @@ const ArbitroStatsTable = ({ data }) => {
   const sorted = sortFn(data);
 
   const efect = (r) =>
-    r.pj > 0 ? (((r.g + r.e * 0.5) / r.pj) * 100).toFixed(1) + '%' : '—';
+    r.pj > 0 ? (((r.g * 3 + r.e) / (r.pj * 3)) * 100).toFixed(1) + '%' : '—';
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
