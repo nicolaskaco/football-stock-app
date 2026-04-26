@@ -215,7 +215,10 @@ const buildArbitroStats = (jornadas, categoriaFiltro) => {
     });
   });
 
-  return Object.values(map).filter((d) => d.pj > 0).sort((a, b) => b.pj - a.pj);
+  return Object.values(map)
+    .filter((d) => d.pj > 0)
+    .map((d) => ({ ...d, efectividad: ((d.g + d.e * 0.5) / d.pj) * 100 }))
+    .sort((a, b) => b.pj - a.pj);
 };
 
 // ─── Player filter ───────────────────────────────────────────────────────────
@@ -658,7 +661,7 @@ const ArbitroStatsTable = ({ data }) => {
                 <th className={`${thClass} text-center`} onClick={() => handleSort('p')}>P <SortIcon col="p" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('amarillas')}>🟨 <SortIcon col="amarillas" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('rojas')}>🟥 <SortIcon col="rojas" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('pj')}>Efect. <SortIcon col="pj" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('efectividad')}>Efect. <SortIcon col="efectividad" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
