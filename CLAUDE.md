@@ -68,6 +68,23 @@ Then work on changes in that branch for the remainder of the session.
 
 ---
 
+## Supabase Migrations — Required Boilerplate for New Tables
+
+From **October 30, 2026**, Supabase will no longer expose new `public` schema tables via the Data API (supabase-js / PostgREST) without explicit grants. Every migration that creates a new table **must** include:
+
+```sql
+-- Required: grant Data API access
+grant select, insert, update, delete on public.your_new_table to authenticated;
+grant select, insert, update, delete on public.your_new_table to service_role;
+
+-- Required: enable RLS (add policies as needed)
+alter table public.your_new_table enable row level security;
+```
+
+Without this, supabase-js will return a `42501` error when querying the new table. Existing tables (created before October 30, 2026) are not affected.
+
+---
+
 ## Additional Documentation
 
 Check these files when working on the relevant area:
