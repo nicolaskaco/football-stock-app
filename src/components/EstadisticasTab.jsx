@@ -193,7 +193,7 @@ const buildArbitroStats = (jornadas, categoriaFiltro) => {
       if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
 
       const key = partido.arbitro.trim();
-      if (!map[key]) map[key] = { arbitro: key, pj: 0, g: 0, e: 0, p: 0, amarillas: 0, rojas: 0, g_rivals: [], e_rivals: [], p_rivals: [] };
+      if (!map[key]) map[key] = { arbitro: key, pj: 0, g: 0, e: 0, p: 0, amarillas: 0, rojas: 0, g_rivals: [], e_rivals: [], p_rivals: [], partidos: [] };
 
       const s = map[key];
       s.pj++;
@@ -208,9 +208,25 @@ const buildArbitroStats = (jornadas, categoriaFiltro) => {
         else { s.e++; if (rivalName) s.e_rivals.push(rivalName); }
       }
 
+      const amarillasPartido = (partido.partido_eventos || []).filter((e) => e.tipo === 'amarilla').length;
+      const rojasPartido     = (partido.partido_eventos || []).filter((e) => e.tipo === 'roja').length;
+
       (partido.partido_eventos || []).forEach((e) => {
         if (e.tipo === 'amarilla') s.amarillas++;
         if (e.tipo === 'roja') s.rojas++;
+      });
+
+      s.partidos.push({
+        fecha:           jornada.fecha,
+        numero_jornada:  jornada.numero_jornada || null,
+        rival:           jornada.rivales?.name  || '—',
+        torneo:          jornada.torneos?.name  || '—',
+        categoria:       partido.categoria,
+        escenario:       partido.escenario,
+        goles_local:     partido.goles_local,
+        goles_visitante: partido.goles_visitante,
+        amarillas:       amarillasPartido,
+        rojas:           rojasPartido,
       });
     });
   });
@@ -641,6 +657,7 @@ const CanchaStatsTable = ({ data }) => {
 const ArbitroStatsTable = ({ data }) => {
   const { handleSort, sortFn, SortIcon } = useTableSort('pj');
   const sorted = sortFn(data);
+  const [selectedArbitro, setSelectedArbitro] = useState(null);
 
   const efect = (r) =>
     r.pj > 0 ? (((r.g * 3 + r.e) / (r.pj * 3)) * 100).toFixed(1) + '%' : '—';
@@ -668,7 +685,14 @@ const ArbitroStatsTable = ({ data }) => {
               {sorted.map((row) => (
                 <tr key={row.arbitro} className="hover:bg-gray-50">
                   <td className="px-3 py-2 font-medium text-gray-900">{row.arbitro}</td>
-                  <td className="px-3 py-2 text-center font-semibold text-gray-800">{row.pj}</td>
+                  <td className="px-3 py-2 text-center">
+                    <button
+                      className="font-semibold text-blue-600 hover:underline tabular-nums"
+                      onClick={() => setSelectedArbitro(row)}
+                    >
+                      {row.pj}
+                    </button>
+                  </td>
                   <td className="px-3 py-2 text-center font-bold text-green-700">
                     {row.g > 0 ? (
                       <div>
@@ -706,6 +730,69 @@ const ArbitroStatsTable = ({ data }) => {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {selectedArbitro && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
+              <h3 className="text-lg font-bold text-gray-900">
+                Partidos de {selectedArbitro.arbitro}
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  ({selectedArbitro.pj} partido{selectedArbitro.pj !== 1 ? 's' : ''})
+                </span>
+              </h3>
+              <button
+                onClick={() => setSelectedArbitro(null)}
+                className="text-gray-400 hover:text-gray-700 text-2xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 divide-y divide-gray-100">
+              {[...selectedArbitro.partidos]
+                .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                .map((p, i) => {
+                  const capGoles   = p.escenario === 'Local' ? p.goles_local    : p.goles_visitante;
+                  const rivalGoles = p.escenario === 'Local' ? p.goles_visitante : p.goles_local;
+                  const hasResult  = capGoles != null && rivalGoles != null;
+                  const resultado  = hasResult
+                    ? (capGoles > rivalGoles ? 'G' : capGoles < rivalGoles ? 'P' : 'E')
+                    : null;
+                  const badgeCls =
+                    resultado === 'G' ? 'bg-green-100 text-green-800' :
+                    resultado === 'P' ? 'bg-red-100 text-red-800'     :
+                    resultado === 'E' ? 'bg-gray-100 text-gray-700'   :
+                                       'bg-gray-50 text-gray-400';
+                  return (
+                    <div key={i} className="px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 text-sm">
+                          {p.rival}
+                          {p.numero_jornada && (
+                            <span className="ml-1 text-gray-400 font-normal">· Fecha {p.numero_jornada}</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {formatDate(p.fecha)} · {p.torneo} · {p.categoria} · {p.escenario}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        {hasResult ? (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${badgeCls}`}>
+                            {resultado} {p.goles_local} - {p.goles_visitante}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">Sin resultado</span>
+                        )}
+                        {p.amarillas > 0 && <span className="text-xs">🟨 {p.amarillas}</span>}
+                        {p.rojas     > 0 && <span className="text-xs">🟥 {p.rojas}</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
         </div>
       )}
     </div>
