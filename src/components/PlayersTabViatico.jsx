@@ -606,7 +606,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                 <td className="px-6 py-4 text-sm">
                   {player.contrato ? (
                     player.incluir_viatico_export ? (
-                      <span className="flex items-center gap-1">
+                      <span className="flex items-center gap-1 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Contrato</span>
                         <span className="text-xs font-semibold">+ ${(player.complemento || 0).toLocaleString()}</span>
                       </span>
