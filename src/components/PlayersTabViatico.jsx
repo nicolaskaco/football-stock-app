@@ -586,7 +586,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                   {player.contrato ? '-' : `$${player.viatico.toLocaleString()}`}
                 </td>
                 <td className="px-6 py-4 text-sm">
-                  {player.contrato ? '-' : (() => {
+                  {(player.contrato && !player.incluir_viatico_export) ? '-' : (() => {
                     const { valor, activo } = getComplementoEfectivo(player);
                     return (
                       <span className={activo ? 'font-semibold text-yellow-700' : ''}>
@@ -605,9 +605,14 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                 </td>
                 <td className="px-6 py-4 text-sm">
                   {player.contrato ? (
-                    <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
-                      Contrato
-                    </span>
+                    player.incluir_viatico_export ? (
+                      <span className="flex items-center gap-1">
+                        <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Contrato</span>
+                        <span className="font-semibold">+ ${(player.complemento || 0).toLocaleString()}</span>
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Contrato</span>
+                    )
                   ) : (
                     <span className="font-semibold">${calculateTotal(player).toLocaleString()}</span>
                   )}
