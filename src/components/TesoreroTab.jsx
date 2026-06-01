@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Lock, Download } from 'lucide-react';
+import { Lock, Download, Star } from 'lucide-react';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { calculateTotal } from '../utils/playerUtils';
@@ -40,7 +40,7 @@ const EXPORT_CATEGORIAS = [
   { key: 'Sub13', label: 'Sub 13' },
 ];
 
-export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
+export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEmail }) => {
   const { execute, isSaving } = useMutation();
 
   const s = (key) => appSettings[key] === 'true';
@@ -55,12 +55,26 @@ export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
       'Configuración actualizada'
     );
 
+  const handleToggleEspecial = (player) =>
+    execute(
+      async () => {
+        await database.updatePlayer(player.id, { incluir_viatico_export: !player.incluir_viatico_export }, currentUserEmail);
+        await onDataChange('players');
+      },
+      'Error al guardar',
+      player.incluir_viatico_export ? 'Excluido del export' : 'Incluido en el export'
+    );
+
+  const casosEspeciales = players.filter(
+    p => p.contrato && EXPORT_CATEGORIAS.some(c => c.key === p.categoria)
+  ).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
+
   const handleExport = () => {
     const workbook = XLSX.utils.book_new();
 
     EXPORT_CATEGORIAS.forEach(({ key, label }) => {
       const catPlayers = players
-        .filter(p => p.categoria === key && !p.contrato)
+        .filter(p => p.categoria === key && (!p.contrato || p.incluir_viatico_export))
         .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
 
       if (catPlayers.length === 0) return;
@@ -68,7 +82,7 @@ export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
       const data = catPlayers.map(p => ({
         'Nombre': p.name || '',
         'Cédula': p.gov_id || '',
-        'Total Viático': calculateTotal(p),
+        'Total Viático': p.contrato ? (p.complemento || 0) : calculateTotal(p),
         'Categoría': label,
       }));
 
@@ -151,7 +165,7 @@ export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
       <div className="bg-white rounded-lg shadow px-6 py-6">
         <h3 className="font-medium text-gray-900 mb-2">Exportar Viáticos</h3>
         <p className="text-sm text-gray-500 mb-4">
-          Genera un archivo Excel con los viáticos de todas las categorías formativas (excluye 3era y jugadores con contrato).
+          Genera un archivo Excel con los viáticos de todas las categorías formativas (excluye 3era). Jugadores con contrato se incluyen solo si están marcados como caso especial.
         </p>
         <button
           onClick={handleExport}
@@ -161,6 +175,45 @@ export const TesoreroTab = ({ players, appSettings, onDataChange }) => {
           Descargar Excel
         </button>
       </div>
+
+      {/* Casos especiales */}
+      {casosEspeciales.length > 0 && (
+        <div className="bg-white rounded-lg shadow px-6 py-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Star className="w-4 h-4 text-amber-500" />
+            <h3 className="font-medium text-gray-900">Casos especiales</h3>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Jugadores con contrato en categorías formativas. Activar el toggle los incluye en la exportación con su complemento.
+          </p>
+          <div className="space-y-3">
+            {casosEspeciales.map(p => (
+              <div key={p.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{p.name}</p>
+                  <p className="text-xs text-gray-500">
+                    {EXPORT_CATEGORIAS.find(c => c.key === p.categoria)?.label} · Complemento: ${(p.complemento || 0).toLocaleString('es-UY')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleToggleEspecial(p)}
+                  disabled={isSaving}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-50 flex-shrink-0 ml-4 ${
+                    p.incluir_viatico_export ? 'bg-amber-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      p.incluir_viatico_export ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

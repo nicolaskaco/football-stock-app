@@ -476,10 +476,10 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Complemento {(formData.contrato || financialFieldsDisabled) && <span className="text-red-500">(Deshabilitado)</span>}
+              Complemento {((formData.contrato && !formData.incluir_viatico_export) || financialFieldsDisabled) && <span className="text-red-500">(Deshabilitado)</span>}
             </label>
             <input type="text" inputMode="numeric" pattern="[0-9]*"
-              disabled={formData.contrato || readOnly || financialFieldsDisabled}
+              disabled={(formData.contrato && !formData.incluir_viatico_export) || readOnly || financialFieldsDisabled}
               value={formData.complemento ?? 0}
               onChange={(e) => {
                 const value = e.target.value === '' ? 0 : Math.min(99999, Math.max(0, parseInt(e.target.value) || 0));

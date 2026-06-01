@@ -93,13 +93,13 @@ export const ChangeRequestModal = ({ player, currentValues, onSubmit, onClose, i
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Nuevo Complemento *
-                  {newValues.contrato && <span className="text-red-500 ml-2">(Deshabilitado - Tiene Contrato)</span>}
+                  {(newValues.contrato && !player?.incluir_viatico_export) && <span className="text-red-500 ml-2">(Deshabilitado - Tiene Contrato)</span>}
                 </label>
                 <input
                   type="number"
                   value={newValues.complemento}
                   onChange={(e) => setNewValues({...newValues, complemento: parseInt(e.target.value) || 0})}
-                  disabled={newValues.contrato}
+                  disabled={newValues.contrato && !player?.incluir_viatico_export}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>

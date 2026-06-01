@@ -137,14 +137,14 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Complemento {formData.contrato && <span className="text-red-500">(Deshabilitado - Tiene Contrato)</span>}
+            Complemento {(formData.contrato && !formData.incluir_viatico_export) && <span className="text-red-500">(Deshabilitado - Tiene Contrato)</span>}
             {isPresidenteCategoria && !viaticosCongelados && <span className="text-orange-500"> (Requiere aprobación)</span>}
           </label>
           <input type="text" inputMode="numeric" pattern="[0-9]*"
-            disabled={readOnly || formData.contrato || isPresidenteCategoria || viaticosCongelados}
-            value={formData.complemento} 
-            onChange={(e) => setFormData({...formData, complemento: parseInt(e.target.value) || 0})} 
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" 
+            disabled={readOnly || (formData.contrato && !formData.incluir_viatico_export) || isPresidenteCategoria || viaticosCongelados}
+            value={formData.complemento}
+            onChange={(e) => setFormData({...formData, complemento: parseInt(e.target.value) || 0})}
+            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
         </div>
       </div>
