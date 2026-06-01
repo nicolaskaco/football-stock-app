@@ -344,7 +344,7 @@ export const AdminDashboard = ({
             players={players}
             appSettings={appSettings}
             onDataChange={onDataChange}
-            currentUser={currentUser}
+            currentUserEmail={currentUser?.email}
           />
         )}
         {activeTab === 'tarjetas' && canViewTarjetas && (
