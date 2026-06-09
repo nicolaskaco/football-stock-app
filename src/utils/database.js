@@ -1168,6 +1168,21 @@ export const database = {
     return data;
   },
 
+  async generatePasswordResetLink(email) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const headers = {};
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    const { data, error } = await supabase.functions.invoke('reset-password-link', {
+      headers,
+      body: { email, redirectTo: window.location.origin },
+    });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data; // { reset_link }
+  },
+
   async updateUserPermissions(email, updates) {
     const { error } = await supabase
       .from('user_permissions')
