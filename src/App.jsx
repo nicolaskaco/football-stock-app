@@ -4,6 +4,7 @@ import { LoginView } from './components/LoginView';
 import { AdminDashboard } from './components/AdminDashboard';
 import { EmployeeView } from './components/EmployeeView';
 import { SetPassword } from './components/SetPassword';
+import { PasswordReset } from './PasswordReset';
 import { PlayerFormPublic } from './forms/PlayerFormPublic';
 import PlayerLoginView from './components/PlayerLoginView';
 import PlayerQuestionnaire from './forms/PlayerQuestionnaire';
@@ -366,7 +367,10 @@ const App = () => {
           <div className="min-h-screen bg-gray-50">
             <HeaderComponent />
             {currentView === 'login' && (
-              <LoginView onLogin={handleLogin} />
+              <LoginView onLogin={handleLogin} onForgotPassword={() => setCurrentView('password-reset')} />
+            )}
+            {currentView === 'password-reset' && (
+              <PasswordReset onBack={() => setCurrentView('login')} />
             )}
             {currentView === 'dashboard' && (
               <AdminDashboard

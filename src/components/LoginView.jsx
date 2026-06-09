@@ -3,7 +3,7 @@ import { Package } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { useToast } from '../context/ToastContext';
 
-export const LoginView = ({ onLogin }) => {
+export const LoginView = ({ onLogin, onForgotPassword }) => {
   const { showToast } = useToast();
   const [isAdmin, setIsAdmin] = useState(true);
   const [email, setEmail] = useState('');
@@ -95,7 +95,7 @@ export const LoginView = ({ onLogin }) => {
         {isAdmin && (
           <div className="mt-4 text-center">
             <button
-              onClick={() => showToast('Contacte al administrador para restablecer su contraseña.', 'info')}
+              onClick={onForgotPassword}
               className="text-sm text-yellow-600 hover:text-yellow-700"
             >
               Olvidó contraseña?
