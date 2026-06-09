@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMountEffect } from '../hooks/useMountEffect';
-import { UserPlus, Pencil, Trash2, Shield, ChevronDown, ChevronUp, Copy, Check, Link } from 'lucide-react';
+import { UserPlus, Pencil, Trash2, Shield, ChevronDown, ChevronUp, Copy, Check, Link, KeyRound } from 'lucide-react';
 import { database } from '../utils/database';
 import { ALL_PERMISSION_KEYS } from '../forms/UserInviteForm';
 import { Modal } from './Modal';
@@ -35,6 +35,8 @@ export const UserManagementSection = () => {
   const [expanded, setExpanded] = useState(true);
   const [inviteLink, setInviteLink] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [resetLink, setResetLink] = useState(null);
+  const [resetCopied, setResetCopied] = useState(false);
   const { execute } = useMutation();
 
   const loadUsers = async () => {
@@ -94,6 +96,38 @@ export const UserManagementSection = () => {
       document.body.removeChild(ta);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleResetPassword = async (email) => {
+    await execute(
+      async () => {
+        const result = await database.generatePasswordResetLink(email);
+        if (result?.reset_link) {
+          setResetLink(result.reset_link);
+          setResetCopied(false);
+        }
+      },
+      'Error al generar enlace de restablecimiento',
+      'Enlace generado correctamente'
+    );
+  };
+
+  const handleCopyResetLink = async () => {
+    if (!resetLink) return;
+    try {
+      await navigator.clipboard.writeText(resetLink);
+      setResetCopied(true);
+      setTimeout(() => setResetCopied(false), 2000);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = resetLink;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      setResetCopied(true);
+      setTimeout(() => setResetCopied(false), 2000);
     }
   };
 
@@ -207,6 +241,13 @@ export const UserManagementSection = () => {
                                 <Pencil className="w-4 h-4" />
                               </button>
                               <button
+                                onClick={() => handleResetPassword(user.email)}
+                                title="Restablecer contraseña"
+                                className="p-1.5 text-gray-400 hover:text-yellow-600 rounded"
+                              >
+                                <KeyRound className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => setDeleteConfirm(user.email)}
                                 title="Eliminar"
                                 className="p-1.5 text-gray-400 hover:text-red-600 rounded"
@@ -258,6 +299,38 @@ export const UserManagementSection = () => {
           onConfirm={() => handleDelete(deleteConfirm)}
           onCancel={() => setDeleteConfirm(null)}
         />
+      )}
+
+      {/* Reset Password Link Modal */}
+      {resetLink && (
+        <Modal title="Enlace de Restablecimiento" onClose={() => setResetLink(null)}>
+          <div className="p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <KeyRound className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-gray-600">
+                Enviá este enlace al usuario para que restablezca su contraseña. El enlace expira en 24 horas.
+              </p>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+              <p className="text-xs text-gray-900 break-all font-mono select-all">{resetLink}</p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setResetLink(null)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={handleCopyResetLink}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-yellow-400 rounded-lg hover:bg-gray-800 text-sm font-medium"
+              >
+                {resetCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {resetCopied ? 'Copiado!' : 'Copiar Enlace'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* Invite Link Modal */}

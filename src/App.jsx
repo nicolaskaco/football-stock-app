@@ -86,8 +86,9 @@ const App = () => {
     const hashParams = new URLSearchParams(hash.slice(1));
     const tokenHash = hashParams.get('token_hash');
     const isInviteFlow = hash && (hash.includes('type=invite') || hash.includes('type=signup'));
+    const isRecoveryFlow = hash && hash.includes('type=recovery') && !!tokenHash;
 
-    // Single listener — handles both invite and password-recovery flows
+    // Single listener — handles invite, admin-generated recovery, and standard password-recovery flows
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY' || (isInviteFlow && session)) {
         setLoading(false);
@@ -117,6 +118,16 @@ const App = () => {
           setLoading(false);
         });
       }
+    } else if (isRecoveryFlow) {
+      // Admin-generated recovery link (WhatsApp-safe hash-fragment approach).
+      // verifyOtp exchanges the token; onAuthStateChange PASSWORD_RECOVERY fires → 'set-password' view.
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+        .then(({ error }) => {
+          if (error) {
+            // Token invalid/expired — fall through to login
+            setLoading(false);
+          }
+        });
     } else {
       checkSession();
     }
