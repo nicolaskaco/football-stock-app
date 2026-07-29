@@ -66,7 +66,7 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
     );
 
   const casosEspeciales = players.filter(
-    p => p.contrato && EXPORT_CATEGORIAS.some(c => c.key === p.categoria)
+    p => p.contrato && EXPORT_CATEGORIAS.some(c => c.key === p.categoria) && (!p.status || p.status === 'activo')
   ).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
 
   const handleExport = () => {
@@ -74,7 +74,7 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
 
     EXPORT_CATEGORIAS.forEach(({ key, label }) => {
       const catPlayers = players
-        .filter(p => p.categoria === key && (!p.contrato || p.incluir_viatico_export))
+        .filter(p => p.categoria === key && (!p.contrato || p.incluir_viatico_export) && (!p.status || p.status === 'activo'))
         .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
 
       if (catPlayers.length === 0) return;
