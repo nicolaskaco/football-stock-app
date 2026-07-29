@@ -8,6 +8,7 @@ const ROLES = [
   { value: 'presidente_categoria', label: 'Presidente de Categoría' },
   { value: 'delegado', label: 'Delegado' },
   { value: 'comision', label: 'Comisión' },
+  { value: 'coordinador', label: 'Coordinador' },
 ];
 
 const PERMISSION_GROUPS = [

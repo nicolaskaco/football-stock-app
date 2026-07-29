@@ -15,6 +15,7 @@ const ROLE_LABELS = {
   presidente_categoria: 'Pres. Categoría',
   delegado: 'Delegado',
   comision: 'Comisión',
+  coordinador: 'Coordinador',
 };
 
 const ROLE_COLORS = {
@@ -24,6 +25,7 @@ const ROLE_COLORS = {
   presidente_categoria: 'bg-amber-100 text-amber-700',
   delegado: 'bg-green-100 text-green-700',
   comision: 'bg-teal-100 text-teal-700',
+  coordinador: 'bg-cyan-100 text-cyan-700',
 };
 
 export const UserManagementSection = () => {
