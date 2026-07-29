@@ -466,7 +466,8 @@ export const database = {
     let query = supabase
       .from('players')
       .select('*')
-      .eq('hide_player', false);
+      .eq('hide_player', false)
+      .or('status.is.null,status.eq.activo');
 
     if (categorias && categorias.length > 0) {
       const cats = categorias.join(',');
@@ -523,6 +524,7 @@ export const database = {
       .from('players')
       .select('id, name, name_visual, categoria, categoria_juego, ficha_medica_hasta, gov_id, celular, tipo_documento')
       .eq('hide_player', false)
+      .or('status.is.null,status.eq.activo')
       .not('ficha_medica_hasta', 'is', null)
       .lte('ficha_medica_hasta', in30DaysStr)
       .order('ficha_medica_hasta', { ascending: true });

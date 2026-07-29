@@ -43,9 +43,10 @@ export const OverviewTab = ({
   // Scope analytics widgets to the user's accessible categories.
   // Cross-category players can appear in the global list (via partido RLS),
   // so we filter them out here to avoid leaking data in home page widgets.
+  const activePlayers = players.filter(p => !p.status || p.status === 'activo');
   const visiblePlayers = currentUser?.categoria?.length > 0
-    ? players.filter(p => currentUser.categoria.includes(p.categoria_juego || p.categoria))
-    : players;
+    ? activePlayers.filter(p => currentUser.categoria.includes(p.categoria_juego || p.categoria))
+    : activePlayers;
 
   const visiblePlayerIds = new Set(visiblePlayers.map(p => p.id));
   const visibleInjuries = injuries.filter(i => visiblePlayerIds.has(i.jugador_id));
