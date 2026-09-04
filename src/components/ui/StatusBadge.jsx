@@ -12,13 +12,14 @@ const STATUS_LABELS = {
   'dado de baja': 'Baja',
 };
 
-export function StatusBadge({ status }) {
+export function StatusBadge({ status, comment }) {
   if (!status || status === 'activo') return null;
   const style = STATUS_STYLES[status] || 'bg-gray-100 text-gray-600';
   const label = STATUS_LABELS[status] || status;
+  const title = comment ? `Estado: ${label} — ${comment}` : `Estado: ${label}`;
   return (
     <span
-      title={`Estado: ${label}`}
+      title={title}
       className={`inline-flex items-center px-1.5 py-0.5 text-xs font-semibold rounded-full ${style}`}
     >
       {label}

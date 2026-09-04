@@ -44,6 +44,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
     celular: '',
     tipo_documento: 'Cédula de Identidad',
     status: 'activo',
+    status_comment: '',
     madre_nombre: '',
     madre_telefono: '',
     padre_nombre: '',
@@ -279,6 +280,22 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               <option value="dado de baja">Dado de baja</option>
             </select>
           </div>
+
+          {formData.status !== 'activo' && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Comentario sobre el Estado
+              </label>
+              <textarea
+                rows="3"
+                value={formData.status_comment || ''}
+                onChange={(e) => setFormData({ ...formData, status_comment: e.target.value })}
+                disabled={readOnly}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder="Motivo o notas sobre el estado del jugador..."
+              />
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
