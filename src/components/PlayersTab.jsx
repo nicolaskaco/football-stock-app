@@ -1113,7 +1113,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                       {activeInjuryMap[player.id] && <InjuryIcon injury={activeInjuryMap[player.id]} />}
                       <SuspensionIcon suspension={suspensionsMap.get(player.categoria_juego || player.categoria)?.get(player.id)} />
                       {(() => { const cat = player.categoria_juego || player.categoria; const r = isPlayerOverAge(player, cat, appSettings); return r.overAge ? <OverAgeIcon birthYear={r.birthYear} minYear={r.minYear} /> : null; })()}
-                      <StatusBadge status={player.status} />
+                      <StatusBadge status={player.status} comment={player.status_comment} />
                       <ViandaIcons count={player.vianda} />
                     </div>
                     {player.name_visual && player.name_visual !== player.name && (
