@@ -3,6 +3,11 @@ import { AlertTriangle } from 'lucide-react';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { getCurrentSuspensionsByCategory, getYellowCountsByCategory } from '../utils/suspensions';
 
+// Discovers the players who received any card this year, keyed by playerId::categoria.
+// It only builds the rows — `amarillas` is filled in from getYellowCountsByCategory so the
+// figure shown is the reset-aware counter. Red cards are not tallied here: this widget only
+// reports who is unavailable for the next match, and an already-served red says nothing
+// about that. Yearly red totals live in TarjetasTab / EstadisticasTab.
 const buildCardStats = (jornadas, players) => {
   const currentYear = new Date().getFullYear();
   const playerMap = {};
@@ -27,10 +32,8 @@ const buildCardStats = (jornadas, players) => {
               name: playerMap[e.player_id].name,
               categoria: cat,
               amarillas: 0, // filled in from getYellowCountsByCategory (reset-aware)
-              rojas: 0,
             };
           }
-          if (e.tipo === 'roja') map[key].rojas++;
         });
       });
     });
@@ -80,7 +83,7 @@ export const SuspensionWidget = ({ jornadas = [], players = [], currentUser }) =
       const aSusp = a.suspension ? 1 : 0;
       const bSusp = b.suspension ? 1 : 0;
       if (bSusp !== aSusp) return bSusp - aSusp;
-      return b.amarillas - a.amarillas || b.rojas - a.rojas;
+      return b.amarillas - a.amarillas;
     });
 
     return list;
@@ -151,11 +154,6 @@ export const SuspensionWidget = ({ jornadas = [], players = [], currentUser }) =
                 <span className="inline-block px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 font-semibold text-xs">
                   🟨 {row.amarillas}
                 </span>
-                {row.rojas > 0 && (
-                  <span className="inline-block px-2 py-0.5 rounded bg-red-100 text-red-800 font-semibold text-xs">
-                    🟥 {row.rojas}
-                  </span>
-                )}
                 {row.suspension && (
                   <div className="flex flex-col items-center">
                     <span className="inline-block px-2 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-bold tracking-wide">
