@@ -4,39 +4,54 @@ import { CATEGORIAS_PARTIDO } from './constants';
  * Walks jornadas 0..uptoIdx-1 for a given categoria and simulates a running
  * yellow-card counter per player: +1 per yellow, reset to 0 (and suspension
  * fired) on the 5th, and reset to 0 (no suspension from the reset itself)
- * whenever the player receives a red card. Events within the same jornada
- * are processed in chronological order (by minuto) so a red card correctly
- * wipes out yellows earned earlier in the same partido.
+ * whenever the player receives a red card.
  *
- * Returns Map<playerId, { reason }> for players whose 5th-yellow milestone
- * landed exactly in jornada (uptoIdx - 1), i.e. whose suspension applies to
- * jornada uptoIdx.
+ * A red card wipes every yellow the player got in that SAME partido, regardless
+ * of `minuto` — the field is optional and PartidoForm stores minute 0 as null,
+ * so it cannot be trusted for ordering. A player cannot earn a yellow after
+ * being sent off anyway.
+ *
+ * Returns { counters, suspendedAt }:
+ *   counters[playerId]    -> running count since that player's last reset
+ *   suspendedAt[playerId] -> jornada index where their 5th yellow landed
  */
-function computeYellowSuspension(yearJornadas, categoria, uptoIdx) {
-  const counters = {}; // playerId -> running count since last reset
-  const suspendedAt = {}; // playerId -> jornada index where the 5th yellow landed
+function walkYellowCounters(yearJornadas, categoria, uptoIdx) {
+  const counters = {};
+  const suspendedAt = {};
 
   for (let i = 0; i < uptoIdx; i++) {
     const partido = (yearJornadas[i].partidos || []).find((p) => p.categoria === categoria);
     if (!partido) continue;
 
-    const events = (partido.partido_eventos || [])
-      .filter((e) => e.player_id && (e.tipo === 'amarilla' || e.tipo === 'roja'))
-      .sort((a, b) => (a.minuto ?? 0) - (b.minuto ?? 0));
+    const eventos = (partido.partido_eventos || []).filter((e) => e.player_id);
+    const expulsados = new Set(
+      eventos.filter((e) => e.tipo === 'roja').map((e) => e.player_id)
+    );
 
-    for (const e of events) {
+    for (const e of eventos) {
+      if (e.tipo !== 'amarilla') continue;
       const pid = e.player_id;
-      if (e.tipo === 'roja') {
-        counters[pid] = 0;
-        continue;
-      }
+      if (expulsados.has(pid)) continue; // wiped by the red in this same partido
       counters[pid] = (counters[pid] || 0) + 1;
       if (counters[pid] === 5) {
         counters[pid] = 0;
         suspendedAt[pid] = i;
       }
     }
+
+    for (const pid of expulsados) counters[pid] = 0;
   }
+
+  return { counters, suspendedAt };
+}
+
+/**
+ * Returns Map<playerId, { reason }> for players whose 5th-yellow milestone
+ * landed exactly in jornada (uptoIdx - 1), i.e. whose suspension applies to
+ * jornada uptoIdx.
+ */
+function computeYellowSuspension(yearJornadas, categoria, uptoIdx) {
+  const { suspendedAt } = walkYellowCounters(yearJornadas, categoria, uptoIdx);
 
   const result = new Map();
   for (const [pid, jornadaIdx] of Object.entries(suspendedAt)) {
@@ -166,6 +181,31 @@ export function getCurrentSuspensionsByCategory(jornadas) {
       // nextIdx === 0 means the first jornada is upcoming — no previous jornada
       result.set(cat, new Map());
     }
+  }
+
+  return result;
+}
+
+/**
+ * Current running yellow-card counter per player, per categoria, after red-card resets.
+ *
+ * This is the number the Suspensiones widget and the Tarjetas tab must display: the raw
+ * yearly total is NOT what counts toward the 5-yellow suspension, since any red card
+ * resets the counter back to 0.
+ *
+ * Returns Map<categoria, Map<playerId, number>>
+ */
+export function getYellowCountsByCategory(jornadas) {
+  const result = new Map();
+  const currentYear = new Date().getFullYear();
+
+  const yearJornadas = jornadas
+    .filter((j) => new Date(j.fecha).getFullYear() === currentYear)
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+
+  for (const cat of CATEGORIAS_PARTIDO) {
+    const { counters } = walkYellowCounters(yearJornadas, cat, yearJornadas.length);
+    result.set(cat, new Map(Object.entries(counters)));
   }
 
   return result;

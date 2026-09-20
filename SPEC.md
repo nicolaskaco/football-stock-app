@@ -368,7 +368,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
 | [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit (name only) |
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
-| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (red card in previous jornada or 5th yellow milestone) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. |
+| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (active red card suspension, or running yellow counter reached 5 in the previous jornada) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. |
 | [InjuryForm.jsx](src/forms/InjuryForm.jsx) | Injury registration/editing: tipo (Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro), severidad (leve/moderada/grave), descripción, fecha_inicio, fecha_retorno_estimada, fecha_alta. Admin-only. |
 | [TareaForm.jsx](src/forms/TareaForm.jsx) | Task add/edit. Fields: título (required), descripción (textarea), prioridad (Urgente/Muy Alta/Alta/Media/Baja), estado (Sin Asignar/Sin Comenzar/En Progreso/Completado), asignado a (Dirigente or Funcionario — combined `<optgroup>` select; auto-advances estado from "Sin Asignar" to "Sin Comenzar" when an assignee is chosen), sprint (defaults to active sprint via `defaultSprintId` prop), fecha estimada. |
 | [UserInviteForm.jsx](src/forms/UserInviteForm.jsx) | Invite / edit-permissions form. Fields: email (disabled in edit mode), role dropdown, 18 grouped permission checkboxes with select-all/none per group, and category chip multi-select. Used by `UserManagementSection` for both invite and edit flows. |
@@ -605,14 +605,16 @@ Players have a `status` field that tracks their current state: `activo` (default
 
 Automatic suspension tracking based on card accumulation. A player is suspended for jornada J if:
 - They received a **red card** in a prior jornada and the suspension still covers J. Red cards carry a `fechas_suspension` count (default 1). A red card at jornada index `i` with `fechas_suspension=N` suspends the player for jornadas `i+1` through `i+N`. The reason shows remaining games (e.g., "Roja (3 fechas)", "Roja (última fecha)").
-- Their cumulative yellow card count crossed a **multiple of 5** (5th, 10th, 15th, etc.) in the immediately previous jornada.
+- Their **running yellow card counter** reached 5 in the immediately previous jornada. The counter fires at 5 and immediately resets to 0, so the next suspension needs 5 fresh yellows.
 
-Yellow cards accumulate across the full calendar year (no Apertura/Clausura reset). Cards count toward the match's category, not the player's home category.
+Yellow cards accumulate across the full calendar year (no Apertura/Clausura reset), **but any red card resets the player's counter to 0** — including yellows the player received in that same partido (the `minuto` field is optional, so it is not used for ordering). Cards count toward the match's category, not the player's home category.
 
-- **`src/utils/suspensions.js`**: Core logic — `getSuspensionMap()` for a specific jornada, `getCurrentSuspensionsByCategory()` for all categories.
+- **`src/utils/suspensions.js`**: Core logic — `getSuspensionMap()` for a specific jornada, `getCurrentSuspensionsByCategory()` for all categories, `getYellowCountsByCategory()` for the running counters the UI displays.
 - **PartidoForm**: Suspended players are disabled in lineup dropdowns with 🚫 prefix, red background, and "SUSPENDIDO (reason)" label. When recording a red card, a "fechas" input lets coaches set the suspension length (default 1).
-- **TarjetasTab**: "SUSPENDIDO" badge with reason shown in the Estado column (includes remaining game count for multi-game suspensions).
-- **SuspensionWidget** (OverviewTab): Shows players with 2+ yellows and currently suspended players; category filter pills; requires `can_view_tarjetas`.
+- **TarjetasTab**: "SUSPENDIDO" badge with reason shown in the Estado column (includes remaining game count for multi-game suspensions). The Amarillas column (and the Excel export) shows the **running counter since the player's last reset**, not the raw yearly total.
+- **SuspensionWidget** (OverviewTab): Shows players with 2+ yellows and currently suspended players; category filter pills; requires `can_view_tarjetas`. The 🟨 figure is the same running counter used for the suspension decision, so a player whose counter was wiped by a red card drops out of the list. The widget shows **no red-card count** — it only answers who is unavailable for the next match, and an already-served red (e.g. from jornada 1) says nothing about that; an active red suspension is conveyed by the SUSPENDIDO badge and its "Roja (N fechas)" reason instead.
+
+Raw lifetime card totals are still shown as-is in the statistics surfaces (`EstadisticasTab`, `PlayerForm`, `PlayerComparisonModal`, `CardDistributionChart`) — those report what happened, not what counts toward a suspension.
 
 ### Age Eligibility Alerts
 
@@ -941,8 +943,9 @@ All shared enums are centralized here — never defined inline in components:
 
 | Export | Description |
 |--------|-------------|
-| `getSuspensionMap(jornadas, targetJornadaId, categoria)` | Returns `Map<playerId, { reason }>` for players suspended for a specific jornada + category. A player is suspended if a prior red card's `fechas_suspension` range still covers this jornada, or their cumulative yellow count crossed a multiple of 5 in the previous jornada. Yellow cards accumulate across the full calendar year. Reason includes remaining games for multi-game suspensions. |
+| `getSuspensionMap(jornadas, targetJornadaId, categoria)` | Returns `Map<playerId, { reason }>` for players suspended for a specific jornada + category. A player is suspended if a prior red card's `fechas_suspension` range still covers this jornada, or their running yellow counter reached 5 in the previous jornada. Yellow cards accumulate across the full calendar year, but any red card resets the counter to 0 (same-partido yellows included). Reason includes remaining games for multi-game suspensions. |
 | `getCurrentSuspensionsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, { reason }>>` for all categories. "Current" = suspended for the next upcoming jornada. If all jornadas are in the past, treats the last jornada as if there were a virtual next one. |
+| `getYellowCountsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, number>>` with each player's **current running yellow counter** after red-card resets. This is the figure `SuspensionWidget` and `TarjetasTab` must display — the raw yearly total is not what counts toward the 5-yellow suspension. |
 
 ### Age Eligibility Utilities (`src/utils/ageEligibility.js`)
 
@@ -1100,7 +1103,7 @@ football-stock-app/
         ├── dateUtils.js           # Date formatting and age calculation helpers
         ├── pdfExport.js           # Dashboard PDF report generation
         ├── playerUtils.js         # Player business logic (calculateTotal)
-        ├── suspensions.js         # Suspension logic (red card / 5th yellow milestone)
+        ├── suspensions.js         # Suspension logic (red card / 5th yellow; red resets the counter)
         ├── ageEligibility.js      # Over-age detection per category (configurable max age)
         └── storage.js             # Legacy localStorage wrapper (largely unused)
 supabase/

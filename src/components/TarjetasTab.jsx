@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
-import { getCurrentSuspensionsByCategory } from '../utils/suspensions';
+import { getCurrentSuspensionsByCategory, getYellowCountsByCategory } from '../utils/suspensions';
 
 const buildCardStats = (jornadas, players) => {
   const currentYear = new Date().getFullYear();
@@ -30,11 +30,10 @@ const buildCardStats = (jornadas, players) => {
               id: e.player_id,
               name: playerMap[e.player_id].name,
               categoria: cat,
-              amarillas: 0,
+              amarillas: 0, // filled in from getYellowCountsByCategory (reset-aware)
               rojas: 0,
             };
           }
-          if (e.tipo === 'amarilla') map[key].amarillas++;
           if (e.tipo === 'roja') map[key].rojas++;
         });
       });
@@ -109,7 +108,18 @@ export const TarjetasTab = ({ jornadas = [], players = [], currentUser }) => {
     });
   };
 
-  const allRows = useMemo(() => buildCardStats(jornadas, players), [jornadas, players]);
+  const yellowCounts = useMemo(() => getYellowCountsByCategory(jornadas), [jornadas]);
+
+  // Amarillas shown here is the running counter since the player's last reset
+  // (a red card zeroes it), not the raw yearly total — that is what counts toward
+  // the 5-yellow suspension.
+  const allRows = useMemo(
+    () => buildCardStats(jornadas, players).map((r) => ({
+      ...r,
+      amarillas: yellowCounts.get(r.categoria)?.get(r.id) ?? 0,
+    })),
+    [jornadas, players, yellowCounts]
+  );
 
   const suspensions = useMemo(() => getCurrentSuspensionsByCategory(jornadas), [jornadas]);
 
