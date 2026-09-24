@@ -113,9 +113,16 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     );
   };
 
-  // Jugadores filtrados según las categorías activas
+  // IDs ya usados en titulares o suplentes (para evitar duplicados)
+  const usedIds = new Set([
+    ...titulares.map((t) => t.player_id),
+    ...suplentes.map((s) => s.player_id),
+  ].filter(Boolean));
+
+  // Jugadores filtrados según las categorías activas, sin los que exceden la edad de la categoría del partido
   const jugadoresCategoria = players
     .filter((p) => categoriasActivas.includes(p.categoria) || categoriasActivas.includes(p.categoria_juego))
+    .filter((p) => !isPlayerOverAge(p, categoria, appSettings).overAge)
     .sort((a, b) => {
       // Primero los de la categoría propia, luego el resto por categoría
       const aPropia = (a.categoria === categoria || a.categoria_juego === categoria) ? 0 : 1;
@@ -124,19 +131,15 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
       return (a.name_visual || a.name).localeCompare(b.name_visual || b.name);
     });
 
-  // Para slots pre-cargados con jugadores de otra categoría, inyectar solo ese jugador
+  // Opciones de un slot: sin los ya convocados en otros slots.
+  // Para slots pre-cargados con jugadores fuera del filtro, inyectar solo ese jugador
   const getOptionsForSlot = (currentPlayerId) => {
-    if (!currentPlayerId) return jugadoresCategoria;
-    if (jugadoresCategoria.some((p) => p.id === currentPlayerId)) return jugadoresCategoria;
+    const disponibles = jugadoresCategoria.filter((p) => !usedIds.has(p.id) || p.id === currentPlayerId);
+    if (!currentPlayerId) return disponibles;
+    if (disponibles.some((p) => p.id === currentPlayerId)) return disponibles;
     const savedPlayer = players.find((p) => p.id === currentPlayerId);
-    return savedPlayer ? [...jugadoresCategoria, savedPlayer] : jugadoresCategoria;
+    return savedPlayer ? [...disponibles, savedPlayer] : disponibles;
   };
-
-  // IDs ya usados en titulares o suplentes (para evitar duplicados)
-  const usedIds = new Set([
-    ...titulares.map((t) => t.player_id),
-    ...suplentes.map((s) => s.player_id),
-  ].filter(Boolean));
 
   const updateTitular = (index, field, value) => {
     setTitulares((prev) => prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)));
@@ -385,7 +388,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                     <option
                       key={p.id}
                       value={p.id}
-                      disabled={(usedIds.has(p.id) && t.player_id !== p.id) || suspended}
+                      disabled={suspended}
                       style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
                     >
                       {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
@@ -444,7 +447,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                     <option
                       key={p.id}
                       value={p.id}
-                      disabled={(usedIds.has(p.id) && s.player_id !== p.id) || suspended}
+                      disabled={suspended}
                       style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
                     >
                       {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
