@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
+import { resolveMarcador } from '../utils/playerStats';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 import { GoalTrendChart } from './charts/GoalTrendChart';
@@ -104,13 +105,7 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
     (jornada.partidos || []).forEach((partido) => {
       if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
 
-      const capGoles   = partido.escenario === 'Local' ? partido.goles_local    : partido.goles_visitante;
-      const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
-
-      let resultado = null;
-      if (capGoles != null && rivalGoles != null) {
-        resultado = capGoles > rivalGoles ? 'G' : capGoles < rivalGoles ? 'P' : 'E';
-      }
+      const { capGoles, rivalGoles, resultado } = resolveMarcador(partido);
 
       // Agrupar goles por jugador
       const golesMap = {};
@@ -198,15 +193,12 @@ const buildArbitroStats = (jornadas, categoriaFiltro) => {
       const s = map[key];
       s.pj++;
 
-      const capGoles   = partido.escenario === 'Local' ? partido.goles_local    : partido.goles_visitante;
-      const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
-      const rivalName  = jornada.rivales?.name || null;
+      const { resultado } = resolveMarcador(partido);
+      const rivalName = jornada.rivales?.name || null;
 
-      if (capGoles != null && rivalGoles != null) {
-        if (capGoles > rivalGoles) { s.g++; if (rivalName) s.g_rivals.push(rivalName); }
-        else if (capGoles < rivalGoles) { s.p++; if (rivalName) s.p_rivals.push(rivalName); }
-        else { s.e++; if (rivalName) s.e_rivals.push(rivalName); }
-      }
+      if (resultado === 'G') { s.g++; if (rivalName) s.g_rivals.push(rivalName); }
+      else if (resultado === 'P') { s.p++; if (rivalName) s.p_rivals.push(rivalName); }
+      else if (resultado === 'E') { s.e++; if (rivalName) s.e_rivals.push(rivalName); }
 
       const amarillasPartido = (partido.partido_eventos || []).filter((e) => e.tipo === 'amarilla').length;
       const rojasPartido     = (partido.partido_eventos || []).filter((e) => e.tipo === 'roja').length;
@@ -753,12 +745,8 @@ const ArbitroStatsTable = ({ data }) => {
               {[...selectedArbitro.partidos]
                 .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
                 .map((p, i) => {
-                  const capGoles   = p.escenario === 'Local' ? p.goles_local    : p.goles_visitante;
-                  const rivalGoles = p.escenario === 'Local' ? p.goles_visitante : p.goles_local;
-                  const hasResult  = capGoles != null && rivalGoles != null;
-                  const resultado  = hasResult
-                    ? (capGoles > rivalGoles ? 'G' : capGoles < rivalGoles ? 'P' : 'E')
-                    : null;
+                  const { resultado } = resolveMarcador(p);
+                  const hasResult = resultado != null;
                   const badgeCls =
                     resultado === 'G' ? 'bg-green-100 text-green-800' :
                     resultado === 'P' ? 'bg-red-100 text-red-800'     :

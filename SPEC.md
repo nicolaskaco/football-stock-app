@@ -221,6 +221,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `categoria` | text | One of `CATEGORIAS_PARTIDO` |
 | `escenario` | text | `'Local'` \| `'Visitante'` |
 | `cesped` | text | `'Natural'` \| `'Sintético'` (default: Local→Sintético, Visitante→Natural) |
+| `cancha` | text | nullable — one of `CANCHAS_LOCAL`; only set when `escenario = 'Local'`, otherwise null |
 | `goles_local` | integer | nullable — filled after the match |
 | `goles_visitante` | integer | nullable — filled after the match |
 | `comentario` | text | nullable — freetext match notes |
@@ -297,6 +298,7 @@ Bucket: `player-documents` (private)
 | `partidos` | Partidos | `can_view_partidos` |
 | `reports` | Reportes | `can_access_ropa` **and** `reportes_tab_enabled` app setting |
 | `estadisticas` | Estadísticas | `can_view_partidos` **and** `estadisticas_tab_enabled` app setting |
+| `estadisticas_jugadores` | Estadísticas Jugadores | `can_view_partidos` **and** `estadisticas_jugadores_tab_enabled` app setting |
 | `tarjetas` | Tarjetas | `can_view_tarjetas` |
 | `configuracion` | Configuración (includes User Management) | `role = 'admin'` only |
 
@@ -591,6 +593,30 @@ Side-by-side comparison modal for 2-3 selected players.
 - **AdminDashboard**: Passes `jornadas` prop to PlayersTab for the comparison chart data.
 - **Export to Excel**: Generates a `.xlsx` file named `comparacion_Player1_vs_Player2.xlsx` containing all comparison sections.
 - **Copy to clipboard**: Copies the comparison as tab-separated text via `navigator.clipboard.writeText()`.
+
+### Estadísticas Jugadores (Individual Player Analytics)
+
+Dedicated tab (`estadisticas_jugadores`) for deep per-player analysis. Search a player to see their full profile, or select 2-3 to compare side by side. Gated by `can_view_partidos` **and** the `estadisticas_jugadores_tab_enabled` app setting.
+
+All figures are computed in the browser from the existing `jornadas` payload — **no new queries or tables**. The engine is `src/utils/playerStats.js`; see §8 for its exports.
+
+- **Filters** (all persisted in URL params so a view is shareable): `ej_cat` (categoría), `ej_year` (año), `ej_q` (búsqueda), `ej_p` (hasta 3 player ids seleccionados).
+- **Search list** only offers players who actually played matches under the current filters, further restricted to the categories in `currentUser.categoria` when set.
+- **PlayerFichaView** (1 player selected) — sections:
+  - *Lo básico*: PJ, goles, G/PJ, amarillas, rojas, % titularidad.
+  - *Análisis por minuto*: goles y tarjetas por tramo (0-15 / 16-30 / 31-45 / 46-60 / 61-75 / 76-90+) como gráfico de barras, 1er vs. 2do tiempo, minuto promedio de gol.
+  - *Cruces con el resultado*: récord G/E/P con él en cancha, y % de victorias cuando marca / no marca, de titular / suplente, con tarjeta / sin tarjeta.
+  - *Cruces con el contexto*: tablas por escenario (Local/Visitante), césped (Natural/Sintético), las 4 combinaciones escenario×césped, e historial contra cada rival.
+  - *Rachas y logros*: rachas actual y máxima (con gol, sin tarjeta, invicto), dobletes, hat-tricks, goles desde el banco, y los goles 10/25/50/100.
+  - *Disciplina*: amarillas acumuladas y cuánto falta para la suspensión, leído de `suspensions.js` (año en curso, ignora el filtro de año).
+- **PlayerCompareView** (2-3 players) — the same metrics in a side-by-side table with best-value highlighting, a grouped minute-band chart, and Excel / clipboard export.
+
+**Sample-size guard**: `app_settings.stats_min_muestra` (default `5`, configurable in ConfiguracionTab) sets the minimum number of matches before a percentage is shown as reliable. Every percentage is always rendered with its `(n=X)`; below the threshold it is dimmed and flagged "muestra chica", so a "100% de victorias en sintético" over 1 match cannot be read as meaningful.
+
+**Data limitations** (reflected in the UI, not worked around):
+- `partido_eventos.minuto` is nullable and `PartidoForm` stores minute 0 as null, so minute-based sections only count events that have a minute and display how many were excluded.
+- Matches without a scoreline (`goles_local`/`goles_visitante` null) count toward PJ and goles but are excluded from every G/E/P cross.
+- Minutes played and goals-per-90 are not computable — there is no `minuto_entrada`/`minuto_salida` on `partido_players`. Assists are not recorded either.
 
 ### Player Status
 
@@ -946,6 +972,25 @@ All shared enums are centralized here — never defined inline in components:
 | `getSuspensionMap(jornadas, targetJornadaId, categoria)` | Returns `Map<playerId, { reason }>` for players suspended for a specific jornada + category. A player is suspended if a prior red card's `fechas_suspension` range still covers this jornada, or their running yellow counter reached 5 in the previous jornada. Yellow cards accumulate across the full calendar year, but any red card resets the counter to 0 (same-partido yellows included). Reason includes remaining games for multi-game suspensions. |
 | `getCurrentSuspensionsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, { reason }>>` for all categories. "Current" = suspended for the next upcoming jornada. If all jornadas are in the past, treats the last jornada as if there were a virtual next one. |
 | `getYellowCountsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, number>>` with each player's **current running yellow counter** after red-card resets. This is the figure `SuspensionWidget` and `TarjetasTab` must display — the raw yearly total is not what counts toward the 5-yellow suspension. |
+
+### Player Stats Utilities (`src/utils/playerStats.js`)
+
+Pure, hook-free engine behind the **Estadísticas Jugadores** tab. Everything derives from a single per-player match log, so no selector re-walks `jornadas`.
+
+| Export | Description |
+|--------|-------------|
+| `resolveMarcador(partido)` | Returns `{ capGoles, rivalGoles, resultado }` orienting the scoreline to CAP via `escenario`. `resultado` is `'G'｜'E'｜'P'｜null` (null when either score is missing). **Shared with `EstadisticasTab`** so both surfaces use one definition. |
+| `buildPlayerMatchLog(jornadas, playerId, { categoria, year })` | The core: chronologically ascending array of that player's matches, each carrying context (rival, escenario, cesped, cancha), the scoreline, `tipo` (titular/suplente) and their goles/tarjetas with minutes. `categoria` filters by the **match** category, matching `EstadisticasTab`. |
+| `getTotales(log)` | PJ, titular, suplente, `pctTitularidad`, goles, amarillas, rojas, `golesPorPartido`. |
+| `getTramos(log)` / `getTiempos(log)` | Goals and cards per minute band (`TRAMOS`) / per half, each with a `sinMinuto` count of events excluded for having no minute. |
+| `getMinutoPromedioGol(log)` | `{ promedio, n }` over goals that have a minute. |
+| `getRecord(log)` | `{ pj, g, e, p, pctVictorias }`. **`pj` counts only matches with a scoreline** — it is the sample size the UI must show next to the percentage. |
+| `getCuandoMarca` / `getPorTipo` / `getConTarjeta` | Paired `Record`s splitting the log by whether he scored, started, or was booked. |
+| `getPorEscenario` / `getPorCesped` / `getCombinaciones` / `getPorRival` | Context blocks: `Record` + goles + `golesPorPartido` + tarjetas, plus `pjTotal` (all matches, including those without a scoreline). |
+| `getRachas(log)` | `{ actual, maxima }` for consecutive matches scoring, without a card, and unbeaten. Matches with no scoreline neither break nor extend the unbeaten streak. |
+| `getHitos(log)` | Dobletes, hat-tricks, goals off the bench, the match where goal 10/25/50/100 landed, and `proximoHito`. |
+| `getDisciplina(yellowCounts, suspensions, playerId, categorias)` | Formats the maps from `suspensions.js` into per-category `{ amarillas, faltan, suspension }`. Does **not** recount cards. |
+| `TRAMOS`, `AMARILLAS_PARA_SUSPENSION`, `fmtPct`, `fmtRatio`, `fmtMinuto` | Shared constants and formatters. |
 
 ### Age Eligibility Utilities (`src/utils/ageEligibility.js`)
 
