@@ -1,8 +1,7 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TRAMOS } from '../../utils/playerStats';
-
-const PALETTE = ['#D4A017', '#1F2937', '#0D9488'];
+import { useChartPalette } from '../../hooks/useChartPalette';
 
 /**
  * Barras por tramo del partido (0-15 … 76-90+).
@@ -12,6 +11,8 @@ const PALETTE = ['#D4A017', '#1F2937', '#0D9488'];
  * con 2-3 series muestra la comparación agrupada.
  */
 export const GolesPorTramoChart = ({ series = [], title = 'Goles por Tramo del Partido', height = 300 }) => {
+  const palette = useChartPalette();
+
   const data = TRAMOS.map((t) => {
     const point = { tramo: t.label };
     series.forEach((s) => { point[s.name] = s.tramos?.[t.key] || 0; });
@@ -34,7 +35,7 @@ export const GolesPorTramoChart = ({ series = [], title = 'Goles por Tramo del P
             <Tooltip />
             {series.length > 1 && <Legend wrapperStyle={{ fontSize: 12 }} />}
             {series.map((s, i) => (
-              <Bar key={s.name} dataKey={s.name} fill={PALETTE[i % PALETTE.length]} radius={[4, 4, 0, 0]} />
+              <Bar key={s.name} dataKey={s.name} fill={palette[i % palette.length]} radius={[4, 4, 0, 0]} />
             ))}
           </BarChart>
         </ResponsiveContainer>

@@ -10,8 +10,7 @@ import {
 } from '../../utils/playerStats';
 import { Row, SectionHeader } from './CompareRow';
 import { GolesPorTramoChart } from '../charts/GolesPorTramoChart';
-
-const COLORS = ['#D4A017', '#1F2937', '#0D9488'];
+import { useChartPalette, contrastText } from '../../hooks/useChartPalette';
 
 /**
  * Porcentaje para la tabla comparativa. Devuelve el string ya formateado con
@@ -32,6 +31,7 @@ export const PlayerCompareView = ({
   minMuestra = 5,
 }) => {
   const names = players.map((p) => p.name_visual || p.name);
+  const palette = useChartPalette();
 
   const data = useMemo(
     () =>
@@ -165,8 +165,11 @@ export const PlayerCompareView = ({
                 <th key={d.player.id} className="py-3 px-3 text-center">
                   <div className="flex flex-col items-center gap-1">
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg"
-                      style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg"
+                      style={{
+                        backgroundColor: palette[i % palette.length],
+                        color: contrastText(palette[i % palette.length]),
+                      }}
                     >
                       {names[i].charAt(0)}
                     </div>

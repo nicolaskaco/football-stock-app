@@ -6,8 +6,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { Download, Copy } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Row, SectionHeader } from './playerstats/CompareRow';
-
-const COLORS = ['#D4A017', '#1F2937', '#0D9488'];
+import { useChartPalette, contrastText } from '../hooks/useChartPalette';
 
 const buildPlayerStats = (jornadas, playerIds) => {
   const map = {};
@@ -70,6 +69,7 @@ const buildGoalTimeline = (jornadas, playerIds, playerNames) => {
 export const PlayerComparisonModal = ({ players = [], jornadas = [], injuries = [] }) => {
   const playerIds = players.map(p => p.id);
   const playerNames = players.map(p => p.name_visual || p.name);
+  const palette = useChartPalette();
 
   const stats = useMemo(() => buildPlayerStats(jornadas, playerIds), [jornadas, playerIds]);
   const goalTimeline = useMemo(() => buildGoalTimeline(jornadas, playerIds, playerNames), [jornadas, playerIds]);
@@ -171,7 +171,10 @@ export const PlayerComparisonModal = ({ players = [], jornadas = [], injuries = 
               {players.map((p, i) => (
                 <th key={p.id} className="py-3 px-3 text-center">
                   <div className="flex flex-col items-center gap-1">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-lg" style={{ backgroundColor: COLORS[i] }}>
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg"
+                      style={{ backgroundColor: palette[i], color: contrastText(palette[i]) }}
+                    >
                       {(p.name_visual || p.name).charAt(0)}
                     </div>
                     <span className="text-sm font-bold text-gray-900">{p.name_visual || p.name}</span>
@@ -243,7 +246,7 @@ export const PlayerComparisonModal = ({ players = [], jornadas = [], injuries = 
                   key={name}
                   type="monotone"
                   dataKey={name}
-                  stroke={COLORS[i]}
+                  stroke={palette[i]}
                   strokeWidth={2}
                   dot={{ r: 3 }}
                 />
