@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL } from '../utils/constants';
+import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL, CESPED_TIPOS } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
 import { resolveMarcador } from '../utils/playerStats';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
@@ -126,6 +126,7 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
         categoria: partido.categoria,
         escenario: partido.escenario,
         cancha: partido.cancha || null,
+        cesped: partido.cesped || null,
         capGoles,
         rivalGoles,
         resultado,
@@ -141,9 +142,47 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
 
 const ALL_LOCATIONS = [...CANCHAS_LOCAL, 'Visitante'];
 
+const emptyStat = (loc) => ({ loc, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 });
+
+const accumulate = (stat, row) => {
+  stat.pj++;
+  if (row.resultado === 'G') stat.g++;
+  else if (row.resultado === 'E') stat.e++;
+  else if (row.resultado === 'P') stat.p++;
+  if (row.capGoles != null) stat.gf += row.capGoles;
+  if (row.rivalGoles != null) stat.gc += row.rivalGoles;
+};
+
+const sumStats = (a, b, loc) => ({
+  loc,
+  pj: a.pj + b.pj,
+  g: a.g + b.g,
+  e: a.e + b.e,
+  p: a.p + b.p,
+  gf: a.gf + b.gf,
+  gc: a.gc + b.gc,
+});
+
+// Agrega children (sub-filas por césped) sólo si hay partidos en ambos tipos;
+// si hay uno solo, se marca con cespedUnico para mostrarlo como badge.
+const withCespedBreakdown = (stat, porCesped) => {
+  const conPartidos = CESPED_TIPOS.filter((tipo) => porCesped[tipo].pj > 0);
+  return {
+    ...stat,
+    children: conPartidos.length > 1 ? CESPED_TIPOS.map((tipo) => porCesped[tipo]) : [],
+    cespedUnico: conPartidos.length === 1 ? conPartidos[0] : null,
+  };
+};
+
 const buildCanchaStats = (rows) => {
   const map = Object.fromEntries(
-    ALL_LOCATIONS.map((loc) => [loc, { loc, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 }])
+    ALL_LOCATIONS.map((loc) => [
+      loc,
+      {
+        total: emptyStat(loc),
+        porCesped: Object.fromEntries(CESPED_TIPOS.map((tipo) => [tipo, emptyStat(tipo)])),
+      },
+    ])
   );
 
   rows.forEach((row) => {
@@ -151,30 +190,28 @@ const buildCanchaStats = (rows) => {
       row.escenario === 'Local'
         ? (row.cancha && map[row.cancha] ? row.cancha : 'Ciudad Deportiva')
         : 'Visitante';
-    const s = map[key];
-    s.pj++;
-    if (row.resultado === 'G') s.g++;
-    else if (row.resultado === 'E') s.e++;
-    else if (row.resultado === 'P') s.p++;
-    if (row.capGoles != null) s.gf += row.capGoles;
-    if (row.rivalGoles != null) s.gc += row.rivalGoles;
+    const bucket = map[key];
+    accumulate(bucket.total, row);
+    // Partidos sin césped registrado suman sólo al total de la sede.
+    if (bucket.porCesped[row.cesped]) accumulate(bucket.porCesped[row.cesped], row);
   });
 
-  const localRows = CANCHAS_LOCAL.map((loc) => map[loc]);
-  const localTotal = localRows.reduce(
-    (acc, r) => ({
-      loc: 'Local Total',
-      pj: acc.pj + r.pj,
-      g: acc.g + r.g,
-      e: acc.e + r.e,
-      p: acc.p + r.p,
-      gf: acc.gf + r.gf,
-      gc: acc.gc + r.gc,
-    }),
-    { loc: 'Local Total', pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 }
-  );
+  const localTotal = {
+    total: emptyStat('Local Total'),
+    porCesped: Object.fromEntries(CESPED_TIPOS.map((tipo) => [tipo, emptyStat(tipo)])),
+  };
+  CANCHAS_LOCAL.forEach((loc) => {
+    localTotal.total = sumStats(localTotal.total, map[loc].total, 'Local Total');
+    CESPED_TIPOS.forEach((tipo) => {
+      localTotal.porCesped[tipo] = sumStats(localTotal.porCesped[tipo], map[loc].porCesped[tipo], tipo);
+    });
+  });
 
-  return [...localRows, localTotal, map['Visitante']];
+  return [
+    ...CANCHAS_LOCAL.map((loc) => withCespedBreakdown(map[loc].total, map[loc].porCesped)),
+    withCespedBreakdown(localTotal.total, localTotal.porCesped),
+    withCespedBreakdown(map['Visitante'].total, map['Visitante'].porCesped),
+  ];
 };
 
 // ─── Árbitro stats helper ─────────────────────────────────────────────────────
@@ -580,53 +617,83 @@ const CanchaStatsTable = ({ data }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {data.map((row) => {
+            {data.flatMap((row) => {
               const isLocalTotal = row.loc === 'Local Total';
               const isVisitante = row.loc === 'Visitante';
-              const d = row.gf - row.gc;
 
-              const rowBg = isLocalTotal
-                ? 'bg-green-100'
-                : isVisitante
-                ? 'bg-blue-50'
-                : 'bg-green-50';
-              const nameCls = isLocalTotal
-                ? 'font-bold text-green-900'
-                : isVisitante
-                ? 'font-semibold text-blue-900'
-                : 'text-green-800';
-              const greyOut = row.pj === 0 && !isLocalTotal ? 'opacity-40' : '';
+              const renderRow = (r, { isChild = false, key } = {}) => {
+                const d = r.gf - r.gc;
+                const rowBg = isChild
+                  ? isVisitante
+                    ? 'bg-blue-50/50'
+                    : 'bg-green-50/50'
+                  : isLocalTotal
+                  ? 'bg-green-100'
+                  : isVisitante
+                  ? 'bg-blue-50'
+                  : 'bg-green-50';
+                const nameCls = isChild
+                  ? 'text-gray-600'
+                  : isLocalTotal
+                  ? 'font-bold text-green-900'
+                  : isVisitante
+                  ? 'font-semibold text-blue-900'
+                  : 'text-green-800';
+                const greyOut = r.pj === 0 && !isLocalTotal ? 'opacity-40' : '';
+                const cellPad = isChild ? 'px-3 py-2 text-xs' : 'px-3 py-3';
 
-              return (
-                <tr key={row.loc} className={`${rowBg} ${greyOut}`}>
-                  <td className={`px-4 py-3 ${nameCls}`}>
-                    {isVisitante ? (
-                      <span className="inline-flex items-center gap-1">
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">Visitante</span>
-                      </span>
-                    ) : isLocalTotal ? (
-                      <span className="inline-flex items-center gap-1">
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-200 text-green-900 font-bold">Local Total</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 pl-4">
-                        <span className="text-xs text-gray-400 mr-1">↳</span>
-                        {row.loc}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-3 text-center font-semibold text-gray-800">{row.pj || '—'}</td>
-                  <td className="px-3 py-3 text-center font-bold text-green-700">{row.pj > 0 ? row.g : '—'}</td>
-                  <td className="px-3 py-3 text-center text-gray-600">{row.pj > 0 ? row.e : '—'}</td>
-                  <td className="px-3 py-3 text-center font-bold text-red-600">{row.pj > 0 ? row.p : '—'}</td>
-                  <td className="px-3 py-3 text-center text-gray-700">{row.pj > 0 ? row.gf : '—'}</td>
-                  <td className="px-3 py-3 text-center text-gray-700">{row.pj > 0 ? row.gc : '—'}</td>
-                  <td className={`px-3 py-3 text-center font-semibold ${row.pj > 0 ? (d > 0 ? 'text-green-700' : d < 0 ? 'text-red-600' : 'text-gray-500') : 'text-gray-300'}`}>
-                    {row.pj > 0 ? dif(row) : '—'}
-                  </td>
-                  <td className="px-3 py-3 text-center text-gray-700 font-medium">{efect(row)}</td>
-                </tr>
-              );
+                return (
+                  <tr key={key ?? r.loc} className={`${rowBg} ${greyOut}`}>
+                    <td className={`${isChild ? 'px-4 py-2 text-xs' : 'px-4 py-3'} ${nameCls}`}>
+                      {isChild ? (
+                        <span className="inline-flex items-center gap-1 pl-10">
+                          <span className="text-gray-400 mr-1">·</span>
+                          {r.loc}
+                        </span>
+                      ) : isVisitante ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">Visitante</span>
+                          {row.cespedUnico && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{row.cespedUnico}</span>
+                          )}
+                        </span>
+                      ) : isLocalTotal ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-200 text-green-900 font-bold">Local Total</span>
+                          {row.cespedUnico && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{row.cespedUnico}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 pl-4">
+                          <span className="text-xs text-gray-400 mr-1">↳</span>
+                          {row.loc}
+                          {row.cespedUnico && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{row.cespedUnico}</span>
+                          )}
+                        </span>
+                      )}
+                    </td>
+                    <td className={`${cellPad} text-center font-semibold text-gray-800`}>{r.pj || '—'}</td>
+                    <td className={`${cellPad} text-center font-bold text-green-700`}>{r.pj > 0 ? r.g : '—'}</td>
+                    <td className={`${cellPad} text-center text-gray-600`}>{r.pj > 0 ? r.e : '—'}</td>
+                    <td className={`${cellPad} text-center font-bold text-red-600`}>{r.pj > 0 ? r.p : '—'}</td>
+                    <td className={`${cellPad} text-center text-gray-700`}>{r.pj > 0 ? r.gf : '—'}</td>
+                    <td className={`${cellPad} text-center text-gray-700`}>{r.pj > 0 ? r.gc : '—'}</td>
+                    <td className={`${cellPad} text-center font-semibold ${r.pj > 0 ? (d > 0 ? 'text-green-700' : d < 0 ? 'text-red-600' : 'text-gray-500') : 'text-gray-300'}`}>
+                      {r.pj > 0 ? dif(r) : '—'}
+                    </td>
+                    <td className={`${cellPad} text-center text-gray-700 font-medium`}>{efect(r)}</td>
+                  </tr>
+                );
+              };
+
+              return [
+                renderRow(row),
+                ...row.children.map((child) =>
+                  renderRow(child, { isChild: true, key: `${row.loc}-${child.loc}` })
+                ),
+              ];
             })}
           </tbody>
           {total && (
@@ -853,6 +920,8 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
     [filteredJornadas, categoriaFiltroRivales, faseFiltro]
   );
 
+  const canchaStats = useMemo(() => buildCanchaStats(partidoRows), [partidoRows]);
+
   const arbitroStats = useMemo(
     () => buildArbitroStats(filteredJornadas, categoriaFiltroRivales),
     [filteredJornadas, categoriaFiltroRivales]
@@ -940,7 +1009,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
       {subTab === 'rivales' && <RivalesTable data={partidoRows} faseFiltro={faseFiltro} />}
-      {subTab === 'cancha'  && <CanchaStatsTable data={buildCanchaStats(partidoRows)} />}
+      {subTab === 'cancha'  && <CanchaStatsTable data={canchaStats} />}
       {isArbitrosTab && (
         <div className="space-y-6">
           <ArbitroPerformanceChart jornadas={filteredJornadas} categoriaFiltro={categoriaFiltroRivales} />
