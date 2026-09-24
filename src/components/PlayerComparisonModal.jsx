@@ -5,6 +5,7 @@ import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Download, Copy } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { Row, SectionHeader } from './playerstats/CompareRow';
 
 const COLORS = ['#D4A017', '#1F2937', '#0D9488'];
 
@@ -65,43 +66,6 @@ const buildGoalTimeline = (jornadas, playerIds, playerNames) => {
 
   return data;
 };
-
-const Row = ({ label, values, highlight, format }) => {
-  const formatted = values.map(v => format ? format(v) : v);
-  const best = highlight ? getBest(values, highlight) : null;
-
-  return (
-    <tr className="border-b border-gray-100 last:border-0">
-      <td className="py-2.5 pr-4 text-sm font-medium text-gray-500">{label}</td>
-      {formatted.map((val, i) => (
-        <td
-          key={i}
-          className={`py-2.5 px-3 text-sm text-center font-semibold ${best && best.has(i) ? 'text-green-700 bg-green-50' : 'text-gray-900'}`}
-        >
-          {val}
-        </td>
-      ))}
-    </tr>
-  );
-};
-
-const getBest = (values, type) => {
-  const nums = values.map(v => typeof v === 'number' ? v : parseFloat(v) || 0);
-  if (nums.every(n => n === nums[0])) return null;
-  const target = type === 'max' ? Math.max(...nums) : type === 'min' ? Math.min(...nums) : null;
-  if (target === null) return null;
-  const indices = new Set();
-  nums.forEach((n, i) => { if (n === target) indices.add(i); });
-  return indices;
-};
-
-const SectionHeader = ({ title }) => (
-  <tr>
-    <td colSpan={4} className="pt-4 pb-2 text-xs font-bold text-gray-400 uppercase tracking-wider border-b-2 border-yellow-400">
-      {title}
-    </td>
-  </tr>
-);
 
 export const PlayerComparisonModal = ({ players = [], jornadas = [], injuries = [] }) => {
   const playerIds = players.map(p => p.id);

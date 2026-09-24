@@ -23,6 +23,7 @@ const PartidosTab = lazy(() => import('./PartidosTab').then(m => ({ default: m.P
 const ConfiguracionTab = lazy(() => import('./ConfiguracionTab').then(m => ({ default: m.ConfiguracionTab })));
 const ActivityLogTab = lazy(() => import('./ActivityLogTab').then(m => ({ default: m.ActivityLogTab })));
 const EstadisticasTab = lazy(() => import('./EstadisticasTab').then(m => ({ default: m.EstadisticasTab })));
+const EstadisticasJugadoresTab = lazy(() => import('./EstadisticasJugadoresTab').then(m => ({ default: m.EstadisticasJugadoresTab })));
 const TesoreroTab = lazy(() => import('./TesoreroTab').then(m => ({ default: m.TesoreroTab })));
 const TarjetasTab = lazy(() => import('./TarjetasTab').then(m => ({ default: m.TarjetasTab })));
 const TareasTab = lazy(() => import('./TareasTab').then(m => ({ default: m.TareasTab })));
@@ -107,6 +108,7 @@ export const AdminDashboard = ({
     { id: 'partidos',       label: 'Partidos',        show: canViewPartidos },
     { id: 'reports',        label: 'Reportes',        show: canAccessRopa && tabEnabled('reportes_tab_enabled') },
     { id: 'estadisticas',   label: 'Estadísticas',   show: canViewPartidos && tabEnabled('estadisticas_tab_enabled') },
+    { id: 'estadisticas_jugadores', label: 'Estadísticas Jugadores', show: canViewPartidos && tabEnabled('estadisticas_jugadores_tab_enabled') },
     { id: 'tarjetas',       label: 'Tarjetas',        show: canViewTarjetas },
     { id: 'configuracion',  label: 'Configuración',  show: isAdmin },
     { id: 'activity_log',   label: 'Actividad',      show: isAdmin },
@@ -337,6 +339,14 @@ export const AdminDashboard = ({
           <EstadisticasTab
             jornadas={jornadas}
             players={players}
+          />
+        )}
+        {activeTab === 'estadisticas_jugadores' && canViewPartidos && (
+          <EstadisticasJugadoresTab
+            jornadas={jornadas}
+            players={players}
+            appSettings={appSettings}
+            currentUser={currentUser}
           />
         )}
         {activeTab === 'tesorero' && canAccessTesorero && (
