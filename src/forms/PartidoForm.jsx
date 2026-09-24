@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS } from '../utils/constants';
+import { POSICIONES_PARTIDO, POSICIONES_DEFAULT_TITULAR, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS } from '../utils/constants';
 import { getSuspensionMap } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
 
@@ -143,6 +143,15 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
 
   const updateTitular = (index, field, value) => {
     setTitulares((prev) => prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)));
+  };
+
+  // Al elegir jugador, autocompleta la posición canónica del número si está vacía
+  const selectTitularPlayer = (index, playerId) => {
+    setTitulares((prev) => prev.map((t, i) => {
+      if (i !== index) return t;
+      if (!playerId) return emptySlot();
+      return { player_id: playerId, posicion: t.posicion || POSICIONES_DEFAULT_TITULAR[index] || '' };
+    }));
   };
 
   const updateSuplente = (index, value) => {
@@ -375,7 +384,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
               <span className="text-xs text-gray-400 w-5 text-right shrink-0">{i + 1}</span>
               <select
                 value={t.player_id}
-                onChange={(e) => updateTitular(i, 'player_id', e.target.value)}
+                onChange={(e) => selectTitularPlayer(i, e.target.value)}
                 className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Jugador —</option>
@@ -410,7 +419,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
               {t.player_id && (
                 <button
                   type="button"
-                  onClick={() => updateTitular(i, 'player_id', '') || updateTitular(i, 'posicion', '')}
+                  onClick={() => selectTitularPlayer(i, '')}
                   className="p-1 text-gray-400 hover:text-red-500"
                 >
                   <X className="w-4 h-4" />
