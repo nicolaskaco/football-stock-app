@@ -94,6 +94,21 @@ export const POSICIONES_PARTIDO = [
   'Extremo Izquierdo',
 ];
 
+/** Posición por defecto según el número de titular (índice 0 = titular 1) */
+export const POSICIONES_DEFAULT_TITULAR = [
+  'Arquero',            // 1
+  'Lateral derecho',    // 2
+  'Zaguero derecho',    // 3
+  'Zaguero izquierdo',  // 4
+  'Lateral izquierdo',  // 5
+  'Volante defensivo',  // 6
+  'Volante defensivo',  // 7
+  'Extremo derecho',    // 8
+  'Volante ofensivo',   // 9
+  'Extremo Izquierdo',  // 10
+  'Delantero Centro',   // 11
+];
+
 /** Números de jornada del campeonato */
 export const NUMEROS_JORNADA = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','Semifinal','Final'];
 
