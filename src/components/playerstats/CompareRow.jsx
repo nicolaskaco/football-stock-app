@@ -1,4 +1,5 @@
 import React from 'react';
+import { getBestIndices } from '../../utils/playerStats';
 
 /**
  * Primitivas compartidas por las vistas de comparación de jugadores
@@ -14,19 +15,9 @@ import React from 'react';
  * imprimir "58% (n=12)".
  */
 
-const getBest = (values, type) => {
-  const nums = values.map(v => typeof v === 'number' ? v : parseFloat(v) || 0);
-  if (nums.every(n => n === nums[0])) return null;
-  const target = type === 'max' ? Math.max(...nums) : type === 'min' ? Math.min(...nums) : null;
-  if (target === null) return null;
-  const indices = new Set();
-  nums.forEach((n, i) => { if (n === target) indices.add(i); });
-  return indices;
-};
-
 export const Row = ({ label, values, highlight, format }) => {
   const formatted = values.map((v, i) => format ? format(v, i) : v);
-  const best = highlight ? getBest(values, highlight) : null;
+  const best = highlight ? getBestIndices(values, highlight) : null;
 
   return (
     <tr className="border-b border-gray-100 last:border-0">
