@@ -15,9 +15,52 @@ import { GolesPorTramoChart } from '../charts/GolesPorTramoChart';
 
 const cardCls = 'bg-white rounded-lg shadow p-4';
 
-/** Tabla chica reutilizada por los bloques de cruces. */
+/** Dato chico (label arriba, valor abajo) de la vista apilada mobile. */
+const CruceDato = ({ label, children }) => (
+  <div>
+    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+    <p className="text-sm text-gray-800">{children}</p>
+  </div>
+);
+
+/**
+ * Tabla chica reutilizada por los bloques de cruces. En pantallas < sm cada
+ * fila se muestra como tarjeta apilada para no tener que scrollear en horizontal.
+ */
 const CruceTable = ({ rows, minMuestra, primeraColumna = 'Contexto' }) => (
-  <div className={`${cardCls} overflow-x-auto p-0`}>
+  <>
+  <div className={`${cardCls} p-0 sm:hidden`}>
+    <p className="px-4 py-2 bg-gray-50 rounded-t-lg text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      {primeraColumna}
+    </p>
+    <div className="divide-y divide-gray-100">
+      {rows.map((r) => (
+        <div key={r.key} className="px-4 py-3 space-y-2">
+          <p className="font-medium text-gray-800">{r.label}</p>
+          <div className="grid grid-cols-3 gap-2">
+            <CruceDato label="PJ">{r.pjTotal}</CruceDato>
+            <CruceDato label="G-E-P">
+              {r.record.pj > 0 ? `${r.record.g}-${r.record.e}-${r.record.p}` : '—'}
+            </CruceDato>
+            <CruceDato label="% Vict.">
+              <PctInline pct={r.record.pctVictorias} n={r.record.pj} minMuestra={minMuestra} />
+            </CruceDato>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            <CruceDato label="Goles"><span className="font-semibold">{r.goles}</span></CruceDato>
+            <CruceDato label="G/PJ">{fmtRatio(r.golesPorPartido)}</CruceDato>
+            <CruceDato label="🟨">{r.amarillas}</CruceDato>
+            <CruceDato label="🟥">{r.rojas}</CruceDato>
+          </div>
+        </div>
+      ))}
+      {rows.length === 0 && (
+        <p className="px-4 py-6 text-center text-sm text-gray-400">Sin datos</p>
+      )}
+    </div>
+  </div>
+
+  <div className={`${cardCls} overflow-x-auto p-0 hidden sm:block`}>
     <table className="w-full text-sm">
       <thead className="bg-gray-50 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
         <tr>
@@ -54,6 +97,7 @@ const CruceTable = ({ rows, minMuestra, primeraColumna = 'Contexto' }) => (
       </tbody>
     </table>
   </div>
+  </>
 );
 
 function RachaCard({ icon, label, actual, maxima }) {
