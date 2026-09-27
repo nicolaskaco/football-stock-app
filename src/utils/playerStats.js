@@ -460,3 +460,21 @@ export const fmtPct = (v) => (v == null ? '—' : `${Math.round(v)}%`);
 export const fmtRatio = (v) => (v == null ? '—' : v.toFixed(2));
 export const fmtMinuto = (v) => (v == null ? '—' : `${Math.round(v)}'`);
 export const fmtRecord = (r) => `${r.g}-${r.e}-${r.p}`;
+
+// ─── Comparación ─────────────────────────────────────────────────────────────
+
+/**
+ * Índices de los mejores valores de una fila comparativa.
+ *   type="max" → mayor es mejor (goles, PJ)
+ *   type="min" → menor es mejor (amarillas, rojas)
+ * Devuelve null si todos los valores son iguales o no hay criterio.
+ */
+export const getBestIndices = (values, type) => {
+  const nums = values.map(v => typeof v === 'number' ? v : parseFloat(v) || 0);
+  if (nums.every(n => n === nums[0])) return null;
+  const target = type === 'max' ? Math.max(...nums) : type === 'min' ? Math.min(...nums) : null;
+  if (target === null) return null;
+  const indices = new Set();
+  nums.forEach((n, i) => { if (n === target) indices.add(i); });
+  return indices;
+};
