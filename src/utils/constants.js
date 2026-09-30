@@ -126,3 +126,11 @@ export const CALENDAR_EVENT_TYPES = {
   FICHA_MEDICA: 'ficha_medica',
   LESIONES: 'lesiones',
 };
+
+// Etiquetas de estado de jugador (players.status) distintos de 'activo'
+export const PLAYER_STATUS_LABELS = {
+  cedido: 'Cedido',
+  transferido: 'Transferido',
+  egresado: 'Egresado',
+  'dado de baja': 'Baja',
+};
