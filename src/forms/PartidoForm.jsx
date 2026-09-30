@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { POSICIONES_PARTIDO, POSICIONES_DEFAULT_TITULAR, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS } from '../utils/constants';
+import { POSICIONES_PARTIDO, POSICIONES_DEFAULT_TITULAR, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS, PLAYER_STATUS_LABELS } from '../utils/constants';
 import { getSuspensionMap } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
 
@@ -119,8 +119,9 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     ...suplentes.map((s) => s.player_id),
   ].filter(Boolean));
 
-  // Jugadores filtrados según las categorías activas, sin los que exceden la edad de la categoría del partido
+  // Jugadores activos filtrados según las categorías activas, sin los que exceden la edad de la categoría del partido
   const jugadoresCategoria = players
+    .filter((p) => !p.status || p.status === 'activo')
     .filter((p) => categoriasActivas.includes(p.categoria) || categoriasActivas.includes(p.categoria_juego))
     .filter((p) => !isPlayerOverAge(p, categoria, appSettings).overAge)
     .sort((a, b) => {
@@ -204,6 +205,26 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
   const getPlayerName = (player_id) => {
     const p = players.find((pl) => pl.id === player_id);
     return p?.name_visual || p?.name || '—';
+  };
+
+  // Opción de jugador en los selects de titulares/suplentes.
+  // Los jugadores no activos solo aparecen si ya estaban guardados en el slot.
+  const renderPlayerOption = (p) => {
+    const efectiva = p.categoria_juego || p.categoria;
+    const mismatch = efectiva !== categoria;
+    const suspended = suspendedMap.has(p.id);
+    const age = isPlayerOverAge(p, categoria, appSettings);
+    const inactive = p.status && p.status !== 'activo';
+    return (
+      <option
+        key={p.id}
+        value={p.id}
+        disabled={suspended}
+        style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : inactive ? { backgroundColor: '#e5e7eb' } : undefined}
+      >
+        {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{inactive ? ` — ${(PLAYER_STATUS_LABELS[p.status] || p.status).toUpperCase()}` : ''}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+      </option>
+    );
   };
 
   return (
@@ -388,22 +409,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                 className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Jugador —</option>
-                {getOptionsForSlot(t.player_id).map((p) => {
-                  const efectiva = p.categoria_juego || p.categoria;
-                  const mismatch = efectiva !== categoria;
-                  const suspended = suspendedMap.has(p.id);
-                  const age = isPlayerOverAge(p, categoria, appSettings);
-                  return (
-                    <option
-                      key={p.id}
-                      value={p.id}
-                      disabled={suspended}
-                      style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
-                    >
-                      {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
-                    </option>
-                  );
-                })}
+                {getOptionsForSlot(t.player_id).map(renderPlayerOption)}
               </select>
               <select
                 value={t.posicion}
@@ -447,22 +453,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
                 className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">— Jugador —</option>
-                {getOptionsForSlot(s.player_id).map((p) => {
-                  const efectiva = p.categoria_juego || p.categoria;
-                  const mismatch = efectiva !== categoria;
-                  const suspended = suspendedMap.has(p.id);
-                  const age = isPlayerOverAge(p, categoria, appSettings);
-                  return (
-                    <option
-                      key={p.id}
-                      value={p.id}
-                      disabled={suspended}
-                      style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : undefined}
-                    >
-                      {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
-                    </option>
-                  );
-                })}
+                {getOptionsForSlot(s.player_id).map(renderPlayerOption)}
               </select>
               {s.player_id && (
                 <button
