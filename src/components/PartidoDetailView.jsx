@@ -104,11 +104,11 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
         <h2 className="text-xl font-bold">{jornada.rivales?.name || 'Rival'}</h2>
         <div className="flex items-center gap-3 mt-1">
           <span className="text-sm text-yellow-200">{formatDate(jornada.fecha)}</span>
-          <span className="px-2 py-0.5 bg-yellow-400 text-gray-900 rounded-full text-xs font-semibold">
+          <span className="px-2 py-0.5 bg-yellow-400 text-black rounded-full text-xs font-semibold">
             {jornada.fase}
           </span>
           {jornada.numero_jornada && (
-            <span className="px-2 py-0.5 bg-yellow-200 text-gray-900 rounded-full text-xs font-semibold">
+            <span className="px-2 py-0.5 bg-yellow-200 text-black rounded-full text-xs font-semibold">
               Jornada {jornada.numero_jornada}
             </span>
           )}
