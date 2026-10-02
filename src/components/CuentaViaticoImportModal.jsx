@@ -5,21 +5,31 @@ import { BANCOS_VIATICO, CUENTA_VIATICO_FIELDS } from '../utils/constants';
 
 // Encabezados del Google Form, normalizados (sin tildes, minúsculas, espacios simples).
 const COLUMNAS = {
+  marcaTemporal: 'marca temporal',
   nombre: 'nombre',
   apellido: 'apellido',
   cedula: 'cedula de identidad',
   categoria: 'categoria / division',
-  banco: 'banco',
-  numero: 'numero de cuenta',
   titularNombre: 'nombre completo del titular',
   titularDocumento: 'documento del titular',
-  titularBanco: 'banco del titular',
-  titularNumero: 'numero de cuenta del titular',
 };
 // La pregunta del tipo de cuenta es larga; se identifica por esta palabra.
 const TIPO_KEYWORD = 'propia';
+// El formulario repite "Banco" y "Número de cuenta": la primera aparición es la cuenta
+// propia del jugador y la segunda la del titular (también se acepta el sufijo "del titular").
+const BANCO_HEADERS = ['banco', 'banco del titular'];
+const NUMERO_HEADERS = ['numero de cuenta', 'numero de cuenta del titular'];
 
-const REQUERIDAS = ['cedula', 'banco', 'numero', 'titularNombre', 'titularDocumento', 'titularBanco', 'titularNumero'];
+const NOMBRES_COLUMNA = {
+  cedula: 'Cédula de identidad',
+  tipo: '¿La cuenta bancaria es propia del jugador o de un familiar?',
+  banco: 'Banco',
+  numero: 'Numero de cuenta',
+  titularNombre: 'Nombre completo del titular',
+  titularDocumento: 'Documento del titular',
+  titularBanco: 'Banco (del titular)',
+  titularNumero: 'Número de cuenta (del titular)',
+};
 
 const ESTADOS = {
   nuevo: { label: 'Nuevo', className: 'bg-green-100 text-green-800' },
@@ -51,14 +61,22 @@ function normalizarBanco(valor) {
   return BANCOS_VIATICO.find(b => normalizar(b).replace(/\s/g, '') === n) ?? valor;
 }
 
-function parseTipo(valor, raw, cols) {
+function parseTipo(valor, fila, cols) {
   const n = normalizar(valor);
   if (n.includes('propia')) return 'jugador';
   if (n.includes('padre') || n.includes('madre') || n.includes('tutor') || n.includes('familiar')) return 'familiar';
   // Sin respuesta: se deduce por qué bloque de columnas está completo
-  if (texto(raw[cols.titularNumero]) || texto(raw[cols.titularNombre])) return 'familiar';
-  if (texto(raw[cols.numero])) return 'jugador';
+  if (texto(fila[cols.titularNumero]) || texto(fila[cols.titularNombre])) return 'familiar';
+  if (texto(fila[cols.numero])) return 'jugador';
   return null;
+}
+
+/** "29/9/2026 20:51:17" (formato de Google Sheets en es-UY) → milisegundos, o null. */
+function parseMarcaTemporal(valor) {
+  const m = String(valor ?? '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if (!m) return null;
+  const [, d, mes, y, h = 0, min = 0, seg = 0] = m;
+  return new Date(+y, +mes - 1, +d, +h, +min, +seg).getTime();
 }
 
 function compararConJugador(player, cuenta) {
@@ -67,41 +85,52 @@ function compararConJugador(player, cuenta) {
   return igual ? 'igual' : 'cambia';
 }
 
-function parsearArchivo(jsonData, players) {
-  const headers = Object.keys(jsonData[0] ?? {});
+/** matriz: filas del archivo como arrays (la primera son los encabezados). */
+function parsearArchivo(matriz, players) {
+  const headers = (matriz[0] ?? []).map(normalizar);
   const cols = {};
-  headers.forEach(h => {
-    const n = normalizar(h);
-    const key = Object.keys(COLUMNAS).find(k => COLUMNAS[k] === n);
-    if (key) cols[key] = h;
-    else if (n.includes(TIPO_KEYWORD)) cols.tipo = h;
+  Object.entries(COLUMNAS).forEach(([key, nombre]) => {
+    const i = headers.indexOf(nombre);
+    if (i !== -1) cols[key] = i;
   });
+  const tipoIdx = headers.findIndex(h => h.includes(TIPO_KEYWORD));
+  if (tipoIdx !== -1) cols.tipo = tipoIdx;
+  const bancos = headers.flatMap((h, i) => (BANCO_HEADERS.includes(h) ? [i] : []));
+  const numeros = headers.flatMap((h, i) => (NUMERO_HEADERS.includes(h) ? [i] : []));
+  [cols.banco, cols.titularBanco] = bancos;
+  [cols.numero, cols.titularNumero] = numeros;
 
-  const faltantes = REQUERIDAS.filter(k => !cols[k]);
+  const faltantes = Object.keys(NOMBRES_COLUMNA).filter(k => cols[k] === undefined);
   if (faltantes.length > 0) {
-    return { error: `Faltan columnas del formulario: ${faltantes.map(k => `"${COLUMNAS[k]}"`).join(', ')}.` };
+    return { error: `Faltan columnas del formulario: ${faltantes.map(k => `"${NOMBRES_COLUMNA[k]}"`).join(', ')}.` };
   }
 
   const playersPorCedula = new Map(players.map(p => [normalizarCedula(p.gov_id), p]));
 
-  // Las respuestas del Google Form vienen en orden cronológico: si un jugador respondió
-  // más de una vez, gana la última fila.
+  // Si un jugador respondió más de una vez, gana la respuesta con la Marca temporal más reciente
+  // (las filas de la hoja no siempre están en orden). Sin marca temporal, gana la última fila.
   const porCedula = new Map();
-  jsonData.forEach((raw, i) => {
-    const cedula = normalizarCedula(raw[cols.cedula]);
+  matriz.slice(1).forEach((fila, i) => {
+    const cedula = normalizarCedula(fila[cols.cedula]);
     if (!cedula) return;
-    porCedula.set(cedula, { raw, fila: i + 2, duplicado: porCedula.has(cedula) });
+    const orden = (cols.marcaTemporal !== undefined ? parseMarcaTemporal(fila[cols.marcaTemporal]) : null) ?? i;
+    const previa = porCedula.get(cedula);
+    if (!previa || orden >= previa.orden) {
+      porCedula.set(cedula, { fila, orden, respuestas: (previa?.respuestas ?? 0) + 1 });
+    } else {
+      previa.respuestas++;
+    }
   });
 
-  const rows = [...porCedula.entries()].map(([cedula, { raw, fila, duplicado }]) => {
-    const tipo = parseTipo(cols.tipo ? raw[cols.tipo] : '', raw, cols);
+  const rows = [...porCedula.entries()].map(([cedula, { fila, respuestas }]) => {
+    const tipo = parseTipo(fila[cols.tipo], fila, cols);
     const esFamiliar = tipo === 'familiar';
     const cuenta = {
       cuenta_titular_tipo: tipo,
-      cuenta_banco: normalizarBanco(raw[esFamiliar ? cols.titularBanco : cols.banco]),
-      cuenta_numero: texto(raw[esFamiliar ? cols.titularNumero : cols.numero]),
-      cuenta_titular_nombre: esFamiliar ? texto(raw[cols.titularNombre]) : null,
-      cuenta_titular_documento: esFamiliar ? texto(raw[cols.titularDocumento]) : null,
+      cuenta_banco: normalizarBanco(fila[esFamiliar ? cols.titularBanco : cols.banco]),
+      cuenta_numero: texto(fila[esFamiliar ? cols.titularNumero : cols.numero]),
+      cuenta_titular_nombre: esFamiliar ? texto(fila[cols.titularNombre]) : null,
+      cuenta_titular_documento: esFamiliar ? texto(fila[cols.titularDocumento]) : null,
     };
 
     const errores = [];
@@ -111,18 +140,24 @@ function parsearArchivo(jsonData, players) {
     if (!cuenta.cuenta_numero) errores.push('Falta el número de cuenta');
     if (esFamiliar && !cuenta.cuenta_titular_nombre) errores.push('Falta el nombre del titular');
 
+    // Avisos: no bloquean la importación, pero conviene revisarlos.
+    const avisos = [];
+    if (esFamiliar && normalizarCedula(cuenta.cuenta_titular_documento) === cedula) {
+      avisos.push('El documento del titular es la cédula del jugador');
+    }
+    if (respuestas > 1) avisos.push(`Respondió ${respuestas} veces: se toma la última respuesta`);
+
     const player = playersPorCedula.get(cedula);
     const estado = !player ? 'no_encontrado' : errores.length > 0 ? 'invalido' : compararConJugador(player, cuenta);
 
     return {
       cedula,
-      fila,
-      duplicado,
-      nombreForm: [texto(cols.nombre ? raw[cols.nombre] : ''), texto(cols.apellido ? raw[cols.apellido] : '')].filter(Boolean).join(' '),
-      categoriaForm: cols.categoria ? texto(raw[cols.categoria]) : null,
+      nombreForm: [texto(fila[cols.nombre]), texto(fila[cols.apellido])].filter(Boolean).join(' '),
+      categoriaForm: texto(fila[cols.categoria]),
       player,
       cuenta,
       errores,
+      avisos,
       estado,
     };
   });
@@ -150,12 +185,13 @@ export const CuentaViaticoImportModal = ({ players = [], onClose, onConfirm }) =
           ? XLSX.read(new TextDecoder('utf-8').decode(ev.target.result), { type: 'string', raw: true })
           : XLSX.read(ev.target.result, { type: 'array', raw: true });
         const sheet = wb.Sheets[wb.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(sheet, { defval: '', raw: false });
-        if (jsonData.length === 0) {
+        // header: 1 → filas como arrays, porque el formulario repite encabezados (Banco, Número de cuenta)
+        const matriz = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+        if (matriz.length < 2) {
           setPreview({ error: 'El archivo está vacío.' });
           return;
         }
-        const result = parsearArchivo(jsonData, players);
+        const result = parsearArchivo(matriz, players);
         setPreview(result);
         setSelected(new Set((result.rows ?? []).filter(r => r.estado === 'nuevo').map(r => r.cedula)));
       } catch {
@@ -278,12 +314,15 @@ export const CuentaViaticoImportModal = ({ players = [], onClose, onConfirm }) =
                             {r.errores.length > 0 && r.player && (
                               <div className="text-xs text-red-600 mt-1">{r.errores.join('. ')}</div>
                             )}
+                            {r.avisos.length > 0 && (
+                              <div className="text-xs text-amber-700 mt-1">{r.avisos.join('. ')}</div>
+                            )}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap">{r.cedula}</td>
                           <td className="px-3 py-2">
                             <div className="font-medium">{r.player ? (r.player.name_visual || r.player.name) : '—'}</div>
                             <div className="text-xs text-gray-500">
-                              {r.nombreForm}{r.categoriaForm ? ` · ${r.categoriaForm}` : ''}{r.duplicado ? ' · respondió más de una vez' : ''}
+                              {r.nombreForm}{r.categoriaForm ? ` · ${r.categoriaForm}` : ''}
                             </div>
                           </td>
                           <td className="px-3 py-2">
