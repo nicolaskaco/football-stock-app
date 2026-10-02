@@ -890,6 +890,19 @@ export const database = {
     if (error) throw error;
   },
 
+  // Bulk update of the viático payment account (Google Form import).
+  // updates: [{ id, cuenta_titular_tipo, cuenta_banco, cuenta_numero, cuenta_titular_nombre, cuenta_titular_documento }]
+  async bulkUpdateCuentaViatico(updates) {
+    for (const { id, ...fields } of updates) {
+      const { error } = await supabase
+        .from('players')
+        .update(fields)
+        .eq('id', id);
+
+      if (error) throw error;
+    }
+  },
+
   // Create a change request
   async createPlayerChangeRequest(playerId, requestedBy, oldValues, newValues, notes = '') {
     const { data, error } = await supabase

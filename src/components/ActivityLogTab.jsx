@@ -42,6 +42,10 @@ function normaliseActivityLog(rows) {
         label = 'Operación masiva — rechazo';
         detail = r.details?.count ? `${r.details.count} solicitud${r.details.count !== 1 ? 'es' : ''}` : '';
         break;
+      case 'import_cuentas_viatico':
+        label = 'Importación de cuentas de viáticos';
+        detail = r.details?.count ? `${r.details.count} jugador${r.details.count !== 1 ? 'es' : ''}` : '';
+        break;
       default:
         label = r.action_type;
     }
@@ -104,6 +108,7 @@ const BADGE = {
   permission_change: 'bg-purple-100 text-purple-700',
   bulk_approve:      'bg-orange-100 text-orange-700',
   bulk_reject:       'bg-orange-100 text-orange-700',
+  import_cuentas_viatico: 'bg-yellow-100 text-yellow-800',
 };
 
 const TYPE_LABELS = {
@@ -114,6 +119,7 @@ const TYPE_LABELS = {
   permission_change: 'Permiso cambiado',
   bulk_approve:      'Operación masiva',
   bulk_reject:       'Operación masiva',
+  import_cuentas_viatico: 'Importación de cuentas',
 };
 
 const ALL_TYPES = Object.keys(TYPE_LABELS);
