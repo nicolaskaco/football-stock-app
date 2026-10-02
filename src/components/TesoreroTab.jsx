@@ -40,6 +40,13 @@ const EXPORT_CATEGORIAS = [
   { key: 'Sub13', label: 'Sub 13' },
 ];
 
+/** Jugadores que entran en la hoja de una categoría: activos, sin contrato o marcados como caso especial. */
+const jugadoresExportables = (players, key) => players
+  .filter(p => p.categoria === key && (!p.contrato || p.incluir_viatico_export) && (!p.status || p.status === 'activo'))
+  .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
+
+const SIN_CUENTA = 'SIN CUENTA';
+
 export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEmail }) => {
   const { execute, isSaving } = useMutation();
 
@@ -69,13 +76,17 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
     p => p.contrato && EXPORT_CATEGORIAS.some(c => c.key === p.categoria) && (!p.status || p.status === 'activo')
   ).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
 
+  const sinCuenta = EXPORT_CATEGORIAS.flatMap(({ key, label }) =>
+    jugadoresExportables(players, key)
+      .filter(p => !p.cuenta_banco || !p.cuenta_numero)
+      .map(p => ({ ...p, categoriaLabel: label }))
+  );
+
   const handleExport = () => {
     const workbook = XLSX.utils.book_new();
 
     EXPORT_CATEGORIAS.forEach(({ key, label }) => {
-      const catPlayers = players
-        .filter(p => p.categoria === key && (!p.contrato || p.incluir_viatico_export) && (!p.status || p.status === 'activo'))
-        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
+      const catPlayers = jugadoresExportables(players, key);
 
       if (catPlayers.length === 0) return;
 
@@ -84,9 +95,15 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
         'Cédula': p.gov_id || '',
         'Total Viático': p.contrato ? (p.complemento || 0) : calculateTotal(p),
         'Categoría': label,
+        // El número de cuenta va como texto: conserva ceros a la izquierda y no pasa a notación científica
+        'Banco': p.cuenta_banco || SIN_CUENTA,
+        'Número de cuenta': p.cuenta_numero || '',
+        'Nombre del titular': p.cuenta_titular_tipo === 'familiar' ? (p.cuenta_titular_nombre || '') : '',
+        'Documento del titular': p.cuenta_titular_tipo === 'familiar' ? (p.cuenta_titular_documento || '') : '',
       }));
 
       const sheet = XLSX.utils.json_to_sheet(data);
+      sheet['!cols'] = [{ wch: 32 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 32 }, { wch: 20 }];
 
       // SUM formula 3 rows below the last data row (row 1 = header, rows 2..N+1 = data)
       const lastDataRow = data.length + 1;
@@ -165,8 +182,20 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
       <div className="bg-white rounded-lg shadow px-6 py-6">
         <h3 className="font-medium text-gray-900 mb-2">Exportar Viáticos</h3>
         <p className="text-sm text-gray-500 mb-4">
-          Genera un archivo Excel con los viáticos de todas las categorías formativas (excluye 3era). Jugadores con contrato se incluyen solo si están marcados como caso especial.
+          Genera un archivo Excel con los viáticos de todas las categorías formativas (excluye 3era), incluyendo la cuenta de cobro (banco, número y titular si es de un padre, madre o tutor). Jugadores con contrato se incluyen solo si están marcados como caso especial.
         </p>
+        {sinCuenta.length > 0 && (
+          <details className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <summary className="cursor-pointer font-medium">
+              {sinCuenta.length} jugador{sinCuenta.length !== 1 ? 'es' : ''} no {sinCuenta.length !== 1 ? 'tienen' : 'tiene'} cuenta cargada; se {sinCuenta.length !== 1 ? 'exportan' : 'exporta'} con "{SIN_CUENTA}".
+            </summary>
+            <ul className="mt-2 space-y-0.5">
+              {sinCuenta.map(p => (
+                <li key={p.id}>{p.name} · {p.categoriaLabel}</li>
+              ))}
+            </ul>
+          </details>
+        )}
         <button
           onClick={handleExport}
           className="flex items-center gap-2 px-4 py-2 bg-black text-yellow-400 rounded-lg hover:bg-gray-800 text-sm font-medium"
