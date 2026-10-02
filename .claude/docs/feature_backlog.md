@@ -37,7 +37,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 - [x] **F1. Padres/Tutores en tabla de jugadores** — Add columns to `players` table: `madre_nombre`, `madre_telefono`, `padre_nombre`, `padre_telefono`. New section in PlayerForm to edit these fields. Planning to integrate with external Office Form for data collection.
 - [x] **F2. Cuenta de cobro de viáticos (Prex / Mi Dinero)** — New `cuenta_*` columns on `players` (own account or padre/madre/tutor account). Replaces legacy `bank` / `bank_account` in PlayerForm, PlayerFormViatico, the Viáticos table and the Excel exports. Bulk import from the Google Form responses in PlayersTabViatico. *(PR #331 · 2026-10-02)*
-- [x] **F3. Cuenta de cobro en el export de Tesorero** — Banco, Número de cuenta, Nombre y Documento del titular added to the Exportar Viáticos Excel; warning for players without an account. *(PR #TBD · 2026-10-02)*
+- [x] **F3. Cuenta de cobro en el export de Tesorero** — Banco, Número de cuenta, Nombre y Documento del titular added to the Exportar Viáticos Excel; warning for players without an account. *(PR #332 · 2026-10-02)*
 
 ### G. Calendario y Vistas
 
