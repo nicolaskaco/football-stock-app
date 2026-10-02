@@ -3,8 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS } from '../utils/constants';
 import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { todayISO, calculateAge } from '../utils/dateUtils';
-import { calculateTotal, getComplementoEfectivo } from '../utils/playerUtils';
-import { Plus, Edit2, Trash2, Users, Download, History, Eye } from 'lucide-react';
+import { calculateTotal, getComplementoEfectivo, CUENTA_EXPORT_LABELS, getCuentaExportValue } from '../utils/playerUtils';
+import { Plus, Edit2, Trash2, Users, Download, History, Eye, Upload } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
 import { SortIcon } from './ui/SortIcon';
@@ -15,6 +15,7 @@ import { database } from '../utils/database';
 import * as XLSX from 'xlsx';
 import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { ExportConfigModal } from './ExportConfigModal';
+import { CuentaViaticoImportModal } from './CuentaViaticoImportModal';
 import { ChangeRequestModal } from '../components/ChangeRequestModal';
 import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
@@ -62,6 +63,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
 
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [showExportConfig, setShowExportConfig] = useState(false);
+  const [showCuentaImport, setShowCuentaImport] = useState(false);
   const [exportFields, setExportFields] = useState({
     name: true,
     name_visual: false,
@@ -72,8 +74,10 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     viatico: false,
     complemento: false,
     total: true,
-    bank: true,
-    bank_account: true
+    cuenta_titular: true,
+    cuenta_titular_documento: true,
+    cuenta_banco: true,
+    cuenta_numero: true
   });
 
   const categorias = CATEGORIAS;
@@ -194,9 +198,9 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
         aValue = calculateTotal(a);
         bValue = calculateTotal(b);
         break;
-      case 'bank':
-        aValue = a.bank || '';
-        bValue = b.bank || '';
+      case 'cuenta_banco':
+        aValue = a.cuenta_banco || '';
+        bValue = b.cuenta_banco || '';
         break;
       default:
         return 0;
@@ -252,6 +256,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
     onDataChange('pendingChangeRequests');
   }, 'Error creando solicitud', 'Solicitud enviada. Será revisada por un administrador');
 
+  const handleImportCuentas = (updates) => execute(async () => {
+    await database.bulkUpdateCuentaViatico(updates);
+    database.logActivity('import_cuentas_viatico', currentUser?.email, 'player', null, { count: updates.length });
+    await onDataChange('players');
+    setShowCuentaImport(false);
+  }, 'Error importando cuentas', `Se actualizaron ${updates.length} cuentas`);
+
   const handleDelete = (id) => setConfirmDelete(id);
 
   const handleConfirmDelete = () => {
@@ -279,8 +290,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       viatico: 'Viático',
       complemento: 'Complemento',
       total: 'Total',
-      bank: 'Banco',
-      bank_account: 'Cuenta Bancaria'
+      ...CUENTA_EXPORT_LABELS
     };
 
     const playersToExport = sortedPlayers.filter(p => selectedPlayers.includes(p.id));
@@ -320,11 +330,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
             case 'total':
               row[label] = player.contrato ? 'Contrato' : calculateTotal(player);
               break;
-            case 'bank':
-              row[label] = player.bank || '';
-              break;
-            case 'bank_account':
-              row[label] = player.bank_account || '';
+            case 'cuenta_titular':
+            case 'cuenta_titular_documento':
+            case 'cuenta_banco':
+            case 'cuenta_numero':
+              row[label] = getCuentaExportValue(player, field);
               break;
             default:
               break;
@@ -362,6 +372,15 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gestión de Jugadores</h2>
         <div className="flex gap-2">
+          {canDirectEdit && (
+            <button
+              onClick={() => setShowCuentaImport(true)}
+              className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800"
+            >
+              <Upload className="w-5 h-5" />
+              Importar cuentas (Google Form)
+            </button>
+          )}
           <button
             onClick={() => {
               if (selectedPlayers.length === 0) {
@@ -514,12 +533,12 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                 </div>
               </th>
               <th 
-                onClick={() => handleSort('bank')}
+                onClick={() => handleSort('cuenta_banco')}
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
               >
                 <div className="flex items-center gap-1">
-                  Banco
-                  <SortIcon sortConfig={sortConfig} columnKey="bank" />
+                  Cuenta
+                  <SortIcon sortConfig={sortConfig} columnKey="cuenta_banco" />
                 </div>
               </th>
               <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">
@@ -617,7 +636,16 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                     <span className="font-semibold">${calculateTotal(player).toLocaleString()}</span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-sm">{player.bank || '-'}</td>
+                <td className="px-6 py-4 text-sm whitespace-nowrap">
+                  {player.cuenta_banco ? (
+                    <>
+                      <div className="font-medium">{player.cuenta_banco} · {player.cuenta_numero || '-'}</div>
+                      {player.cuenta_titular_tipo === 'familiar' && (
+                        <div className="text-xs text-gray-500">Titular: {player.cuenta_titular_nombre || '-'}</div>
+                      )}
+                    </>
+                  ) : '-'}
+                </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-2">
                     
@@ -694,6 +722,13 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
           toggleExportField={toggleExportField}
           onClose={() => setShowExportConfig(false)}
           onExport={handleExportToExcel}
+        />
+      )}
+      {showCuentaImport && (
+        <CuentaViaticoImportModal
+          players={safePlayers}
+          onClose={() => setShowCuentaImport(false)}
+          onConfirm={handleImportCuentas}
         />
       )}
       {showChangeRequestModal && (

@@ -36,8 +36,26 @@ export const DEPARTAMENTOS = [
   'Venezuela',
 ];
 
-/** Bancos disponibles para cobro de viáticos */
+/** LEGACY: bancos de las columnas players.bank / bank_account, ya no se muestran en la UI */
 export const BANCOS = ['Itau', 'Prex', 'Mi Dinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Otro'];
+
+/** Bancos habilitados para el cobro de viáticos */
+export const BANCOS_VIATICO = ['Prex', 'Mi Dinero'];
+
+/** Titular de la cuenta de cobro de viáticos */
+export const CUENTA_TITULAR_TIPOS = [
+  { value: 'jugador', label: 'Cuenta propia (del jugador)' },
+  { value: 'familiar', label: 'Padre, madre o tutor' },
+];
+
+/** Columnas de la cuenta de viáticos en la tabla players */
+export const CUENTA_VIATICO_FIELDS = [
+  'cuenta_titular_tipo',
+  'cuenta_banco',
+  'cuenta_numero',
+  'cuenta_titular_nombre',
+  'cuenta_titular_documento',
+];
 
 /** Posiciones de jugadores (orden para ordenamiento en tabla) */
 export const POSICIONES_JUGADOR = ['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero'];

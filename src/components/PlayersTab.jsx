@@ -4,7 +4,7 @@ import { useMutation } from '../hooks/useMutation';
 import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { CATEGORIAS, POSICIONES_JUGADOR, DEPARTAMENTOS } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
-import { calculateTotal } from '../utils/playerUtils';
+import { calculateTotal, CUENTA_EXPORT_LABELS, getCuentaExportValue } from '../utils/playerUtils';
 import { getCurrentSuspensionsByCategory } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type, Stethoscope, Upload, Settings2 } from 'lucide-react';
@@ -290,15 +290,20 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
     complemento: false,
     total: true,
     contrato: false,
-    bank: false,
-    bank_account: false,
+    cuenta_titular: false,
+    cuenta_titular_documento: false,
+    cuenta_banco: false,
+    cuenta_numero: false,
     numero_buzo_entrenamiento: false,
     ficha_medica_hasta: false
   };
   const [exportFields, setExportFields] = useState(() => {
     try {
       const saved = localStorage.getItem('cap_export_fields');
-      return saved ? { ...defaultExportFields, ...JSON.parse(saved) } : defaultExportFields;
+      if (!saved) return defaultExportFields;
+      // Ignora campos guardados que ya no existen (ej. bank / bank_account legacy)
+      const parsed = JSON.parse(saved);
+      return Object.fromEntries(Object.keys(defaultExportFields).map(k => [k, parsed[k] ?? defaultExportFields[k]]));
     } catch {
       return defaultExportFields;
     }
@@ -627,8 +632,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
       complemento: 'Complemento',
       total: 'Total',
       contrato: 'Contrato',
-      bank: 'Banco',
-      bank_account: 'Cuenta Bancaria',
+      ...CUENTA_EXPORT_LABELS,
       numero_buzo_entrenamiento: 'N° Buzo Entrenamiento',
       ficha_medica_hasta: 'Vencimiento Ficha Medica'
     };
@@ -691,11 +695,11 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
             case 'contrato':
               row[label] = player.contrato ? 'Sí' : 'No';
               break;
-            case 'bank':
-              row[label] = player.bank || '';
-              break;
-            case 'bank_account':
-              row[label] = player.bank_account || '';
+            case 'cuenta_titular':
+            case 'cuenta_titular_documento':
+            case 'cuenta_banco':
+            case 'cuenta_numero':
+              row[label] = getCuentaExportValue(player, field);
               break;
             case 'numero_buzo_entrenamiento':
               row[label] = player.numero_buzo_entrenamiento || '';

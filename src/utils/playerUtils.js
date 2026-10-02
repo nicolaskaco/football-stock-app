@@ -34,3 +34,30 @@ export function getComplementoEfectivo(player) {
     activo: usoOverride,
   };
 }
+
+/** Columnas de exportación de la cuenta de cobro de viáticos (reemplazan a bank / bank_account) */
+export const CUENTA_EXPORT_LABELS = {
+  cuenta_titular: 'Titular Cuenta',
+  cuenta_titular_documento: 'Documento Titular',
+  cuenta_banco: 'Banco',
+  cuenta_numero: 'Número de Cuenta',
+};
+
+/** Valor de una columna de cuenta para exportar; para cuenta propia el titular es el jugador. */
+export function getCuentaExportValue(player, field) {
+  const esFamiliar = player.cuenta_titular_tipo === 'familiar';
+  switch (field) {
+    case 'cuenta_titular':
+      if (esFamiliar) return player.cuenta_titular_nombre || '';
+      return player.cuenta_titular_tipo === 'jugador' ? player.name : '';
+    case 'cuenta_titular_documento':
+      if (esFamiliar) return player.cuenta_titular_documento || '';
+      return player.cuenta_titular_tipo === 'jugador' ? player.gov_id : '';
+    case 'cuenta_banco':
+      return player.cuenta_banco || '';
+    case 'cuenta_numero':
+      return player.cuenta_numero || '';
+    default:
+      return '';
+  }
+}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Download } from 'lucide-react';
+import { CUENTA_EXPORT_LABELS } from '../utils/playerUtils';
 
 export const ExportConfigModal = ({ 
   selectedPlayers, 
@@ -25,8 +26,7 @@ export const ExportConfigModal = ({
     complemento: 'Complemento',
     total: 'Total Viático',
     contrato: 'Contrato',
-    bank: 'Banco',
-    bank_account: 'Cuenta Bancaria',
+    ...CUENTA_EXPORT_LABELS,
     numero_buzo_entrenamiento: 'N° Buzo Entrenamiento',
     ficha_medica_hasta: 'Vencimiento Ficha Medica'
   };

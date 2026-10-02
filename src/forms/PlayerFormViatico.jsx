@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useFormDirty } from '../hooks/useFormDirty';
-import { CATEGORIAS, BANCOS } from '../utils/constants';
+import { CATEGORIAS } from '../utils/constants';
 import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner';
+import { CuentaViaticoFields } from '../components/ui/CuentaViaticoFields';
 
 export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false, onDirtyChange, appSettings = {}, onRequestChange = null, hasPendingRequest = false }) => {
   const [formData, setFormData] = useState(player || {
@@ -11,8 +12,11 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
     viatico: 0,
     complemento: 0,
     contrato: false,
-    bank: '',
-    bank_account: '',
+    cuenta_titular_tipo: null,
+    cuenta_banco: null,
+    cuenta_numero: null,
+    cuenta_titular_nombre: null,
+    cuenta_titular_documento: null,
     comentario_viatico: '',
     categoria: '',
     complemento_override: null,
@@ -35,7 +39,6 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
   };
 
   const categorias = CATEGORIAS;
-  const banks = BANCOS;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -210,37 +213,13 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
       )}
 
       {/* Bank Information */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Banco
-          </label>
-          <select 
-            value={formData.bank} 
-            disabled={readOnly}
-            onChange={(e) => setFormData({...formData, bank: e.target.value})} 
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Seleccione Banco</option>
-            {banks.map(bank => (
-              <option key={bank} value={bank}>{bank}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Cuenta Bancaria
-          </label>
-          <input 
-            type="text" 
-            value={formData.bank_account} 
-            onChange={(e) => setFormData({...formData, bank_account: e.target.value})} 
-            disabled={readOnly}
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" 
-            placeholder="Número de cuenta"
-          />
-        </div>
+      <div>
+        <h4 className="text-sm font-semibold text-gray-700 mb-3">Información Bancaria</h4>
+        <CuentaViaticoFields
+          value={formData}
+          onChange={(patch) => setFormData({...formData, ...patch})}
+          readOnly={readOnly}
+        />
       </div>
 
       {/* Comment */}

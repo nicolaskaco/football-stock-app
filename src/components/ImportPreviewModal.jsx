@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Upload, X, FileSpreadsheet, Check, AlertTriangle } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { CATEGORIAS, DEPARTAMENTOS, BANCOS, POSICIONES_JUGADOR } from '../utils/constants';
+import { CATEGORIAS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
 
 const FIELD_MAP = {
   'nombre': 'name',
@@ -20,8 +20,6 @@ const FIELD_MAP = {
   'celular': 'celular',
   'email': 'email',
   'representante': 'representante',
-  'banco': 'bank',
-  'cuenta bancaria': 'bank_account',
   'casita': 'casita',
   'residencia': 'casita',
   'vianda': 'vianda',
@@ -225,7 +223,7 @@ export const ImportPreviewModal = ({ isOpen, onClose, onConfirm, existingPlayers
                 Seleccioná un archivo Excel (.xlsx, .xls) con los datos de los jugadores.
               </p>
               <p className="text-xs text-gray-400">
-                Columnas reconocidas: Nombre, Cédula, Categoría, Fecha de Nacimiento, Posición, Departamento, Celular, Email, Representante, Banco, Cuenta Bancaria, Casita, Vianda, Viático, Complemento, Contrato, Numero Buzo, Buzo Entrenamiento.
+                Columnas reconocidas: Nombre, Cédula, Categoría, Fecha de Nacimiento, Posición, Departamento, Celular, Email, Representante, Casita, Vianda, Viático, Complemento, Contrato, Numero Buzo, Buzo Entrenamiento.
               </p>
               <button
                 onClick={() => fileInputRef.current?.click()}
