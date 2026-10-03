@@ -8,7 +8,7 @@ import {
   getPorEscenario, getPorCesped, getCombinaciones, getPorRival,
   getRachas, getHitos, getDisciplina, getCategoriasJugadas,
   AMARILLAS_PARA_SUSPENSION,
-  fmtPct, fmtRatio, fmtMinuto,
+  fmtPct, fmtRatio, fmtMinuto, fmtRecord,
 } from '../../utils/playerStats';
 import { StatCard, PctStatCard, PctInline, RecordBar, FichaSection, SinMinutoNota } from './StatCard';
 import { GolesPorTramoChart } from '../charts/GolesPorTramoChart';
@@ -42,8 +42,8 @@ const CruceTable = ({ rows, minMuestra, primeraColumna = 'Contexto' }) => (
             <CruceDato label="G-E-P">
               {r.record.pj > 0 ? `${r.record.g}-${r.record.e}-${r.record.p}` : '—'}
             </CruceDato>
-            <CruceDato label="% Vict.">
-              <PctInline pct={r.record.pctVictorias} n={r.record.pj} minMuestra={minMuestra} />
+            <CruceDato label="% Pts.">
+              <PctInline pct={r.record.pctPuntos} n={r.record.pj} minMuestra={minMuestra} />
             </CruceDato>
           </div>
           <div className="grid grid-cols-4 gap-2">
@@ -67,7 +67,7 @@ const CruceTable = ({ rows, minMuestra, primeraColumna = 'Contexto' }) => (
           <th className="px-4 py-2">{primeraColumna}</th>
           <th className="px-4 py-2 text-center">PJ</th>
           <th className="px-4 py-2 text-center">G-E-P</th>
-          <th className="px-4 py-2 text-center">% Victorias</th>
+          <th className="px-4 py-2 text-center">% Puntos</th>
           <th className="px-4 py-2 text-center">Goles</th>
           <th className="px-4 py-2 text-center">G/PJ</th>
           <th className="px-4 py-2 text-center">🟨</th>
@@ -83,7 +83,7 @@ const CruceTable = ({ rows, minMuestra, primeraColumna = 'Contexto' }) => (
               {r.record.pj > 0 ? `${r.record.g}-${r.record.e}-${r.record.p}` : '—'}
             </td>
             <td className="px-4 py-2 text-center">
-              <PctInline pct={r.record.pctVictorias} n={r.record.pj} minMuestra={minMuestra} />
+              <PctInline pct={r.record.pctPuntos} n={r.record.pj} minMuestra={minMuestra} />
             </td>
             <td className="px-4 py-2 text-center font-semibold">{r.goles}</td>
             <td className="px-4 py-2 text-center">{fmtRatio(r.golesPorPartido)}</td>
@@ -148,8 +148,9 @@ export const PlayerFichaView = ({
     };
   }, [log]);
 
-  // Impacto de su ausencia: siempre en la categoría en la que juega, sin
-  // importar el filtro de categoría de la pestaña (sí respeta el de año).
+  // Impacto de su ausencia: convocado (titular o suplente) vs. no convocado,
+  // siempre en la categoría en la que juega, sin importar el filtro de
+  // categoría de la pestaña (sí respeta el de año).
   const catJuego = player.categoria_juego || player.categoria;
   const ausencia = useMemo(() => ({
     sinConvocar: getRecordSinConvocar(jornadas, player.id, catJuego, { year }),
@@ -242,7 +243,7 @@ export const PlayerFichaView = ({
       {/* ── Cruces con el resultado ────────────────────────────────── */}
       <FichaSection
         title="Cruces con el resultado"
-        description="Solo cuentan los partidos que tienen el marcador cargado."
+        description="Solo cuentan los partidos que tienen el marcador cargado. % de puntos: 3 por victoria, 1 por empate."
       >
         <div className={cardCls}>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -252,18 +253,25 @@ export const PlayerFichaView = ({
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <PctStatCard label="% Victorias cuando marca"    pct={cuandoMarca.conGol.pctVictorias}    n={cuandoMarca.conGol.pj}    minMuestra={minMuestra} />
-          <PctStatCard label="% Victorias cuando no marca" pct={cuandoMarca.sinGol.pctVictorias}    n={cuandoMarca.sinGol.pj}    minMuestra={minMuestra} />
-          <PctStatCard label="% Victorias de titular"      pct={porTipo.titular.pctVictorias}       n={porTipo.titular.pj}       minMuestra={minMuestra} />
-          <PctStatCard label="% Victorias de suplente"     pct={porTipo.suplente.pctVictorias}      n={porTipo.suplente.pj}      minMuestra={minMuestra} />
-          <PctStatCard label="% Victorias con tarjeta"     pct={conTarjeta.conTarjeta.pctVictorias} n={conTarjeta.conTarjeta.pj} minMuestra={minMuestra} />
-          <PctStatCard label="% Victorias sin tarjeta"     pct={conTarjeta.sinTarjeta.pctVictorias} n={conTarjeta.sinTarjeta.pj} minMuestra={minMuestra} />
+          <PctStatCard label="% Puntos cuando marca"    pct={cuandoMarca.conGol.pctPuntos}    n={cuandoMarca.conGol.pj}    minMuestra={minMuestra} sub={fmtRecord(cuandoMarca.conGol)} />
+          <PctStatCard label="% Puntos cuando no marca" pct={cuandoMarca.sinGol.pctPuntos}    n={cuandoMarca.sinGol.pj}    minMuestra={minMuestra} sub={fmtRecord(cuandoMarca.sinGol)} />
+          <PctStatCard label="% Puntos de titular"      pct={porTipo.titular.pctPuntos}       n={porTipo.titular.pj}       minMuestra={minMuestra} sub={fmtRecord(porTipo.titular)} />
+          <PctStatCard label="% Puntos de suplente"     pct={porTipo.suplente.pctPuntos}      n={porTipo.suplente.pj}      minMuestra={minMuestra} sub={fmtRecord(porTipo.suplente)} />
+          <PctStatCard label="% Puntos con tarjeta"     pct={conTarjeta.conTarjeta.pctPuntos} n={conTarjeta.conTarjeta.pj} minMuestra={minMuestra} sub={fmtRecord(conTarjeta.conTarjeta)} />
+          <PctStatCard label="% Puntos sin tarjeta"     pct={conTarjeta.sinTarjeta.pctPuntos} n={conTarjeta.sinTarjeta.pj} minMuestra={minMuestra} sub={fmtRecord(conTarjeta.sinTarjeta)} />
           <PctStatCard
-            label="% Victorias sin estar convocado"
-            pct={ausencia.sinConvocar.pctVictorias}
+            label="% Puntos estando convocado"
+            pct={ausencia.conConvocar.pctPuntos}
+            n={ausencia.conConvocar.pj}
+            minMuestra={minMuestra}
+            sub={`${fmtRecord(ausencia.conConvocar)} · ${catJuego}`}
+          />
+          <PctStatCard
+            label="% Puntos sin estar convocado"
+            pct={ausencia.sinConvocar.pctPuntos}
             n={ausencia.sinConvocar.pj}
             minMuestra={minMuestra}
-            sub={`${catJuego} · convocado: ${fmtPct(ausencia.conConvocar.pctVictorias)}`}
+            sub={`${fmtRecord(ausencia.sinConvocar)} · ${catJuego}`}
           />
         </div>
       </FichaSection>

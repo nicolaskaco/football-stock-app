@@ -117,6 +117,10 @@ export function buildPlayerMatchLog(jornadas = [], playerId, { categoria = null,
  *
  * `pj` es siempre el número de partidos VÁLIDOS (con resultado), que es el
  * tamaño de muestra que la UI debe mostrar junto al porcentaje.
+ *
+ * `pctPuntos` (3 por victoria, 1 por empate, sobre 3 × pj) es la métrica que
+ * muestra la UI: a diferencia de `pctVictorias`, no trata el empate como una
+ * derrota.
  */
 export function getRecord(log = []) {
   const validos = log.filter((m) => m.resultado != null);
@@ -131,6 +135,7 @@ export function getRecord(log = []) {
     e,
     p,
     pctVictorias: pj > 0 ? (g / pj) * 100 : null,
+    pctPuntos: pj > 0 ? ((3 * g + e) / (3 * pj)) * 100 : null,
   };
 }
 

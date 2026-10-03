@@ -24,7 +24,7 @@ export const StatCard = ({ label, value, sub, tone = 'default' }) => {
 /**
  * Tarjeta de PORCENTAJE con control de tamaño de muestra.
  *
- * Un "100% de victorias en sintético" con 1 partido engaña, así que:
+ * Un "100% de puntos en sintético" con 1 partido engaña, así que:
  *   n === 0            → "—"
  *   n <  minMuestra    → porcentaje atenuado + aviso "muestra chica"
  *   n >= minMuestra    → porcentaje destacado
@@ -42,13 +42,13 @@ export const PctStatCard = ({ label, pct, n, minMuestra = 5, sub }) => {
         </p>
         <span className="text-xs text-gray-400">(n={n})</span>
       </div>
+      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       {muestraChica && (
         <p className="flex items-center gap-1 text-[11px] text-amber-600 mt-1">
           <AlertTriangle className="w-3 h-3 flex-shrink-0" />
           Muestra chica
         </p>
       )}
-      {sub && !muestraChica && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
 };
