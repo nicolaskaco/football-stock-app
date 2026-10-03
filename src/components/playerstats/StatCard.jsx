@@ -42,13 +42,13 @@ export const PctStatCard = ({ label, pct, n, minMuestra = 5, sub }) => {
         </p>
         <span className="text-xs text-gray-400">(n={n})</span>
       </div>
+      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
       {muestraChica && (
         <p className="flex items-center gap-1 text-[11px] text-amber-600 mt-1">
           <AlertTriangle className="w-3 h-3 flex-shrink-0" />
           Muestra chica
         </p>
       )}
-      {sub && !muestraChica && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
     </div>
   );
 };
