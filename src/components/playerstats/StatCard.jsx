@@ -24,7 +24,7 @@ export const StatCard = ({ label, value, sub, tone = 'default' }) => {
 /**
  * Tarjeta de PORCENTAJE con control de tamaño de muestra.
  *
- * Un "100% de victorias en sintético" con 1 partido engaña, así que:
+ * Un "100% de puntos en sintético" con 1 partido engaña, así que:
  *   n === 0            → "—"
  *   n <  minMuestra    → porcentaje atenuado + aviso "muestra chica"
  *   n >= minMuestra    → porcentaje destacado

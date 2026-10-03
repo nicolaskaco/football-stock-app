@@ -23,7 +23,7 @@ const GRID_COLS = { 2: 'grid-cols-2', 3: 'grid-cols-3' };
 const pctCell = (record, minMuestra) => {
   if (!record || record.pj === 0) return '—';
   const chica = record.pj < minMuestra;
-  return `${fmtPct(record.pctVictorias)} (n=${record.pj})${chica ? ' *' : ''}`;
+  return `${fmtPct(record.pctPuntos)} (n=${record.pj})${chica ? ' *' : ''}`;
 };
 
 export const PlayerCompareView = ({
@@ -93,22 +93,22 @@ export const PlayerCompareView = ({
 
     push('Cruces con el Resultado', names.map(() => ''));
     push('Récord (G-E-P)', data.map((d) => `${d.record.g}-${d.record.e}-${d.record.p}`));
-    push('% Victorias', data.map((d) => pctCell(d.record, minMuestra)));
-    push('% Victorias cuando marca', data.map((d) => pctCell(d.cuandoMarca.conGol, minMuestra)));
-    push('% Victorias cuando no marca', data.map((d) => pctCell(d.cuandoMarca.sinGol, minMuestra)));
-    push('% Victorias de titular', data.map((d) => pctCell(d.porTipo.titular, minMuestra)));
-    push('% Victorias de suplente', data.map((d) => pctCell(d.porTipo.suplente, minMuestra)));
-    push('% Victorias con tarjeta', data.map((d) => pctCell(d.conTarjeta.conTarjeta, minMuestra)));
-    push('% Victorias sin tarjeta', data.map((d) => pctCell(d.conTarjeta.sinTarjeta, minMuestra)));
+    push('% Puntos', data.map((d) => pctCell(d.record, minMuestra)));
+    push('% Puntos cuando marca', data.map((d) => pctCell(d.cuandoMarca.conGol, minMuestra)));
+    push('% Puntos cuando no marca', data.map((d) => pctCell(d.cuandoMarca.sinGol, minMuestra)));
+    push('% Puntos de titular', data.map((d) => pctCell(d.porTipo.titular, minMuestra)));
+    push('% Puntos de suplente', data.map((d) => pctCell(d.porTipo.suplente, minMuestra)));
+    push('% Puntos con tarjeta', data.map((d) => pctCell(d.conTarjeta.conTarjeta, minMuestra)));
+    push('% Puntos sin tarjeta', data.map((d) => pctCell(d.conTarjeta.sinTarjeta, minMuestra)));
 
     push('Cruces con el Contexto', names.map(() => ''));
     ['Local', 'Visitante'].forEach((esc) => {
       push(`Goles/PJ ${esc}`, data.map((d) => fmtRatio(d.porEscenario[esc].golesPorPartido)));
-      push(`% Victorias ${esc}`, data.map((d) => pctCell(d.porEscenario[esc].record, minMuestra)));
+      push(`% Puntos ${esc}`, data.map((d) => pctCell(d.porEscenario[esc].record, minMuestra)));
     });
     ['Natural', 'Sintético'].forEach((ces) => {
       push(`Goles/PJ ${ces}`, data.map((d) => fmtRatio(d.porCesped[ces].golesPorPartido)));
-      push(`% Victorias ${ces}`, data.map((d) => pctCell(d.porCesped[ces].record, minMuestra)));
+      push(`% Puntos ${ces}`, data.map((d) => pctCell(d.porCesped[ces].record, minMuestra)));
     });
 
     push('Rachas y Logros', names.map(() => ''));
@@ -147,7 +147,7 @@ export const PlayerCompareView = ({
       const records = data.map(pick);
       return {
         label,
-        values: records.map((r) => (r.pj > 0 ? r.pctVictorias : 0)),
+        values: records.map((r) => (r.pj > 0 ? r.pctPuntos : 0)),
         highlight: 'max',
         records,
       };
@@ -180,13 +180,13 @@ export const PlayerCompareView = ({
         title: 'Cruces con el Resultado',
         rows: [
           row('Récord (G-E-P)', data.map((d) => `${d.record.g}-${d.record.e}-${d.record.p}`)),
-          cruce('% Victorias',                 (d) => d.record),
-          cruce('% Victorias cuando marca',    (d) => d.cuandoMarca.conGol),
-          cruce('% Victorias cuando no marca', (d) => d.cuandoMarca.sinGol),
-          cruce('% Victorias de titular',      (d) => d.porTipo.titular),
-          cruce('% Victorias de suplente',     (d) => d.porTipo.suplente),
-          cruce('% Victorias con tarjeta',     (d) => d.conTarjeta.conTarjeta),
-          cruce('% Victorias sin tarjeta',     (d) => d.conTarjeta.sinTarjeta),
+          cruce('% Puntos',                 (d) => d.record),
+          cruce('% Puntos cuando marca',    (d) => d.cuandoMarca.conGol),
+          cruce('% Puntos cuando no marca', (d) => d.cuandoMarca.sinGol),
+          cruce('% Puntos de titular',      (d) => d.porTipo.titular),
+          cruce('% Puntos de suplente',     (d) => d.porTipo.suplente),
+          cruce('% Puntos con tarjeta',     (d) => d.conTarjeta.conTarjeta),
+          cruce('% Puntos sin tarjeta',     (d) => d.conTarjeta.sinTarjeta),
         ],
       },
       {
@@ -194,11 +194,11 @@ export const PlayerCompareView = ({
         rows: [
           ...['Local', 'Visitante'].flatMap((esc) => [
             row(`Goles/PJ ${esc}`, data.map((d) => d.porEscenario[esc].golesPorPartido), 'max', fmtRatio),
-            cruce(`% Victorias ${esc}`, (d) => d.porEscenario[esc].record),
+            cruce(`% Puntos ${esc}`, (d) => d.porEscenario[esc].record),
           ]),
           ...['Natural', 'Sintético'].flatMap((ces) => [
             row(`Goles/PJ ${ces}`, data.map((d) => d.porCesped[ces].golesPorPartido), 'max', fmtRatio),
-            cruce(`% Victorias ${ces}`, (d) => d.porCesped[ces].record),
+            cruce(`% Puntos ${ces}`, (d) => d.porCesped[ces].record),
           ]),
         ],
       },
@@ -367,7 +367,7 @@ const MobileCompareRow = ({ row, gridCols, palette, minMuestra }) => {
             >
               <div className={`text-sm font-semibold ${isBest ? 'text-green-700' : 'text-gray-900'}`}>
                 {record
-                  ? (record.pj > 0 ? fmtPct(record.pctVictorias) : '—')
+                  ? (record.pj > 0 ? fmtPct(record.pctPuntos) : '—')
                   : (row.format ? row.format(v, i) : v)}
               </div>
               {record && record.pj > 0 && (
