@@ -3,6 +3,7 @@ import { Lock, Download, Star } from 'lucide-react';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { calculateTotal } from '../utils/playerUtils';
+import { BANCOS_VIATICO } from '../utils/constants';
 import * as XLSX from 'xlsx';
 
 const ContactoInput = ({ value, loading, onSave }) => {
@@ -47,6 +48,36 @@ const jugadoresExportables = (players, key) => players
 
 const SIN_CUENTA = 'SIN CUENTA';
 
+/** Monto que se le paga al jugador en el export: complemento si tiene contrato, viático total si no. */
+const montoViatico = (p) => (p.contrato ? (p.complemento || 0) : calculateTotal(p));
+
+const EFECTIVO = 'Efectivo';
+const MEDIOS = [...BANCOS_VIATICO, EFECTIVO];
+
+/** Sin cuenta cargada se considera pago en efectivo. */
+const medioDePago = (p) => (p.cuenta_banco && p.cuenta_numero ? p.cuenta_banco : EFECTIVO);
+
+const bucketsVacios = () => Object.fromEntries([...MEDIOS, 'total'].map(m => [m, { monto: 0, cantidad: 0 }]));
+
+/** Totales por medio de pago (Prex / Mi Dinero / Efectivo), por categoría y generales. Mismos criterios que el export. */
+const resumenPagos = (players) => {
+  const totales = bucketsVacios();
+  const porCategoria = EXPORT_CATEGORIAS.map(({ key, label }) => {
+    const fila = { label, ...bucketsVacios() };
+    jugadoresExportables(players, key).forEach(p => {
+      const monto = montoViatico(p);
+      [fila[medioDePago(p)], fila.total, totales[medioDePago(p)], totales.total].forEach(b => {
+        b.monto += monto;
+        b.cantidad += 1;
+      });
+    });
+    return fila;
+  }).filter(f => f.total.cantidad > 0);
+  return { porCategoria, totales };
+};
+
+const formatMonto = (n) => `$ ${n.toLocaleString('es-UY')}`;
+
 export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEmail }) => {
   const { execute, isSaving } = useMutation();
 
@@ -82,8 +113,23 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
       .map(p => ({ ...p, categoriaLabel: label }))
   );
 
+  const resumen = resumenPagos(players);
+
   const handleExport = () => {
     const workbook = XLSX.utils.book_new();
+
+    // Hoja Resumen: montos y cantidad de jugadores por medio de pago
+    const header = ['Categoría', ...MEDIOS, 'Total'];
+    const filaMontos = (label, f) => [label, ...MEDIOS.map(m => f[m].monto), f.total.monto];
+    const resumenSheet = XLSX.utils.aoa_to_sheet([
+      header,
+      ...resumen.porCategoria.map(f => filaMontos(f.label, f)),
+      filaMontos('TOTAL', resumen.totales),
+      [],
+      ['Cantidad de jugadores', ...MEDIOS.map(m => resumen.totales[m].cantidad), resumen.totales.total.cantidad],
+    ]);
+    resumenSheet['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
+    XLSX.utils.book_append_sheet(workbook, resumenSheet, 'Resumen');
 
     EXPORT_CATEGORIAS.forEach(({ key, label }) => {
       const catPlayers = jugadoresExportables(players, key);
@@ -93,7 +139,7 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
       const data = catPlayers.map(p => ({
         'Nombre': p.name || '',
         'Cédula': p.gov_id || '',
-        'Total Viático': p.contrato ? (p.complemento || 0) : calculateTotal(p),
+        'Total Viático': montoViatico(p),
         'Categoría': label,
         // El número de cuenta va como texto: conserva ceros a la izquierda y no pasa a notación científica
         'Banco': p.cuenta_banco || SIN_CUENTA,
@@ -178,11 +224,79 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
         )}
       </div>
 
+      {/* Resumen de pagos por medio */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-6">
+        <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Resumen de pagos</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Cuánto se paga por Prex, por Mi Dinero y en efectivo (jugadores sin cuenta cargada). Usa los mismos criterios que la exportación.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {MEDIOS.map(m => {
+            const { monto, cantidad } = resumen.totales[m];
+            const pct = resumen.totales.total.monto > 0 ? Math.round((monto / resumen.totales.total.monto) * 100) : 0;
+            const esEfectivo = m === EFECTIVO;
+            return (
+              <div
+                key={m}
+                className={`rounded-lg border px-4 py-3 ${
+                  esEfectivo
+                    ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20'
+                    : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40'
+                }`}
+              >
+                <p className={`text-xs font-semibold uppercase tracking-wide ${esEfectivo ? 'text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {m}
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1 tabular-nums">{formatMonto(monto)}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {cantidad} jugador{cantidad !== 1 ? 'es' : ''} · {pct}%{esEfectivo ? ' · Sin cuenta cargada' : ''}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-sm text-gray-700 dark:text-gray-300 mt-4">
+          Total a pagar: <span className="font-semibold tabular-nums">{formatMonto(resumen.totales.total.monto)}</span> · {resumen.totales.total.cantidad} jugadores
+        </p>
+        {resumen.porCategoria.length > 0 && (
+          <details className="mt-3 text-sm">
+            <summary className="cursor-pointer font-medium text-gray-700 dark:text-gray-300">Ver por categoría</summary>
+            <div className="overflow-x-auto mt-2">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400">
+                    <th className="text-left font-medium py-2 pr-4">Categoría</th>
+                    {MEDIOS.map(m => <th key={m} className="text-right font-medium py-2 px-2">{m}</th>)}
+                    <th className="text-right font-medium py-2 pl-2">Total</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-900 dark:text-gray-100 tabular-nums">
+                  {resumen.porCategoria.map(f => (
+                    <tr key={f.label} className="border-b border-gray-100 dark:border-gray-700/60">
+                      <td className="py-2 pr-4">{f.label}</td>
+                      {MEDIOS.map(m => <td key={m} className="text-right py-2 px-2">{formatMonto(f[m].monto)}</td>)}
+                      <td className="text-right py-2 pl-2 font-medium">{formatMonto(f.total.monto)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="text-gray-900 dark:text-gray-100 font-semibold tabular-nums">
+                  <tr>
+                    <td className="py-2 pr-4">TOTAL</td>
+                    {MEDIOS.map(m => <td key={m} className="text-right py-2 px-2">{formatMonto(resumen.totales[m].monto)}</td>)}
+                    <td className="text-right py-2 pl-2">{formatMonto(resumen.totales.total.monto)}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </details>
+        )}
+      </div>
+
       {/* Export Excel */}
       <div className="bg-white rounded-lg shadow px-6 py-6">
         <h3 className="font-medium text-gray-900 mb-2">Exportar Viáticos</h3>
         <p className="text-sm text-gray-500 mb-4">
-          Genera un archivo Excel con los viáticos de todas las categorías formativas (excluye 3era), incluyendo la cuenta de cobro (banco, número y titular si es de un padre, madre o tutor). Jugadores con contrato se incluyen solo si están marcados como caso especial.
+          Genera un archivo Excel con los viáticos de todas las categorías formativas (excluye 3era), incluyendo la cuenta de cobro (banco, número y titular si es de un padre, madre o tutor). La primera hoja (Resumen) tiene los totales por medio de pago. Jugadores con contrato se incluyen solo si están marcados como caso especial.
         </p>
         {sinCuenta.length > 0 && (
           <details className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
