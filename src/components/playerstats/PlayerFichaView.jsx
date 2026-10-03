@@ -4,7 +4,7 @@ import { formatDate } from '../../utils/dateUtils';
 import {
   buildPlayerMatchLog,
   getTotales, getTramos, getTiempos, getMinutoPromedioGol,
-  getRecord, getCuandoMarca, getPorTipo, getConTarjeta,
+  getRecord, getCuandoMarca, getPorTipo, getConTarjeta, getRecordSinConvocar,
   getPorEscenario, getPorCesped, getCombinaciones, getPorRival,
   getRachas, getHitos, getDisciplina, getCategoriasJugadas,
   AMARILLAS_PARA_SUSPENSION,
@@ -148,6 +148,14 @@ export const PlayerFichaView = ({
     };
   }, [log]);
 
+  // Impacto de su ausencia: siempre en la categoría en la que juega, sin
+  // importar el filtro de categoría de la pestaña (sí respeta el de año).
+  const catJuego = player.categoria_juego || player.categoria;
+  const ausencia = useMemo(() => ({
+    sinConvocar: getRecordSinConvocar(jornadas, player.id, catJuego, { year }),
+    conConvocar: getRecord(buildPlayerMatchLog(jornadas, player.id, { categoria: catJuego, year })),
+  }), [jornadas, player.id, catJuego, year]);
+
   const disciplina = useMemo(() => {
     if (!stats) return [];
     return getDisciplina(yellowCounts, suspensions, player.id, stats.categoriasJugadas);
@@ -250,6 +258,13 @@ export const PlayerFichaView = ({
           <PctStatCard label="% Victorias de suplente"     pct={porTipo.suplente.pctVictorias}      n={porTipo.suplente.pj}      minMuestra={minMuestra} />
           <PctStatCard label="% Victorias con tarjeta"     pct={conTarjeta.conTarjeta.pctVictorias} n={conTarjeta.conTarjeta.pj} minMuestra={minMuestra} />
           <PctStatCard label="% Victorias sin tarjeta"     pct={conTarjeta.sinTarjeta.pctVictorias} n={conTarjeta.sinTarjeta.pj} minMuestra={minMuestra} />
+          <PctStatCard
+            label="% Victorias sin estar convocado"
+            pct={ausencia.sinConvocar.pctVictorias}
+            n={ausencia.sinConvocar.pj}
+            minMuestra={minMuestra}
+            sub={`${catJuego} · convocado: ${fmtPct(ausencia.conConvocar.pctVictorias)}`}
+          />
         </div>
       </FichaSection>
 
