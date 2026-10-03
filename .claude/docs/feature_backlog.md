@@ -27,7 +27,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [ ] **D2. Analítica de lesiones** — Historical injury analysis: most common injury types (bar chart), average recovery time per severity, players with most injury history. New sub-section in EstadisticasTab or OverviewTab.
 - [x] **D3. Frecuencia de convocatoria del jugador** — Dynamic per-year convocatoria columns in EstadisticasTab General table (titular/suplente split, filterable by category). Player read-only modal shows per-year + per-category breakdown. *(completed — PR #272 · 2026-03-23)*
 - [x] **D4. % Victorias sin estar convocado** — New card under "Cruces con el resultado" in the Estadísticas Jugadores ficha: team win % in matches of the player's categoría de juego where he was not convocado (from his first convocatoria on), with the convocado % as reference. *(PR #334 · 2026-10-02)*
-- [x] **D5. Cruces en % de puntos** — Estadísticas Jugadores (ficha, tablas de contexto y comparación, incluido el export) pasa de % de victorias a % de puntos (3-1-0), con el G-E-P como subtítulo. Reemplaza el % de victorias de D4. *(PR #TBD · 2026-10-02)*
+- [x] **D5. Cruces en % de puntos** — Estadísticas Jugadores (ficha, tablas de contexto y comparación, incluido el export) pasa de % de victorias a % de puntos (3-1-0), con el G-E-P como subtítulo. Reemplaza el % de victorias de D4. *(PR #335 · 2026-10-02)*
 
 ### E. Mejoras de UX
 
