@@ -26,6 +26,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [x] **D1. Reparar y expandir ReportsTab** — Translate all labels to Spanish. Add Excel export buttons per report. Add player-focused report: roster by category, viático + complemento totals per category, players with casita. *(completed — PR #257 · 2026-03-19)*
 - [ ] **D2. Analítica de lesiones** — Historical injury analysis: most common injury types (bar chart), average recovery time per severity, players with most injury history. New sub-section in EstadisticasTab or OverviewTab.
 - [x] **D3. Frecuencia de convocatoria del jugador** — Dynamic per-year convocatoria columns in EstadisticasTab General table (titular/suplente split, filterable by category). Player read-only modal shows per-year + per-category breakdown. *(completed — PR #272 · 2026-03-23)*
+- [x] **D4. % Victorias sin estar convocado** — New card under "Cruces con el resultado" in the Estadísticas Jugadores ficha: team win % in matches of the player's categoría de juego where he was not convocado (from his first convocatoria on), with the convocado % as reference. *(PR #TBD · 2026-10-02)*
 
 ### E. Mejoras de UX
 

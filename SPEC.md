@@ -607,7 +607,7 @@ All figures are computed in the browser from the existing `jornadas` payload —
 - **PlayerFichaView** (1 player selected) — sections:
   - *Lo básico*: PJ, goles, G/PJ, amarillas, rojas, % titularidad.
   - *Análisis por minuto*: goles y tarjetas por tramo (0-15 / 16-30 / 31-45 / 46-60 / 61-75 / 76-90+) como gráfico de barras, 1er vs. 2do tiempo, minuto promedio de gol.
-  - *Cruces con el resultado*: récord G/E/P con él en cancha, y % de victorias cuando marca / no marca, de titular / suplente, con tarjeta / sin tarjeta.
+  - *Cruces con el resultado*: récord G/E/P con él en cancha, y % de victorias cuando marca / no marca, de titular / suplente, con tarjeta / sin tarjeta. Además, % de victorias **sin estar convocado**: partidos de su categoría de juego (`categoria_juego || categoria`) en los que no figura en `partido_players`, desde su primera convocatoria en esa categoría. Cuenta cualquier ausencia, ignora el filtro de categoría de la pestaña (respeta el de año) y muestra como referencia el % con él convocado en esa misma categoría.
   - *Cruces con el contexto*: tablas por escenario (Local/Visitante), césped (Natural/Sintético), las 4 combinaciones escenario×césped, e historial contra cada rival.
   - *Rachas y logros*: rachas actual y máxima (con gol, sin tarjeta, invicto), dobletes, hat-tricks, goles desde el banco, y los goles 10/25/50/100.
   - *Disciplina*: amarillas acumuladas y cuánto falta para la suspensión, leído de `suspensions.js` (año en curso, ignora el filtro de año).
@@ -991,6 +991,7 @@ Pure, hook-free engine behind the **Estadísticas Jugadores** tab. Everything de
 | `getMinutoPromedioGol(log)` | `{ promedio, n }` over goals that have a minute. |
 | `getRecord(log)` | `{ pj, g, e, p, pctVictorias }`. **`pj` counts only matches with a scoreline** — it is the sample size the UI must show next to the percentage. |
 | `getCuandoMarca` / `getPorTipo` / `getConTarjeta` | Paired `Record`s splitting the log by whether he scored, started, or was booked. |
+| `getRecordSinConvocar(jornadas, playerId, categoria, { year })` | `Record` of the matches in `categoria` where the player was **not** in `partido_players`, counting only from his first convocatoria in that category. The only selector that walks `jornadas` instead of the log. |
 | `getPorEscenario` / `getPorCesped` / `getCombinaciones` / `getPorRival` | Context blocks: `Record` + goles + `golesPorPartido` + tarjetas, plus `pjTotal` (all matches, including those without a scoreline). |
 | `getRachas(log)` | `{ actual, maxima }` for consecutive matches scoring, without a card, and unbeaten. Matches with no scoreline neither break nor extend the unbeaten streak. |
 | `getHitos(log)` | Dobletes, hat-tricks, goals off the bench, the match where goal 10/25/50/100 landed, and `proximoHito`. |

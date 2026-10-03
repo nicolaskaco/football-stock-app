@@ -4,7 +4,8 @@
  * Todo se deriva de un único "match log" por jugador (`buildPlayerMatchLog`),
  * construido desde el payload de `database.getJornadas()`. Los selectores de
  * abajo son puros y solo reciben ese log, así ningún cruce vuelve a recorrer
- * `jornadas` por su cuenta.
+ * `jornadas` por su cuenta. Única excepción: `getRecordSinConvocar`, que
+ * necesita justamente los partidos que el log deja afuera.
  *
  * Dos particularidades de los datos que todo este archivo respeta:
  *  - `partido_eventos.minuto` es nullable (PartidoForm guarda el minuto 0 como
@@ -267,6 +268,44 @@ export function getConTarjeta(log = []) {
     conTarjeta: getRecord(log.filter(conTarjeta)),
     sinTarjeta: getRecord(log.filter((m) => !conTarjeta(m))),
   };
+}
+
+/**
+ * Récord del equipo en los partidos de la categoría del jugador en los que NO
+ * fue convocado, a partir de su primera convocatoria en esa categoría (los
+ * partidos anteriores a que entrara al plantel no cuentan).
+ *
+ * Recorre `jornadas` directamente, porque el match log solo tiene partidos
+ * donde fue convocado. Cuenta cualquier ausencia (decisión técnica, lesión o
+ * suspensión).
+ */
+export function getRecordSinConvocar(jornadas = [], playerId, categoria, { year = null } = {}) {
+  if (!playerId || !categoria) return getRecord([]);
+
+  const partidos = [];
+
+  jornadas.forEach((jornada) => {
+    if (!jornada.fecha) return;
+    const fechaYear = new Date(jornada.fecha).getFullYear();
+    if (year && fechaYear !== Number(year)) return;
+
+    (jornada.partidos || []).forEach((partido) => {
+      if (partido.categoria !== categoria) return;
+      partidos.push({
+        fecha: new Date(jornada.fecha),
+        convocado: (partido.partido_players || []).some((x) => x.player_id === playerId),
+        resultado: resolveMarcador(partido).resultado,
+      });
+    });
+  });
+
+  const fechasConvocado = partidos.filter((p) => p.convocado).map((p) => p.fecha.getTime());
+  if (fechasConvocado.length === 0) return getRecord([]);
+  const primeraConvocatoria = Math.min(...fechasConvocado);
+
+  return getRecord(
+    partidos.filter((p) => !p.convocado && p.fecha.getTime() >= primeraConvocatoria)
+  );
 }
 
 // ─── Cruces con el contexto ──────────────────────────────────────────────────
