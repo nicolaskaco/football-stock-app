@@ -148,8 +148,9 @@ export const PlayerFichaView = ({
     };
   }, [log]);
 
-  // Impacto de su ausencia: siempre en la categoría en la que juega, sin
-  // importar el filtro de categoría de la pestaña (sí respeta el de año).
+  // Impacto de su ausencia: convocado (titular o suplente) vs. no convocado,
+  // siempre en la categoría en la que juega, sin importar el filtro de
+  // categoría de la pestaña (sí respeta el de año).
   const catJuego = player.categoria_juego || player.categoria;
   const ausencia = useMemo(() => ({
     sinConvocar: getRecordSinConvocar(jornadas, player.id, catJuego, { year }),
@@ -259,11 +260,18 @@ export const PlayerFichaView = ({
           <PctStatCard label="% Puntos con tarjeta"     pct={conTarjeta.conTarjeta.pctPuntos} n={conTarjeta.conTarjeta.pj} minMuestra={minMuestra} sub={fmtRecord(conTarjeta.conTarjeta)} />
           <PctStatCard label="% Puntos sin tarjeta"     pct={conTarjeta.sinTarjeta.pctPuntos} n={conTarjeta.sinTarjeta.pj} minMuestra={minMuestra} sub={fmtRecord(conTarjeta.sinTarjeta)} />
           <PctStatCard
+            label="% Puntos estando convocado"
+            pct={ausencia.conConvocar.pctPuntos}
+            n={ausencia.conConvocar.pj}
+            minMuestra={minMuestra}
+            sub={`${fmtRecord(ausencia.conConvocar)} · ${catJuego}`}
+          />
+          <PctStatCard
             label="% Puntos sin estar convocado"
             pct={ausencia.sinConvocar.pctPuntos}
             n={ausencia.sinConvocar.pj}
             minMuestra={minMuestra}
-            sub={`${fmtRecord(ausencia.sinConvocar)} · convocado en ${catJuego}: ${fmtPct(ausencia.conConvocar.pctPuntos)}`}
+            sub={`${fmtRecord(ausencia.sinConvocar)} · ${catJuego}`}
           />
         </div>
       </FichaSection>
