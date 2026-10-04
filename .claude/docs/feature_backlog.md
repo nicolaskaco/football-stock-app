@@ -49,3 +49,4 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 ### H. Auditoría
 
 - [x] **H1. Log de Actividad Global** — App-wide audit trail: logins, permission changes, approval/rejection of change requests, bulk operations. New `activity_log` table + ActivityLogTab (admin only). *(completed — PR #281 · 2026-03-27)*
+  - [x] Paginación con "Cargar más" y filtros de tipo/usuario/fecha en la base *(PR #337 · 2026-10-04)*
