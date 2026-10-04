@@ -65,7 +65,9 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 | [src/utils/database.js](src/utils/database.js) | All Supabase data access methods |
 | [src/utils/constants.js](src/utils/constants.js) | Centralized enums and constant lists |
 | [src/utils/dateUtils.js](src/utils/dateUtils.js) | Centralized date formatting helpers |
-| [src/utils/storage.js](src/utils/storage.js) | Storage utilities |
+| [src/utils/playerStats.js](src/utils/playerStats.js) | Estadísticas Jugadores engine (see §8) |
+| [src/utils/suspensions.js](src/utils/suspensions.js) | Suspension and running yellow-counter logic (see §8) |
+| [src/utils/storage.js](src/utils/storage.js) | Legacy localStorage wrapper (unused) |
 | [src/utils/pdfExport.js](src/utils/pdfExport.js) | PDF dashboard report generation |
 | [src/context/DarkModeContext.jsx](src/context/DarkModeContext.jsx) | Dark mode state + localStorage persistence |
 | [src/PasswordReset.jsx](src/PasswordReset.jsx) | Password reset page |
@@ -117,6 +119,16 @@ Admins can invite new users directly from `ConfiguracionTab` → `UserManagement
 
 `App.jsx` handles standard password recovery links via the same `onAuthStateChange` listener: the `PASSWORD_RECOVERY` event routes the user to `SetPassword`.
 
+**Self-service reset:** Clicking "Olvidó contraseña?" on the admin login (`LoginView`) routes to `PasswordReset` (`src/PasswordReset.jsx`), which calls `supabase.auth.resetPasswordForEmail(email, { redirectTo })` directly — the standard Supabase email-based recovery link, subject to Supabase's free-tier email rate limit.
+
+**Admin-generated reset link:** To avoid the email rate limit, admins can generate a one-time reset link for any user directly from `UserManagementSection` (KeyRound button per row), without sending an email — mirroring the invite-link pattern:
+1. Frontend calls `database.generatePasswordResetLink(email)`, which invokes the `reset-password-link` Edge Function with the caller's JWT.
+2. The Edge Function verifies the caller is an `admin` via `user_permissions`, then calls `auth.admin.generateLink({ type: 'recovery', email })` and builds a hash-fragment link `<app-origin>/#type=recovery&token_hash=<hashed_token>` (same WhatsApp-crawler-safe technique as the invite flow). The link expires in 24 hours.
+3. The admin sees a modal with the link and a "Copiar Enlace" button.
+4. When opened, `App.jsx` detects `type=recovery` + `token_hash` in the URL hash and calls `supabase.auth.verifyOtp({ token_hash, type: 'recovery' })`; the resulting `PASSWORD_RECOVERY` event (via the same `onAuthStateChange` listener) routes to `SetPassword`.
+
+**Edge Function:** `supabase/functions/reset-password-link/index.ts` — deployed with caller-identity verification performed internally (same pattern as `invite-user`).
+
 ### Roles
 
 Stored as `user_permissions.role`:
@@ -129,6 +141,7 @@ Stored as `user_permissions.role`:
 | `presidente_categoria` | Category manager — must submit change requests for financial edits |
 | `delegado` | Limited role — can view Solicitudes tab (read-only); no approve/reject/create; access to other tabs controlled by permission flags |
 | `comision` | Limited role — same access model as `delegado` |
+| `coordinador` | Limited role — same access model as `delegado` |
 | (default) | Limited view-only, controlled by permission flags |
 
 ### Permission Flags (`user_permissions` table)
@@ -156,7 +169,7 @@ Stored as `user_permissions.role`:
 | `can_delete_tareas` | Show delete button on Tareas cards and list view (default: false) |
 | `categoria[]` | Array — restricts access to specific player categories |
 
-The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision` (read-only for the last two — approve/reject/create buttons hidden).
+The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision`, `coordinador` (read-only for the last three — approve/reject/create buttons hidden). The `user_permissions_role_check` DB constraint enumerates all valid roles including `coordinador`.
 
 ---
 
@@ -166,7 +179,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 
 | Table | Purpose |
 |-------|---------|
-| `players` | Player records: personal info, financials, boarding, clothing sizes. Notable columns: `tipo_documento` (text, default `'Cédula de Identidad'`), `complemento_override` (integer, nullable), `complemento_override_expira` (date, nullable), `status` (text, default `'activo'`, CHECK in `activo`/`cedido`/`transferido`/`egresado`/`dado de baja`). **Cuenta de cobro de viáticos**: `cuenta_titular_tipo` (CHECK `jugador`/`familiar`), `cuenta_banco` (CHECK `Prex`/`Mi Dinero`), `cuenta_numero`, `cuenta_titular_nombre`, `cuenta_titular_documento` (the last two only for `familiar`, i.e. a padre/madre/tutor account). `bank` / `bank_account` are **legacy**: kept in the DB but no longer shown in the UI |
+| `players` | Player records: personal info, financials, boarding, clothing sizes. Notable columns: `tipo_documento` (text, default `'Cédula de Identidad'`), `complemento_override` (integer, nullable), `complemento_override_expira` (date, nullable), `status` (text, default `'activo'`, CHECK in `activo`/`cedido`/`transferido`/`egresado`/`dado de baja`), `status_comment` (text, nullable — free-text reason for a non-active status), `incluir_viatico_export` (boolean, default `false` — marks a contracted player as a "caso especial" to include in the Tesorero viático export with their complemento). **Cuenta de cobro de viáticos**: `cuenta_titular_tipo` (CHECK `jugador`/`familiar`), `cuenta_banco` (CHECK `Prex`/`Mi Dinero`), `cuenta_numero`, `cuenta_titular_nombre`, `cuenta_titular_documento` (the last two only for `familiar`, i.e. a padre/madre/tutor account). `bank` / `bank_account` are **legacy**: kept in the DB but no longer shown in the UI |
 | `player_history` | Audit log of changes to `contrato`, `viatico`, `complemento` |
 | `player_change_requests` | Approval workflow for financial field modifications |
 | `player_documents` | Document metadata — file paths in `player-documents` storage bucket |
@@ -191,7 +204,8 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `player_injuries` | Injury log per player: tipo, severidad, dates (inicio, retorno estimado, alta) |
 | `sprints` | Weekly time-boxes for task management. `fecha_inicio` has a UNIQUE constraint — upsert-safe. |
 | `tareas` | Tasks for the Tareas module (see §6 Tareas). FK `sprint_id → sprints.id ON DELETE SET NULL`. |
-| `user_permissions` | Role and permission flags per user email (RLS disabled — access controlled via Edge Function caller verification) |
+| `activity_log` | App-wide audit trail written by `database.logActivity()`: `action_type`, `performed_by` (email), `target_type`, `target_id`, `details` (jsonb), `created_at`. Shown in the Actividad tab |
+| `user_permissions` | Role and permission flags per user email. RLS enabled: `users_select_own` (a user can read their own row), `admins_select_all`/`admins_update`/`admins_delete` (admins can read/update/delete any row, gated by the `current_user_is_admin()` SECURITY DEFINER helper to avoid RLS recursion). No INSERT policy — row creation goes through the `invite-user` Edge Function's service-role client, which bypasses RLS. |
 
 ### Campeonato Juvenil Tables Detail
 
@@ -254,7 +268,7 @@ Used by `EstadisticasTab` to compute per-player totals (goals, cards) and standi
 
 ### Audit-Tracked Player Fields
 
-Changes to `contrato`, `viatico`, `complemento`, `vianda`, and `casita` are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call. `complemento_override` and `complemento_override_expira` are **not** audit-tracked — they are transient by design.
+Changes to `contrato`, `viatico`, `complemento`, `vianda`, and `casita` are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call. `complemento_override` and `complemento_override_expira` are **not** audit-tracked — they are transient by design. Fields absent from a partial-update payload (e.g. inline single-field edits) are skipped entirely rather than compared, preventing false history entries from partial saves.
 
 ### Row-Level Security (RLS) — `players` table
 
@@ -288,7 +302,7 @@ Bucket: `player-documents` (private)
 | `players` | Jugadores | `can_access_players` |
 | `players_viatico` | Viáticos | `can_access_viatico` |
 | `tesorero` | Tesorero | `can_access_tesorero` |
-| `change_requests` | Solicitudes | role in `[admin, ejecutivo, presidente, presidente_categoria]` |
+| `change_requests` | Solicitudes | role in `[admin, ejecutivo, presidente, presidente_categoria, delegado, comision, coordinador]` |
 | `tareas` | Tareas | `can_access_tareas` |
 | `dirigentes` | Dirigentes | `can_access_dirigentes` |
 | `distributions` | Distribuciones | `can_access_ropa` **and** `distribuciones_tab_enabled` app setting |
@@ -301,6 +315,7 @@ Bucket: `player-documents` (private)
 | `estadisticas_jugadores` | Estadísticas Jugadores | `can_view_partidos` **and** `estadisticas_jugadores_tab_enabled` app setting |
 | `tarjetas` | Tarjetas | `can_view_tarjetas` |
 | `configuracion` | Configuración (includes User Management) | `role = 'admin'` only |
+| `activity_log` | Actividad | `role = 'admin'` only |
 
 App settings (`app_settings` table) are loaded at login into `appSettings` global state in `App.jsx`. Admins toggle them via `ConfiguracionTab`. The `tabEnabled(key)` helper in `AdminDashboard` checks `appSettings[key] === 'true'`.
 
@@ -311,7 +326,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 |-----------|-------------|
 | [AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell + permission gating. On desktop (`sm+`) renders a horizontal scrollable tab bar; on mobile, the tab bar is hidden and replaced by a hamburger icon + active tab label in the nav bar that opens a slide-in drawer. Clicking the logo/title navigates to the Resumen tab. |
 | [OverviewTab.jsx](src/components/OverviewTab.jsx) | Dashboard with stat cards, optional widgets, and CalendarioView for `can_view_partidos` users |
-| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits for Cédulas. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerForm` modal. Bulk actions (change category, toggle casita, hide, import from XLSX). Injury icon (Swiss cross) shown next to player name when injured. Injury CRUD button (admin only). "Comparar" button (indigo, Users icon) appears when 2-3 players are selected, opens `PlayerComparisonModal`. Admin-only status filter dropdown (defaults to "Solo activos"): filters by `status` field — `activo` (default), `cedido`, `transferido`, `egresado`, `dado de baja`. Color-coded `StatusBadge` shown next to player name for non-active statuses. |
+| [PlayersTab.jsx](src/components/PlayersTab.jsx) | Player CRUD, document upload, history modal. Ficha Médica check (individual and bulk) maps `tipo_documento` → `idtipodocumento` (Cédula de Identidad=1, Pasaporte=2, Otro=3); only strips non-digits for Cédulas. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerForm` modal. Bulk actions (change category, toggle casita, hide, import from XLSX). Injury icon (Swiss cross) shown next to player name when injured. Injury CRUD button (admin only). "Comparar" button (indigo, Users icon) appears when 2-3 players are selected, opens `PlayerComparisonModal`. Admin-only status filter dropdown (defaults to "Solo activos"): filters by `status` field — `activo` (default), `cedido`, `transferido`, `egresado`, `dado de baja`. Color-coded `StatusBadge` shown next to player name for non-active statuses; its tooltip includes the `status_comment` when set. Admin-only "Edición inline" toggle (persisted to `localStorage['cap_inline_edit']`) enables click-to-edit cells (via `InlineEditCell`) for celular, posición, categoría, departamento, casita, and representante directly in the table, saving through `database.updatePlayer()` on blur/select/Enter. |
 | [PlayersTabViatico.jsx](src/components/PlayersTabViatico.jsx) | Financial fields view with change-request flow. Complemento column shows the effective value (override if active) with a yellow "temp" badge and tooltip showing the expiry date. Sticky Nombre column on horizontal scroll. Clicking a player name opens a read-only `PlayerFormViatico` modal. Only shows players with `status = 'activo'` (hides cedidos, transferidos, egresados, dados de baja). Cuenta column shows banco · número, plus the titular when it's a padre/madre/tutor account. "Importar cuentas (Google Form)" button (admin/ejecutivo/presidente) opens `CuentaViaticoImportModal`. |
 | [ChangeRequestsTab.jsx](src/components/ChangeRequestsTab.jsx) | Approval/rejection UI for financial change requests. When viáticos are frozen, approve/reject buttons are hidden and a `ViaticosCongeladosBanner` is shown. |
 | [InventoryTab.jsx](src/components/InventoryTab.jsx) | Inventory CRUD, low-stock alerts, bulk stock adjustment via multi-select |
@@ -326,12 +341,13 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions; list view shows escenario + result badge per category. Mobile-friendly header: button label collapses to "Nueva" on small screens. Year filter dropdown (defaults to current year) filters jornadas in both list and calendar views. |
 | [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, comment, and event minutes (e.g. `⚽45'`, `🟨72'`) |
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
-| [TesoreroTab.jsx](src/components/TesoreroTab.jsx) | Tesorero view with two features: (1) **Congelar Viáticos** toggle (same `viaticos_congelados` app setting also shown in ConfiguracionTab) — when enabled the card turns amber and a configurable contact name input appears; (2) **Exportar Viáticos** — generates a multi-sheet Excel workbook (`Viaticos-Formativas-DD-MM-YYYY.xlsx`) with one sheet per formative category (Sub 19/17/16/15/14/13), sorted by name, excluding 3era and contracted players. Columns: Nombre, Cédula, Total Viático, Categoría, Banco, Número de cuenta, Nombre del titular, Documento del titular (the titular columns are only filled for padre/madre/tutor accounts; players with no account show `SIN CUENTA` in Banco). Each sheet includes a `TOTAL` / SUM formula row 3 rows below the last data row. An amber warning above the button lists the exportable players without an account. |
+| [TesoreroTab.jsx](src/components/TesoreroTab.jsx) | Tesorero view with four features: (1) **Congelar Viáticos** toggle (same `viaticos_congelados` app setting also shown in ConfiguracionTab) — when enabled the card turns amber and a configurable contact name input appears; (2) **Exportar Viáticos** — generates a multi-sheet Excel workbook (`Viaticos-Formativas-DD-MM-YYYY.xlsx`) with one sheet per formative category (Sub 19/17/16/15/14/13), sorted by name, excluding 3era and (by default) contracted players; only active players (`status = 'activo'` or null) are included. The workbook opens with a **Resumen** sheet (amount per category and medio de pago, a TOTAL row, and player counts per medio). Category sheet columns: Nombre, Cédula, Total Viático, Categoría, Banco, Número de cuenta, Nombre del titular, Documento del titular (the titular columns are only filled for padre/madre/tutor accounts; players with no account show `SIN CUENTA` in Banco). Each sheet includes a `TOTAL` / SUM formula row 3 rows below the last data row. An amber warning above the button lists the exportable players without an account. (3) **Casos especiales** — lists contracted (`contrato = true`) active players in formative categories with a toggle (`incluir_viatico_export` field) that, when enabled, includes that player in the export sheet with their complemento as "Total Viático". (4) **Resumen de pagos** — one card per medio de pago (**Prex**, **Mi Dinero**, **Efectivo**) with amount, player count and % of the total, the grand total, and a collapsible "Ver por categoría" table. **Efectivo** = the player has no `cuenta_banco` or `cuenta_numero` (same rule as `SIN CUENTA`). It uses the same population and amounts as the export, so the screen and the Excel always agree. |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
-| [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Por Cancha, Gráficos, Árbitros; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart. Árbitros sub-tab shows ArbitroPerformanceChart and ArbitroStatsTable (PJ, G, E, P with rival names, cards, effectiveness %). |
+| [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Por Cancha, Gráficos, Árbitros; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart. Árbitros sub-tab shows ArbitroPerformanceChart and ArbitroStatsTable (PJ, G, E, P with rival names, cards, effectiveness %); clicking the PJ count for a referee opens a modal listing every match they officiated (rival, fecha, número de jornada, torneo, categoría, escenario, color-coded result badge, card counts), sorted newest first. |
 | [TareasTab.jsx](src/components/TareasTab.jsx) | Task management (see §6 Tareas). Kanban and list views. Sprint management panel (create, rollover). Toolbar filters: sprint selector, assignee dropdown (shows only people with tasks in the selected sprint), and free-text search. Requires `can_access_tareas`. |
 | [TarjetasTab.jsx](src/components/TarjetasTab.jsx) | Accumulated yellow and red cards per player for the current calendar year, grouped by match category. Category filter (URL param `t_cat`). SUSPENDIDO badge when a player has a red card in the last jornada or crosses a yellow card milestone (every 5th). Excel export with one sheet per category. Requires `can_view_tarjetas` permission. Rows sorted by priority: red card + suspended first, yellow card + suspended second, red card not suspended third, yellow card not suspended last; within each group sorted by card count descending. |
 | [ConfiguracionTab.jsx](src/components/ConfiguracionTab.jsx) | Admin-only toggle switches to enable/disable feature tabs; writes to `app_settings` via `database.updateAppSetting()`. Includes a **Congelar Viáticos** toggle — when enabled, all viatico/complemento/contrato fields are disabled app-wide, solicitud creation is blocked, and approve/reject actions in ChangeRequestsTab are hidden. A configurable contact name (stored in `app_settings`) is shown in freeze banners. Also renders `UserManagementSection` for inviting and managing admin users. |
+| [ActivityLogTab.jsx](src/components/ActivityLogTab.jsx) | Admin-only audit timeline (see §6 Activity Log). Merges `activity_log`, `player_history` and resolved change requests, with type/user/date filters and a "Cargar más" button. |
 | [UserManagementSection.jsx](src/components/UserManagementSection.jsx) | Collapsible section inside ConfiguracionTab. Displays a table of all `user_permissions` rows (email, role badge, permission count, category restrictions). Provides invite, edit-permissions, and delete actions. After a successful invite the admin sees a modal with a copyable invite link. |
 | [SetPassword.jsx](src/components/SetPassword.jsx) | Full-page password setup form shown after an invite or password-recovery link is opened. Validates minimum 6 characters and confirmation match; calls `supabase.auth.updateUser({ password })`. Styled with the black/yellow CAP theme. |
 | [NotificationCenter.jsx](src/components/NotificationCenter.jsx) | Bell icon with unread-count badge in the nav bar. Opens a dropdown panel listing notifications by type: cumpleaños (players & dirigentes within 7 days), fichas médicas vencidas/por vencer, solicitudes de cambio pendientes, and lesiones activas. Unread state persisted to `localStorage`. Clicking a notification navigates to the relevant tab. Admins see all four types (filtered by `categoria`); Funcionarios only see cumpleaños. |
@@ -353,7 +369,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [InjuredPlayersWidget.jsx](src/components/InjuredPlayersWidget.jsx) | Active (open) injuries summary. Admin-only. Category filter pills. Sorted by category order then injury start date ascending. |
 | [SuspensionWidget.jsx](src/components/SuspensionWidget.jsx) | Players with 2+ accumulated yellow cards and currently suspended players. Category filter pills. Suspended players shown first with red styling; at-risk players with yellow styling. Requires `can_view_tarjetas` permission. |
 
-> All player-based analytics widgets (`SpendingTrends`, `CategoryDistribution`, `AgeDistribution`, `Departamento`) receive a `visiblePlayers` array derived in `OverviewTab` — filtered by `currentUser.categoria` when the user has category restrictions. This prevents cross-category players (visible via the partido RLS policy) from leaking into home page statistics.
+> All player-based analytics widgets (`SpendingTrends`, `CategoryDistribution`, `AgeDistribution`, `Departamento`) receive a `visiblePlayers` array derived in `OverviewTab` — first filtered to active players only (`status` null or `'activo'`), then further filtered by `currentUser.categoria` when the user has category restrictions. This prevents cross-category players (visible via the partido RLS policy) and non-active players from leaking into home page statistics.
 
 #### Forms
 | Form | Description |
@@ -390,7 +406,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [CuentaViaticoImportModal.jsx](src/components/CuentaViaticoImportModal.jsx) | Imports the viático payment accounts from the Google Form responses export (.csv/.xlsx). Columns matched by header ignoring accents/case/spaces (`Cédula de identidad`, `¿La cuenta bancaria es propia…?`, `Nombre completo del titular`, `Documento del titular`). The form repeats `Banco` / `Número de cuenta`: the first pair is the player's own account and the second the titular's (a `del titular` suffix is also accepted). Matches players by cédula ignoring dots/dashes; for duplicate responses the most recent `Marca temporal` wins (rows aren't always in order). Warnings (non-blocking): titular documento equals the player's cédula, player answered more than once. Preview statuses: Nuevo (pre-checked), Cambia (unchecked), Sin cambios, No encontrado, Inválido (bank not Prex/Mi Dinero, missing number or titular). Saves via `database.bulkUpdateCuentaViatico` and logs `import_cuentas_viatico`. |
 | [CuentaViaticoFields.jsx](src/components/ui/CuentaViaticoFields.jsx) | "Información Bancaria" fields shared by PlayerForm and PlayerFormViatico. Edit: tipo de cuenta, banco (Prex/Mi Dinero), número, and titular nombre/documento when the account belongs to a padre/madre/tutor. Read-only: Banco + Cuenta for own account; titular name + Banco + Cuenta for a familiar account. |
 | [ImportPreviewModal.jsx](src/components/ImportPreviewModal.jsx) | XLSX import with field auto-mapping, row validation (required fields, category/position checks, duplicate detection), green/red preview rows |
-| [PlayerComparisonModal.jsx](src/components/PlayerComparisonModal.jsx) | Side-by-side comparison for 2-3 players: Datos Personales, Estado, Financiero, Estadísticas de Partido, goal timeline LineChart. Best values highlighted in green via `getBest()` helper. Export to Excel (`.xlsx`) or copy to clipboard as tab-separated text |
+| [PlayerComparisonModal.jsx](src/components/PlayerComparisonModal.jsx) | Side-by-side comparison for 2-3 players: Datos Personales, Estado, Financiero, Estadísticas de Partido, goal timeline LineChart. Best values highlighted in green via `getBestIndices()` (`playerStats.js`, through the shared `CompareRow`). Export to Excel (`.xlsx`) or copy to clipboard as tab-separated text |
 | [ExportConfigModal.jsx](src/components/ExportConfigModal.jsx) | Excel export field selector |
 | [DocumentUpload.jsx](src/components/DocumentUpload.jsx) | Supabase Storage document upload/download |
 | [NameVisualEditor.jsx](src/components/NameVisualEditor.jsx) | Visual name editing (dual-name system) |
@@ -404,6 +420,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [ui/FichaMedicaIcon.jsx](src/components/ui/FichaMedicaIcon.jsx) | Stethoscope icon colored by ficha médica expiry status (red=expired, orange=expiring, green=valid) |
 | [ui/InjuryIcon.jsx](src/components/ui/InjuryIcon.jsx) | Swiss-cross SVG icon colored by injury severity (yellow=leve, orange=moderada, red=grave); tooltip shows injury type and estimated return date |
 | [ui/StatusBadge.jsx](src/components/ui/StatusBadge.jsx) | Color-coded badge for player status: amber (cedido), blue (transferido), gray (egresado), red (dado de baja). Returns null for `activo` status. |
+| [ui/InlineEditCell.jsx](src/components/ui/InlineEditCell.jsx) | Click-to-edit `<td>` cell used by PlayersTab's "Edición inline" mode. Supports `text`, `select`, and `boolean` types; boolean toggles immediately on click, text/select enter an editable state on click and save on blur/Enter/change; Escape cancels. No-op save if the value didn't change. |
 
 ---
 
@@ -422,6 +439,7 @@ Only users with `editar_nombre_especial = true` can edit `name_visual`, via the 
 Applies when `currentUser.role === 'presidente_categoria'` attempts to edit `viatico`, `complemento`, or `contrato`:
 
 1. A `player_change_requests` row is inserted with `status: 'pending'`. The "Solicitar Cambio de Viáticos/Contrato" button is accessible from the read-only player modal in both **PlayersTab** and **PlayersTabViatico** — it closes the read-only view and opens `ChangeRequestModal`.
+   - The Complemento field is normally disabled once `contrato = true` (contracted players don't receive viático/complemento) — in `ChangeRequestModal`, `PlayerForm`, and `PlayersTabViatico`. This lock is lifted when the player has `incluir_viatico_export = true` (a "caso especial" — see TesoreroTab), allowing complemento edits alongside an active contract.
 2. A reviewer (admin / ejecutivo / presidente) sees it in the "Solicitudes" tab and via the `PendingChangeRequestsWidget`
 3. **Approve**: player's financial fields are updated, request notes appended to `comentario_viatico`, history record created
 4. **Reject**: request marked `rejected`, player unchanged
@@ -573,10 +591,12 @@ Interactive charts powered by `recharts` for match statistics and dashboard widg
 - **CardDistributionChart**: BarChart of amarillas vs rojas per category.
 - **AgeCurveChart**: Stacked BarChart of player age distribution per category; respects `categoriaFiltro` prop for filtering.
 - **RivalPerformanceChart**: Horizontal stacked BarChart of wins/draws/losses per rival.
+- **GolesPorTramoChart**: BarChart of counts per minute band (`TRAMOS`) — one series in the player ficha, 2-3 grouped series in the comparison; colors from `useChartPalette`. Used by Estadísticas Jugadores.
 - **ArbitroPerformanceChart**: Horizontal stacked BarChart of wins/draws/losses per referee. Custom tooltip shows rival team name(s) for each result category (e.g. "Ganados: 1 (Nacional)").
 - **EstadisticasTab "Gráficos" sub-tab**: Renders all 4 charts above, shares category and phase filters with the existing sub-tabs.
-- **EstadisticasTab "Árbitros" sub-tab**: Renders ArbitroPerformanceChart and ArbitroStatsTable. Table columns: Árbitro, PJ, G (with rival names), E (with rival names), P (with rival names), amarillas, rojas, Efect. %. Filterable by category. Chart tooltip shows rival names per result type.
-- **EstadisticasTab "Por Cancha" sub-tab**: Shows win/draw/loss counts and goal effectiveness grouped by venue. Rows: Ciudad Deportiva, Las Acacias, CAR (each as Local), a Local Total summary, and Visitante (all away matches combined). Respects existing phase and category filters.
+- **EstadisticasTab "Árbitros" sub-tab**: Renders ArbitroPerformanceChart and ArbitroStatsTable. Table columns: Árbitro, PJ (clickable — opens a per-referee match list modal), G (with rival names), E (with rival names), P (with rival names), amarillas, rojas, Efect. %. Filterable by category. Chart tooltip shows rival names per result type. Sortable columns (including Efect. %, which sorts by the computed effectiveness value rather than PJ).
+- **EstadisticasTab "Por Cancha" sub-tab**: Shows win/draw/loss counts and goal effectiveness grouped by venue. Rows: Ciudad Deportiva, Las Acacias, CAR (each as Local), a Local Total summary, and Visitante (all away matches combined). Each row (including Local Total and Visitante) is split by `cesped` into indented Natural / Sintético sub-rows **only when it has matches on both surfaces**; with a single surface the row shows a badge with that type instead. Matches without `cesped` count toward the row total but not toward any sub-row. Respects existing phase and category filters.
+- **Efectividad (%) formula**: used in both `ArbitroStatsTable` and `CanchaStatsTable` — `(Victorias×3 + Empates) / (PJ×3) × 100`, i.e. the standard 3-point win system normalized to a percentage.
 - **CategoryDistributionWidget**: Replaced horizontal bar with a recharts donut chart (PieChart with `innerRadius`).
 - Chart components located in `src/components/charts/`.
 
@@ -590,7 +610,7 @@ Side-by-side comparison modal for 2-3 selected players.
   - Financiero (viático, complemento, total)
   - Estadísticas de Partido (PJ, titular, suplente, goles, amarillas, rojas, G/PJ)
   - Goal timeline LineChart (per-player lines overlaid)
-- **Best value highlighting**: `getBest()` helper auto-highlights the best value in each row in green.
+- **Best value highlighting**: `getBestIndices()` (in `playerStats.js`, used through the shared `CompareRow`) auto-highlights the best value in each row in green.
 - **PlayersTab integration**: "Comparar" button (indigo, `Users` icon) appears when 2-3 players are selected via checkboxes.
 - **AdminDashboard**: Passes `jornadas` prop to PlayersTab for the comparison chart data.
 - **Export to Excel**: Generates a `.xlsx` file named `comparacion_Player1_vs_Player2.xlsx` containing all comparison sections.
@@ -608,10 +628,10 @@ All figures are computed in the browser from the existing `jornadas` payload —
   - *Lo básico*: PJ, goles, G/PJ, amarillas, rojas, % titularidad.
   - *Análisis por minuto*: goles y tarjetas por tramo (0-15 / 16-30 / 31-45 / 46-60 / 61-75 / 76-90+) como gráfico de barras, 1er vs. 2do tiempo, minuto promedio de gol.
   - *Cruces con el resultado*: récord G/E/P con él en cancha, y % de puntos (3 por victoria, 1 por empate, con el G-E-P como subtítulo) cuando marca / no marca, de titular / suplente, con tarjeta / sin tarjeta. Además, % de puntos **sin estar convocado**: partidos de su categoría de juego (`categoria_juego || categoria`) en los que no figura en `partido_players`, desde su primera convocatoria en esa categoría. Cuenta cualquier ausencia, ignora el filtro de categoría de la pestaña (respeta el de año) y se muestra al lado de **% de puntos estando convocado** (titular o suplente) en esa misma categoría y período, para comparar directamente.
-  - *Cruces con el contexto*: tablas por escenario (Local/Visitante), césped (Natural/Sintético), las 4 combinaciones escenario×césped, e historial contra cada rival.
+  - *Cruces con el contexto*: tablas por escenario (Local/Visitante), césped (Natural/Sintético), las 4 combinaciones escenario×césped, e historial contra cada rival. On mobile each row becomes a stacked card (label, then PJ / G-E-P / % Puntos, then Goles / G/PJ / 🟨 / 🟥), so no horizontal scroll.
   - *Rachas y logros*: rachas actual y máxima (con gol, sin tarjeta, invicto), dobletes, hat-tricks, goles desde el banco, y los goles 10/25/50/100.
   - *Disciplina*: amarillas acumuladas y cuánto falta para la suspensión, leído de `suspensions.js` (año en curso, ignora el filtro de año).
-- **PlayerCompareView** (2-3 players) — the same metrics in a side-by-side table with best-value highlighting, a grouped minute-band chart, and Excel / clipboard export.
+- **PlayerCompareView** (2-3 players) — the same metrics (percentages as % de puntos) in a side-by-side table with best-value highlighting, a grouped minute-band chart, and Excel / clipboard export. On mobile (`< sm`) the table becomes a stacked view: a player legend (color avatar + name) on top, then each stat on its own line with every player's value below it, marked with that player's color; percentages show `n=X` (and `*` for a small sample) on a second line. Copiar/Excel buttons are icon-only on mobile.
 
 **Sample-size guard**: `app_settings.stats_min_muestra` (default `5`, configurable in ConfiguracionTab) sets the minimum number of matches before a percentage is shown as reliable. Every percentage is always rendered with its `(n=X)`; below the threshold it is dimmed and flagged "muestra chica", so a "100% de puntos en sintético" over 1 match cannot be read as meaningful.
 
@@ -624,10 +644,11 @@ All figures are computed in the browser from the existing `jornadas` payload —
 
 Players have a `status` field that tracks their current state: `activo` (default), `cedido`, `transferido`, `egresado`, `dado de baja`.
 
-- **PlayerForm**: Status dropdown in the "Información Básica" section.
-- **PlayersTab**: Admin-only filter dropdown (defaults to "Solo activos"), persisted in URL via `p_status` param. Color-coded `StatusBadge` next to player name for non-active statuses (amber=cedido, blue=transferido, gray=egresado, red=dado de baja).
+- **PlayerForm**: Status dropdown in the "Información Básica" section. When the status is not `activo`, a "Comentario sobre el Estado" textarea appears (`status_comment`, optional).
+- **PlayersTab**: Admin-only filter dropdown (defaults to "Solo activos"), persisted in URL via `p_status` param. Color-coded `StatusBadge` next to player name for non-active statuses (amber=cedido, blue=transferido, gray=egresado, red=dado de baja); hovering it shows the status and its `status_comment`.
 - **PlayersTabViatico**: Only shows active players (hides non-active automatically).
-- **PartidoForm**: No status filtering — all players are available for selection regardless of status.
+- **PartidoForm**: Only `activo` (or null) players are offered in titular/suplente slots. A non-active player already saved in a lineup stays selected and is labeled with `PLAYER_STATUS_LABELS` (e.g. `— CEDIDO`, gray background).
+- **`database.getPlayers()`** and the ficha médica query filter server-side to `status is null or status = 'activo'`. **OverviewTab** widgets and **TesoreroTab**'s export/casos-especiales also restrict to active players.
 
 ### Suspension Logic
 
@@ -650,7 +671,7 @@ Configurable minimum birth year per category, stored in `app_settings` as `ano_m
 
 - **`src/utils/ageEligibility.js`**: Core logic — `getMinBirthYearForCategory()` and `isPlayerOverAge()`. Compares `player.date_of_birth` year against the configured minimum.
 - **PlayersTab**: Amber warning triangle (`OverAgeIcon`) shown next to player name when their birth year is before the minimum for their effective category (`categoria_juego || categoria`).
-- **PartidoForm**: Over-age players shown with `⚠️ EXCEDE EDAD` label and orange background in lineup dropdowns. Warning only — not disabled, as coaches may have legitimate reasons to include over-age players. Checks against the **match category**, not the player's home category.
+- **PartidoForm**: Over-age players (checked against the **match category**, not the player's home category) are **not offered** in lineup dropdowns. A player saved in a lineup before becoming over-age stays in their slot, labeled `⚠️ EXCEDE EDAD (nac. YYYY, mín: YYYY)` with an orange background.
 - **ConfiguracionTab**: Grid of year inputs (one per category from `CATEGORIAS`), debounce-saved to `app_settings`.
 
 ### Player Match History
@@ -690,6 +711,8 @@ Class-based dark theme with user preference persistence.
   - Scrollbar styling (webkit)
   - Group-hover and hover states
 - **Transitions**: Smooth CSS transitions (0.2s for background/border, 0.15s for color).
+- **Gotcha**: the `index.css` overrides (e.g. `.dark .bg-amber-50`, `.dark .text-gray-900`) come after `@tailwind utilities` with the same specificity as `dark:` variants, so a `dark:` class on an overridden utility loses. Use the `!` modifier (`dark:!bg-black`, as in TesoreroTab's sin-cuenta warnings) or avoid the overridden class (`text-black` instead of `text-gray-900` on yellow labels, as in PartidoDetailView).
+- **Chart palettes**: `useChartPalette()` swaps the player-comparison series colors in dark mode (the near-black series becomes a light neutral).
 
 ### Responsive / Mobile Optimizations
 
@@ -701,11 +724,28 @@ Optimized layouts for small screens across tabs, modals, and forms.
 - **PartidosTab**: "Nueva Jornada" button label collapses to "Nueva" on small screens.
 - **TorneoDetailView**: "Excel Jugadores" and "Exportar PDF" buttons stack below the torneo title on mobile (`flex-col sm:flex-row`); title scales to `text-2xl` on mobile, `text-3xl` on sm+.
 - **TorneosTab**: Clicking the torneo name in the table opens `TorneoDetailView` (same as the info icon), with hover underline + purple color to indicate the link.
+- **Estadísticas Jugadores**: compare view and the ficha's *Cruces con el contexto* tables switch to stacked cards below `sm` (see §6 Estadísticas Jugadores).
 - **Forms and modals**: Responsive padding (`px-4 sm:px-6 lg:px-8`), vertical scroll within modals.
 
 ### Low-Stock Alerts
 
 `database.checkLowStock()` queries inventory items where `quantity <= min_stock`. Called after every inventory save.
+
+### Activity Log
+
+Admin-only **Actividad** tab (`ActivityLogTab`) showing a single timeline built from three sources:
+
+| Source | Event types |
+|--------|-------------|
+| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import) |
+| `player_history` | `field_change` — audited player field changes (see §4 Audit-Tracked Player Fields) |
+| `player_change_requests` (status ≠ `pending`) | `approved` / `rejected` solicitudes, with the new viático/complemento/contrato values |
+
+New auditable actions call `database.logActivity(actionType, performedBy, targetType, targetId, details)` fire-and-forget and need a label/badge entry in `ActivityLogTab`.
+
+- **Paging**: loads 50 rows per source, newest first, and a **Cargar más** button fetches the next 50 from each source that still has rows. Because the sources cover different time spans, only events at or above the newest "oldest loaded" timestamp among sources that still have more rows are shown, so the merged list is always in strict time order. Events are de-duplicated by id across pages.
+- **Filters** run in the database, not on the loaded rows: type chips (a source with no selected types is not queried), user (`performed_by` / `changed_by` / `reviewed_by`) and Desde/hasta dates (local days converted to timestamps). Changing a filter reloads from the first page. The user dropdown lists every `user_permissions` email plus any performer seen in the loaded events (e.g. `Unknown`, ex-users).
+- Database methods: `getActivityLog`, `getPlayerHistoryAll`, `getResolvedChangeRequests`, all taking `{ limit, offset, fromDate, toDate, performer }` plus `actionTypes` / `statuses` respectively.
 
 ### In-App Notification Center
 
@@ -732,6 +772,7 @@ Full CRUD for admin-level users managed from `ConfiguracionTab`. See [Admin User
 |--------|-------------|
 | `listUserPermissions()` | Returns all rows in `user_permissions` ordered by email |
 | `inviteUser(email, role, permissions)` | Calls the `invite-user` Edge Function; returns `{ invite_link, user_id }` |
+| `generatePasswordResetLink(email)` | Calls the `reset-password-link` Edge Function; returns `{ reset_link }` |
 | `updateUserPermissions(email, updates)` | Updates role and permission flags for an existing user |
 | `deleteUserPermissions(email)` | Removes the user's `user_permissions` row (revokes dashboard access) |
 
@@ -740,6 +781,7 @@ Full CRUD for admin-level users managed from `ConfiguracionTab`. See [Admin User
 | Function | Description |
 |----------|-------------|
 | `invite-user` | Verifies caller is admin, calls `auth.admin.generateLink({ type: 'invite' })`, upserts `user_permissions`, returns `invite_link` |
+| `reset-password-link` | Verifies caller is admin, calls `auth.admin.generateLink({ type: 'recovery' })`, returns a hash-fragment `reset_link` (24h expiry) — does not send an email |
 | `validate-employee` | Validates funcionario credentials and returns the employee record |
 | `validate-player` | Looks up player by `gov_id`, returns player record + `already_submitted` flag (checks `player_questionnaire` table). Deployed with `--no-verify-jwt`. |
 | `check-ficha-medica` | Proxies to SND API to retrieve sports medical license records by document number |
@@ -775,12 +817,13 @@ Default césped: `Sintético` for Local matches, `Natural` for Visitante.
 #### Individual partido editing
 
 Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
-- **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown
+- **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown. Picking a player fills an **empty** position with the default for that slot number (`POSICIONES_DEFAULT_TITULAR`: 1 Arquero, 2 Lateral derecho, 3 Zaguero derecho, 4 Zaguero izquierdo, 5 Lateral izquierdo, 6–7 Volante defensivo, 8 Extremo derecho, 9 Volante ofensivo, 10 Extremo Izquierdo, 11 Delantero Centro); a position chosen by hand is kept. Clearing the slot (X) also clears its position.
 - **Suplentes**: up to 10 slots, player dropdown only
 - **Category filter**: defaults to the partido's own category; can be expanded to include other categories (e.g. 3era, 5ta playing up in 4ta). Players from other categories are labeled with their category in parentheses.
 - **Resultado**: always displayed as Peñarol (left) vs. Rival (right), regardless of escenario. Inputs bind to `goles_local`/`goles_visitante` correctly based on escenario.
 - **Comentario**: optional freetext field for match notes.
-- Duplicate player prevention: a player already selected as titular cannot be chosen as suplente and vice versa.
+- Duplicate player prevention: a player already picked in any titular or suplente slot is removed from the other slots' dropdowns (and comes back when that slot is cleared).
+- **Who is offered**: only active players of the enabled categories who are **not over-age** for the match category (see §6 Age Eligibility). Suspended players are still listed but disabled, so the reason is visible. A player already saved in a slot who falls outside these filters stays visible in that slot only.
 - After saving, the modal returns automatically to the jornada detail view with refreshed data.
 
 #### Result display
@@ -917,7 +960,9 @@ Toggled by the "Sprints ▾" button in the header. Shows:
 ## 7. Data Export
 
 - Format: Excel (`.xlsx`) via the `xlsx` library
-- Available in: PlayersTab, PlayersTabViatico, DistributionsTab, ReportsTab, TorneoDetailView, TarjetasTab
+- Available in: PlayersTab, PlayersTabViatico, DistributionsTab, ReportsTab, TorneoDetailView, TarjetasTab, TesoreroTab (Resumen sheet + one sheet per formative category, see §5), Estadísticas Jugadores compare view (also copy to clipboard)
+- Player exports (PlayersTab, PlayersTabViatico) use the viático payment account columns — Titular, Documento titular, Banco, Número de cuenta — instead of the legacy Banco / Cuenta Bancaria
+- **Imports**: PlayersTab general XLSX import (`ImportPreviewModal`, no longer maps bank fields) and the viático accounts import from the Google Form (`CuentaViaticoImportModal`, admin/ejecutivo/presidente)
 - `ExportConfigModal` lets the user select which fields to include before downloading
 - RivalesTab supports Excel **import** (column A = rival names; row 1 always skipped as header)
 
@@ -939,7 +984,8 @@ All shared enums are centralized here — never defined inline in components:
 | `ESCENARIOS` | `['Local', 'Visitante']` |
 | `CESPED_TIPOS` | `['Natural', 'Sintético']` |
 | `POSICIONES_JUGADOR` | `['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero']` |
-| `POSICIONES_PARTIDO` | 10 specific match positions |
+| `POSICIONES_PARTIDO` | 10 specific match positions (Arquero, Lateral derecho/izquierdo, Zaguero derecho/izquierdo, Volante defensivo/ofensivo, Extremo derecho/Izquierdo, Delantero Centro) |
+| `POSICIONES_DEFAULT_TITULAR` | Default `posicion` per titular slot 1–11, used by PartidoForm to pre-fill an empty position (6 and 7 are both Volante defensivo) |
 | `DEPARTAMENTOS` | All 19 Uruguayan departments + foreign countries |
 | `BANCOS` | **Legacy** (old `bank` column): Itau, Prex, Mi Dinero, BROU, Santander, Scotia, HSBC, Otro |
 | `BANCOS_VIATICO` | `['Prex', 'Mi Dinero']`: banks enabled for paying viáticos |
@@ -949,6 +995,7 @@ All shared enums are centralized here — never defined inline in components:
 | `CATEGORIAS_INVENTARIO` | Clothing categories |
 | `CHANGE_REQUEST_STATUS` | `{ PENDING, APPROVED, REJECTED }` |
 | `PLAYER_STATUSES` | `['activo', 'cedido', 'transferido', 'egresado', 'dado de baja']` |
+| `PLAYER_STATUS_LABELS` | Display labels for non-active statuses (`'dado de baja'` → `Baja`); used by PartidoForm for saved non-active players |
 
 ### Player Utilities (`src/utils/playerUtils.js`)
 
@@ -996,7 +1043,9 @@ Pure, hook-free engine behind the **Estadísticas Jugadores** tab. Everything de
 | `getRachas(log)` | `{ actual, maxima }` for consecutive matches scoring, without a card, and unbeaten. Matches with no scoreline neither break nor extend the unbeaten streak. |
 | `getHitos(log)` | Dobletes, hat-tricks, goals off the bench, the match where goal 10/25/50/100 landed, and `proximoHito`. |
 | `getDisciplina(yellowCounts, suspensions, playerId, categorias)` | Formats the maps from `suspensions.js` into per-category `{ amarillas, faltan, suspension }`. Does **not** recount cards. |
-| `TRAMOS`, `AMARILLAS_PARA_SUSPENSION`, `fmtPct`, `fmtRatio`, `fmtMinuto` | Shared constants and formatters. |
+| `getBestIndices(values, type)` | Indices of the best values in a comparison row (`'max'` or `'min'`); `null` when all values are equal. Used by `CompareRow` (PlayerComparisonModal) and PlayerCompareView. |
+| `getCategoriasJugadas(log)` | Distinct match categories in a log. |
+| `TRAMOS`, `AMARILLAS_PARA_SUSPENSION`, `ESCENARIOS`, `CESPEDES`, `fmtPct`, `fmtRatio`, `fmtMinuto`, `fmtRecord` | Shared constants and formatters. |
 
 ### Age Eligibility Utilities (`src/utils/ageEligibility.js`)
 
@@ -1009,10 +1058,13 @@ Pure, hook-free engine behind the **Estadísticas Jugadores** tab. Everything de
 
 | Hook | Description |
 |------|-------------|
-| `useMutation.jsx` | Wraps async operations with loading state, error handling, and toast feedback; returns `{ execute, isSaving }` |
+| `useMutation.js` | Wraps async operations with loading state, error handling, and toast feedback; returns `{ execute, isSaving }` |
 | `useAlertModal.js` | Manages `AlertModal` state; returns `{ alertModal, showAlert(title, message, type), closeAlert }` |
 | `useDebouncedSearch.js` | Syncs a local `inputValue` to a URL search param after a 300ms debounce; returns `[inputValue, setInputValue]` |
 | `useTableSort.jsx` | Table sort state for `EstadisticasTab`; exports `SORT_DEFAULTS`, `thClass`, and `useTableSort(initialKey, initialDir)` returning `{ handleSort, sortFn, SortIcon, sortKey, sortDir }` |
+| `useMountEffect.js` | `useMountEffect(fn)` — runs `fn` once on mount. The sanctioned way to do mount-time work (e.g. a tab or widget fetching its own data) under the no-`useEffect` rule |
+| `useFormDirty.js` | `useFormDirty(formData, initialValue, onDirtyChange)` — reports to the parent whether a form differs from its initial value (powers the unsaved-changes guard on modals) |
+| `useChartPalette.js` | `useChartPalette()` returns the 3-series player-comparison palette for the active theme; also exports `CHART_PALETTE_LIGHT`, `CHART_PALETTE_DARK` and `contrastText(hex)` |
 
 ---
 
@@ -1042,126 +1094,160 @@ football-stock-app/
 ├── vercel.json
 ├── package.json
 ├── .env.example                   # Required env var keys (committed, no values)
+├── CLAUDE.md                      # Agent/dev guide (patterns, constraints, workflow)
 ├── SPEC.md                        ← this file
+├── ROADMAP.md
 ├── Summary App.md                 ← legacy feature summary
+├── .claude/docs/                  # architectural_patterns.md, feature_backlog.md
 ├── public/
 │   ├── logo.jpeg
 │   └── apple-touch-icon.png
-└── src/
-    ├── App.jsx                    # Root: routing, session, global state
-    ├── main.jsx                   # React entry point
-    ├── supabaseClient.js          # Supabase client
-    ├── PasswordReset.jsx          # Password reset page
-    ├── App.css
-    ├── index.css
-    ├── logo.jpeg
-    ├── components/                # UI components (tabs, widgets, modals)
-    │   ├── ui/
-    │   │   ├── FilterButtonGroup.jsx  # Shared toggle-button filter bar
-    │   │   ├── SearchInput.jsx        # Shared debounced search input
-    │   │   ├── SortIcon.jsx           # Shared sort direction arrow
-    │   │   ├── ViandaIcons.jsx        # Shared vianda icon renderer
-    │   │   ├── FichaMedicaIcon.jsx     # Ficha médica status icon
-    │   │   ├── InjuryIcon.jsx          # Swiss-cross injury severity icon
-    │   │   └── StatusBadge.jsx         # Player status badge (cedido/transferido/etc.)
-    │   ├── charts/
-    │   │   ├── GoalTrendChart.jsx       # Goals per jornada line chart
-    │   │   ├── CardDistributionChart.jsx # Cards by category bar chart
-    │   │   ├── AgeCurveChart.jsx        # Age distribution stacked bar chart
-    │   │   └── RivalPerformanceChart.jsx # W/D/L per rival horizontal bar chart
-    │   ├── AdminDashboard.jsx
-    │   ├── LoginView.jsx
-    │   ├── PlayerLoginView.jsx          # Player login screen for /jugador
-    │   ├── EmployeeView.jsx
-    │   ├── OverviewTab.jsx
-    │   ├── PlayersTab.jsx
-    │   ├── PlayersTabViatico.jsx
-    │   ├── ChangeRequestsTab.jsx
-    │   ├── InventoryTab.jsx
-    │   ├── DistributionsTab.jsx
-    │   ├── EmployeesTab.jsx
-    │   ├── DirigentesTab.jsx
-    │   ├── TorneosTab.jsx
-    │   ├── TorneoDetailView.jsx
-    │   ├── ComisionesTab.jsx
-    │   ├── ComisionDetailView.jsx
-    │   ├── RivalesTab.jsx
-    │   ├── PartidosTab.jsx
-    │   ├── PartidoDetailView.jsx
-    │   ├── CalendarioView.jsx
-    │   ├── ReportsTab.jsx
-    │   ├── EstadisticasTab.jsx
-    │   ├── TareasTab.jsx               # Task management (Kanban + list, sprint panel)
-    │   ├── TarjetasTab.jsx
-    │   ├── ConfiguracionTab.jsx
-    │   ├── BirthdayWidget.jsx
-    │   ├── FichaMedicaWidget.jsx
-    │   ├── SpendingTrendsWidget.jsx
-    │   ├── CategoryDistributionWidget.jsx
-    │   ├── AgeDistributionWidget.jsx
-    │   ├── DepartamentoWidget.jsx
-    │   ├── MostDistributedWidget.jsx
-    │   ├── PendingChangeRequestsWidget.jsx
-    │   ├── InjuredPlayersWidget.jsx
-    │   ├── SuspensionWidget.jsx
-    │   ├── NotificationCenter.jsx      # Bell icon + notification dropdown panel
-    │   ├── SetPassword.jsx              # Password setup for invite / recovery flow
-    │   ├── UserManagementSection.jsx    # User invite + permission management UI
-    │   ├── Modal.jsx
-    │   ├── ConfirmModal.jsx
-    │   ├── AlertModal.jsx
-    │   ├── PromptModal.jsx
-    │   ├── ChangeRequestModal.jsx
-    │   ├── PlayerHistoryModal.jsx
-    │   ├── PlayerQuestionnaireModal.jsx
-    │   ├── QuestionnaireFieldSync.jsx
-    │   ├── BulkActionModal.jsx
-    │   ├── ImportPreviewModal.jsx
-    │   ├── ExportConfigModal.jsx
-    │   ├── PlayerComparisonModal.jsx
-    │   ├── DocumentUpload.jsx
-    │   ├── NameVisualEditor.jsx
-    │   ├── StatCard.jsx
-    │   └── Toast.jsx
-    ├── forms/                     # Data entry forms
-    │   ├── PlayerForm.jsx
-    │   ├── PlayerFormViatico.jsx
-    │   ├── PlayerFormPublic.jsx
-    │   ├── PlayerQuestionnaire.jsx      # One-time player self-service questionnaire
-    │   ├── EmployeeForm.jsx
-    │   ├── InventoryForm.jsx
-    │   ├── DistributionForm.jsx
-    │   ├── DirigenteForm.jsx
-    │   ├── TorneoForm.jsx
-    │   ├── ComisionForm.jsx
-    │   ├── RivalForm.jsx
-    │   ├── JornadaForm.jsx
-    │   ├── PartidoForm.jsx
-    │   ├── InjuryForm.jsx
-    │   ├── TareaForm.jsx              # Task add/edit form
-    │   └── UserInviteForm.jsx         # Invite / permission form for admin user management
-    ├── context/
-    │   ├── ToastContext.jsx       # Toast notification context + provider
-    │   └── DarkModeContext.jsx    # Dark mode state + localStorage persistence
-    ├── hooks/
-    │   ├── useMutation.jsx        # Async mutation helper with toast feedback
-    │   ├── useAlertModal.js       # AlertModal state manager
-    │   ├── useDebouncedSearch.js  # Debounced URL-param search input
-    │   └── useTableSort.jsx       # Table sort state for EstadisticasTab
-    └── utils/
-        ├── constants.js           # All shared enums and constant lists
-        ├── database.js            # All Supabase data access methods
-        ├── dateUtils.js           # Date formatting and age calculation helpers
-        ├── pdfExport.js           # Dashboard PDF report generation
-        ├── playerUtils.js         # Player business logic (calculateTotal)
-        ├── suspensions.js         # Suspension logic (red card / 5th yellow; red resets the counter)
-        ├── ageEligibility.js      # Over-age detection per category (configurable max age)
-        └── storage.js             # Legacy localStorage wrapper (largely unused)
-supabase/
-└── functions/
-    ├── invite-user/               # Generate invite link + upsert user_permissions (no email sent)
-    │   └── index.ts
-    ├── validate-employee/         # Funcionario credential validation
-    ├── validate-player/           # Player credential validation + already_submitted check
-    └── check-ficha-medica/        # SND API proxy for sports medical license lookup
+├── src/
+│   ├── App.jsx                    # Root: routing, session, global state
+│   ├── main.jsx                   # React entry point
+│   ├── supabaseClient.js          # Supabase client
+│   ├── PasswordReset.jsx          # Password reset page
+│   ├── App.css
+│   ├── index.css                  # Tailwind + dark-mode overrides
+│   ├── logo.jpeg
+│   ├── components/                # UI components (tabs, widgets, modals)
+│   │   ├── ui/
+│   │   │   ├── FilterButtonGroup.jsx    # Shared toggle-button filter bar
+│   │   │   ├── SearchInput.jsx          # Shared debounced search input
+│   │   │   ├── SortIcon.jsx             # Shared sort direction arrow
+│   │   │   ├── ViandaIcons.jsx          # Shared vianda icon renderer
+│   │   │   ├── FichaMedicaIcon.jsx      # Ficha médica status icon
+│   │   │   ├── InjuryIcon.jsx           # Swiss-cross injury severity icon
+│   │   │   ├── OverAgeIcon.jsx          # Over-age warning triangle
+│   │   │   ├── SuspensionIcon.jsx       # Suspension indicator
+│   │   │   ├── StatusBadge.jsx          # Player status badge (cedido/transferido/etc.) + status_comment tooltip
+│   │   │   ├── InlineEditCell.jsx       # Click-to-edit table cell (PlayersTab inline editing)
+│   │   │   └── CuentaViaticoFields.jsx  # "Información Bancaria" (cuenta de cobro) fields
+│   │   ├── charts/
+│   │   │   ├── GoalTrendChart.jsx         # Goals per jornada line chart
+│   │   │   ├── CardDistributionChart.jsx  # Cards by category bar chart
+│   │   │   ├── AgeCurveChart.jsx          # Age distribution stacked bar chart
+│   │   │   ├── RivalPerformanceChart.jsx  # W/D/L per rival horizontal bar chart
+│   │   │   ├── ArbitroPerformanceChart.jsx # W/D/L per referee horizontal bar chart
+│   │   │   └── GolesPorTramoChart.jsx     # Per-minute-band bars (Estadísticas Jugadores)
+│   │   ├── playerstats/               # Estadísticas Jugadores views
+│   │   │   ├── PlayerFichaView.jsx    # Single-player ficha
+│   │   │   ├── PlayerCompareView.jsx  # 2-3 player comparison (table / mobile stacked)
+│   │   │   ├── CompareRow.jsx         # Row / SectionHeader shared with PlayerComparisonModal
+│   │   │   └── StatCard.jsx           # Stat and % cards with sample-size guard
+│   │   ├── AdminDashboard.jsx
+│   │   ├── LoginView.jsx
+│   │   ├── PlayerLoginView.jsx          # Player login screen for /jugador
+│   │   ├── EmployeeView.jsx
+│   │   ├── OverviewTab.jsx
+│   │   ├── PlayersTab.jsx
+│   │   ├── PlayersTabViatico.jsx
+│   │   ├── ChangeRequestsTab.jsx
+│   │   ├── InventoryTab.jsx
+│   │   ├── DistributionsTab.jsx
+│   │   ├── EmployeesTab.jsx
+│   │   ├── DirigentesTab.jsx
+│   │   ├── TorneosTab.jsx
+│   │   ├── TorneoDetailView.jsx
+│   │   ├── ComisionesTab.jsx
+│   │   ├── ComisionDetailView.jsx
+│   │   ├── RivalesTab.jsx
+│   │   ├── PartidosTab.jsx
+│   │   ├── PartidoDetailView.jsx
+│   │   ├── CalendarioView.jsx
+│   │   ├── ReportsTab.jsx
+│   │   ├── TesoreroTab.jsx              # Congelar viáticos, export, casos especiales, resumen de pagos
+│   │   ├── EstadisticasTab.jsx
+│   │   ├── EstadisticasJugadoresTab.jsx # Per-player analytics tab (ficha / comparison)
+│   │   ├── TareasTab.jsx                # Task management (Kanban + list, sprint panel)
+│   │   ├── TarjetasTab.jsx
+│   │   ├── ActivityLogTab.jsx           # Admin audit timeline (Actividad)
+│   │   ├── ConfiguracionTab.jsx
+│   │   ├── BirthdayWidget.jsx
+│   │   ├── FichaMedicaWidget.jsx
+│   │   ├── SpendingTrendsWidget.jsx
+│   │   ├── CategoryDistributionWidget.jsx
+│   │   ├── AgeDistributionWidget.jsx
+│   │   ├── DepartamentoWidget.jsx
+│   │   ├── MostDistributedWidget.jsx
+│   │   ├── PendingChangeRequestsWidget.jsx
+│   │   ├── InjuredPlayersWidget.jsx
+│   │   ├── SuspensionWidget.jsx
+│   │   ├── NotificationCenter.jsx       # Bell icon + notification dropdown panel
+│   │   ├── SetPassword.jsx              # Password setup for invite / recovery flow
+│   │   ├── UserManagementSection.jsx    # User invite + permission management UI
+│   │   ├── ViaticosCongeladosBanner.jsx # Banner shown while viáticos are frozen
+│   │   ├── Modal.jsx
+│   │   ├── ConfirmModal.jsx
+│   │   ├── AlertModal.jsx
+│   │   ├── PromptModal.jsx
+│   │   ├── ChangeRequestModal.jsx
+│   │   ├── PlayerHistoryModal.jsx
+│   │   ├── PlayerQuestionnaireModal.jsx
+│   │   ├── QuestionnaireFieldSync.jsx
+│   │   ├── BulkActionModal.jsx
+│   │   ├── ImportPreviewModal.jsx
+│   │   ├── CuentaViaticoImportModal.jsx # Viático accounts import from the Google Form
+│   │   ├── ExportConfigModal.jsx
+│   │   ├── PlayerComparisonModal.jsx
+│   │   ├── DocumentUpload.jsx
+│   │   ├── NameVisualEditor.jsx
+│   │   ├── StatCard.jsx
+│   │   └── Toast.jsx
+│   ├── forms/                     # Data entry forms
+│   │   ├── PlayerForm.jsx
+│   │   ├── PlayerFormViatico.jsx
+│   │   ├── PlayerFormPublic.jsx
+│   │   ├── PlayerQuestionnaire.jsx      # One-time player self-service questionnaire
+│   │   ├── EmployeeForm.jsx
+│   │   ├── InventoryForm.jsx
+│   │   ├── DistributionForm.jsx
+│   │   ├── DirigenteForm.jsx
+│   │   ├── TorneoForm.jsx
+│   │   ├── ComisionForm.jsx
+│   │   ├── RivalForm.jsx
+│   │   ├── JornadaForm.jsx
+│   │   ├── PartidoForm.jsx
+│   │   ├── InjuryForm.jsx
+│   │   ├── TareaForm.jsx              # Task add/edit form
+│   │   └── UserInviteForm.jsx         # Invite / permission form for admin user management
+│   ├── context/
+│   │   ├── ToastContext.jsx       # Toast notification context + provider
+│   │   └── DarkModeContext.jsx    # Dark mode state + localStorage persistence
+│   ├── hooks/
+│   │   ├── useMutation.js         # Async mutation helper with toast feedback
+│   │   ├── useAlertModal.js       # AlertModal state manager
+│   │   ├── useDebouncedSearch.js  # Debounced URL-param search input
+│   │   ├── useTableSort.jsx       # Table sort state for EstadisticasTab
+│   │   ├── useMountEffect.js      # Run once on mount (no-useEffect rule)
+│   │   ├── useFormDirty.js        # Unsaved-changes reporting for forms
+│   │   └── useChartPalette.js     # Theme-aware comparison chart colors
+│   └── utils/
+│       ├── constants.js           # All shared enums and constant lists
+│       ├── database.js            # All Supabase data access methods
+│       ├── dateUtils.js           # Date formatting and age calculation helpers
+│       ├── pdfExport.js           # Dashboard PDF report generation
+│       ├── playerUtils.js         # Player business logic (calculateTotal)
+│       ├── playerStats.js         # Estadísticas Jugadores engine
+│       ├── suspensions.js         # Suspension logic (red card / 5th yellow; red resets the counter)
+│       ├── ageEligibility.js      # Over-age detection per category (configurable max age)
+│       └── storage.js             # Legacy localStorage wrapper (largely unused)
+└── supabase/
+    ├── migrations/                # Recent migrations only (YYYYMMDD_description.sql); base schema is in §4
+    │   ├── 20260312_add_arbitros_to_partidos.sql
+    │   ├── 20260330_add_padres_to_players.sql
+    │   ├── 20260415_add_player_questionnaire.sql
+    │   ├── 20260505_enable_rls_user_permissions.sql
+    │   ├── 20260601_add_incluir_viatico_export.sql
+    │   ├── 20260729170948_add_coordinador_role.sql
+    │   ├── 20260903_add_status_comment_to_players.sql
+    │   └── 20261002_add_cuenta_viatico_to_players.sql
+    └── functions/
+        ├── invite-user/           # Generate invite link + upsert user_permissions (no email sent)
+        │   └── index.ts
+        ├── reset-password-link/   # Generate admin password-reset link (no email sent)
+        │   └── index.ts
+        ├── validate-player/       # Player credential validation + already_submitted check
+        ├── check-ficha-medica/    # SND API proxy for sports medical license lookup
+        └── validate-employee/     # Funcionario credential validation (deployed; source not in repo)
 ```
