@@ -240,15 +240,15 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
                 key={m}
                 className={`rounded-lg border px-4 py-3 ${
                   esEfectivo
-                    ? 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-900/20'
+                    ? 'border-amber-300 bg-amber-50 dark:border-yellow-500 dark:!bg-black'
                     : 'border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-900/40'
                 }`}
               >
-                <p className={`text-xs font-semibold uppercase tracking-wide ${esEfectivo ? 'text-amber-700 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                <p className={`text-xs font-semibold uppercase tracking-wide ${esEfectivo ? 'text-amber-700 dark:text-yellow-400' : 'text-gray-500 dark:text-gray-400'}`}>
                   {m}
                 </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1 tabular-nums">{formatMonto(monto)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className={`text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1 tabular-nums ${esEfectivo ? 'dark:!text-yellow-400' : ''}`}>{formatMonto(monto)}</p>
+                <p className={`text-xs text-gray-500 dark:text-gray-400 mt-0.5 ${esEfectivo ? 'dark:!text-yellow-500/80' : ''}`}>
                   {cantidad} jugador{cantidad !== 1 ? 'es' : ''} · {pct}%{esEfectivo ? ' · Sin cuenta cargada' : ''}
                 </p>
               </div>
@@ -299,7 +299,7 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
           Genera un archivo Excel con los viáticos de todas las categorías formativas (excluye 3era), incluyendo la cuenta de cobro (banco, número y titular si es de un padre, madre o tutor). La primera hoja (Resumen) tiene los totales por medio de pago. Jugadores con contrato se incluyen solo si están marcados como caso especial.
         </p>
         {sinCuenta.length > 0 && (
-          <details className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <details className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-yellow-500 dark:!bg-black dark:text-yellow-400">
             <summary className="cursor-pointer font-medium">
               {sinCuenta.length} jugador{sinCuenta.length !== 1 ? 'es' : ''} no {sinCuenta.length !== 1 ? 'tienen' : 'tiene'} cuenta cargada; se {sinCuenta.length !== 1 ? 'exportan' : 'exporta'} con "{SIN_CUENTA}".
             </summary>
