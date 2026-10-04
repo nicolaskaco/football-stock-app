@@ -1593,7 +1593,9 @@ export const database = {
     }
   },
 
-  async getActivityLog({ limit = 200, offset = 0, fromDate, toDate } = {}) {
+  // Shared filters for the Actividad tab: fromDate / toDate are ISO timestamps,
+  // performer is an email. Each table uses its own timestamp and performer column.
+  async getActivityLog({ limit = 200, offset = 0, fromDate, toDate, performer, actionTypes } = {}) {
     let query = supabase
       .from('activity_log')
       .select('*')
@@ -1601,13 +1603,15 @@ export const database = {
       .range(offset, offset + limit - 1);
     if (fromDate) query = query.gte('created_at', fromDate);
     if (toDate) query = query.lte('created_at', toDate);
+    if (performer) query = query.eq('performed_by', performer);
+    if (actionTypes) query = query.in('action_type', actionTypes);
     const { data, error } = await query;
     if (error) throw error;
     return data;
   },
 
-  async getPlayerHistoryAll({ limit = 200, offset = 0 } = {}) {
-    const { data, error } = await supabase
+  async getPlayerHistoryAll({ limit = 200, offset = 0, fromDate, toDate, performer } = {}) {
+    let query = supabase
       .from('player_history')
       .select(`
         *,
@@ -1615,20 +1619,28 @@ export const database = {
       `)
       .order('changed_at', { ascending: false })
       .range(offset, offset + limit - 1);
+    if (fromDate) query = query.gte('changed_at', fromDate);
+    if (toDate) query = query.lte('changed_at', toDate);
+    if (performer) query = query.eq('changed_by', performer);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
 
-  async getResolvedChangeRequests({ limit = 200, offset = 0 } = {}) {
-    const { data, error } = await supabase
+  async getResolvedChangeRequests({ limit = 200, offset = 0, fromDate, toDate, performer, statuses } = {}) {
+    let query = supabase
       .from('player_change_requests')
       .select(`
         *,
         players ( name, name_visual, categoria )
       `)
-      .neq('status', 'pending')
       .order('review_date', { ascending: false })
       .range(offset, offset + limit - 1);
+    query = statuses ? query.in('status', statuses) : query.neq('status', 'pending');
+    if (fromDate) query = query.gte('review_date', fromDate);
+    if (toDate) query = query.lte('review_date', toDate);
+    if (performer) query = query.eq('reviewed_by', performer);
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
