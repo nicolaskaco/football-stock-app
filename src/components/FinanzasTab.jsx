@@ -8,6 +8,7 @@ import { useTableSort, thClass } from '../hooks/useTableSort';
 import { SearchInput } from './ui/SearchInput';
 import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { database } from '../utils/database';
+import { exportViaticosFormativas, viaticosFileNameMes } from '../utils/viaticoExport';
 
 const money = (n) => (n == null ? '-' : `$${Number(n).toLocaleString('es-UY')}`);
 
@@ -101,6 +102,13 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
     database.logActivity('export_finanzas', currentUser?.email, 'players', null, { cantidad: rows.length, categorias, mostrarContrato });
   };
 
+  // Mismo Excel que "Exportar Viáticos" de Tesorero (todas las formativas, ignora los filtros de la tabla)
+  const handleExportViaticos = () => {
+    const fileName = viaticosFileNameMes();
+    exportViaticosFormativas(players, fileName);
+    database.logActivity('export_viaticos_finanzas', currentUser?.email, 'players', null, { archivo: fileName });
+  };
+
   const th = (col, label, className = '') => (
     <th onClick={() => handleSort(col)} className={`${thClass} text-left ${className}`}>
       {label}<SortIcon col={col} />
@@ -114,14 +122,25 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
           <h2 className="text-2xl font-bold">Finanzas</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">Jugadores activos · solo lectura</p>
         </div>
-        <button
-          onClick={handleExport}
-          disabled={rows.length === 0}
-          className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50"
-        >
-          <Download className="w-5 h-5" />
-          Exportar a Excel
-        </button>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={handleExportViaticos}
+            disabled={players.length === 0}
+            title="Excel con los viáticos de todas las categorías formativas (excluye 3era), igual al de Tesorero"
+            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50"
+          >
+            <Download className="w-5 h-5" />
+            Exportar Viáticos
+          </button>
+          <button
+            onClick={handleExport}
+            disabled={rows.length === 0}
+            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50"
+          >
+            <Download className="w-5 h-5" />
+            Exportar a Excel
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">

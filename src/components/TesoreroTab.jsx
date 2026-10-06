@@ -2,9 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Lock, Download, Star } from 'lucide-react';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
-import { calculateTotal } from '../utils/playerUtils';
-import { BANCOS_VIATICO } from '../utils/constants';
-import * as XLSX from 'xlsx';
+import {
+  EXPORT_CATEGORIAS, jugadoresExportables, SIN_CUENTA, EFECTIVO, MEDIOS, resumenPagos,
+  exportViaticosFormativas, viaticosFileNameFecha,
+} from '../utils/viaticoExport';
 
 const ContactoInput = ({ value, loading, onSave }) => {
   const [draft, setDraft] = useState(value);
@@ -30,50 +31,6 @@ const ContactoInput = ({ value, loading, onSave }) => {
       />
     </div>
   );
-};
-
-const EXPORT_CATEGORIAS = [
-  { key: '4ta', label: 'Sub 19' },
-  { key: '5ta', label: 'Sub 17' },
-  { key: 'S16', label: 'Sub 16' },
-  { key: '6ta', label: 'Sub 15' },
-  { key: '7ma', label: 'Sub 14' },
-  { key: 'Sub13', label: 'Sub 13' },
-];
-
-/** Jugadores que entran en la hoja de una categoría: activos, sin contrato o marcados como caso especial. */
-const jugadoresExportables = (players, key) => players
-  .filter(p => p.categoria === key && (!p.contrato || p.incluir_viatico_export) && (!p.status || p.status === 'activo'))
-  .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es-UY'));
-
-const SIN_CUENTA = 'SIN CUENTA';
-
-/** Monto que se le paga al jugador en el export: complemento si tiene contrato, viático total si no. */
-const montoViatico = (p) => (p.contrato ? (p.complemento || 0) : calculateTotal(p));
-
-const EFECTIVO = 'Efectivo';
-const MEDIOS = [...BANCOS_VIATICO, EFECTIVO];
-
-/** Sin cuenta cargada se considera pago en efectivo. */
-const medioDePago = (p) => (p.cuenta_banco && p.cuenta_numero ? p.cuenta_banco : EFECTIVO);
-
-const bucketsVacios = () => Object.fromEntries([...MEDIOS, 'total'].map(m => [m, { monto: 0, cantidad: 0 }]));
-
-/** Totales por medio de pago (Prex / Mi Dinero / Efectivo), por categoría y generales. Mismos criterios que el export. */
-const resumenPagos = (players) => {
-  const totales = bucketsVacios();
-  const porCategoria = EXPORT_CATEGORIAS.map(({ key, label }) => {
-    const fila = { label, ...bucketsVacios() };
-    jugadoresExportables(players, key).forEach(p => {
-      const monto = montoViatico(p);
-      [fila[medioDePago(p)], fila.total, totales[medioDePago(p)], totales.total].forEach(b => {
-        b.monto += monto;
-        b.cantidad += 1;
-      });
-    });
-    return fila;
-  }).filter(f => f.total.cantidad > 0);
-  return { porCategoria, totales };
 };
 
 const formatMonto = (n) => `$ ${n.toLocaleString('es-UY')}`;
@@ -115,60 +72,7 @@ export const TesoreroTab = ({ players, appSettings, onDataChange, currentUserEma
 
   const resumen = resumenPagos(players);
 
-  const handleExport = () => {
-    const workbook = XLSX.utils.book_new();
-
-    // Hoja Resumen: montos y cantidad de jugadores por medio de pago
-    const header = ['Categoría', ...MEDIOS, 'Total'];
-    const filaMontos = (label, f) => [label, ...MEDIOS.map(m => f[m].monto), f.total.monto];
-    const resumenSheet = XLSX.utils.aoa_to_sheet([
-      header,
-      ...resumen.porCategoria.map(f => filaMontos(f.label, f)),
-      filaMontos('TOTAL', resumen.totales),
-      [],
-      ['Cantidad de jugadores', ...MEDIOS.map(m => resumen.totales[m].cantidad), resumen.totales.total.cantidad],
-    ]);
-    resumenSheet['!cols'] = [{ wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
-    XLSX.utils.book_append_sheet(workbook, resumenSheet, 'Resumen');
-
-    EXPORT_CATEGORIAS.forEach(({ key, label }) => {
-      const catPlayers = jugadoresExportables(players, key);
-
-      if (catPlayers.length === 0) return;
-
-      const data = catPlayers.map(p => ({
-        'Nombre': p.name || '',
-        'Cédula': p.gov_id || '',
-        'Total Viático': montoViatico(p),
-        'Categoría': label,
-        // El número de cuenta va como texto: conserva ceros a la izquierda y no pasa a notación científica
-        'Banco': p.cuenta_banco || SIN_CUENTA,
-        'Número de cuenta': p.cuenta_numero || '',
-        'Nombre del titular': p.cuenta_titular_tipo === 'familiar' ? (p.cuenta_titular_nombre || '') : '',
-        'Documento del titular': p.cuenta_titular_tipo === 'familiar' ? (p.cuenta_titular_documento || '') : '',
-      }));
-
-      const sheet = XLSX.utils.json_to_sheet(data);
-      sheet['!cols'] = [{ wch: 32 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 12 }, { wch: 16 }, { wch: 32 }, { wch: 20 }];
-
-      // SUM formula 3 rows below the last data row (row 1 = header, rows 2..N+1 = data)
-      const lastDataRow = data.length + 1;
-      const sumRow = lastDataRow + 3;
-      sheet[`A${sumRow}`] = { v: 'TOTAL', t: 's' };
-      sheet[`C${sumRow}`] = { f: `SUM(C2:C${lastDataRow})`, t: 'n' };
-      const range = XLSX.utils.decode_range(sheet['!ref']);
-      range.e.r = Math.max(range.e.r, sumRow - 1);
-      sheet['!ref'] = XLSX.utils.encode_range(range);
-
-      XLSX.utils.book_append_sheet(workbook, sheet, label);
-    });
-
-    const today = new Date();
-    const dd = String(today.getDate()).padStart(2, '0');
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const yyyy = today.getFullYear();
-    XLSX.writeFile(workbook, `Viaticos-Formativas-${dd}-${mm}-${yyyy}.xlsx`);
-  };
+  const handleExport = () => exportViaticosFormativas(players, viaticosFileNameFecha());
 
   return (
     <div className="space-y-6">

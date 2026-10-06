@@ -55,7 +55,7 @@ Environment: copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` / `
 | [src/supabaseClient.js](src/supabaseClient.js) | Supabase client init |
 | [src/utils/database.js](src/utils/database.js) | **Data access layer**: a single `database` object with ~90 async methods (~1600 lines) grouped by entity |
 | [src/utils/constants.js](src/utils/constants.js) | Canonical enums: `CATEGORIAS`, `POSICIONES_*`, `DEPARTAMENTOS`, `CESPED_TIPOS`, `CHANGE_REQUEST_STATUS`, and others. Import from here and never redefine them inline |
-| [src/utils/](src/utils/) | Also `dateUtils`, `playerStats`, `playerUtils`, `suspensions`, `ageEligibility`, `pdfExport`. `storage.js` is legacy localStorage code and unused |
+| [src/utils/](src/utils/) | Also `dateUtils`, `playerStats`, `playerUtils`, `viaticoExport` (Tesorero/Finanzas viático Excel), `suspensions`, `ageEligibility`, `pdfExport`. `storage.js` is legacy localStorage code and unused |
 | [src/components/AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell: derives permission flags, builds the `tabs` list, lazy-loads each tab, owns `showModal` and dirty-tracking state. The active tab lives in the URL (`?tab=`) |
 | [src/components/*Tab.jsx](src/components/) | One component per dashboard tab (Players, Viáticos, Tesorero, Torneos, Partidos, Estadísticas, Tareas, Configuración, Actividad, and more) |
 | [src/components/*Widget.jsx](src/components/) | Overview-tab cards (birthdays, ficha médica, injuries, suspensions, spending trends, and more) |
