@@ -130,6 +130,10 @@ Admins can invite new users directly from `ConfiguracionTab` → `UserManagement
 
 **Edge Function:** `supabase/functions/reset-password-link/index.ts` — deployed with caller-identity verification performed internally (same pattern as `invite-user`).
 
+### Change Password (logged-in user)
+
+Any admin-dashboard user (every Supabase Auth role, `finanzas` included) can change their own password from the KeyRound button in the `AdminDashboard` header. It opens `ChangePasswordForm` (`src/forms/ChangePasswordForm.jsx`) in the shared modal, with current password, new password and confirmation fields (minimum 6 characters, must match, must differ from the current one). `database.changePassword(email, currentPassword, newPassword)` re-verifies the current password with `signInWithPassword` and then calls `supabase.auth.updateUser({ password })`. On success it logs a `password_changed` activity and shows a toast. Funcionarios and players have no password, so this does not apply to them.
+
 ### Roles
 
 Stored as `user_permissions.role`:
@@ -787,6 +791,7 @@ Full CRUD for admin-level users managed from `ConfiguracionTab`. See [Admin User
 | `listUserPermissions()` | Returns all rows in `user_permissions` ordered by email |
 | `inviteUser(email, role, permissions)` | Calls the `invite-user` Edge Function; returns `{ invite_link, user_id }` |
 | `generatePasswordResetLink(email)` | Calls the `reset-password-link` Edge Function; returns `{ reset_link }` |
+| `changePassword(email, currentPassword, newPassword)` | Re-verifies the current password, then updates it for the logged-in user via `supabase.auth.updateUser` |
 | `updateUserPermissions(email, updates)` | Updates role and permission flags for an existing user |
 | `deleteUserPermissions(email)` | Removes the user's `user_permissions` row (revokes dashboard access) |
 
