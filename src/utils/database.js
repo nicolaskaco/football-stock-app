@@ -258,6 +258,21 @@ export const database = {
     if (error) throw error;
   },
 
+  // FINANZAS (rol de solo lectura: solo accede vía RPC con columnas limitadas)
+  async getPlayersFinanzas() {
+    const { data, error } = await supabase.rpc('get_players_finanzas');
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getPlayerHistoryFinanzas(playerId) {
+    const { data, error } = await supabase.rpc('get_player_history_finanzas', { p_player_id: playerId });
+
+    if (error) throw error;
+    return data || [];
+  },
+
   // PLAYER HISTORY
   async getPlayerHistory(playerId) {
     const { data, error } = await supabase

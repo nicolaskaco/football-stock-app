@@ -83,6 +83,7 @@ The app is a **Single-Page Application (SPA)** with client-side routing.
 1. `supabase.auth.signInWithPassword()` against Supabase Auth
 2. Fetches `user_permissions` row by email to load role + permission flags
 3. Routes to `AdminDashboard`
+4. Login requires `can_access_players = true` **or** `role = 'finanzas'` (checked in `checkSession`). A `finanzas` user skips `loadData()` and only loads `finanzasPlayers` through the `get_players_finanzas` RPC (`loadInitialData` in `App.jsx`)
 
 **Funcionario (staff) login** (gov ID + employee ID):
 1. Calls Supabase Edge Function `validate-employee`
@@ -142,6 +143,7 @@ Stored as `user_permissions.role`:
 | `delegado` | Limited role — can view Solicitudes tab (read-only); no approve/reject/create; access to other tabs controlled by permission flags |
 | `comision` | Limited role — same access model as `delegado` |
 | `coordinador` | Limited role — same access model as `delegado` |
+| `finanzas` | Read-only finance staff. Fixed access (permission flags and `categoria` are ignored and saved as false/null): only the **Finanzas** tab, no Resumen or NotificationCenter. Enforced in the DB — see [Rol finanzas](#rol-finanzas) |
 | (default) | Limited view-only, controlled by permission flags |
 
 ### Permission Flags (`user_permissions` table)
@@ -169,7 +171,7 @@ Stored as `user_permissions.role`:
 | `can_delete_tareas` | Show delete button on Tareas cards and list view (default: false) |
 | `categoria[]` | Array — restricts access to specific player categories |
 
-The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision`, `coordinador` (read-only for the last three — approve/reject/create buttons hidden). The `user_permissions_role_check` DB constraint enumerates all valid roles including `coordinador`.
+The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision`, `coordinador` (read-only for the last three — approve/reject/create buttons hidden). The `user_permissions_role_check` DB constraint enumerates all valid roles including `coordinador` and `finanzas`.
 
 ---
 
@@ -282,6 +284,16 @@ Three policies work together on the `players` table:
 
 > **Important:** Supabase evaluates RLS policies with OR logic — a row is returned if *any* policy allows it. The `admin_all` policy is intentionally scoped to `role = 'admin'` so it does not bypass the categoria restriction for other roles.
 
+### Rol finanzas
+
+Migration `20261006_add_finanzas_role.sql`. The `finanzas` role never reads tables directly:
+
+- `current_user_is_finanzas()`: SECURITY DEFINER helper, same shape as `current_user_is_admin()`.
+- **`deny_finanzas`**: a RESTRICTIVE policy (`FOR ALL TO authenticated`, `NOT current_user_is_finanzas()`) on every `public` table except `user_permissions` (a user must read their own row at login) and `activity_log` (restrictive on SELECT/UPDATE/DELETE only, so login and export events can still be inserted). Restrictive policies are ANDed with the permissive ones, so existing policies are untouched. The same applies to `storage.objects` for the `player-documents` bucket. **Every new table must add its own `deny_finanzas` policy** (see CLAUDE.md).
+- `get_players_finanzas()`: SECURITY DEFINER RPC, only for `finanzas` or `admin`. Returns JSON with active (`status` null/`activo`), non-hidden players and only these columns: `id, name, date_of_birth, tipo_documento, gov_id, categoria, viatico, complemento, contrato, complemento_override, complemento_override_expira, incluir_viatico_export, cuenta_titular_tipo, cuenta_titular_nombre, cuenta_titular_documento, cuenta_banco, cuenta_numero, comentario_viatico`.
+- `get_player_history_finanzas(p_player_id)`: same guard. Returns the `viatico`/`complemento`/`contrato` entries of `player_history` without `changed_by`.
+- `database.getPlayersFinanzas()` / `database.getPlayerHistoryFinanzas(id)` wrap the RPCs.
+
 ### Storage
 
 Bucket: `player-documents` (private)
@@ -296,7 +308,7 @@ Bucket: `player-documents` (private)
 
 | Tab ID | Label | Visible When |
 |--------|-------|--------------|
-| `overview` | Resumen | Always |
+| `overview` | Resumen | Always, except `role = 'finanzas'` |
 | `inventory` | Inventario | `can_access_ropa` **and** `inventario_tab_enabled` app setting |
 | `employees` | Funcionarios | `can_access_ropa` |
 | `players` | Jugadores | `can_access_players` |
@@ -316,6 +328,7 @@ Bucket: `player-documents` (private)
 | `tarjetas` | Tarjetas | `can_view_tarjetas` |
 | `configuracion` | Configuración (includes User Management) | `role = 'admin'` only |
 | `activity_log` | Actividad | `role = 'admin'` only |
+| `finanzas` | Finanzas | `role` in `[finanzas, admin]`. It is the home tab for `finanzas` |
 
 App settings (`app_settings` table) are loaded at login into `appSettings` global state in `App.jsx`. Admins toggle them via `ConfiguracionTab`. The `tabEnabled(key)` helper in `AdminDashboard` checks `appSettings[key] === 'true'`.
 
@@ -341,6 +354,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions; list view shows escenario + result badge per category. Mobile-friendly header: button label collapses to "Nueva" on small screens. Year filter dropdown (defaults to current year) filters jornadas in both list and calendar views. |
 | [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, comment, and event minutes (e.g. `⚽45'`, `🟨72'`) |
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
+| [FinanzasTab.jsx](src/components/FinanzasTab.jsx) | Read-only table for the `finanzas` role (also visible to admins) built from `finanzasPlayers` (RPC, active players of every category). Columns: Nombre (sticky; click opens `PlayerHistoryModal` with `getPlayerHistoryFinanzas`), Fecha nac., Documento (+ tipo when not cédula), Categoría, Viático, Complemento (yellow "temp" badge when an override is active), Contrato (amber "Caso especial" badge when `incluir_viatico_export`), Override (amount + válido hasta), Total (same amount as the Tesorero export: `calculateTotal`, or the complemento for a caso especial), Titular (Jugador, or padre/madre/tutor name · documento), Banco, Cuenta, Comentario. Search by nombre/documento, **multi-select category chips** (all selected by default; "Todas" selects every category, or clears them all when they're already selected; clicking a chip toggles just that category), a **"Mostrar jugadores con contrato"** checkbox (off by default; casos especiales are always shown), sortable columns, summary cards (jugadores, con contrato, total). **Exportar Viáticos**: the same workbook as Tesorero's Exportar Viáticos (shared `exportViaticosFormativas` in `src/utils/viaticoExport.js`, ignores the table filters), named `Viaticos_Formativas_<Mes>_<Año>.xlsx` (e.g. `Viaticos_Formativas_Octubre_2026.xlsx`); logs `export_viaticos_finanzas`. **Exportar a Excel** (`Finanzas-Jugadores-DD-MM-YYYY.xlsx`) with the visible rows; logs `export_finanzas` |
 | [TesoreroTab.jsx](src/components/TesoreroTab.jsx) | Tesorero view with four features: (1) **Congelar Viáticos** toggle (same `viaticos_congelados` app setting also shown in ConfiguracionTab) — when enabled the card turns amber and a configurable contact name input appears; (2) **Exportar Viáticos** — generates a multi-sheet Excel workbook (`Viaticos-Formativas-DD-MM-YYYY.xlsx`) with one sheet per formative category (Sub 19/17/16/15/14/13), sorted by name, excluding 3era and (by default) contracted players; only active players (`status = 'activo'` or null) are included. The workbook opens with a **Resumen** sheet (amount per category and medio de pago, a TOTAL row, and player counts per medio). Category sheet columns: Nombre, Cédula, Total Viático, Categoría, Banco, Número de cuenta, Nombre del titular, Documento del titular (the titular columns are only filled for padre/madre/tutor accounts; players with no account show `SIN CUENTA` in Banco). Each sheet includes a `TOTAL` / SUM formula row 3 rows below the last data row. An amber warning above the button lists the exportable players without an account. (3) **Casos especiales** — lists contracted (`contrato = true`) active players in formative categories with a toggle (`incluir_viatico_export` field) that, when enabled, includes that player in the export sheet with their complemento as "Total Viático". (4) **Resumen de pagos** — one card per medio de pago (**Prex**, **Mi Dinero**, **Efectivo**) with amount, player count and % of the total, the grand total, and a collapsible "Ver por categoría" table. **Efectivo** = the player has no `cuenta_banco` or `cuenta_numero` (same rule as `SIN CUENTA`). It uses the same population and amounts as the export, so the screen and the Excel always agree. |
 | [ReportsTab.jsx](src/components/ReportsTab.jsx) | Excel export for distributions/inventory |
 | [EstadisticasTab.jsx](src/components/EstadisticasTab.jsx) | Player/match statistics; sub-tabs: General, Goleadores, Tarjetas, Por Rival, Por Cancha, Gráficos, Árbitros; top-scorer podium; filterable by category and phase. Gráficos sub-tab renders GoalTrendChart, CardDistributionChart, AgeCurveChart, and RivalPerformanceChart. Árbitros sub-tab shows ArbitroPerformanceChart and ArbitroStatsTable (PJ, G, E, P with rival names, cards, effectiveness %); clicking the PJ count for a referee opens a modal listing every match they officiated (rival, fecha, número de jornada, torneo, categoría, escenario, color-coded result badge, card counts), sorted newest first. |
@@ -399,7 +413,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [AlertModal.jsx](src/components/AlertModal.jsx) | Informational alerts |
 | [PromptModal.jsx](src/components/PromptModal.jsx) | Text input prompt dialog |
 | [ChangeRequestModal.jsx](src/components/ChangeRequestModal.jsx) | Financial change request submission form |
-| [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes; includes per-field filter buttons when history spans multiple fields |
+| [PlayerHistoryModal.jsx](src/components/PlayerHistoryModal.jsx) | Audit trail viewer for player field changes; includes per-field filter buttons when history spans multiple fields. Optional `fetchHistory` prop (FinanzasTab passes the finanzas RPC); "Modificado por" is hidden when records have no `changed_by` |
 | [PlayerQuestionnaireModal.jsx](src/components/PlayerQuestionnaireModal.jsx) | Viewer for a player's questionnaire responses, opened from both read-only and edit player modals. Groups all answers into 11 sections; booleans show Sí/No badges; semicolon-separated multiselects display as comma-joined lists. In edit mode, includes a "Sincronizar datos" button that opens `QuestionnaireFieldSync` for selectively syncing answers into the player record. |
 | [QuestionnaireFieldSync.jsx](src/components/QuestionnaireFieldSync.jsx) | Review-and-confirm UI for syncing questionnaire answers into player fields. Shows mappable fields split into two groups: empty player fields (pre-checked) and conflicts with existing values (unchecked, shows both values side-by-side). |
 | [BulkActionModal.jsx](src/components/BulkActionModal.jsx) | Generic before→after preview modal for bulk player/inventory operations |

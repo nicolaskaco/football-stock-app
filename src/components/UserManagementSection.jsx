@@ -16,6 +16,7 @@ const ROLE_LABELS = {
   delegado: 'Delegado',
   comision: 'Comisión',
   coordinador: 'Coordinador',
+  finanzas: 'Finanzas',
 };
 
 const ROLE_COLORS = {
@@ -26,6 +27,7 @@ const ROLE_COLORS = {
   delegado: 'bg-green-100 text-green-700',
   comision: 'bg-teal-100 text-teal-700',
   coordinador: 'bg-cyan-100 text-cyan-700',
+  finanzas: 'bg-emerald-100 text-emerald-700',
 };
 
 export const UserManagementSection = () => {

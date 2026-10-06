@@ -55,7 +55,7 @@ Environment: copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` / `
 | [src/supabaseClient.js](src/supabaseClient.js) | Supabase client init |
 | [src/utils/database.js](src/utils/database.js) | **Data access layer**: a single `database` object with ~90 async methods (~1600 lines) grouped by entity |
 | [src/utils/constants.js](src/utils/constants.js) | Canonical enums: `CATEGORIAS`, `POSICIONES_*`, `DEPARTAMENTOS`, `CESPED_TIPOS`, `CHANGE_REQUEST_STATUS`, and others. Import from here and never redefine them inline |
-| [src/utils/](src/utils/) | Also `dateUtils`, `playerStats`, `playerUtils`, `suspensions`, `ageEligibility`, `pdfExport`. `storage.js` is legacy localStorage code and unused |
+| [src/utils/](src/utils/) | Also `dateUtils`, `playerStats`, `playerUtils`, `viaticoExport` (Tesorero/Finanzas viático Excel), `suspensions`, `ageEligibility`, `pdfExport`. `storage.js` is legacy localStorage code and unused |
 | [src/components/AdminDashboard.jsx](src/components/AdminDashboard.jsx) | Tab shell: derives permission flags, builds the `tabs` list, lazy-loads each tab, owns `showModal` and dirty-tracking state. The active tab lives in the URL (`?tab=`) |
 | [src/components/*Tab.jsx](src/components/) | One component per dashboard tab (Players, Viáticos, Tesorero, Torneos, Partidos, Estadísticas, Tareas, Configuración, Actividad, and more) |
 | [src/components/*Widget.jsx](src/components/) | Overview-tab cards (birthdays, ficha médica, injuries, suspensions, spending trends, and more) |
@@ -85,6 +85,7 @@ These are summarized here. [.claude/docs/architectural_patterns.md](.claude/docs
    - **Boolean flags** from `user_permissions` (mapped to camelCase in `App.jsx`, e.g. `can_view_partidos` → `canViewPartidos`) gate tabs.
    - **Role arrays** (`admin`, `ejecutivo`, `presidente`, `presidente_categoria`, `delegado`, `comision`, `coordinador`) gate fields and actions inside a tab.
    - `currentUser.categoria` (an array) limits which categories a user sees.
+   - The `finanzas` role is the exception: it ignores flags, sees only the Finanzas tab, skips `loadData` and is blocked from every table by RLS (data comes from the `get_players_finanzas` RPC).
    - Some tabs also need an `app_settings` toggle (`tabEnabled('xxx_tab_enabled')`, edited in ConfiguracionTab).
    - **Adding a permission touches four places:** a DB column, **both** `setCurrentUser` blocks in `App.jsx` (`checkSession` and `handleLogin`, which are duplicated), and the tab gating in `AdminDashboard`.
 8. **Tabs are lazy-loaded** with `React.lazy` plus named-export remapping in `AdminDashboard`. A new tab needs the lazy import, an entry in the `tabs` array, and an `activeTab === '...'` render block.
@@ -121,7 +122,15 @@ grant select, insert, update, delete on public.your_new_table to service_role;
 alter table public.your_new_table enable row level security;
 ```
 
-Without these lines, supabase-js returns a `42501` error when it queries the new table. Tables created before October 30, 2026 are not affected. Name migration files `YYYYMMDD_description.sql`.
+Every new table must also block the read-only `finanzas` role (see SPEC.md, "Rol finanzas"). Without it, finance users can read the new table through the API:
+
+```sql
+create policy deny_finanzas on public.your_new_table as restrictive for all to authenticated
+  using (not (select public.current_user_is_finanzas()))
+  with check (not (select public.current_user_is_finanzas()));
+```
+
+Without the grant lines, supabase-js returns a `42501` error when it queries the new table. Tables created before October 30, 2026 are not affected. Name migration files `YYYYMMDD_description.sql`.
 
 ---
 

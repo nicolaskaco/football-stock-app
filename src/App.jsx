@@ -80,6 +80,7 @@ const App = () => {
   const [pendingChangeRequests, setPendingChangeRequests] = useState([]);
   const [tareas, setTareas] = useState([]);
   const [sprints, setSprints] = useState([]);
+  const [finanzasPlayers, setFinanzasPlayers] = useState([]);
 
   useEffect(() => {
     const hash = window.location.hash;
@@ -151,7 +152,7 @@ const App = () => {
           console.error('Error fetching permissions:', permError);
         }
 
-        const isAdmin = permissions?.can_access_players || false;
+        const isAdmin = permissions?.can_access_players || permissions?.role === 'finanzas' || false;
         
         if (isAdmin) {
           setCurrentUser({ 
@@ -180,7 +181,7 @@ const App = () => {
             canAccessTareas: permissions?.can_access_tareas || false,
             canDeleteTareas: permissions?.can_delete_tareas || false,
           });
-          await loadData();
+          await loadInitialData(permissions?.role);
           setCurrentView('dashboard');
         }
       }
@@ -204,6 +205,22 @@ const App = () => {
   const loadPendingChangeRequests = async () => { const d = await database.getPendingChangeRequests(); setPendingChangeRequests(d || []); };
   const loadTareas = async () => { const d = await database.getTareas(); setTareas(d || []); };
   const loadSprints = async () => { const d = await database.getSprints(); setSprints(d || []); };
+  const loadFinanzasPlayers = async () => { const d = await database.getPlayersFinanzas(); setFinanzasPlayers(d || []); };
+
+  // El rol finanzas no tiene acceso a las tablas (RLS): solo carga su vista vía RPC
+  const loadInitialData = async (role) => {
+    if (role === 'finanzas') {
+      try {
+        await loadFinanzasPlayers();
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+      setLoading(false);
+      return;
+    }
+    if (role === 'admin') loadFinanzasPlayers().catch(error => console.error('Error loading finanzas:', error));
+    await loadData();
+  };
 
   const loadData = async () => {
     try {
@@ -244,6 +261,7 @@ const App = () => {
     pendingChangeRequests: loadPendingChangeRequests,
     tareas: loadTareas,
     sprints: loadSprints,
+    finanzasPlayers: loadFinanzasPlayers,
   };
 
   const handleDataChange = async (...entities) => {
@@ -309,7 +327,7 @@ const App = () => {
           canDeleteTareas: permissions?.can_delete_tareas || false,
         });
 
-        await loadData();
+        await loadInitialData(permissions?.role);
         setCurrentView('dashboard');
         // Fire-and-forget — don't block login on logging failure
         database.logActivity('login', emailOrGovId, null, null, { role: permissions?.role || 'user' });
@@ -399,6 +417,7 @@ const App = () => {
                 pendingChangeRequests={pendingChangeRequests}
                 tareas={tareas}
                 sprints={sprints}
+                finanzasPlayers={finanzasPlayers}
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 onDataChange={handleDataChange}

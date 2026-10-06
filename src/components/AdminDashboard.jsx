@@ -27,6 +27,7 @@ const EstadisticasJugadoresTab = lazy(() => import('./EstadisticasJugadoresTab')
 const TesoreroTab = lazy(() => import('./TesoreroTab').then(m => ({ default: m.TesoreroTab })));
 const TarjetasTab = lazy(() => import('./TarjetasTab').then(m => ({ default: m.TarjetasTab })));
 const TareasTab = lazy(() => import('./TareasTab').then(m => ({ default: m.TareasTab })));
+const FinanzasTab = lazy(() => import('./FinanzasTab').then(m => ({ default: m.FinanzasTab })));
 
 const TabFallback = () => (
   <div className="flex items-center justify-center py-24">
@@ -49,12 +50,16 @@ export const AdminDashboard = ({
   pendingChangeRequests = [],
   tareas = [],
   sprints = [],
+  finanzasPlayers = [],
   onLogout,
   onDataChange,
   currentUser
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get('tab') || 'overview';
+  // El rol finanzas solo ve su pestaña (sin Resumen)
+  const isFinanzas = currentUser?.role === 'finanzas';
+  const homeTab = isFinanzas ? 'finanzas' : 'overview';
+  const activeTab = searchParams.get('tab') || homeTab;
   const setActiveTab = (tab) => setSearchParams(prev => {
     const p = new URLSearchParams(prev);
     p.set('tab', tab);
@@ -92,7 +97,7 @@ export const AdminDashboard = ({
 
   // Rest of your code stays the same...
   const tabs = [
-    { id: 'overview',       label: 'Resumen',        show: true },
+    { id: 'overview',       label: 'Resumen',        show: !isFinanzas },
     { id: 'inventory',      label: 'Inventario',     show: canAccessRopa && tabEnabled('inventario_tab_enabled') },
     { id: 'employees',      label: 'Funcionarios',   show: canAccessRopa },
     { id: 'players',        label: 'Jugadores',      show: canAccessPlayers },
@@ -112,6 +117,7 @@ export const AdminDashboard = ({
     { id: 'tarjetas',       label: 'Tarjetas',        show: canViewTarjetas },
     { id: 'configuracion',  label: 'Configuración',  show: isAdmin },
     { id: 'activity_log',   label: 'Actividad',      show: isAdmin },
+    { id: 'finanzas',       label: 'Finanzas',       show: isFinanzas || isAdmin },
   ];
 
   // Filter visible tabs
@@ -131,9 +137,9 @@ export const AdminDashboard = ({
                 <Menu className="w-5 h-5 text-gray-600" />
               </button>
               <button
-                onClick={() => setActiveTab('overview')}
+                onClick={() => setActiveTab(homeTab)}
                 className="flex items-center gap-2 hover:opacity-80 transition"
-                aria-label="Ir a Resumen"
+                aria-label={isFinanzas ? 'Ir a Finanzas' : 'Ir a Resumen'}
               >
                 <img
                   src={logo}
@@ -158,12 +164,14 @@ export const AdminDashboard = ({
               >
                 {dark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
               </button>
-              <NotificationCenter
-                currentUser={currentUser}
-                players={players}
-                injuries={injuries}
-                setActiveTab={setActiveTab}
-              />
+              {!isFinanzas && (
+                <NotificationCenter
+                  currentUser={currentUser}
+                  players={players}
+                  injuries={injuries}
+                  setActiveTab={setActiveTab}
+                />
+              )}
               <button 
                 onClick={onLogout} 
                 className="px-2 sm:px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
@@ -192,7 +200,7 @@ export const AdminDashboard = ({
         </div>
 
         <Suspense fallback={<TabFallback />}>
-        {activeTab === 'overview' && (
+        {activeTab === 'overview' && !isFinanzas && (
           <OverviewTab
             lowStockItems={lowStockItems}
             totalEmployees={totalEmployees}
@@ -240,6 +248,12 @@ export const AdminDashboard = ({
             setShowModal={setShowModal}
             onDataChange={onDataChange}
             onFormDirtyChange={setModalIsDirty}
+          />
+        )}
+        {activeTab === 'finanzas' && (isFinanzas || isAdmin) && (
+          <FinanzasTab
+            players={finanzasPlayers}
+            currentUser={currentUser}
           />
         )}
         {activeTab === 'players_viatico' && canAccessViaticos && (
