@@ -6,7 +6,6 @@ import { formatDate, todayISO } from '../utils/dateUtils';
 import { calculateTotal, getComplementoEfectivo } from '../utils/playerUtils';
 import { useTableSort, thClass } from '../hooks/useTableSort';
 import { SearchInput } from './ui/SearchInput';
-import { FilterButtonGroup } from './ui/FilterButtonGroup';
 import { PlayerHistoryModal } from './PlayerHistoryModal';
 import { database } from '../utils/database';
 
@@ -38,7 +37,9 @@ const toRow = (p) => {
     contratoSort: p.contrato ? 1 : 0,
     complementoEfectivo,
     overrideActivo,
-    total: calculateTotal(p),
+    casoEspecial: !!(p.contrato && p.incluir_viatico_export),
+    // Mismo monto que el export de Tesorero: con contrato solo cobra el complemento si es caso especial
+    total: p.contrato ? (p.incluir_viatico_export ? (p.complemento || 0) : 0) : calculateTotal(p),
   };
 };
 
@@ -50,7 +51,7 @@ const EXPORT_COLUMNS = [
   ['Categoría', (r) => r.categoria],
   ['Viático', (r) => r.viatico],
   ['Complemento', (r) => r.complemento],
-  ['Contrato', (r) => (r.contrato ? 'Sí' : 'No')],
+  ['Contrato', (r) => (r.casoEspecial ? 'Sí (caso especial)' : r.contrato ? 'Sí' : 'No')],
   ['Override Complemento', (r) => r.complemento_override ?? ''],
   ['Válido Hasta', (r) => (r.complemento_override_expira ? formatDate(r.complemento_override_expira) : '')],
   ['Total', (r) => r.total],
@@ -68,7 +69,9 @@ const EXPORT_COLUMNS = [
  */
 export const FinanzasTab = ({ players = [], currentUser }) => {
   const [search, setSearch] = useState('');
-  const [categoria, setCategoria] = useState(null);
+  const [categorias, setCategorias] = useState([]);
+  // Por defecto se ocultan los jugadores con contrato, salvo los casos especiales (contrato + complemento)
+  const [mostrarContrato, setMostrarContrato] = useState(false);
   const [historyPlayer, setHistoryPlayer] = useState(null);
   const { handleSort, sortFn, SortIcon } = useTableSort('name', 'asc');
 
@@ -76,11 +79,17 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
   const rows = sortFn(
     players
       .map(toRow)
-      .filter(r => !categoria || r.categoria === categoria)
+      .filter(r => categorias.length === 0 || categorias.includes(r.categoria))
+      .filter(r => mostrarContrato || !r.contrato || r.casoEspecial)
       .filter(r => !term || r.name.toLowerCase().includes(term) || r.gov_id.toLowerCase().includes(term))
   );
 
   const categoriasPresentes = CATEGORIAS.filter(c => players.some(p => p.categoria === c));
+  const toggleCategoria = (cat) =>
+    setCategorias(prev => (prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]));
+  const chipClass = (active) =>
+    `px-3 py-1.5 rounded-lg text-sm font-medium ${active ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`;
+
   const totalGeneral = rows.reduce((sum, r) => sum + r.total, 0);
 
   const handleExport = () => {
@@ -89,7 +98,7 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(data), 'Jugadores');
     const [y, m, d] = todayISO().split('-');
     XLSX.writeFile(workbook, `Finanzas-Jugadores-${d}-${m}-${y}.xlsx`);
-    database.logActivity('export_finanzas', currentUser?.email, 'players', null, { cantidad: rows.length, categoria });
+    database.logActivity('export_finanzas', currentUser?.email, 'players', null, { cantidad: rows.length, categorias, mostrarContrato });
   };
 
   const th = (col, label, className = '') => (
@@ -137,7 +146,25 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
           placeholder="Buscar por nombre o documento..."
           className="w-full"
         />
-        <FilterButtonGroup options={categoriasPresentes} value={categoria} onChange={setCategoria} label="Categoría:" />
+        <div className="flex gap-2 flex-wrap items-center">
+          <span className="text-xs text-gray-500 mr-1">Categorías:</span>
+          <button onClick={() => setCategorias([])} className={chipClass(categorias.length === 0)}>Todas</button>
+          {categoriasPresentes.map(cat => (
+            <button key={cat} onClick={() => toggleCategoria(cat)} className={chipClass(categorias.includes(cat))}>
+              {cat}
+            </button>
+          ))}
+        </div>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer w-fit">
+          <input
+            type="checkbox"
+            checked={mostrarContrato}
+            onChange={(e) => setMostrarContrato(e.target.checked)}
+            className="rounded border-gray-300 text-black focus:ring-yellow-500"
+          />
+          Mostrar jugadores con contrato
+          <span className="text-xs text-gray-500">(los casos especiales se muestran siempre)</span>
+        </label>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-x-auto">
@@ -187,16 +214,23 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
                   )}
                 </td>
                 <td className="px-3 py-2">
-                  {r.contrato
-                    ? <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Sí</span>
-                    : 'No'}
+                  {r.contrato ? (
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Sí</span>
+                      {r.casoEspecial && (
+                        <span className="px-2 py-1 text-xs font-semibold bg-amber-100 text-amber-800 rounded-full" title="Tiene contrato y cobra complemento">
+                          Caso especial
+                        </span>
+                      )}
+                    </span>
+                  ) : 'No'}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
                   {r.complemento_override != null
                     ? <>{money(r.complemento_override)} <span className="text-xs text-gray-500">hasta {formatDate(r.complemento_override_expira || null)}</span></>
                     : '-'}
                 </td>
-                <td className="px-3 py-2 whitespace-nowrap font-semibold">{r.contrato ? '-' : money(r.total)}</td>
+                <td className="px-3 py-2 whitespace-nowrap font-semibold">{r.contrato && !r.casoEspecial ? '-' : money(r.total)}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.titular || <span className="text-gray-400">Sin cuenta</span>}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.cuenta_banco || '-'}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.cuenta_numero || '-'}</td>
