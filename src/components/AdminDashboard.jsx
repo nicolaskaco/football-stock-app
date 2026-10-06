@@ -1,9 +1,10 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Menu, X, Moon, Sun, Loader2 } from 'lucide-react';
+import { Menu, X, Moon, Sun, Loader2, KeyRound } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
 import { NotificationCenter } from './NotificationCenter';
+import { ChangePasswordForm } from '../forms/ChangePasswordForm';
 import { useDarkMode } from '../context/DarkModeContext';
 
 // Lazy-loaded tab components — each chunk is downloaded only when the tab is first opened
@@ -163,6 +164,21 @@ export const AdminDashboard = ({
                 title={dark ? 'Modo claro' : 'Modo oscuro'}
               >
                 {dark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
+              </button>
+              <button
+                onClick={() => setShowModal({
+                  title: 'Cambiar contraseña',
+                  content: <ChangePasswordForm
+                    currentUser={currentUser}
+                    onClose={() => { setShowModal(null); setModalIsDirty(false); }}
+                    onDirtyChange={setModalIsDirty}
+                  />
+                })}
+                className="p-2 rounded-lg hover:bg-gray-100"
+                aria-label="Cambiar contraseña"
+                title="Cambiar contraseña"
+              >
+                <KeyRound className="w-5 h-5 text-gray-600" />
               </button>
               {!isFinanzas && (
                 <NotificationCenter

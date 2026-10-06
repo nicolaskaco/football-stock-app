@@ -1198,6 +1198,14 @@ export const database = {
     return data;
   },
 
+  async changePassword(email, currentPassword, newPassword) {
+    // Re-verify the current password so an unattended session can't take over the account
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+    if (signInError) throw new Error('La contraseña actual es incorrecta.');
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+  },
+
   async generatePasswordResetLink(email) {
     const { data: { session } } = await supabase.auth.getSession();
     const headers = {};
