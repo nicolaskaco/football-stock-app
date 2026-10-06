@@ -50,3 +50,4 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 - [x] **H1. Log de Actividad Global** — App-wide audit trail: logins, permission changes, approval/rejection of change requests, bulk operations. New `activity_log` table + ActivityLogTab (admin only). *(completed — PR #281 · 2026-03-27)*
   - [x] Paginación con "Cargar más" y filtros de tipo/usuario/fecha en la base *(PR #337 · 2026-10-04)*
+- [x] **H2. Rol finanzas (solo lectura)** — New `finanzas` role for the club's finance staff: only a read-only Finanzas tab (datos personales básicos + viático, complemento, contrato, override, cuenta de cobro, comentario), change history and Excel export. Enforced in the DB: RESTRICTIVE `deny_finanzas` policy on every table + column-limited SECURITY DEFINER RPCs. *(PR #TBD · 2026-10-06)*

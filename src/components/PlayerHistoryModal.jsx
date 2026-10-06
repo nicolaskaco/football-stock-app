@@ -15,7 +15,8 @@ const fieldNames = {
 
 const fieldKeyMap = Object.fromEntries(Object.entries(fieldNames).map(([k, v]) => [v, k]));
 
-export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
+// fetchHistory permite usar el RPC del rol finanzas (sin changed_by) en lugar de la tabla
+export const PlayerHistoryModal = ({ playerId, playerName, onClose, fetchHistory = (id) => database.getPlayerHistory(id) }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterField, setFilterField] = useState(null);
@@ -26,7 +27,7 @@ export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
 
   const loadHistory = async () => {
     try {
-      const data = await database.getPlayerHistory(playerId);
+      const data = await fetchHistory(playerId);
       setHistory(data);
     } catch (error) {
       console.error('Error loading history:', error);
@@ -101,8 +102,8 @@ export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {filteredHistory.map((record) => (
-                    <div key={record.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  {filteredHistory.map((record, i) => (
+                    <div key={record.id ?? i} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-blue-600" />
@@ -130,9 +131,11 @@ export const PlayerHistoryModal = ({ playerId, playerName, onClose }) => {
                         </div>
                       </div>
 
-                      <div className="text-xs text-gray-500 mt-2">
-                        Modificado por: <span className="font-medium">{record.changed_by}</span>
-                      </div>
+                      {record.changed_by !== undefined && (
+                        <div className="text-xs text-gray-500 mt-2">
+                          Modificado por: <span className="font-medium">{record.changed_by}</span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -9,6 +9,7 @@ const ROLES = [
   { value: 'delegado', label: 'Delegado' },
   { value: 'comision', label: 'Comisión' },
   { value: 'coordinador', label: 'Coordinador' },
+  { value: 'finanzas', label: 'Finanzas (solo lectura)' },
 ];
 
 const PERMISSION_GROUPS = [
@@ -87,6 +88,8 @@ export const UserInviteForm = ({ existingUser, onSubmit, onCancel }) => {
   });
   const [categoria, setCategoria] = useState(existingUser?.categoria || []);
   const [loading, setLoading] = useState(false);
+  // El rol finanzas tiene un acceso fijo (pestaña Finanzas): no usa permisos ni categorías
+  const isFinanzas = role === 'finanzas';
 
   const togglePerm = (key) =>
     setPermissions(prev => ({ ...prev, [key]: !prev[key] }));
@@ -111,7 +114,9 @@ export const UserInviteForm = ({ existingUser, onSubmit, onCancel }) => {
       await onSubmit({
         email: email.toLowerCase().trim(),
         role,
-        permissions: { ...permissions, categoria: categoria.length > 0 ? categoria : null },
+        permissions: isFinanzas
+          ? { ...defaultPermissions(), categoria: null }
+          : { ...permissions, categoria: categoria.length > 0 ? categoria : null },
       });
     } catch {
       // error handled by parent
@@ -154,7 +159,14 @@ export const UserInviteForm = ({ existingUser, onSubmit, onCancel }) => {
         </select>
       </div>
 
+      {isFinanzas && (
+        <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+          Solo ve la pestaña Finanzas: datos personales básicos y financieros de los jugadores activos, sin poder editar.
+        </p>
+      )}
+
       {/* Permissions */}
+      {!isFinanzas && (<>
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="block text-sm font-medium text-gray-700">Permisos</label>
@@ -222,6 +234,7 @@ export const UserInviteForm = ({ existingUser, onSubmit, onCancel }) => {
           ))}
         </div>
       </div>
+      </>)}
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
