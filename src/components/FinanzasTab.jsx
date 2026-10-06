@@ -70,7 +70,8 @@ const EXPORT_COLUMNS = [
  */
 export const FinanzasTab = ({ players = [], currentUser }) => {
   const [search, setSearch] = useState('');
-  const [categorias, setCategorias] = useState([]);
+  // Se guardan las categorías desmarcadas: por defecto (vacío) están todas seleccionadas
+  const [excluidas, setExcluidas] = useState([]);
   // Por defecto se ocultan los jugadores con contrato, salvo los casos especiales (contrato + complemento)
   const [mostrarContrato, setMostrarContrato] = useState(false);
   const [historyPlayer, setHistoryPlayer] = useState(null);
@@ -80,14 +81,17 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
   const rows = sortFn(
     players
       .map(toRow)
-      .filter(r => categorias.length === 0 || categorias.includes(r.categoria))
+      .filter(r => !excluidas.includes(r.categoria))
       .filter(r => mostrarContrato || !r.contrato || r.casoEspecial)
       .filter(r => !term || r.name.toLowerCase().includes(term) || r.gov_id.toLowerCase().includes(term))
   );
 
   const categoriasPresentes = CATEGORIAS.filter(c => players.some(p => p.categoria === c));
+  const todasSeleccionadas = categoriasPresentes.every(c => !excluidas.includes(c));
   const toggleCategoria = (cat) =>
-    setCategorias(prev => (prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]));
+    setExcluidas(prev => (prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]));
+  // "Todas" marca todas; si ya están todas marcadas, las desmarca
+  const toggleTodas = () => setExcluidas(todasSeleccionadas ? categoriasPresentes : []);
   const chipClass = (active) =>
     `px-3 py-1.5 rounded-lg text-sm font-medium ${active ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`;
 
@@ -99,7 +103,7 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
     XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(data), 'Jugadores');
     const [y, m, d] = todayISO().split('-');
     XLSX.writeFile(workbook, `Finanzas-Jugadores-${d}-${m}-${y}.xlsx`);
-    database.logActivity('export_finanzas', currentUser?.email, 'players', null, { cantidad: rows.length, categorias, mostrarContrato });
+    database.logActivity('export_finanzas', currentUser?.email, 'players', null, { cantidad: rows.length, categorias: categoriasPresentes.filter(c => !excluidas.includes(c)), mostrarContrato });
   };
 
   // Mismo Excel que "Exportar Viáticos" de Tesorero (todas las formativas, ignora los filtros de la tabla)
@@ -167,9 +171,9 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
         />
         <div className="flex gap-2 flex-wrap items-center">
           <span className="text-xs text-gray-500 mr-1">Categorías:</span>
-          <button onClick={() => setCategorias([])} className={chipClass(categorias.length === 0)}>Todas</button>
+          <button onClick={toggleTodas} className={chipClass(todasSeleccionadas)}>Todas</button>
           {categoriasPresentes.map(cat => (
-            <button key={cat} onClick={() => toggleCategoria(cat)} className={chipClass(categorias.includes(cat))}>
+            <button key={cat} onClick={() => toggleCategoria(cat)} className={chipClass(!excluidas.includes(cat))}>
               {cat}
             </button>
           ))}
