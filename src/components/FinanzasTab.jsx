@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Users } from 'lucide-react';
+import { ChevronDown, Download, History, SlidersHorizontal, Users } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { CATEGORIAS } from '../utils/constants';
 import { formatDate, todayISO } from '../utils/dateUtils';
@@ -19,12 +19,56 @@ const titularLabel = (p) => {
   return p.cuenta_titular_tipo === 'jugador' ? 'Jugador' : '';
 };
 
+// Celdas compartidas entre la tabla (desktop) y las tarjetas (mobile)
+const ComplementoCell = ({ r }) => (
+  <>
+    {money(r.complemento)}
+    {r.overrideActivo && (
+      <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 rounded px-1" title="Override activo">temp</span>
+    )}
+  </>
+);
+
+const ContratoCell = ({ r }) =>
+  r.contrato ? (
+    <span className="flex items-center gap-1 whitespace-nowrap">
+      <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Sí</span>
+      {r.casoEspecial && (
+        <span className="px-2 py-1 text-xs font-semibold bg-amber-100 text-amber-800 rounded-full" title="Tiene contrato y cobra complemento">
+          Caso especial
+        </span>
+      )}
+    </span>
+  ) : 'No';
+
+const OverrideCell = ({ r }) =>
+  r.complemento_override != null
+    ? <>{money(r.complemento_override)} <span className="text-xs text-gray-500">hasta {formatDate(r.complemento_override_expira || null)}</span></>
+    : '-';
+
+const Detalle = ({ label, children }) => (
+  <>
+    <dt className="text-gray-500 dark:text-gray-400">{label}</dt>
+    <dd className="min-w-0 break-words text-gray-900 dark:text-gray-100">{children}</dd>
+  </>
+);
+
+const totalLabel = (r) => (r.contrato && !r.casoEspecial ? '-' : money(r.total));
+
+const SORT_OPTIONS = [
+  ['displayName', 'Nombre'],
+  ['total', 'Total'],
+  ['categoria', 'Categoría'],
+  ['date_of_birth', 'Fecha nac.'],
+];
+
 // Filas normalizadas (sin nulls) para que useTableSort pueda ordenar cualquier columna
 const toRow = (p) => {
   const { valor: complementoEfectivo, activo: overrideActivo } = getComplementoEfectivo(p);
   return {
     ...p,
     name: p.name || '',
+    displayName: p.name_visual || p.name || '',
     gov_id: p.gov_id || '',
     categoria: p.categoria || '',
     date_of_birth: p.date_of_birth || '',
@@ -75,7 +119,9 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
   // Por defecto se ocultan los jugadores con contrato, salvo los casos especiales (contrato + complemento)
   const [mostrarContrato, setMostrarContrato] = useState(false);
   const [historyPlayer, setHistoryPlayer] = useState(null);
-  const { handleSort, sortFn, SortIcon } = useTableSort('name', 'asc');
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+  const [expandido, setExpandido] = useState(null);
+  const { handleSort, sortFn, SortIcon, sortKey, sortDir } = useTableSort('displayName', 'asc');
 
   const term = search.trim().toLowerCase();
   const rows = sortFn(
@@ -83,7 +129,10 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
       .map(toRow)
       .filter(r => !excluidas.includes(r.categoria))
       .filter(r => mostrarContrato || !r.contrato || r.casoEspecial)
-      .filter(r => !term || r.name.toLowerCase().includes(term) || r.gov_id.toLowerCase().includes(term))
+      .filter(r => !term
+        || r.name.toLowerCase().includes(term)
+        || r.displayName.toLowerCase().includes(term)
+        || r.gov_id.toLowerCase().includes(term))
   );
 
   const categoriasPresentes = CATEGORIAS.filter(c => players.some(p => p.categoria === c));
@@ -94,6 +143,9 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
   const toggleTodas = () => setExcluidas(todasSeleccionadas ? categoriasPresentes : []);
   const chipClass = (active) =>
     `px-3 py-1.5 rounded-lg text-sm font-medium ${active ? 'bg-black text-yellow-400' : 'bg-white text-gray-600 border border-gray-200'}`;
+
+  const filtrosActivos = excluidas.filter(c => categoriasPresentes.includes(c)).length + (mostrarContrato ? 1 : 0);
+  const openHistory = (r) => setHistoryPlayer({ playerId: r.id, playerName: r.displayName });
 
   const totalGeneral = rows.reduce((sum, r) => sum + r.total, 0);
 
@@ -131,70 +183,105 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
             onClick={handleExportViaticos}
             disabled={players.length === 0}
             title="Excel con los viáticos de todas las categorías formativas (excluye 3era), igual al de Tesorero"
-            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50"
+            className="flex items-center gap-2 bg-black text-yellow-400 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50"
           >
             <Download className="w-5 h-5" />
-            Exportar Viáticos
+            <span className="sm:hidden">Viáticos</span>
+            <span className="hidden sm:inline">Exportar Viáticos</span>
           </button>
           <button
             onClick={handleExport}
             disabled={rows.length === 0}
-            className="flex items-center gap-2 bg-black text-yellow-400 px-4 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50"
+            className="flex items-center gap-2 bg-black text-yellow-400 px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 disabled:opacity-50"
           >
             <Download className="w-5 h-5" />
-            Exportar a Excel
+            <span className="sm:hidden">Excel</span>
+            <span className="hidden sm:inline">Exportar a Excel</span>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Jugadores</p>
-          <p className="text-2xl font-bold">{rows.length}</p>
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4 min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500">Jugadores</p>
+          <p className="text-lg sm:text-2xl font-bold">{rows.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Con contrato</p>
-          <p className="text-2xl font-bold">{rows.filter(r => r.contrato).length}</p>
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4 min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500">Con contrato</p>
+          <p className="text-lg sm:text-2xl font-bold">{rows.filter(r => r.contrato).length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-500">Total viáticos + complementos</p>
-          <p className="text-2xl font-bold">{money(totalGeneral)}</p>
+        <div className="bg-white rounded-lg shadow p-3 sm:p-4 min-w-0">
+          <p className="text-xs sm:text-sm text-gray-500">
+            <span className="sm:hidden">Total</span>
+            <span className="hidden sm:inline">Total viáticos + complementos</span>
+          </p>
+          <p className="text-lg sm:text-2xl font-bold truncate">{money(totalGeneral)}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow mb-6 p-4 flex flex-col gap-3">
+      <div className="bg-white rounded-lg shadow mb-4 sm:mb-6 p-3 sm:p-4 flex flex-col gap-3">
         <SearchInput
           value={search}
           onChange={setSearch}
           placeholder="Buscar por nombre o documento..."
           className="w-full"
         />
-        <div className="flex gap-2 flex-wrap items-center">
-          <span className="text-xs text-gray-500 mr-1">Categorías:</span>
-          <button onClick={toggleTodas} className={chipClass(todasSeleccionadas)}>Todas</button>
-          {categoriasPresentes.map(cat => (
-            <button key={cat} onClick={() => toggleCategoria(cat)} className={chipClass(!excluidas.includes(cat))}>
-              {cat}
+        <button
+          onClick={() => setFiltrosAbiertos(v => !v)}
+          className="sm:hidden flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 w-fit"
+        >
+          <SlidersHorizontal className="w-4 h-4" />
+          Filtros y orden
+          {filtrosActivos > 0 && (
+            <span className="px-1.5 text-xs rounded-full bg-black text-yellow-400">{filtrosActivos}</span>
+          )}
+          <ChevronDown className={`w-4 h-4 transition-transform ${filtrosAbiertos ? 'rotate-180' : ''}`} />
+        </button>
+        <div className={`${filtrosAbiertos ? 'flex' : 'hidden'} sm:flex flex-col gap-3`}>
+          <div className="sm:hidden flex items-center gap-2">
+            <span className="text-xs text-gray-500 mr-1">Ordenar:</span>
+            <select
+              value={sortKey}
+              onChange={(e) => handleSort(e.target.value)}
+              className="flex-1 px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600"
+            >
+              {SORT_OPTIONS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            </select>
+            <button
+              onClick={() => handleSort(sortKey)}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg dark:border-gray-600 dark:text-gray-100"
+              title={sortDir === 'asc' ? 'Ascendente' : 'Descendente'}
+            >
+              {sortDir === 'asc' ? '↑' : '↓'}
             </button>
-          ))}
+          </div>
+          <div className="flex gap-2 flex-wrap items-center">
+            <span className="text-xs text-gray-500 mr-1">Categorías:</span>
+            <button onClick={toggleTodas} className={chipClass(todasSeleccionadas)}>Todas</button>
+            {categoriasPresentes.map(cat => (
+              <button key={cat} onClick={() => toggleCategoria(cat)} className={chipClass(!excluidas.includes(cat))}>
+                {cat}
+              </button>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer w-fit">
+            <input
+              type="checkbox"
+              checked={mostrarContrato}
+              onChange={(e) => setMostrarContrato(e.target.checked)}
+              className="rounded border-gray-300 text-black focus:ring-yellow-500"
+            />
+            Mostrar jugadores con contrato
+            <span className="text-xs text-gray-500">(los casos especiales se muestran siempre)</span>
+          </label>
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer w-fit">
-          <input
-            type="checkbox"
-            checked={mostrarContrato}
-            onChange={(e) => setMostrarContrato(e.target.checked)}
-            className="rounded border-gray-300 text-black focus:ring-yellow-500"
-          />
-          Mostrar jugadores con contrato
-          <span className="text-xs text-gray-500">(los casos especiales se muestran siempre)</span>
-        </label>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
+      <div className="hidden sm:block bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
-              {th('name', 'Nombre', 'sticky left-0 z-10 bg-gray-50 border-r border-gray-200')}
+              {th('displayName', 'Nombre', 'sticky left-0 z-10 bg-gray-50 border-r border-gray-200')}
               {th('date_of_birth', 'Fecha nac.')}
               {th('gov_id', 'Documento')}
               {th('categoria', 'Categoría')}
@@ -214,11 +301,11 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
               <tr key={r.id} className="hover:bg-gray-50">
                 <td className="px-3 py-2 sticky left-0 z-10 bg-white border-r border-gray-200 whitespace-nowrap">
                   <button
-                    onClick={() => setHistoryPlayer({ playerId: r.id, playerName: r.name })}
+                    onClick={() => openHistory(r)}
                     className="font-medium text-left hover:underline"
-                    title="Ver historial de cambios"
+                    title={r.displayName !== r.name ? `${r.name} · Ver historial de cambios` : 'Ver historial de cambios'}
                   >
-                    {r.name}
+                    {r.displayName}
                   </button>
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">{formatDate(r.date_of_birth || null)}</td>
@@ -230,30 +317,10 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
                 </td>
                 <td className="px-3 py-2">{r.categoria}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{money(r.viatico)}</td>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  {money(r.complemento)}
-                  {r.overrideActivo && (
-                    <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 rounded px-1" title="Override activo">temp</span>
-                  )}
-                </td>
-                <td className="px-3 py-2">
-                  {r.contrato ? (
-                    <span className="flex items-center gap-1 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">Sí</span>
-                      {r.casoEspecial && (
-                        <span className="px-2 py-1 text-xs font-semibold bg-amber-100 text-amber-800 rounded-full" title="Tiene contrato y cobra complemento">
-                          Caso especial
-                        </span>
-                      )}
-                    </span>
-                  ) : 'No'}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap">
-                  {r.complemento_override != null
-                    ? <>{money(r.complemento_override)} <span className="text-xs text-gray-500">hasta {formatDate(r.complemento_override_expira || null)}</span></>
-                    : '-'}
-                </td>
-                <td className="px-3 py-2 whitespace-nowrap font-semibold">{r.contrato && !r.casoEspecial ? '-' : money(r.total)}</td>
+                <td className="px-3 py-2 whitespace-nowrap"><ComplementoCell r={r} /></td>
+                <td className="px-3 py-2"><ContratoCell r={r} /></td>
+                <td className="px-3 py-2 whitespace-nowrap"><OverrideCell r={r} /></td>
+                <td className="px-3 py-2 whitespace-nowrap font-semibold">{totalLabel(r)}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.titular || <span className="text-gray-400">Sin cuenta</span>}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.cuenta_banco || '-'}</td>
                 <td className="px-3 py-2 whitespace-nowrap">{r.cuenta_numero || '-'}</td>
@@ -262,13 +329,68 @@ export const FinanzasTab = ({ players = [], currentUser }) => {
             ))}
           </tbody>
         </table>
-        {rows.length === 0 && (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No se encontraron jugadores</p>
-          </div>
-        )}
       </div>
+
+      {/* Mobile: tarjetas expandibles en lugar de la tabla */}
+      {rows.length > 0 && (
+        <div className="sm:hidden bg-white rounded-lg shadow divide-y divide-gray-200 dark:divide-gray-700">
+          {rows.map(r => {
+            const abierto = expandido === r.id;
+            return (
+              <div key={r.id}>
+                <button
+                  onClick={() => setExpandido(abierto ? null : r.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                  aria-expanded={abierto}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium break-words">{r.displayName}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{r.categoria || '-'}</p>
+                  </div>
+                  <span className="font-semibold whitespace-nowrap">{totalLabel(r)}</span>
+                  <ChevronDown className={`w-4 h-4 shrink-0 text-gray-400 transition-transform ${abierto ? 'rotate-180' : ''}`} />
+                </button>
+                {abierto && (
+                  <div className="px-4 pb-4">
+                    <dl className="grid grid-cols-[auto,1fr] gap-x-3 gap-y-1.5 text-sm">
+                      {r.displayName !== r.name && <Detalle label="Nombre completo">{r.name}</Detalle>}
+                      <Detalle label="Fecha nac.">{formatDate(r.date_of_birth || null)}</Detalle>
+                      <Detalle label="Documento">
+                        {r.gov_id || '-'}
+                        {r.tipo_documento && r.tipo_documento !== 'Cédula de Identidad' && (
+                          <span className="ml-1 text-xs text-gray-500">({r.tipo_documento})</span>
+                        )}
+                      </Detalle>
+                      <Detalle label="Viático">{money(r.viatico)}</Detalle>
+                      <Detalle label="Complemento"><ComplementoCell r={r} /></Detalle>
+                      <Detalle label="Contrato"><ContratoCell r={r} /></Detalle>
+                      <Detalle label="Override"><OverrideCell r={r} /></Detalle>
+                      <Detalle label="Titular">{r.titular || <span className="text-gray-400">Sin cuenta</span>}</Detalle>
+                      <Detalle label="Banco">{r.cuenta_banco || '-'}</Detalle>
+                      <Detalle label="Cuenta">{r.cuenta_numero || '-'}</Detalle>
+                      {r.comentario_viatico && <Detalle label="Comentario">{r.comentario_viatico}</Detalle>}
+                    </dl>
+                    <button
+                      onClick={() => openHistory(r)}
+                      className="mt-3 flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:text-gray-100"
+                    >
+                      <History className="w-4 h-4" />
+                      Ver historial
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {rows.length === 0 && (
+        <div className="bg-white rounded-lg shadow text-center py-12">
+          <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500">No se encontraron jugadores</p>
+        </div>
+      )}
 
       {historyPlayer && (
         <PlayerHistoryModal
