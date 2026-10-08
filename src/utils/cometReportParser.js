@@ -90,6 +90,25 @@ export function titleCase(s) {
   return (s || '').toLowerCase().replace(/(^|[\s,'-])(\p{L})/gu, (m, sep, ch) => sep + ch.toUpperCase());
 }
 
+// Partículas que forman parte del primer apellido ("DE LOS SANTOS", "SAN MARTIN", "DA SILVA")
+const PARTICULAS = new Set(['DE', 'DEL', 'LA', 'LAS', 'LOS', 'DA', 'DAS', 'DO', 'DOS', 'SAN', 'SANTA', 'VAN', 'VON', 'DI']);
+
+/**
+ * Nombre de un oficial en el formato de los partidos cargados:
+ * "VICENTE CARRERAS, JOAQUIN SANTIAGO" → "Joaquin Vicente"
+ * (primer nombre + primer apellido, conservando partículas: "DE LOS SANTOS X, JUAN" → "Juan De Los Santos").
+ */
+export function formatOficial(raw) {
+  const [apellidos, nombres] = (raw || '').split(',').map((x) => x.trim());
+  if (!nombres) return titleCase(apellidos);
+  const words = apellidos.split(/\s+/).filter(Boolean);
+  let i = 0;
+  while (i < words.length - 1 && PARTICULAS.has(words[i].toUpperCase())) i++;
+  const primerApellido = words.slice(0, i + 1).join(' ');
+  const primerNombre = nombres.split(/\s+/)[0];
+  return titleCase(`${primerNombre} ${primerApellido}`);
+}
+
 const parseMinuto = (s) => {
   const m = String(s).match(/^(\d{1,3})(?:\s*\+\s*(\d{1,2}))?'$/);
   return m ? Number(m[1]) + (m[2] ? Number(m[2]) : 0) : null;
@@ -182,7 +201,7 @@ export function parseCometPages(pages) {
     row.items.forEach((it, i) => {
       const value = row.items[i + 1];
       if (!value || !value.str.startsWith(':')) return;
-      const nombre = titleCase(value.str.replace(/^:\s*/, ''));
+      const nombre = formatOficial(value.str.replace(/^:\s*/, ''));
       if (/^[ÁA]rbitro$/i.test(it.str)) oficiales.arbitro = nombre;
       else if (/^1/.test(it.str)) oficiales.primerLinea = nombre;
       else if (/^2/.test(it.str)) oficiales.segundaLinea = nombre;
