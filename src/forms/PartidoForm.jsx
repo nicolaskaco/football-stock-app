@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, FileUp, AlertTriangle } from 'lucide-react';
-import { POSICIONES_PARTIDO, POSICIONES_DEFAULT_TITULAR, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS, PLAYER_STATUS_LABELS, DURACION_PARTIDO_DEFAULT } from '../utils/constants';
+import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS, PLAYER_STATUS_LABELS, DURACION_PARTIDO_DEFAULT } from '../utils/constants';
 import { getSuspensionMap } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
 import { CometImportPanel } from '../components/CometImportPanel';
@@ -13,6 +13,16 @@ const emptySlot = () => ({ player_id: '', posicion: '', minuto_salida: null });
 const emptySuplente = () => ({ player_id: '', minuto_entrada: null, minuto_salida: null });
 
 const toMinuto = (v) => (v === '' || v == null ? null : Number(v));
+
+// Ordena titulares según POSICIONES_PARTIDO (Arquero primero, Delantero centro último).
+// Sin posición van después; los slots vacíos al final. El sort es estable, así que
+// posiciones repetidas (dos volantes defensivos, tres zagueros) mantienen su orden relativo.
+const rankTitular = (t) => {
+  const idx = POSICIONES_PARTIDO.indexOf(t.posicion);
+  if (idx !== -1) return idx;
+  return t.player_id || t.comet_hint ? POSICIONES_PARTIDO.length : POSICIONES_PARTIDO.length + 1;
+};
+const sortTitulares = (slots) => [...slots].sort((a, b) => rankTitular(a) - rankTitular(b));
 
 export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [], jornadaId, appSettings = {}, onSubmit }) => {
   const categoria = partido?.categoria || '';
@@ -160,12 +170,17 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     setTitulares((prev) => prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)));
   };
 
-  // Al elegir jugador, autocompleta la posición canónica del número si está vacía
+  // Cambiar la posición reubica al jugador en el orden de la formación
+  const updateTitularPosicion = (index, posicion) => {
+    setTitulares((prev) => sortTitulares(prev.map((t, i) => (i === index ? { ...t, posicion } : t))));
+  };
+
+  // La posición no se autocompleta: el dorsal no siempre coincide con la posición jugada
   const selectTitularPlayer = (index, playerId) => {
     setTitulares((prev) => prev.map((t, i) => {
       if (i !== index) return t;
       if (!playerId) return emptySlot();
-      return { ...t, player_id: playerId, posicion: t.posicion || POSICIONES_DEFAULT_TITULAR[index] || '' };
+      return { ...t, player_id: playerId };
     }));
   };
 
@@ -194,11 +209,10 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
       comet_hint: r.player_id ? null : `${r.dorsal} ${r.nombre}`,
     });
 
-    const newTitulares = imp.rows.filter((r) => r.rol === 'titular').slice(0, MAX_TITULARES).map((r, i) => ({
+    // Solo se conserva la posición de quien ya estaba en el partido; el resto queda vacío
+    const newTitulares = imp.rows.filter((r) => r.rol === 'titular').slice(0, MAX_TITULARES).map((r) => ({
       player_id: r.player_id,
-      posicion: r.player_id
-        ? prevPosicion.get(r.player_id) || POSICIONES_DEFAULT_TITULAR[r.dorsal <= 11 ? r.dorsal - 1 : i] || ''
-        : '',
+      posicion: (r.player_id && prevPosicion.get(r.player_id)) || '',
       minuto_salida: salida.get(r.dorsal) ?? null,
       ...cometFields(r),
     }));
@@ -240,7 +254,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     const importedPlayers = imp.rows.map((r) => players.find((p) => p.id === r.player_id)).filter(Boolean);
     setCategoriasActivas((prev) => [...new Set([...prev, ...importedPlayers.map((p) => p.categoria_juego || p.categoria)])]);
 
-    setTitulares(newTitulares);
+    setTitulares(sortTitulares(newTitulares));
     setSuplentes(newSuplentes);
     setEventosState(newEventos);
     setFormData((prev) => ({
@@ -587,7 +601,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
               />
               <select
                 value={t.posicion}
-                onChange={(e) => updateTitular(i, 'posicion', e.target.value)}
+                onChange={(e) => updateTitularPosicion(i, e.target.value)}
                 className="w-full sm:w-44 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                 disabled={!t.player_id}
               >
