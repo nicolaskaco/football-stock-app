@@ -847,7 +847,7 @@ Default césped: `Sintético` for Local matches, `Natural` for Visitante.
 #### Individual partido editing
 
 Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
-- **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown. Picking a player fills an **empty** position with the default for that slot number (`POSICIONES_DEFAULT_TITULAR`: 1 Arquero, 2 Lateral derecho, 3 Zaguero derecho, 4 Zaguero izquierdo, 5 Lateral izquierdo, 6–7 Volante defensivo, 8 Extremo derecho, 9 Volante ofensivo, 10 Extremo Izquierdo, 11 Delantero Centro); a position chosen by hand is kept. Clearing the slot (X) also clears its position.
+- **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown. Picking a player fills an **empty** position with the default for that slot number (`POSICIONES_DEFAULT_TITULAR`: 1 Arquero, 2 Lateral derecho, 3 Zaguero derecho, 4 Zaguero izquierdo, 5 Lateral izquierdo, 6–7 Volante defensivo, 8 Extremo derecho, 9 Volante ofensivo, 10 Extremo izquierdo, 11 Delantero centro); a position chosen by hand is kept. Clearing the slot (X) also clears its position.
 - **Suplentes**: up to 10 slots, player dropdown only
 - **Category filter**: defaults to the partido's own category; can be expanded to include other categories (e.g. 3era, 5ta playing up in 4ta). Players from other categories are labeled with their category in parentheses.
 - **Resultado**: always displayed as Peñarol (left) vs. Rival (right), regardless of escenario. Inputs bind to `goles_local`/`goles_visitante` correctly based on escenario.
@@ -1014,7 +1014,7 @@ All shared enums are centralized here — never defined inline in components:
 | `ESCENARIOS` | `['Local', 'Visitante']` |
 | `CESPED_TIPOS` | `['Natural', 'Sintético']` |
 | `POSICIONES_JUGADOR` | `['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero']` |
-| `POSICIONES_PARTIDO` | 10 specific match positions (Arquero, Lateral derecho/izquierdo, Zaguero derecho/izquierdo, Volante defensivo/ofensivo, Extremo derecho/Izquierdo, Delantero Centro) |
+| `POSICIONES_PARTIDO` | 10 specific match positions (Arquero, Lateral derecho/izquierdo, Zaguero derecho/izquierdo, Volante defensivo, Extremo derecho, Volante ofensivo, Extremo izquierdo, Delantero centro) |
 | `POSICIONES_DEFAULT_TITULAR` | Default `posicion` per titular slot 1–11, used by PartidoForm to pre-fill an empty position (6 and 7 are both Volante defensivo) |
 | `DEPARTAMENTOS` | All 19 Uruguayan departments + foreign countries |
 | `BANCOS` | **Legacy** (old `bank` column): Itau, Prex, Mi Dinero, BROU, Santander, Scotia, HSBC, Otro |
