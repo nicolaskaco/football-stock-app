@@ -16,7 +16,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [x] **B1. Mostrar minuto de gol/tarjeta en PartidoDetailView** — PR #229 · 2026-03-16
 - [x] **B2. Resultado del torneo** — PR #230 · 2026-03-16
 - [x] **B3. Advertencias de elegibilidad en PartidoForm** — PR #233 · 2026-03-16
-- [x] **B4. Importar planilla COMET** — PartidoForm reads the AUF "Informe del partido" PDF (pdfjs, in the browser), matches players by COMET ID or name with a preview, and fills titulares, suplentes, cambios (new `minuto_entrada`/`minuto_salida`), tarjetas, marcador and árbitros. Learns `players.comet_id`. Minutes played in the player ficha for partidos with `duracion`. *(PR #TBD · 2026-10-08)*
+- [x] **B4. Importar planilla COMET** — PartidoForm reads the AUF "Informe del partido" PDF (pdfjs, in the browser), matches players by COMET ID or name with a preview, and fills titulares, suplentes, cambios (new `minuto_entrada`/`minuto_salida`), tarjetas, marcador and árbitros. Learns `players.comet_id`. Minutes played in the player ficha for partidos with `duracion`. *(PR #343 · 2026-10-08)*
 
 ### C. Inventario y Equipamiento
 
