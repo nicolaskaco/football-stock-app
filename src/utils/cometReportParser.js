@@ -220,13 +220,15 @@ export function parseCometPages(pages) {
   const parseIncidencias = (key) => {
     const items = inSection(key).filter(isPenarol);
     const out = [];
-    items.filter((it) => parseMinuto(it.str) != null).forEach((minItem) => {
+    // A veces COMET no tiene el minuto y pone una sigla ("AM"): la tarjeta va sin minuto
+    const isMarker = (it) => parseMinuto(it.str) != null || /^[A-Z]{1,3}$/.test(it.str);
+    items.filter(isMarker).forEach((minItem) => {
       const texto = items
         .filter((it) => it.page === minItem.page && Math.abs(it.y - minItem.y) <= 8 && it.x > minItem.x && /^\d{1,2}\b/.test(it.str))
         .sort((a, b) => b.y - a.y)[0];
       const m = texto?.str.match(/^(\d{1,2})\b/);
       if (!m) {
-        warnings.push(`No se pudo leer el jugador de la incidencia del minuto ${minItem.str}.`);
+        warnings.push(`No se pudo leer el jugador de la incidencia "${minItem.str}".`);
         return;
       }
       out.push({ minuto: parseMinuto(minItem.str), dorsal: Number(m[1]), detalle: texto.str });
