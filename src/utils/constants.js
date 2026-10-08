@@ -81,6 +81,13 @@ export const CATEGORIAS_INVENTARIO = [
 export const CATEGORIAS_PARTIDO = ['4ta', '5ta', 'S16', '6ta', '7ma'];
 
 /**
+ * Duración reglamentaria (minutos) por categoría, usada como valor por defecto de
+ * `partidos.duracion` al cargar minutos de entrada/salida.
+ * TODO: confirmar duraciones reales de las categorías menores.
+ */
+export const DURACION_PARTIDO_DEFAULT = { '4ta': 90, '5ta': 90, 'S16': 90, '6ta': 90, '7ma': 90 };
+
+/**
  * Categorías "mayores" que invierten el escenario respecto al valor base.
  * Si la jornada se crea como Local → estas categorías juegan Visitante.
  */

@@ -222,6 +222,21 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              COMET ID (AUF)
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={formData.comet_id || ''}
+              onChange={(e) => setFormData({...formData, comet_id: e.target.value.replace(/\D/g, '') || null})}
+              disabled={readOnly}
+              placeholder="Se completa al importar planillas"
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           {player && player.name_visual && (
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">

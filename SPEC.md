@@ -185,7 +185,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 
 | Table | Purpose |
 |-------|---------|
-| `players` | Player records: personal info, financials, boarding, clothing sizes. Notable columns: `tipo_documento` (text, default `'Cédula de Identidad'`), `complemento_override` (integer, nullable), `complemento_override_expira` (date, nullable), `status` (text, default `'activo'`, CHECK in `activo`/`cedido`/`transferido`/`egresado`/`dado de baja`), `status_comment` (text, nullable — free-text reason for a non-active status), `incluir_viatico_export` (boolean, default `false` — marks a contracted player as a "caso especial" to include in the Tesorero viático export with their complemento). **Cuenta de cobro de viáticos**: `cuenta_titular_tipo` (CHECK `jugador`/`familiar`), `cuenta_banco` (CHECK `Prex`/`Mi Dinero`), `cuenta_numero`, `cuenta_titular_nombre`, `cuenta_titular_documento` (the last two only for `familiar`, i.e. a padre/madre/tutor account). `bank` / `bank_account` are **legacy**: kept in the DB but no longer shown in the UI |
+| `players` | Player records: personal info, financials, boarding, clothing sizes. Notable columns: `tipo_documento` (text, default `'Cédula de Identidad'`), `complemento_override` (integer, nullable), `complemento_override_expira` (date, nullable), `status` (text, default `'activo'`, CHECK in `activo`/`cedido`/`transferido`/`egresado`/`dado de baja`), `status_comment` (text, nullable — free-text reason for a non-active status), `incluir_viatico_export` (boolean, default `false` — marks a contracted player as a "caso especial" to include in the Tesorero viático export with their complemento). **Cuenta de cobro de viáticos**: `cuenta_titular_tipo` (CHECK `jugador`/`familiar`), `cuenta_banco` (CHECK `Prex`/`Mi Dinero`), `cuenta_numero`, `cuenta_titular_nombre`, `cuenta_titular_documento` (the last two only for `familiar`, i.e. a padre/madre/tutor account). `bank` / `bank_account` are **legacy**: kept in the DB but no longer shown in the UI. `comet_id` (text, nullable, unique when set): the player's ID in COMET (AUF), learned when a COMET match report is imported or typed in PlayerForm |
 | `player_history` | Audit log of changes to `contrato`, `viatico`, `complemento` |
 | `player_change_requests` | Approval workflow for financial field modifications |
 | `player_documents` | Document metadata — file paths in `player-documents` storage bucket |
@@ -248,6 +248,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `arbitro` | text | nullable — referee name |
 | `primer_linea` | text | nullable — first linesman name |
 | `segundo_linea` | text | nullable — second linesman name |
+| `duracion` | smallint | nullable — match length in minutes. Null = minutes in/out not tracked for this partido (it doesn't count toward minutes played) |
 | `created_at` | timestamptz | |
 
 #### `partido_players`
@@ -259,6 +260,8 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `tipo` | text | `'titular'` \| `'suplente'` |
 | `posicion` | text | nullable — only for titulares |
 | `orden` | integer | 1–11 for titulares, 1–10 for suplentes |
+| `minuto_entrada` | smallint | nullable — suplentes only: minute they came on (null = didn't play) |
+| `minuto_salida` | smallint | nullable — minute they were substituted off (null = played until the end) |
 
 #### `partido_eventos`
 | Column | Type | Notes |
@@ -404,7 +407,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
 | [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit (name only) |
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
-| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (active red card suspension, or running yellow counter reached 5 in the previous jornada) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. Only players with `status = 'activo'` (or null) are offered; a non-active player already saved in a slot stays selected and is labeled with their status (e.g. `— CEDIDO`, gray background). |
+| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (active red card suspension, or running yellow counter reached 5 in the previous jornada) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. Minute in/out per slot (titulares: sale; suplentes: entra/sale) plus `duracion` (defaults to `DURACION_PARTIDO_DEFAULT[categoria]` when any minute is entered). "Importar planilla COMET" opens `CometImportPanel` (see *COMET Match Report Import*). Only players with `status = 'activo'` (or null) are offered; a non-active player already saved in a slot stays selected and is labeled with their status (e.g. `— CEDIDO`, gray background). |
 | [InjuryForm.jsx](src/forms/InjuryForm.jsx) | Injury registration/editing: tipo (Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro), severidad (leve/moderada/grave), descripción, fecha_inicio, fecha_retorno_estimada, fecha_alta. Admin-only. |
 | [TareaForm.jsx](src/forms/TareaForm.jsx) | Task add/edit. Fields: título (required), descripción (textarea), prioridad (Urgente/Muy Alta/Alta/Media/Baja), estado (Sin Asignar/Sin Comenzar/En Progreso/Completado), asignado a (Dirigente or Funcionario — combined `<optgroup>` select; auto-advances estado from "Sin Asignar" to "Sin Comenzar" when an assignee is chosen), sprint (defaults to active sprint via `defaultSprintId` prop), fecha estimada. |
 | [UserInviteForm.jsx](src/forms/UserInviteForm.jsx) | Invite / edit-permissions form. Fields: email (disabled in edit mode), role dropdown, 18 grouped permission checkboxes with select-all/none per group, and category chip multi-select. Used by `UserManagementSection` for both invite and edit flows. |
@@ -656,7 +659,15 @@ All figures are computed in the browser from the existing `jornadas` payload —
 **Data limitations** (reflected in the UI, not worked around):
 - `partido_eventos.minuto` is nullable and `PartidoForm` stores minute 0 as null, so minute-based sections only count events that have a minute and display how many were excluded.
 - Matches without a scoreline (`goles_local`/`goles_visitante` null) count toward PJ and goles but are excluded from every G/E/P cross.
-- Minutes played and goals-per-90 are not computable — there is no `minuto_entrada`/`minuto_salida` on `partido_players`. Assists are not recorded either.
+- Minutes played only count partidos with `duracion` set (those with substitutions loaded, usually through the COMET import): titular = `(minuto_salida ?? roja ?? duracion)`, suplente = that minus `minuto_entrada`. The ficha shows a "Minutos" card with how many partidos it covers. Goals-per-90 and assists are not computed.
+
+### COMET Match Report Import
+
+The AUF sends a COMET "Informe del partido" PDF per match. In PartidoForm, **Importar planilla COMET** opens `CometImportPanel`:
+- `utils/cometReportParser.js` reads the PDF in the browser with `pdfjs-dist` (legacy build, lazy-loaded) using text positions: left column = local, right = visitante. It extracts marcador, escenario (from Peñarol's side), árbitros, titulares/banco (dorsal, name, COMET ID), cambios (by dorsal), tarjetas and goles. Only Peñarol's data is returned. The goals section format has not been seen yet (no sample with goals); if the parsed goals don't add up to the score a warning asks to load them by hand.
+- `utils/cometMatch.js` matches each row by `players.comet_id`, then by accent-insensitive surname/name tokens (status `id` / `nombre` / `dudoso` / `sin_match`). The preview allows correcting each match and choosing whether to save the COMET ID.
+- **Aplicar** replaces titulares, suplentes, minutes in/out, cards (and goals when parsed), score, escenario and árbitros in the form; unmatched rows stay as empty, highlighted slots. Nothing is saved until **Guardar Partido**; then `database.setPlayersCometIds` stores the learned IDs.
+- Warnings: category in the torneo name (e.g. `5A`) or date differing from the partido, suspended players who played, more than 10 suplentes.
 
 ### Player Status
 
@@ -755,7 +766,7 @@ Admin-only **Actividad** tab (`ActivityLogTab`) showing a single timeline built 
 
 | Source | Event types |
 |--------|-------------|
-| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import) |
+| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import) |
 | `player_history` | `field_change` — audited player field changes (see §4 Audit-Tracked Player Fields) |
 | `player_change_requests` (status ≠ `pending`) | `approved` / `rejected` solicitudes, with the new viático/complemento/contrato values |
 

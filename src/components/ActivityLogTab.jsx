@@ -47,6 +47,10 @@ function normaliseActivityLog(rows) {
         label = 'Importación de cuentas de viáticos';
         detail = r.details?.count ? `${r.details.count} jugador${r.details.count !== 1 ? 'es' : ''}` : '';
         break;
+      case 'import_planilla_comet':
+        label = 'Importación de planilla COMET';
+        detail = [r.details?.categoria, r.details?.rival && `vs ${r.details.rival}`].filter(Boolean).join(' ');
+        break;
       default:
         label = r.action_type;
     }
@@ -110,6 +114,7 @@ const BADGE = {
   bulk_approve:      'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
   bulk_reject:       'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
   import_cuentas_viatico: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
+  import_planilla_comet: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
 };
 
 const TYPE_LABELS = {
@@ -121,6 +126,7 @@ const TYPE_LABELS = {
   bulk_approve:      'Operación masiva',
   bulk_reject:       'Operación masiva',
   import_cuentas_viatico: 'Importación de cuentas',
+  import_planilla_comet: 'Planilla COMET',
 };
 
 const ALL_TYPES = Object.keys(TYPE_LABELS);
@@ -130,7 +136,7 @@ const ALL_TYPES = Object.keys(TYPE_LABELS);
 // Events come from 3 tables, each paged on its own and merged by timestamp.
 const PAGE_SIZE = 50;
 
-const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico'];
+const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet'];
 const REQUEST_TYPES = ['approved', 'rejected'];
 
 // Returns the subset of `all` that is selected, null when none is (skip the

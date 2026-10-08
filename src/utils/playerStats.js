@@ -50,6 +50,21 @@ export function resolveMarcador(partido) {
  *                            categoría de ficha del jugador.
  * @returns {Array<MatchRecord>}
  */
+/**
+ * Minutos jugados en un partido. null si el partido no tiene `duracion`
+ * (partidos cargados antes de registrar cambios): así no se inventan 90'
+ * para quien quizás salió antes.
+ */
+function calcMinutos(partido, pp, rojas = []) {
+  const duracion = partido.duracion == null ? null : Number(partido.duracion);
+  if (!duracion) return null;
+  const rojaMin = rojas[0]?.minuto == null ? null : Number(rojas[0].minuto);
+  const fin = pp.minuto_salida ?? rojaMin ?? duracion;
+  const inicio = pp.tipo === 'titular' ? 0 : pp.minuto_entrada;
+  if (inicio == null) return 0; // suplente que no entró
+  return Math.max(0, Math.min(fin, duracion) - inicio);
+}
+
 export function buildPlayerMatchLog(jornadas = [], playerId, { categoria = null, year = null } = {}) {
   if (!playerId) return [];
 
@@ -101,6 +116,8 @@ export function buildPlayerMatchLog(jornadas = [], playerId, { categoria = null,
         rojas: rojas.length,
         rojaMinuto: rojas.length ? (rojas[0].minuto == null ? null : Number(rojas[0].minuto)) : null,
         rojaFechas: rojas.length ? (rojas[0].fechas_suspension || 1) : null,
+
+        minutos: calcMinutos(partido, pp, rojas),
       });
     });
   });
@@ -148,6 +165,8 @@ export function getTotales(log = []) {
   const goles     = log.reduce((s, m) => s + m.goles, 0);
   const amarillas = log.reduce((s, m) => s + m.amarillas, 0);
   const rojas     = log.reduce((s, m) => s + m.rojas, 0);
+  const conMinutos = log.filter((m) => m.minutos != null);
+  const minutos = conMinutos.reduce((s, m) => s + m.minutos, 0);
 
   return {
     pj,
@@ -158,6 +177,8 @@ export function getTotales(log = []) {
     amarillas,
     rojas,
     golesPorPartido: pj > 0 ? goles / pj : 0,
+    minutos,
+    partidosConMinutos: conMinutos.length,
   };
 }
 

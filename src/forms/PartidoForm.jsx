@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
-import { POSICIONES_PARTIDO, POSICIONES_DEFAULT_TITULAR, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS, PLAYER_STATUS_LABELS } from '../utils/constants';
+import { X, FileUp, AlertTriangle } from 'lucide-react';
+import { POSICIONES_PARTIDO, POSICIONES_DEFAULT_TITULAR, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS, PLAYER_STATUS_LABELS, DURACION_PARTIDO_DEFAULT } from '../utils/constants';
 import { getSuspensionMap } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
+import { CometImportPanel } from '../components/CometImportPanel';
 
 const MAX_TITULARES = 11;
 const MAX_SUPLENTES = 10;
 
-const emptySlot = () => ({ player_id: '', posicion: '' });
+// comet_id/comet_hint: datos del informe COMET importado para ese slot
+const emptySlot = () => ({ player_id: '', posicion: '', minuto_salida: null });
+const emptySuplente = () => ({ player_id: '', minuto_entrada: null, minuto_salida: null });
+
+const toMinuto = (v) => (v === '' || v == null ? null : Number(v));
 
 export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [], jornadaId, appSettings = {}, onSubmit }) => {
   const categoria = partido?.categoria || '';
@@ -32,7 +37,13 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     arbitro: partido?.arbitro || '',
     primer_linea: partido?.primer_linea || '',
     segundo_linea: partido?.segundo_linea || '',
+    duracion: partido?.duracion ?? '',
   });
+
+  const [showImport, setShowImport] = useState(false);
+  const [importAvisos, setImportAvisos] = useState([]);
+  const [importado, setImportado] = useState(false);
+  const fechaJornada = jornadas.find((j) => j.id === jornadaId)?.fecha || null;
 
   // Construir slots iniciales desde partido_players existentes
   const buildInitialTitulares = () => {
@@ -42,6 +53,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     const slots = existing.map((pp) => ({
       player_id: pp.player_id || pp.players?.id || '',
       posicion: pp.posicion || '',
+      minuto_salida: pp.minuto_salida ?? null,
     }));
     while (slots.length < MAX_TITULARES) slots.push(emptySlot());
     return slots;
@@ -53,8 +65,10 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
       .sort((a, b) => (a.orden || 0) - (b.orden || 0));
     const slots = existing.map((pp) => ({
       player_id: pp.player_id || pp.players?.id || '',
+      minuto_entrada: pp.minuto_entrada ?? null,
+      minuto_salida: pp.minuto_salida ?? null,
     }));
-    while (slots.length < MAX_SUPLENTES) slots.push({ player_id: '' });
+    while (slots.length < MAX_SUPLENTES) slots.push(emptySuplente());
     return slots;
   };
 
@@ -151,29 +165,132 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     setTitulares((prev) => prev.map((t, i) => {
       if (i !== index) return t;
       if (!playerId) return emptySlot();
-      return { player_id: playerId, posicion: t.posicion || POSICIONES_DEFAULT_TITULAR[index] || '' };
+      return { ...t, player_id: playerId, posicion: t.posicion || POSICIONES_DEFAULT_TITULAR[index] || '' };
     }));
   };
 
   const updateSuplente = (index, value) => {
-    setSuplentes((prev) => prev.map((s, i) => (i === index ? { player_id: value } : s)));
+    setSuplentes((prev) => prev.map((s, i) => {
+      if (i !== index) return s;
+      return value ? { ...s, player_id: value } : emptySuplente();
+    }));
+  };
+
+  const updateSuplenteMinuto = (index, field, value) => {
+    setSuplentes((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: toMinuto(value) } : s)));
+  };
+
+  // Vuelca un informe COMET (ver CometImportPanel) en el formulario.
+  // Reemplaza titulares, suplentes, minutos y tarjetas; los goles solo si el informe trae detalle.
+  const applyCometImport = (imp) => {
+    const byDorsal = new Map(imp.rows.map((r) => [r.dorsal, r]));
+    const salida = new Map(imp.cambios.map((c) => [c.sale, c.minuto]));
+    const entrada = new Map(imp.cambios.map((c) => [c.entra, c.minuto]));
+    const prevPosicion = new Map(titulares.filter((t) => t.player_id).map((t) => [t.player_id, t.posicion]));
+
+    // El COMET ID viaja con el slot y se guarda en el jugador al guardar el partido
+    const cometFields = (r) => ({
+      comet_id: r.player_id ? (r.status !== 'id' && r.saveComet ? r.cometId : null) : r.cometId,
+      comet_hint: r.player_id ? null : `${r.dorsal} ${r.nombre}`,
+    });
+
+    const newTitulares = imp.rows.filter((r) => r.rol === 'titular').slice(0, MAX_TITULARES).map((r, i) => ({
+      player_id: r.player_id,
+      posicion: r.player_id
+        ? prevPosicion.get(r.player_id) || POSICIONES_DEFAULT_TITULAR[r.dorsal <= 11 ? r.dorsal - 1 : i] || ''
+        : '',
+      minuto_salida: salida.get(r.dorsal) ?? null,
+      ...cometFields(r),
+    }));
+    while (newTitulares.length < MAX_TITULARES) newTitulares.push(emptySlot());
+
+    const suplentesImp = imp.rows.filter((r) => r.rol === 'suplente');
+    const newSuplentes = suplentesImp.slice(0, MAX_SUPLENTES).map((r) => ({
+      player_id: r.player_id,
+      minuto_entrada: entrada.get(r.dorsal) ?? null,
+      minuto_salida: salida.get(r.dorsal) ?? null,
+      ...cometFields(r),
+    }));
+    while (newSuplentes.length < MAX_SUPLENTES) newSuplentes.push(emptySuplente());
+
+    // Eventos: tarjetas del informe; goles del informe si los trae, si no se conservan los cargados
+    const newEventos = {};
+    const ensure = (pid) => (newEventos[pid] ||= emptyEvento());
+    if (imp.goles.length === 0) {
+      Object.entries(eventosState).forEach(([pid, ev]) => {
+        if (ev.goles > 0) Object.assign(ensure(pid), { goles: ev.goles, goles_minutos: ev.goles_minutos });
+      });
+    }
+    imp.goles.forEach((g) => {
+      const pid = byDorsal.get(g.dorsal)?.player_id;
+      if (!pid) return;
+      const ev = ensure(pid);
+      ev.goles += 1;
+      ev.goles_minutos = [...ev.goles_minutos, g.minuto];
+    });
+    imp.tarjetas.forEach((t) => {
+      const pid = byDorsal.get(t.dorsal)?.player_id;
+      if (!pid) return;
+      const ev = ensure(pid);
+      if (t.tipo === 'amarilla') Object.assign(ev, { amarilla: true, amarilla_minuto: t.minuto });
+      else Object.assign(ev, { roja: true, roja_minuto: t.minuto, roja_fechas: eventosState[pid]?.roja_fechas ?? 1 });
+    });
+
+    // Mostrar en los selects a los jugadores importados de otras categorías
+    const importedPlayers = imp.rows.map((r) => players.find((p) => p.id === r.player_id)).filter(Boolean);
+    setCategoriasActivas((prev) => [...new Set([...prev, ...importedPlayers.map((p) => p.categoria_juego || p.categoria)])]);
+
+    setTitulares(newTitulares);
+    setSuplentes(newSuplentes);
+    setEventosState(newEventos);
+    setFormData((prev) => ({
+      ...prev,
+      escenario: imp.escenario,
+      goles_local: imp.golesLocal,
+      goles_visitante: imp.golesVisitante,
+      arbitro: imp.arbitro || prev.arbitro,
+      primer_linea: imp.primerLinea || prev.primer_linea,
+      segundo_linea: imp.segundaLinea || prev.segundo_linea,
+      duracion: prev.duracion || DURACION_PARTIDO_DEFAULT[categoria] || 90,
+    }));
+
+    const avisos = [];
+    const sinAsignar = imp.rows.filter((r) => !r.player_id);
+    if (sinAsignar.length) avisos.push(`Sin asignar: ${sinAsignar.map((r) => `${r.dorsal} ${r.nombre}`).join(', ')}. Elegilos en su lugar de la planilla.`);
+    if (suplentesImp.length > MAX_SUPLENTES) avisos.push(`El informe trae ${suplentesImp.length} suplentes; solo entran ${MAX_SUPLENTES}.`);
+    importedPlayers.filter((p) => suspendedMap.has(p.id)).forEach((p) => {
+      avisos.push(`${p.name_visual || p.name} figura como suspendido (${suspendedMap.get(p.id).reason}) pero jugó según el informe.`);
+    });
+    if (imp.goles.length === 0 && Number(imp.escenario === 'Local' ? imp.golesLocal : imp.golesVisitante) > 0) {
+      avisos.push('El informe no trae el detalle de los goles de Peñarol: cargalos a mano.');
+    }
+    setImportAvisos(avisos);
+    setImportado(true);
+    setShowImport(false);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     const titularesData = titulares
-      .map((t, i) => ({ player_id: t.player_id, posicion: t.posicion, orden: i + 1 }))
+      .map((t, i) => ({ player_id: t.player_id, posicion: t.posicion, orden: i + 1, minuto_salida: toMinuto(t.minuto_salida) }))
       .filter((t) => t.player_id);
     const suplentesData = suplentes
-      .map((s, i) => ({ player_id: s.player_id, orden: i + 1 }))
+      .map((s, i) => ({ player_id: s.player_id, orden: i + 1, minuto_entrada: toMinuto(s.minuto_entrada), minuto_salida: toMinuto(s.minuto_salida) }))
       .filter((s) => s.player_id);
 
+    const tieneMinutos = [...titularesData, ...suplentesData].some((x) => x.minuto_entrada != null || x.minuto_salida != null);
     const data = {
       ...formData,
       cancha: formData.escenario === 'Local' ? formData.cancha : null,
       goles_local: formData.goles_local === '' ? null : Number(formData.goles_local),
       goles_visitante: formData.goles_visitante === '' ? null : Number(formData.goles_visitante),
+      duracion: formData.duracion !== '' ? Number(formData.duracion) : tieneMinutos ? (DURACION_PARTIDO_DEFAULT[categoria] || 90) : null,
     };
+
+    // COMET IDs a aprender: slots importados cuyo jugador todavía no tiene ese ID
+    const cometIds = [...titulares, ...suplentes]
+      .filter((s) => s.player_id && s.comet_id && players.find((p) => p.id === s.player_id)?.comet_id !== s.comet_id)
+      .map((s) => ({ player_id: s.player_id, comet_id: s.comet_id }));
 
     const lineupIds = new Set([
       ...titularesData.map((t) => t.player_id),
@@ -190,7 +307,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
       if (stats.roja)     eventosData.push({ player_id, tipo: 'roja',     minuto: stats.roja_minuto    ? Number(stats.roja_minuto)    : null, fechas_suspension: stats.roja_fechas || 1 });
     });
 
-    onSubmit(data, titularesData, suplentesData, eventosData);
+    onSubmit(data, titularesData, suplentesData, eventosData, { cometIds, importado });
   };
 
   const titularesCount = titulares.filter((t) => t.player_id).length;
@@ -236,7 +353,35 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
           formData.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
         }`}>{formData.escenario || '—'}</span>
+        {!showImport && (
+          <button
+            type="button"
+            onClick={() => setShowImport(true)}
+            className="ml-auto flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg bg-black text-yellow-400 hover:bg-gray-900 font-medium"
+          >
+            <FileUp className="w-4 h-4" />
+            Importar planilla COMET
+          </button>
+        )}
       </div>
+
+      {showImport && (
+        <CometImportPanel
+          categoria={categoria}
+          players={players}
+          fechaJornada={fechaJornada}
+          onApply={applyCometImport}
+          onCancel={() => setShowImport(false)}
+        />
+      )}
+
+      {importAvisos.length > 0 && (
+        <ul className="text-sm text-amber-800 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-200 rounded-lg p-3 space-y-1">
+          {importAvisos.map((a, i) => (
+            <li key={i} className="flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{a}</li>
+          ))}
+        </ul>
+      )}
 
       {/* Filtro de categorías de jugadores */}
       <div>
@@ -343,6 +488,24 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
         </div>
       </div>
 
+      {/* Duración (para minutos jugados) */}
+      <div className="flex items-center gap-3">
+        <label className="text-sm font-medium text-gray-700" htmlFor="partido-duracion">
+          Duración (min)
+        </label>
+        <input
+          id="partido-duracion"
+          type="number"
+          min="1"
+          max="130"
+          placeholder={String(DURACION_PARTIDO_DEFAULT[categoria] || 90)}
+          value={formData.duracion}
+          onChange={(e) => setFormData({ ...formData, duracion: e.target.value })}
+          className="w-20 px-2 py-1.5 border rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500"
+        />
+        <span className="text-xs text-gray-400">Para calcular minutos jugados. Se completa sola si cargás cambios.</span>
+      </div>
+
       {/* Comentario */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">Comentario del partido</label>
@@ -406,11 +569,22 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
               <select
                 value={t.player_id}
                 onChange={(e) => selectTitularPlayer(i, e.target.value)}
-                className="flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                className={`flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 ${t.comet_hint && !t.player_id ? 'border-red-400' : ''}`}
               >
-                <option value="">— Jugador —</option>
+                <option value="">{t.comet_hint ? `— ${t.comet_hint} (sin asignar) —` : '— Jugador —'}</option>
                 {getOptionsForSlot(t.player_id).map(renderPlayerOption)}
               </select>
+              <input
+                type="number"
+                min="1"
+                max="130"
+                placeholder="sale"
+                title="Minuto en que salió"
+                value={t.minuto_salida ?? ''}
+                onChange={(e) => updateTitular(i, 'minuto_salida', toMinuto(e.target.value))}
+                disabled={!t.player_id}
+                className="w-16 px-1 py-2 border rounded-lg text-xs text-center focus:ring-2 focus:ring-blue-500"
+              />
               <select
                 value={t.posicion}
                 onChange={(e) => updateTitular(i, 'posicion', e.target.value)}
@@ -450,11 +624,33 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
               <select
                 value={s.player_id}
                 onChange={(e) => updateSuplente(i, e.target.value)}
-                className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                className={`flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 ${s.comet_hint && !s.player_id ? 'border-red-400' : ''}`}
               >
-                <option value="">— Jugador —</option>
+                <option value="">{s.comet_hint ? `— ${s.comet_hint} (sin asignar) —` : '— Jugador —'}</option>
                 {getOptionsForSlot(s.player_id).map(renderPlayerOption)}
               </select>
+              <input
+                type="number"
+                min="1"
+                max="130"
+                placeholder="entra"
+                title="Minuto en que entró"
+                value={s.minuto_entrada ?? ''}
+                onChange={(e) => updateSuplenteMinuto(i, 'minuto_entrada', e.target.value)}
+                disabled={!s.player_id}
+                className="w-16 px-1 py-2 border rounded-lg text-xs text-center focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="number"
+                min="1"
+                max="130"
+                placeholder="sale"
+                title="Minuto en que salió"
+                value={s.minuto_salida ?? ''}
+                onChange={(e) => updateSuplenteMinuto(i, 'minuto_salida', e.target.value)}
+                disabled={!s.player_id}
+                className="w-16 px-1 py-2 border rounded-lg text-xs text-center focus:ring-2 focus:ring-blue-500"
+              />
               {s.player_id && (
                 <button
                   type="button"
