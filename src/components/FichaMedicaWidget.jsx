@@ -34,15 +34,19 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
         (f) => f.deporte && ['FÚTBOL', 'FUTBOL'].includes(f.deporte.toUpperCase())
       );
       if (!fichaFutbol) {
-        setRefreshResult({ ok: false, msg: 'No se encontró ficha de FÚTBOL en SND.' });
+        setRefreshResult({ status: 'error', msg: 'No se encontró ficha de FÚTBOL en SND.' });
+        return;
+      }
+      // fichaFutbol.hasta is DD/MM/YYYY — convert to YYYY-MM-DD to compare and display
+      const [d, m, y] = fichaFutbol.hasta.split('/');
+      const isoHasta = `${y}-${m}-${d}`;
+      if (isoHasta === selectedPlayer.ficha_medica_hasta) {
+        setRefreshResult({ status: 'unchanged', msg: `Sin cambios en SND: vence ${fichaFutbol.hasta}` });
         return;
       }
       await database.saveFichaMedicaHasta(selectedPlayer.id, fichaFutbol.hasta, currentUser?.email);
       if (onDataChange) onDataChange('players');
       fetchPlayers();
-      // fichaFutbol.hasta is DD/MM/YYYY — convert to YYYY-MM-DD for display
-      const [d, m, y] = fichaFutbol.hasta.split('/');
-      const isoHasta = `${y}-${m}-${d}`;
       const todayStr2 = new Date().toISOString().split('T')[0];
       const in30 = new Date(); in30.setDate(in30.getDate() + 30);
       const in30Str = in30.toISOString().split('T')[0];
@@ -52,9 +56,9 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
         expired: isoHasta < todayStr2,
         expiringSoon: isoHasta >= todayStr2 && isoHasta <= in30Str,
       }));
-      setRefreshResult({ ok: true, msg: `Actualizado: vence ${fichaFutbol.hasta}` });
-    } catch (err) {
-      setRefreshResult({ ok: false, msg: 'Error al consultar SND.' });
+      setRefreshResult({ status: 'updated', msg: `Actualizado: vence ${fichaFutbol.hasta}` });
+    } catch {
+      setRefreshResult({ status: 'error', msg: 'Error al consultar SND.' });
     } finally {
       setRefreshing(false);
     }
@@ -308,7 +312,11 @@ export const FichaMedicaWidget = ({ currentUser, onDataChange }) => {
               </div>
 
               {refreshResult && (
-                <p className={`text-sm font-medium ${refreshResult.ok ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-sm font-medium ${
+                  refreshResult.status === 'updated' ? 'text-green-600 dark:text-green-400'
+                    : refreshResult.status === 'unchanged' ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-red-600 dark:text-red-400'
+                }`}>
                   {refreshResult.msg}
                 </p>
               )}
