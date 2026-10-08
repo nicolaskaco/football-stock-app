@@ -198,7 +198,7 @@ export const PlayerFichaView = ({
 
       {/* ── Lo básico ──────────────────────────────────────────────── */}
       <FichaSection title="Lo básico">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className={`grid grid-cols-2 sm:grid-cols-3 ${totales.partidosConMinutos > 0 ? 'lg:grid-cols-7' : 'lg:grid-cols-6'} gap-3`}>
           <StatCard label="Partidos" value={totales.pj} />
           <StatCard label="Goles" value={totales.goles} tone="green" />
           <StatCard label="Goles / Partido" value={fmtRatio(totales.golesPorPartido)} />
@@ -209,6 +209,13 @@ export const PlayerFichaView = ({
             value={fmtPct(totales.pctTitularidad)}
             sub={`${totales.titular} titular · ${totales.suplente} suplente`}
           />
+          {totales.partidosConMinutos > 0 && (
+            <StatCard
+              label="Minutos"
+              value={totales.minutos}
+              sub={`en ${totales.partidosConMinutos} ${totales.partidosConMinutos === 1 ? 'partido' : 'partidos'} con cambios cargados`}
+            />
+          )}
         </div>
       </FichaSection>
 

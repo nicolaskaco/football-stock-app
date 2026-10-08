@@ -66,6 +66,7 @@ export const OverviewTab = ({
           onFormDirtyChange={onFormDirtyChange}
           reopenDetail={openDetail}
           appSettings={appSettings}
+          currentUser={currentUser}
         />
       ),
     });

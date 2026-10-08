@@ -80,6 +80,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
           onFormDirtyChange={onFormDirtyChange}
           reopenDetail={openDetail}
           appSettings={appSettings}
+          currentUser={currentUser}
         />
       ),
     });

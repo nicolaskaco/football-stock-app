@@ -6,12 +6,24 @@ import { useMutation } from '../hooks/useMutation';
 import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 
-export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {} }) => {
+export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {}, currentUser = null }) => {
   const { execute } = useMutation();
 
-  const handleEditPartido = (partido, partidoData, titulares, suplentes, eventos) => execute(async () => {
+  const handleEditPartido = (partido, partidoData, titulares, suplentes, eventos, { cometIds = [], importado = false } = {}) => execute(async () => {
     await database.updatePartido(partido.id, partidoData, titulares, suplentes, eventos);
-    await onDataChange('jornadas');
+    if (importado) {
+      database.logActivity('import_planilla_comet', currentUser?.email, 'partido', partido.id, {
+        categoria: partido.categoria,
+        rival: jornada.rivales?.name || null,
+        comet_ids_nuevos: cometIds.length,
+      });
+    }
+    if (cometIds.length > 0) {
+      await database.setPlayersCometIds(cometIds);
+      await onDataChange('jornadas', 'players');
+    } else {
+      await onDataChange('jornadas');
+    }
     if (reopenDetail) {
       // Volver al detalle de la jornada con datos frescos desde la BD
       const allJornadas = await database.getJornadas();
@@ -42,8 +54,8 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
           jornadas={jornadas}
           jornadaId={jornada.id}
           appSettings={appSettings}
-          onSubmit={(data, titulares, suplentes, eventos) =>
-            handleEditPartido(partido, data, titulares, suplentes, eventos)
+          onSubmit={(data, titulares, suplentes, eventos, importMeta) =>
+            handleEditPartido(partido, data, titulares, suplentes, eventos, importMeta)
           }
         />
       ),
@@ -184,6 +196,9 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
                           {pp.posicion && (
                             <span className="text-xs text-gray-500">({pp.posicion})</span>
                           )}
+                          {pp.minuto_salida != null && (
+                            <span className="text-xs text-red-600 dark:text-red-400" title="Salió">↓{pp.minuto_salida}'</span>
+                          )}
                           {golesList.length > 0 && (
                             <span className="text-xs font-semibold text-green-700">
                               {anyGoalMinuto
@@ -221,6 +236,12 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
                           <span className="font-medium text-gray-800">
                             {pp.players?.name_visual || pp.players?.name || '—'}
                           </span>
+                          {pp.minuto_entrada != null && (
+                            <span className="text-xs text-green-700 dark:text-green-400" title="Entró">↑{pp.minuto_entrada}'</span>
+                          )}
+                          {pp.minuto_salida != null && (
+                            <span className="text-xs text-red-600 dark:text-red-400" title="Salió">↓{pp.minuto_salida}'</span>
+                          )}
                           {golesList.length > 0 && (
                             <span className="text-xs font-semibold text-green-700">
                               {anyGoalMinuto

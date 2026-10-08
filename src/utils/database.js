@@ -1258,7 +1258,7 @@ export const database = {
         partidos(
           *,
           partido_players(
-            id, player_id, tipo, posicion, orden,
+            id, player_id, tipo, posicion, orden, minuto_entrada, minuto_salida,
             players(id, name, name_visual, categoria)
           ),
           partido_eventos(id, tipo, player_id, minuto, fechas_suspension)
@@ -1355,6 +1355,8 @@ export const database = {
         tipo: 'titular',
         posicion: t.posicion,
         orden: t.orden,
+        minuto_entrada: null,
+        minuto_salida: t.minuto_salida ?? null,
       }));
       const { error: titError } = await supabase
         .from('partido_players')
@@ -1370,6 +1372,8 @@ export const database = {
         tipo: 'suplente',
         posicion: null,
         orden: s.orden,
+        minuto_entrada: s.minuto_entrada ?? null,
+        minuto_salida: s.minuto_salida ?? null,
       }));
       const { error: supError } = await supabase
         .from('partido_players')
@@ -1396,6 +1400,30 @@ export const database = {
         .from('partido_eventos')
         .insert(evRecords);
       if (evError) throw evError;
+    }
+  },
+
+  /**
+   * Guarda los COMET ID aprendidos al importar una planilla.
+   * @param {Array<{player_id, comet_id}>} list
+   */
+  async setPlayersCometIds(list = []) {
+    for (const { player_id, comet_id } of list) {
+      const { error } = await supabase
+        .from('players')
+        .update({ comet_id })
+        .eq('id', player_id);
+      if (error) {
+        if (error.code === '23505') {
+          const { data: owner } = await supabase
+            .from('players')
+            .select('name')
+            .eq('comet_id', comet_id)
+            .maybeSingle();
+          throw new Error(`El COMET ID ${comet_id} ya está asignado a ${owner?.name || 'otro jugador'}.`);
+        }
+        throw error;
+      }
     }
   },
 
