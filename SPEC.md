@@ -666,7 +666,7 @@ All figures are computed in the browser from the existing `jornadas` payload —
 The AUF sends a COMET "Informe del partido" PDF per match. In PartidoForm, **Importar planilla COMET** opens `CometImportPanel`:
 - `utils/cometReportParser.js` reads the PDF in the browser with `pdfjs-dist` (legacy build, lazy-loaded) using text positions: left column = local, right = visitante. It extracts marcador, escenario (from Peñarol's side), árbitros (COMET's `APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2` is converted to `Nombre1 Apellido1`, keeping particles like `De Los` / `San`, to match the partidos loaded by hand), titulares/banco (dorsal, name, COMET ID), cambios (by dorsal), tarjetas and goles. Only Peñarol's data is returned. Goals and cards are listed as minute + "dorsal NAME" in the scoring team's column; a card without a minute shows a code (e.g. `AM`) and is imported with a null minute. If the parsed goals don't add up to Peñarol's score (e.g. an own goal by the rival), a warning asks to load them by hand.
 - `utils/cometMatch.js` matches each row by `players.comet_id`, then by accent-insensitive surname/name tokens (status `id` / `nombre` / `dudoso` / `sin_match`). The preview allows correcting each match and choosing whether to save the COMET ID.
-- **Aplicar** replaces titulares, suplentes, minutes in/out, cards (and goals when parsed), score, escenario and árbitros in the form; unmatched rows stay as empty, highlighted slots. Nothing is saved until **Guardar Partido**; then `database.setPlayersCometIds` stores the learned IDs.
+- **Aplicar** replaces titulares, suplentes, minutes in/out, cards (and goals when parsed), score, escenario and árbitros in the form; unmatched rows stay as empty, highlighted slots. Titulares are imported without a position, except players already in the lineup, who keep theirs; the lineup is then sorted by position. Nothing is saved until **Guardar Partido**; then `database.setPlayersCometIds` stores the learned IDs.
 - Warnings: category in the torneo name (e.g. `5A`) or date differing from the partido, suspended players who played, more than 10 suplentes.
 
 ### Player Status
@@ -847,7 +847,7 @@ Default césped: `Sintético` for Local matches, `Natural` for Visitante.
 #### Individual partido editing
 
 Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
-- **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown. Picking a player fills an **empty** position with the default for that slot number (`POSICIONES_DEFAULT_TITULAR`: 1 Arquero, 2 Lateral derecho, 3 Zaguero derecho, 4 Zaguero izquierdo, 5 Lateral izquierdo, 6–7 Volante defensivo, 8 Extremo derecho, 9 Volante ofensivo, 10 Extremo izquierdo, 11 Delantero centro); a position chosen by hand is kept. Clearing the slot (X) also clears its position.
+- **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown. Positions are never filled in automatically (the shirt number doesn't always match the position played). Choosing a position immediately moves the player to their place in the formation order (`POSICIONES_PARTIDO`: Arquero, Lateral derecho, Zaguero derecho, Zaguero izquierdo, Lateral izquierdo, Volante defensivo ×2, Extremo derecho, Volante ofensivo, Extremo izquierdo, Delantero centro). The sort is stable, so repeated positions keep their relative order; players without a position go after those with one, and empty slots go last. The saved `orden` follows this order. Clearing the slot (X) also clears its position.
 - **Suplentes**: up to 10 slots, player dropdown only
 - **Category filter**: defaults to the partido's own category; can be expanded to include other categories (e.g. 3era, 5ta playing up in 4ta). Players from other categories are labeled with their category in parentheses.
 - **Resultado**: always displayed as Peñarol (left) vs. Rival (right), regardless of escenario. Inputs bind to `goles_local`/`goles_visitante` correctly based on escenario.
@@ -1014,8 +1014,7 @@ All shared enums are centralized here — never defined inline in components:
 | `ESCENARIOS` | `['Local', 'Visitante']` |
 | `CESPED_TIPOS` | `['Natural', 'Sintético']` |
 | `POSICIONES_JUGADOR` | `['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero']` |
-| `POSICIONES_PARTIDO` | 10 specific match positions (Arquero, Lateral derecho/izquierdo, Zaguero derecho/izquierdo, Volante defensivo, Extremo derecho, Volante ofensivo, Extremo izquierdo, Delantero centro) |
-| `POSICIONES_DEFAULT_TITULAR` | Default `posicion` per titular slot 1–11, used by PartidoForm to pre-fill an empty position (6 and 7 are both Volante defensivo) |
+| `POSICIONES_PARTIDO` | 10 specific match positions (Arquero, Lateral derecho/izquierdo, Zaguero derecho/izquierdo, Volante defensivo, Extremo derecho, Volante ofensivo, Extremo izquierdo, Delantero centro). Their order is the lineup order PartidoForm sorts titulares by |
 | `DEPARTAMENTOS` | All 19 Uruguayan departments + foreign countries |
 | `BANCOS` | **Legacy** (old `bank` column): Itau, Prex, Mi Dinero, BROU, Santander, Scotia, HSBC, Otro |
 | `BANCOS_VIATICO` | `['Prex', 'Mi Dinero']`: banks enabled for paying viáticos |

@@ -105,7 +105,7 @@ export const CESPED_TIPOS = ['Natural', 'Sintético'];
 /** Canchas propias (solo aplica cuando escenario = Local) */
 export const CANCHAS_LOCAL = ['Ciudad Deportiva', 'Las Acacias', 'CAR'];
 
-/** Posiciones específicas para la planilla de partidos */
+/** Posiciones específicas para la planilla de partidos, en el orden de la formación titular */
 export const POSICIONES_PARTIDO = [
   'Arquero',
   'Lateral derecho',
@@ -117,21 +117,6 @@ export const POSICIONES_PARTIDO = [
   'Volante ofensivo',
   'Extremo izquierdo',
   'Delantero centro',
-];
-
-/** Posición por defecto según el número de titular (índice 0 = titular 1) */
-export const POSICIONES_DEFAULT_TITULAR = [
-  'Arquero',            // 1
-  'Lateral derecho',    // 2
-  'Zaguero derecho',    // 3
-  'Zaguero izquierdo',  // 4
-  'Lateral izquierdo',  // 5
-  'Volante defensivo',  // 6
-  'Volante defensivo',  // 7
-  'Extremo derecho',    // 8
-  'Volante ofensivo',   // 9
-  'Extremo izquierdo',  // 10
-  'Delantero centro',   // 11
 ];
 
 /** Números de jornada del campeonato */
