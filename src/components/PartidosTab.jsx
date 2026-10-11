@@ -345,7 +345,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                   <th className="w-px px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                   <th className="px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Rival</th>
                   <th className="w-px px-3 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" title="Puntos">Pts</th>
-                  <th className="px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Torneo</th>
+                  <th className="w-px px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Torneo</th>
                   {CATEGORIAS_PARTIDO.map((cat) => (
                     <th key={cat} className="w-px px-2 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       {cat}
@@ -377,10 +377,10 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                       </div>
                     </td>
                     <td className="w-px px-3 py-3 text-center whitespace-nowrap">{renderPuntos(jornada)}</td>
-                    <td className="px-3 py-3 text-sm text-gray-600">
+                    <td className="w-px px-3 py-3 text-sm text-gray-600 whitespace-nowrap">
                       {jornada.torneos?.name ? (
                         <span
-                          className="inline-block max-w-[11rem] truncate align-middle px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full"
+                          className="inline-block max-w-[16rem] truncate align-middle px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full"
                           title={jornada.torneos.name}
                         >
                           {jornada.torneos.name}
