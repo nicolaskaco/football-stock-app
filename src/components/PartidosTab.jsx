@@ -107,6 +107,24 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
 
   const RESULT_DOT = { win: 'bg-green-500', loss: 'bg-red-500', draw: 'bg-gray-400' };
   const RESULT_LABEL = { win: 'G', loss: 'P', draw: 'E' };
+  const RESULT_PUNTOS = { win: 3, draw: 1, loss: 0 };
+  const MAX_PUNTOS_JORNADA = CATEGORIAS_PARTIDO.length * RESULT_PUNTOS.win;
+
+  // Puntos de la jornada: 3 por victoria, 1 por empate. null si no hay ningún marcador cargado.
+  const getPuntosJornada = (jornada) => {
+    const resultados = CATEGORIAS_PARTIDO
+      .map((cat) => getResultado(getPartidoForCategoria(jornada, cat)))
+      .filter(Boolean);
+    if (resultados.length === 0) return null;
+    return resultados.reduce((sum, r) => sum + RESULT_PUNTOS[r], 0);
+  };
+
+  // Verde con más de 10 puntos, rojo con menos de 7.
+  const puntosColor = (puntos) => {
+    if (puntos > 10) return 'text-green-600';
+    if (puntos < 7) return 'text-red-600';
+    return 'text-gray-900';
+  };
 
   const currentYear = new Date().getFullYear();
   const [yearFiltro, setYearFiltro] = useState(currentYear);
@@ -215,6 +233,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fase</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rival</th>
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Puntos</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Torneo</th>
                 {CATEGORIAS_PARTIDO.map((cat) => (
                   <th key={cat} className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -241,6 +260,14 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">{formatDate(jornada.fecha)}</td>
                   <td className="px-6 py-4 font-medium text-gray-900">{jornada.rivales?.name || '—'}</td>
+                  <td className="px-3 py-4 text-center whitespace-nowrap">
+                    {getPuntosJornada(jornada) == null ? '—' : (
+                      <>
+                        <span className={`font-bold ${puntosColor(getPuntosJornada(jornada))}`}>{getPuntosJornada(jornada)}</span>
+                        <span className="text-xs text-gray-400">/{MAX_PUNTOS_JORNADA}</span>
+                      </>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {jornada.torneos?.name ? (
                       <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">
