@@ -5,6 +5,7 @@ import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
+import { RivalBadge } from './ui/RivalBadge';
 
 export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {}, currentUser = null }) => {
   const { execute } = useMutation();
@@ -113,7 +114,10 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
     <div className="space-y-4">
       {/* Jornada header */}
       <div className="bg-gradient-to-r from-gray-900 to-black text-yellow-400 p-4 rounded-lg">
-        <h2 className="text-xl font-bold">{jornada.rivales?.name || 'Rival'}</h2>
+        <h2 className="flex items-center gap-3 text-xl font-bold">
+          <RivalBadge rival={jornada.rivales} size="md" className="text-gray-600" />
+          {jornada.rivales?.name || 'Rival'}
+        </h2>
         <div className="flex items-center gap-3 mt-1">
           <span className="text-sm text-yellow-200">{formatDate(jornada.fecha)}</span>
           <span className="px-2 py-0.5 bg-yellow-400 text-black rounded-full text-xs font-semibold">
