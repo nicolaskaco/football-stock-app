@@ -6,6 +6,7 @@ import { AlertModal } from './AlertModal';
 import { formatDate, formatDateLong, todayISO } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { useAlertModal } from '../hooks/useAlertModal';
+import { RivalBadge } from './ui/RivalBadge';
 
 export const TorneoDetailView = ({ torneo }) => {
 
@@ -676,7 +677,12 @@ export const TorneoDetailView = ({ torneo }) => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDate(jornada.fecha)}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{jornada.rivales?.name || '—'}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <RivalBadge rival={jornada.rivales} />
+                        {jornada.rivales?.name || '—'}
+                      </div>
+                    </td>
                     {CATEGORIAS_PARTIDO.map((cat) => {
                       const partido = getPartidoForCategoria(jornada, cat);
                       const resultado = getResultado(partido);

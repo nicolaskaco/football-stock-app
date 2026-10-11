@@ -673,7 +673,7 @@ export const database = {
         torneo_dirigentes(dirigente_id, dirigentes(id, name, rol, categoria)),
         torneo_players(player_id, players(id, name, categoria, posicion, gov_id, date_of_birth)),
         torneo_funcionarios(employee_id, employees(id, name, role, categoria)),
-        jornadas(id, fecha, numero_jornada, fase, rival_id, rivales(id, name), partidos(id, categoria, escenario, goles_local, goles_visitante))
+        jornadas(id, fecha, numero_jornada, fase, rival_id, rivales(id, name, badge_path), partidos(id, categoria, escenario, goles_local, goles_visitante))
       `)
       .order('start_date', { ascending: false });
     
@@ -1134,12 +1134,55 @@ export const database = {
     return data;
   },
 
-  async deleteRival(id) {
+  async deleteRival(id, badgePath = null) {
     const { error } = await supabase
       .from('rivales')
       .delete()
       .eq('id', id);
     if (error) throw error;
+    if (badgePath) await this.removeRivalBadgeFile(badgePath);
+  },
+
+  // Bucket público: la URL se arma sin pedirle nada al servidor
+  getRivalBadgeUrl(path) {
+    if (!path) return null;
+    return supabase.storage.from('rival-badges').getPublicUrl(path).data.publicUrl;
+  },
+
+  async uploadRivalBadge(rival, file) {
+    const fileExt = file.name.split('.').pop().toLowerCase();
+    // Nombre único por subida: no hace falta upsert y no queda la imagen vieja en caché
+    const path = `${rival.id}/${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from('rival-badges')
+      .upload(path, file, { contentType: file.type, cacheControl: '31536000' });
+    if (uploadError) throw uploadError;
+
+    const { error } = await supabase
+      .from('rivales')
+      .update({ badge_path: path })
+      .eq('id', rival.id);
+    if (error) {
+      await this.removeRivalBadgeFile(path);
+      throw error;
+    }
+    if (rival.badge_path) await this.removeRivalBadgeFile(rival.badge_path);
+    return path;
+  },
+
+  async removeRivalBadge(rival) {
+    const { error } = await supabase
+      .from('rivales')
+      .update({ badge_path: null })
+      .eq('id', rival.id);
+    if (error) throw error;
+    if (rival.badge_path) await this.removeRivalBadgeFile(rival.badge_path);
+  },
+
+  // Un archivo huérfano no rompe nada: se registra y se sigue
+  async removeRivalBadgeFile(path) {
+    const { error } = await supabase.storage.from('rival-badges').remove([path]);
+    if (error) console.error('Error al borrar el escudo:', error);
   },
 
   // ============================================================
@@ -1253,7 +1296,7 @@ export const database = {
       .from('jornadas')
       .select(`
         *,
-        rivales(id, name),
+        rivales(id, name, badge_path),
         torneos(id, name),
         partidos(
           *,

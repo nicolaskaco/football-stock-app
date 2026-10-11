@@ -220,6 +220,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 |--------|------|-------|
 | `id` | uuid PK | |
 | `name` | text | Rival team name |
+| `badge_path` | text | Path of the team badge inside the `rival-badges` bucket (nullable) |
 | `created_at` | timestamptz | |
 
 #### `jornadas`
@@ -307,6 +308,11 @@ Bucket: `player-documents` (private)
 - Files stored at path: `{player_id}/{document_type}_{timestamp}.{ext}`
 - Access via signed URLs (1-hour expiry via `createSignedUrl`)
 
+Bucket: `rival-badges` (public)
+- Rival team badges, stored at path `{rival_id}/{timestamp}.{ext}`; the path is saved in `rivales.badge_path`
+- Served through the public URL (`database.getRivalBadgeUrl(path)`, no signing). Limits enforced by the bucket: 512 KB, PNG / JPG / WEBP / SVG
+- Write policies on `storage.objects`: insert/update/delete only for users with `can_edit_partidos` (never `finanzas`)
+
 ---
 
 ## 5. Navigation & Modules
@@ -357,7 +363,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [TorneoDetailView.jsx](src/components/TorneoDetailView.jsx) | Detailed tournament view with participants |
 | [ComisionesTab.jsx](src/components/ComisionesTab.jsx) | Committee list and management. Sticky Nombre column on horizontal scroll; tap name on mobile to expand truncated text. |
 | [ComisionDetailView.jsx](src/components/ComisionDetailView.jsx) | Committee detail with member list |
-| [RivalesTab.jsx](src/components/RivalesTab.jsx) | Rival team CRUD + Excel bulk import |
+| [RivalesTab.jsx](src/components/RivalesTab.jsx) | Rival team CRUD + Excel bulk import. Shows each rival's badge. "Subir escudos" uploads many badge images at once, matching each file name to a rival name (ignoring case, accents and spaces) with a preview of matched, unmatched and invalid files before confirming. |
 | [PartidosTab.jsx](src/components/PartidosTab.jsx) | Jornadas list (Lista / Calendario toggle) with Nueva Jornada + edit/delete actions; list view shows escenario + result badge per category. Mobile-friendly header: button label collapses to "Nueva" on small screens. Year filter dropdown (defaults to current year) filters jornadas in both list and calendar views. |
 | [PartidoDetailView.jsx](src/components/PartidoDetailView.jsx) | Jornada detail: 5 category cards with lineup, color-coded result badge, comment, and event minutes (e.g. `⚽45'`, `🟨72'`) |
 | [CalendarioView.jsx](src/components/CalendarioView.jsx) | Month/week calendar showing jornadas with color-coded category dots; used in PartidosTab and OverviewTab |
@@ -405,7 +411,7 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [DirigenteForm.jsx](src/forms/DirigenteForm.jsx) | Board member add/edit |
 | [TorneoForm.jsx](src/forms/TorneoForm.jsx) | Tournament add/edit (multi-select players/dirigentes/staff). Player list has a category filter and a "Seleccionar todos / Deseleccionar todos" button that bulk-selects/deselects all currently visible (filtered) players. "Resultado del Torneo" section: position (1–16), playoff result (Campeón/Subcampeón, only when position = 1), and optional result comment. |
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
-| [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit (name only) |
+| [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit: name and badge image (upload, replace, remove) |
 | [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
 | [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (active red card suspension, or running yellow counter reached 5 in the previous jornada) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. Minute in/out per slot (titulares: sale; suplentes: entra/sale) plus `duracion` (defaults to `DURACION_PARTIDO_DEFAULT[categoria]` when any minute is entered). "Importar planilla COMET" opens `CometImportPanel` (see *COMET Match Report Import*). Only players with `status = 'activo'` (or null) are offered; a non-active player already saved in a slot stays selected and is labeled with their status (e.g. `— CEDIDO`, gray background). |
 | [InjuryForm.jsx](src/forms/InjuryForm.jsx) | Injury registration/editing: tipo (Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro), severidad (leve/moderada/grave), descripción, fecha_inicio, fecha_retorno_estimada, fecha_alta. Admin-only. |

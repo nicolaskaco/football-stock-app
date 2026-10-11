@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Cake, ShieldAlert, HeartPulse, Trophy, X } from 'lucide-react';
 import { CATEGORIAS_PARTIDO, CALENDAR_EVENT_TYPES } from '../utils/constants';
+import { RivalBadge } from './ui/RivalBadge';
 
 /**
  * Determina si CAP ganó, empatamos, o perdimos un partido individual.
@@ -66,8 +67,9 @@ function JornadaCard({ jornada, onClick }) {
       onClick={() => onClick(jornada)}
       className="w-full text-left bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md px-1 py-1 sm:px-2 sm:py-1.5 hover:border-blue-400 hover:shadow-sm transition group"
     >
-      <p className="text-[10px] sm:text-xs font-semibold text-gray-800 dark:text-gray-200 truncate group-hover:text-blue-700 dark:group-hover:text-blue-400">
-        {jornada.rivales?.name || 'Rival'}
+      <p className="flex items-center gap-1 text-[10px] sm:text-xs font-semibold text-gray-800 dark:text-gray-200 group-hover:text-blue-700 dark:group-hover:text-blue-400">
+        {jornada.rivales?.badge_path && <RivalBadge rival={jornada.rivales} size="xs" className="hidden sm:block" />}
+        <span className="truncate">{jornada.rivales?.name || 'Rival'}</span>
       </p>
       <div className="flex items-center gap-1">
         <CategoryDots jornada={jornada} />

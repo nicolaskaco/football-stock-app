@@ -9,6 +9,7 @@ import { ConfirmModal } from './ConfirmModal';
 import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
+import { RivalBadge } from './ui/RivalBadge';
 
 export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], dirigentes = [], torneos = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const { execute } = useMutation();
@@ -259,7 +260,12 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-700">{formatDate(jornada.fecha)}</td>
-                  <td className="px-6 py-4 font-medium text-gray-900">{jornada.rivales?.name || '—'}</td>
+                  <td className="px-6 py-4 font-medium text-gray-900">
+                    <div className="flex items-center gap-2">
+                      <RivalBadge rival={jornada.rivales} />
+                      {jornada.rivales?.name || '—'}
+                    </div>
+                  </td>
                   <td className="px-3 py-4 text-center whitespace-nowrap">
                     {getPuntosJornada(jornada) == null ? '—' : (
                       <>
