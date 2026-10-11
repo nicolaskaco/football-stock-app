@@ -107,6 +107,17 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
 
   const RESULT_DOT = { win: 'bg-green-500', loss: 'bg-red-500', draw: 'bg-gray-400' };
   const RESULT_LABEL = { win: 'G', loss: 'P', draw: 'E' };
+  const RESULT_PUNTOS = { win: 3, draw: 1, loss: 0 };
+  const MAX_PUNTOS_JORNADA = CATEGORIAS_PARTIDO.length * RESULT_PUNTOS.win;
+
+  // Puntos de la jornada: 3 por victoria, 1 por empate. null si no hay ningún marcador cargado.
+  const getPuntosJornada = (jornada) => {
+    const resultados = CATEGORIAS_PARTIDO
+      .map((cat) => getResultado(getPartidoForCategoria(jornada, cat)))
+      .filter(Boolean);
+    if (resultados.length === 0) return null;
+    return resultados.reduce((sum, r) => sum + RESULT_PUNTOS[r], 0);
+  };
 
   const currentYear = new Date().getFullYear();
   const [yearFiltro, setYearFiltro] = useState(currentYear);
@@ -221,6 +232,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                     {cat}
                   </th>
                 ))}
+                <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Puntos</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
@@ -272,6 +284,14 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                       </td>
                     );
                   })}
+                  <td className="px-3 py-4 text-center whitespace-nowrap">
+                    {getPuntosJornada(jornada) == null ? '—' : (
+                      <>
+                        <span className="font-bold text-gray-900">{getPuntosJornada(jornada)}</span>
+                        <span className="text-xs text-gray-400">/{MAX_PUNTOS_JORNADA}</span>
+                      </>
+                    )}
+                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end gap-2">
                       <button
