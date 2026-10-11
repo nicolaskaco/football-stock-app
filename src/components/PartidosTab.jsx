@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Eye, Trash2, Calendar, Pencil, List } from 'lucide-react';
+import { Plus, Eye, Trash2, Calendar, Pencil, List, ArrowUp, ArrowDown } from 'lucide-react';
 import { JornadaForm } from '../forms/JornadaForm';
 import { PartidoDetailView } from './PartidoDetailView';
 import { CalendarioView } from './CalendarioView';
@@ -10,12 +10,18 @@ import { formatDate } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 import { RivalBadge } from './ui/RivalBadge';
+import { SortIcon } from './ui/SortIcon';
+
+// Dirección del primer click en cada columna ordenable
+const SORT_FIRST_DIR = { fecha: 'asc', rival: 'asc', pts: 'desc' };
+const SORT_DEFAULT = { key: null, direction: 'asc' };
 
 export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], dirigentes = [], torneos = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const { execute } = useMutation();
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [view, setView] = useState('lista'); // 'lista' | 'calendario'
   const [faseFiltro, setFaseFiltro] = useState(null);
+  const [sortConfig, setSortConfig] = useState(SORT_DEFAULT); // key null = orden por defecto
 
   const canEdit = currentUser?.canEditPartidos || false;
 
@@ -182,15 +188,50 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
   const effectiveYear = availableYears.includes(yearFiltro) ? yearFiltro : (availableYears[0] ?? currentYear);
 
   const FASES_ORDER = ['Apertura', 'Clausura'];
+
+  // Orden por defecto: fase (Apertura antes que Clausura) y después N° de jornada.
+  const compareDefault = (a, b) => {
+    const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
+    if (faseDiff !== 0) return faseDiff;
+    return (a.numero_jornada ?? 999) - (b.numero_jornada ?? 999);
+  };
+
+  const getSortValue = (jornada, key) => {
+    if (key === 'fecha') return jornada.fecha || null;
+    if (key === 'rival') return jornada.rivales?.name || null;
+    return getPuntosJornada(jornada);
+  };
+
+  // Los valores vacíos (sin marcador, sin rival) van siempre al final, en cualquier dirección.
+  const compareByKey = (a, b) => {
+    const av = getSortValue(a, sortConfig.key);
+    const bv = getSortValue(b, sortConfig.key);
+    if (av == null || bv == null) return (av == null) - (bv == null);
+    const diff = typeof av === 'string' ? av.localeCompare(bv, 'es') : av - bv;
+    return sortConfig.direction === 'asc' ? diff : -diff;
+  };
+
+  // Primer click: dirección inicial de la columna. Segundo: la invierte. Tercero: vuelve al orden por defecto.
+  const handleSort = (key) => setSortConfig((prev) => {
+    if (prev.key !== key) return { key, direction: SORT_FIRST_DIR[key] };
+    if (prev.direction === SORT_FIRST_DIR[key]) return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+    return SORT_DEFAULT;
+  });
+
+  const ariaSort = (key) => {
+    if (sortConfig.key !== key) return 'none';
+    return sortConfig.direction === 'asc' ? 'ascending' : 'descending';
+  };
+
   const sortedJornadas = [...jornadas]
     .filter((j) => {
       const year = j.fecha ? new Date(j.fecha).getFullYear() : null;
       return year === effectiveYear && (!faseFiltro || j.fase === faseFiltro);
     })
     .sort((a, b) => {
-      const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
-      if (faseDiff !== 0) return faseDiff;
-      return (a.numero_jornada ?? 999) - (b.numero_jornada ?? 999);
+      // En un empate manda el orden por defecto, sin invertirse con la dirección.
+      const diff = sortConfig.key ? compareByKey(a, b) : 0;
+      return diff !== 0 ? diff : compareDefault(a, b);
     });
 
   return (
@@ -270,6 +311,33 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
         <>
           {/* Mobile / tablet: tarjetas apiladas, sin scroll horizontal */}
           <div className="lg:hidden space-y-3">
+            <div className="flex items-center gap-2">
+              <label htmlFor="partidos-orden" className="text-sm text-gray-500 font-medium">Ordenar por:</label>
+              <select
+                id="partidos-orden"
+                value={sortConfig.key || ''}
+                onChange={(e) => {
+                  const key = e.target.value;
+                  setSortConfig(key ? { key, direction: SORT_FIRST_DIR[key] } : SORT_DEFAULT);
+                }}
+                className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-black dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200"
+              >
+                <option value="">Por defecto</option>
+                <option value="fecha">Fecha</option>
+                <option value="rival">Rival</option>
+                <option value="pts">Puntos</option>
+              </select>
+              {sortConfig.key && (
+                <button
+                  onClick={() => setSortConfig((prev) => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' }))}
+                  className="p-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
+                  title={sortConfig.direction === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
+                  aria-label={sortConfig.direction === 'asc' ? 'Orden ascendente' : 'Orden descendente'}
+                >
+                  {sortConfig.direction === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+                </button>
+              )}
+            </div>
             {sortedJornadas.map((jornada) => (
               <div key={jornada.id} className="bg-white rounded-lg shadow">
                 <div className="px-4 pt-3 pb-3 space-y-2">
@@ -342,9 +410,37 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                 <tr>
                   <th className="w-px px-3 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" title="Jornada">N°</th>
                   <th className="w-px px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fase</th>
-                  <th className="w-px px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th className="px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Rival</th>
-                  <th className="w-px px-3 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" title="Puntos">Pts</th>
+                  <th
+                    onClick={() => handleSort('fecha')}
+                    aria-sort={ariaSort('fecha')}
+                    className="w-px px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Fecha
+                      <SortIcon sortConfig={sortConfig} columnKey="fecha" />
+                    </span>
+                  </th>
+                  <th
+                    onClick={() => handleSort('rival')}
+                    aria-sort={ariaSort('rival')}
+                    className="px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Rival
+                      <SortIcon sortConfig={sortConfig} columnKey="rival" />
+                    </span>
+                  </th>
+                  <th
+                    onClick={() => handleSort('pts')}
+                    aria-sort={ariaSort('pts')}
+                    className="w-px px-3 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700"
+                    title="Puntos"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Pts
+                      <SortIcon sortConfig={sortConfig} columnKey="pts" />
+                    </span>
+                  </th>
                   <th className="w-px px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Torneo</th>
                   {CATEGORIAS_PARTIDO.map((cat) => (
                     <th key={cat} className="w-px px-2 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
