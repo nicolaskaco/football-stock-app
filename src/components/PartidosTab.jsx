@@ -119,6 +119,13 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
     return resultados.reduce((sum, r) => sum + RESULT_PUNTOS[r], 0);
   };
 
+  // Verde con más de 10 puntos, rojo con menos de 7.
+  const puntosColor = (puntos) => {
+    if (puntos > 10) return 'text-green-600';
+    if (puntos < 7) return 'text-red-600';
+    return 'text-gray-900';
+  };
+
   const currentYear = new Date().getFullYear();
   const [yearFiltro, setYearFiltro] = useState(currentYear);
 
@@ -256,7 +263,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                   <td className="px-3 py-4 text-center whitespace-nowrap">
                     {getPuntosJornada(jornada) == null ? '—' : (
                       <>
-                        <span className="font-bold text-gray-900">{getPuntosJornada(jornada)}</span>
+                        <span className={`font-bold ${puntosColor(getPuntosJornada(jornada))}`}>{getPuntosJornada(jornada)}</span>
                         <span className="text-xs text-gray-400">/{MAX_PUNTOS_JORNADA}</span>
                       </>
                     )}
