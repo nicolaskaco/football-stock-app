@@ -127,6 +127,47 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
     return 'text-gray-900';
   };
 
+  const RESULT_TITLE = { win: 'Ganamos', loss: 'Perdimos', draw: 'Empate' };
+
+  // Escenario + resultado de una categoría. `compact` abrevia el escenario (L/V) para mobile.
+  const renderCategoria = (jornada, cat, compact = false) => {
+    const partido = getPartidoForCategoria(jornada, cat);
+    const esc = partido?.escenario || '—';
+    const resultado = getResultado(partido);
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <span
+          className={`text-xs py-0.5 rounded-full font-medium ${compact ? 'px-1.5' : 'px-2'} ${escenarioBadge(esc)}`}
+          title={compact ? esc : undefined}
+          aria-label={compact ? esc : undefined}
+        >
+          {compact ? esc.charAt(0) : esc}
+        </span>
+        {resultado ? (
+          <span
+            className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold ${RESULT_DOT[resultado]}`}
+            title={RESULT_TITLE[resultado]}
+          >
+            {RESULT_LABEL[resultado]}
+          </span>
+        ) : (
+          <span className="w-5 h-5" />
+        )}
+      </div>
+    );
+  };
+
+  const renderPuntos = (jornada) => {
+    const puntos = getPuntosJornada(jornada);
+    if (puntos == null) return '—';
+    return (
+      <>
+        <span className={`font-bold ${puntosColor(puntos)}`}>{puntos}</span>
+        <span className="text-xs text-gray-400">/{MAX_PUNTOS_JORNADA}</span>
+      </>
+    );
+  };
+
   const currentYear = new Date().getFullYear();
   const [yearFiltro, setYearFiltro] = useState(currentYear);
 
@@ -226,119 +267,166 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
       ) : view === 'calendario' ? (
         <CalendarioView jornadas={sortedJornadas} onJornadaClick={openDetail} players={players} dirigentes={dirigentes} injuries={injuries} />
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jornada</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fase</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rival</th>
-                <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Puntos</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Torneo</th>
-                {CATEGORIAS_PARTIDO.map((cat) => (
-                  <th key={cat} className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {cat}
-                  </th>
-                ))}
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {sortedJornadas.map((jornada) => (
-                <tr key={jornada.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    {jornada.numero_jornada ? (
-                      <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">
-                        {jornada.numero_jornada}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">
-                      {jornada.fase}
+        <>
+          {/* Mobile / tablet: tarjetas apiladas, sin scroll horizontal */}
+          <div className="lg:hidden space-y-3">
+            {sortedJornadas.map((jornada) => (
+              <div key={jornada.id} className="bg-white rounded-lg shadow">
+                <div className="px-4 pt-3 pb-3 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 min-w-0 text-sm text-gray-600">
+                      {jornada.numero_jornada && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">
+                          {jornada.numero_jornada}
+                        </span>
+                      )}
+                      <span className="truncate">{jornada.fase} · {formatDate(jornada.fecha)}</span>
+                    </div>
+                    <div className="whitespace-nowrap">{renderPuntos(jornada)}</div>
+                  </div>
+                  <div className="flex items-center gap-2 font-medium text-gray-900">
+                    <RivalBadge rival={jornada.rivales} />
+                    <span className="min-w-0 break-words">{jornada.rivales?.name || '—'}</span>
+                  </div>
+                  {jornada.torneos?.name && (
+                    <span className="inline-block max-w-full truncate px-2 py-0.5 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">
+                      {jornada.torneos.name}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-700">{formatDate(jornada.fecha)}</td>
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    <div className="flex items-center gap-2">
-                      <RivalBadge rival={jornada.rivales} />
-                      {jornada.rivales?.name || '—'}
+                  )}
+                </div>
+                <div className="grid grid-cols-5 gap-1 px-2 py-3 border-t border-gray-100">
+                  {CATEGORIAS_PARTIDO.map((cat) => (
+                    <div key={cat} className="flex flex-col items-center gap-1">
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">{cat}</span>
+                      {renderCategoria(jornada, cat, true)}
                     </div>
-                  </td>
-                  <td className="px-3 py-4 text-center whitespace-nowrap">
-                    {getPuntosJornada(jornada) == null ? '—' : (
-                      <>
-                        <span className={`font-bold ${puntosColor(getPuntosJornada(jornada))}`}>{getPuntosJornada(jornada)}</span>
-                        <span className="text-xs text-gray-400">/{MAX_PUNTOS_JORNADA}</span>
-                      </>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {jornada.torneos?.name ? (
-                      <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full">
-                        {jornada.torneos.name}
-                      </span>
-                    ) : '—'}
-                  </td>
-                  {CATEGORIAS_PARTIDO.map((cat) => {
-                    const partido = getPartidoForCategoria(jornada, cat);
-                    const esc = partido?.escenario || '—';
-                    const resultado = getResultado(partido);
-                    return (
-                      <td key={cat} className="px-3 py-4 text-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${escenarioBadge(esc)}`}>
-                            {esc}
-                          </span>
-                          {resultado ? (
-                            <span
-                              className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold ${RESULT_DOT[resultado]}`}
-                              title={resultado === 'win' ? 'Ganamos' : resultado === 'loss' ? 'Perdimos' : 'Empate'}
-                            >
-                              {RESULT_LABEL[resultado]}
-                            </span>
-                          ) : (
-                            <span className="w-5 h-5" />
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end gap-2">
+                  ))}
+                </div>
+                <div className="flex items-center justify-between gap-2 px-2 py-2 border-t border-gray-100">
+                  <button
+                    onClick={() => openDetail(jornada)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-lg"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Ver detalle
+                  </button>
+                  {canEdit && (
+                    <div className="flex gap-1">
                       <button
-                        onClick={() => openDetail(jornada)}
-                        className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
-                        title="Ver detalle"
+                        onClick={() => openEditJornada(jornada)}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                        title="Editar jornada"
+                        aria-label="Editar jornada"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Pencil className="w-4 h-4" />
                       </button>
-                      {canEdit && (
-                        <button
-                          onClick={() => openEditJornada(jornada)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                          title="Editar jornada"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                      )}
-                      {canEdit && (
-                        <button
-                          onClick={() => setConfirmDelete(jornada)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setConfirmDelete(jornada)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        title="Eliminar"
+                        aria-label="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
-                  </td>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: tabla */}
+          <div className="hidden lg:block bg-white rounded-lg shadow overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="w-px px-3 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" title="Jornada">N°</th>
+                  <th className="w-px px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fase</th>
+                  <th className="w-px px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                  <th className="px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Rival</th>
+                  <th className="w-px px-3 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" title="Puntos">Pts</th>
+                  <th className="px-3 text-left py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Torneo</th>
+                  {CATEGORIAS_PARTIDO.map((cat) => (
+                    <th key={cat} className="w-px px-2 text-center py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      {cat}
+                    </th>
+                  ))}
+                  <th className="w-px px-3 text-right py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {sortedJornadas.map((jornada) => (
+                  <tr key={jornada.id} className="hover:bg-gray-50">
+                    <td className="w-px px-3 py-3 text-center whitespace-nowrap">
+                      {jornada.numero_jornada ? (
+                        <span className="px-2 py-1 text-xs font-semibold bg-yellow-100 text-yellow-800 rounded-full">
+                          {jornada.numero_jornada}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    <td className="w-px px-3 py-3 whitespace-nowrap">
+                      <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">
+                        {jornada.fase}
+                      </span>
+                    </td>
+                    <td className="w-px px-3 py-3 text-sm text-gray-700 whitespace-nowrap">{formatDate(jornada.fecha)}</td>
+                    <td className="px-3 py-3 min-w-[10rem] font-medium text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <RivalBadge rival={jornada.rivales} />
+                        {jornada.rivales?.name || '—'}
+                      </div>
+                    </td>
+                    <td className="w-px px-3 py-3 text-center whitespace-nowrap">{renderPuntos(jornada)}</td>
+                    <td className="px-3 py-3 text-sm text-gray-600">
+                      {jornada.torneos?.name ? (
+                        <span
+                          className="inline-block max-w-[11rem] truncate align-middle px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded-full"
+                          title={jornada.torneos.name}
+                        >
+                          {jornada.torneos.name}
+                        </span>
+                      ) : '—'}
+                    </td>
+                    {CATEGORIAS_PARTIDO.map((cat) => (
+                      <td key={cat} className="w-px px-2 py-3 text-center">
+                        {renderCategoria(jornada, cat)}
+                      </td>
+                    ))}
+                    <td className="w-px px-3 py-3 text-right whitespace-nowrap">
+                      <div className="flex justify-end gap-1">
+                        <button
+                          onClick={() => openDetail(jornada)}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
+                          title="Ver detalle"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        {canEdit && (
+                          <button
+                            onClick={() => openEditJornada(jornada)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                            title="Editar jornada"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canEdit && (
+                          <button
+                            onClick={() => setConfirmDelete(jornada)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       <ConfirmModal
