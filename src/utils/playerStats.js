@@ -37,6 +37,22 @@ export function resolveMarcador(partido) {
   return { capGoles, rivalGoles, resultado };
 }
 
+/**
+ * Goles de CAP en un partido agrupados por jugador: [{ name, count }].
+ * Compartido por las vistas Por Rival y Por Cancha de EstadisticasTab.
+ */
+export function groupGoleadores(partido) {
+  const golesMap = {};
+  (partido.partido_eventos || [])
+    .filter((e) => e.tipo === 'gol')
+    .forEach((e) => {
+      const pp = (partido.partido_players || []).find((p) => p.player_id === e.player_id);
+      const name = pp?.players?.name_visual || pp?.players?.name || '?';
+      golesMap[e.player_id] = { name, count: (golesMap[e.player_id]?.count || 0) + 1 };
+    });
+  return Object.values(golesMap);
+}
+
 // ─── Match log ───────────────────────────────────────────────────────────────
 
 /**

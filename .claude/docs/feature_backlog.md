@@ -18,6 +18,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [x] **B3. Advertencias de elegibilidad en PartidoForm** — PR #233 · 2026-03-16
 - [x] **B4. Importar planilla COMET** — PartidoForm reads the AUF "Informe del partido" PDF (pdfjs, in the browser), matches players by COMET ID or name with a preview, and fills titulares, suplentes, cambios (new `minuto_entrada`/`minuto_salida`), tarjetas, marcador and árbitros. Learns `players.comet_id`. Minutes played in the player ficha for partidos with `duracion`. *(PR #343 · 2026-10-08)*
 - [x] **B5. Escudos de los rivales** — Badge image per rival in a public `rival-badges` Storage bucket (`rivales.badge_path`). Upload from RivalForm or in bulk by file name; shown in Rivales, Partidos, the jornada detail, Calendario and the torneo detail. *(PR #348 · 2026-10-10)*
+- [x] **B6. Por Rival agrupado con puntos** — Estadísticas → Por Rival shows one collapsible row per rival (escudo, PJ, G-E-P, points over possible for Apertura, Clausura and total) with a category × jornada detail grid and a totals row. Semifinal/Final don't add points. *(PR #351 · 2026-10-11)*
 
 ### C. Inventario y Equipamiento
 
