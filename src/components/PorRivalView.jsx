@@ -126,11 +126,19 @@ const buildRivalStats = (jornadas, categoriaFiltro) => {
 
 // ─── Small pieces ────────────────────────────────────────────────────────────
 
+// Mismo criterio que la columna Pts de Partidos (verde con más de 10 sobre 15,
+// rojo con menos de 7 sobre 15), llevado a proporción de los puntos posibles.
+const puntosColor = ({ pts, posibles }) => {
+  if (pts * 15 > posibles * 10) return 'text-green-600';
+  if (pts * 15 < posibles * 7) return 'text-red-600';
+  return 'text-gray-900';
+};
+
 const Puntos = ({ record, bold = false }) => {
   if (!record || record.pj === 0) return <span className="text-gray-400">—</span>;
   return (
     <span className="whitespace-nowrap">
-      <span className={bold ? 'font-bold text-gray-900' : 'font-semibold text-gray-900'}>{record.pts}</span>
+      <span className={`${bold ? 'font-bold' : 'font-semibold'} ${puntosColor(record)}`}>{record.pts}</span>
       <span className="text-xs text-gray-400">/{record.posibles}</span>
     </span>
   );
