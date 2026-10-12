@@ -2,9 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL, CESPED_TIPOS } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
-import { resolveMarcador } from '../utils/playerStats';
+import { resolveMarcador, groupGoleadores } from '../utils/playerStats';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
+import { PorRivalView } from './PorRivalView';
 import { GoalTrendChart } from './charts/GoalTrendChart';
 import { CardDistributionChart } from './charts/CardDistributionChart';
 import { AgeCurveChart } from './charts/AgeCurveChart';
@@ -107,16 +108,6 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
 
       const { capGoles, rivalGoles, resultado } = resolveMarcador(partido);
 
-      // Agrupar goles por jugador
-      const golesMap = {};
-      (partido.partido_eventos || [])
-        .filter((e) => e.tipo === 'gol')
-        .forEach((e) => {
-          const pp = (partido.partido_players || []).find((p) => p.player_id === e.player_id);
-          const name = pp?.players?.name_visual || pp?.players?.name || '?';
-          golesMap[e.player_id] = { name, count: (golesMap[e.player_id]?.count || 0) + 1 };
-        });
-
       rows.push({
         rival: jornada.rivales?.name || '—',
         rival_id: jornada.rival_id,
@@ -130,7 +121,7 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
         capGoles,
         rivalGoles,
         resultado,
-        goleadores: Object.values(golesMap),
+        goleadores: groupGoleadores(partido),
         partido_id: partido.id,
       });
     });
@@ -289,20 +280,6 @@ const ResultadosFilters = ({ faseFiltro, onFaseFiltro, categoriaFiltro, onCatego
     <FilterButtonGroup options={CATEGORIAS_PARTIDO} value={categoriaFiltro} onChange={onCategoriaFiltro} label="Cat:" />
   </div>
 );
-
-// ─── Result badge helper ─────────────────────────────────────────────────────
-
-const ResultadoBadge = ({ resultado, capGoles, rivalGoles }) => {
-  if (capGoles == null || rivalGoles == null) {
-    return <span className="text-gray-400 text-xs">Sin resultado</span>;
-  }
-  const text = `${capGoles} - ${rivalGoles}`;
-  const cls =
-    resultado === 'G' ? 'bg-green-100 text-green-800' :
-    resultado === 'P' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-700';
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${cls}`}>{text}</span>;
-};
 
 // ─── Player tables ───────────────────────────────────────────────────────────
 
@@ -480,94 +457,6 @@ const TarjetasTable = ({ data }) => {
                   <td className="px-3 py-2 text-center text-gray-700">{s.amarillas > 0 ? s.amarillas : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.rojas > 0 ? s.rojas : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.amarillas > 0 ? s.amarillasRatio : <span className="text-gray-300">—</span>}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── Rivales tables ──────────────────────────────────────────────────────────
-
-const catIdx = (cat) => {
-  const i = CATEGORIAS_PARTIDO.indexOf(cat);
-  return i === -1 ? 99 : i;
-};
-
-const RivalesTable = ({ data, faseFiltro }) => {
-  const { handleSort, SortIcon, sortKey, sortDir } = useTableSort('fecha', 'desc');
-  const showFase = !faseFiltro;
-
-  const sorted = useMemo(() => {
-    return [...data].sort((a, b) => {
-      let primary = 0;
-      if (sortKey === 'categoria') {
-        primary = sortDir === 'asc'
-          ? catIdx(a.categoria) - catIdx(b.categoria)
-          : catIdx(b.categoria) - catIdx(a.categoria);
-      } else {
-        const av = a[sortKey];
-        const bv = b[sortKey];
-        if (typeof av === 'string') {
-          primary = sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
-        } else {
-          primary = sortDir === 'asc' ? Number(av) - Number(bv) : Number(bv) - Number(av);
-        }
-      }
-      if (primary !== 0) return primary;
-      return catIdx(a.categoria) - catIdx(b.categoria);
-    });
-  }, [data, sortKey, sortDir]);
-
-  return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      {sorted.length === 0 ? (
-        <p className="text-center text-gray-500 py-12">No hay datos para mostrar.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className={`${thClass} text-center w-10`} onClick={() => handleSort('numero_jornada')}># <SortIcon col="numero_jornada" /></th>
-                {showFase && <th className={`${thClass} text-center`} onClick={() => handleSort('fase')}>Fase <SortIcon col="fase" /></th>}
-                <th className={thClass} onClick={() => handleSort('rival')}>Rival <SortIcon col="rival" /></th>
-                <th className={thClass} onClick={() => handleSort('fecha')}>Fecha <SortIcon col="fecha" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('escenario')}>Esc <SortIcon col="escenario" /></th>
-                <th className={`${thClass} text-center`} onClick={() => handleSort('resultado')}>Resultado <SortIcon col="resultado" /></th>
-                <th className={thClass}>Goles CAP</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sorted.map((row) => (
-                <tr key={row.partido_id} className="hover:bg-gray-50">
-                  <td className="px-2 py-2 text-center text-xs text-gray-400 w-10">{row.numero_jornada ?? '—'}</td>
-                  {showFase && <td className="px-3 py-2 text-center text-xs text-gray-500">{row.fase || '—'}</td>}
-                  <td className="px-3 py-2 font-medium text-gray-900">{row.rival}</td>
-                  <td className="px-3 py-2 text-gray-500 text-xs whitespace-nowrap">{formatDate(row.fecha)}</td>
-                  <td className="px-3 py-2 text-center text-xs text-gray-600">{row.categoria}</td>
-                  <td className="px-3 py-2 text-center">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${row.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                      {row.escenario}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    <ResultadoBadge resultado={row.resultado} capGoles={row.capGoles} rivalGoles={row.rivalGoles} />
-                  </td>
-                  <td className="px-3 py-2 text-sm text-gray-700">
-                    {row.goleadores.length === 0
-                      ? <span className="text-gray-300">—</span>
-                      : row.goleadores.map((g) => (
-                          <span key={g.name} className="mr-2 whitespace-nowrap">
-                            {g.name}{g.count > 1 && <span className="text-green-700 font-semibold"> ⚽×{g.count}</span>}
-                            {g.count === 1 && <span className="text-green-700"> ⚽</span>}
-                          </span>
-                        ))
-                    }
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -987,7 +876,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
           onCategoriaFiltro={setCategoriaFiltro}
         />
       )}
-      {(isRivalesTab || isCanchaTab || isGraficosTab) && (
+      {(isCanchaTab || isGraficosTab) && (
         <ResultadosFilters
           faseFiltro={faseFiltro}
           onFaseFiltro={setFaseFiltro}
@@ -995,7 +884,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
           onCategoriaFiltro={setCategoriaFiltroRivales}
         />
       )}
-      {isArbitrosTab && (
+      {(isRivalesTab || isArbitrosTab) && (
         <FilterButtonGroup
           options={CATEGORIAS_PARTIDO}
           value={categoriaFiltroRivales}
@@ -1008,7 +897,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {subTab === 'general'      && <GeneralTable          data={filtered} convocatoriasByYear={convocatoriasByYear} availableYears={availableYears} />}
       {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
-      {subTab === 'rivales' && <RivalesTable data={partidoRows} faseFiltro={faseFiltro} />}
+      {subTab === 'rivales' && <PorRivalView jornadas={filteredJornadas} categoriaFiltro={categoriaFiltroRivales} />}
       {subTab === 'cancha'  && <CanchaStatsTable data={canchaStats} />}
       {isArbitrosTab && (
         <div className="space-y-6">

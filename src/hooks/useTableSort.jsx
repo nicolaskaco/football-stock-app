@@ -7,6 +7,7 @@ export const SORT_DEFAULTS = {
   name_visual: 'asc', categoria: 'asc',
   rival: 'asc', fecha: 'desc', fase: 'asc',
   g: 'desc', e: 'desc', p: 'desc', gf: 'desc', ga: 'asc', dif: 'desc',
+  orden: 'asc', name: 'asc', ptsApertura: 'desc', ptsClausura: 'desc', ptsTotal: 'desc',
 };
 
 export const thClass =
