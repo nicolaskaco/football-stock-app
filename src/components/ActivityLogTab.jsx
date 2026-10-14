@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { database } from '../utils/database';
 import { useMountEffect } from '../hooks/useMountEffect';
 import { Loader2, RefreshCw } from 'lucide-react';
+import { CUENTA_TITULAR_TIPOS } from '../utils/constants';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -16,9 +17,17 @@ const formatTs = (ts) => {
 const FIELD_LABELS = {
   viatico: 'Viático', complemento: 'Complemento', contrato: 'Contrato',
   vianda: 'Vianda', casita: 'Casita', ficha_medica_hasta: 'Ficha médica hasta',
+  cuenta_titular_tipo: 'Titular de la cuenta', cuenta_titular_nombre: 'Nombre del titular',
+  cuenta_titular_documento: 'Documento del titular', cuenta_banco: 'Banco', cuenta_numero: 'Número de cuenta',
 };
 
 const fieldLabel = (f) => FIELD_LABELS[f] || f;
+
+const fieldValue = (f, v) => {
+  if (v == null) return '—';
+  if (f === 'cuenta_titular_tipo') return CUENTA_TITULAR_TIPOS.find(t => t.value === v)?.label || v;
+  return v;
+};
 
 // ── Event normalisation ────────────────────────────────────────────────────
 
@@ -70,7 +79,7 @@ function normalisePlayerHistory(rows) {
   return rows.map(r => {
     const playerName = r.players?.name_visual || r.players?.name || '—';
     const fld = fieldLabel(r.field_name);
-    const detail = `${fld}: ${r.old_value ?? '—'} → ${r.new_value ?? '—'}`;
+    const detail = `${fld}: ${fieldValue(r.field_name, r.old_value)} → ${fieldValue(r.field_name, r.new_value)}`;
     return {
       _id: `ph-${r.id}`,
       _type: 'field_change',

@@ -1,6 +1,22 @@
 import { supabase } from '../supabaseClient';
-import { CHANGE_REQUEST_STATUS } from './constants';
+import { CHANGE_REQUEST_STATUS, CUENTA_VIATICO_FIELDS } from './constants';
 import { parseDOB, formatDate } from './dateUtils';
+
+// Player fields whose changes are written to player_history
+const TRACKED_PLAYER_FIELDS = ['contrato', 'viatico', 'complemento', 'vianda', 'casita', ...CUENTA_VIATICO_FIELDS];
+
+// Builds player_history rows for the tracked fields that changed between oldRow and newFields.
+// Fields absent from newFields are skipped (partial updates should not create false history entries).
+const buildHistoryRecords = (playerId, oldRow, newFields, changedBy, fields = TRACKED_PLAYER_FIELDS) =>
+  fields
+    .filter(field => field in newFields && oldRow[field] !== newFields[field])
+    .map(field => ({
+      player_id: playerId,
+      field_name: field,
+      old_value: oldRow[field] != null ? String(oldRow[field]) : null,
+      new_value: newFields[field] != null ? String(newFields[field]) : null,
+      changed_by: changedBy || 'Unknown',
+    }));
 
 export const database = {
   // EMPLOYEES
@@ -206,27 +222,7 @@ export const database = {
     if (fetchError) throw fetchError;
 
     // Track which fields changed
-    const trackedFields = ['contrato', 'viatico', 'complemento', 'vianda', 'casita'];
-    const historyRecords = [];
-
-    trackedFields.forEach(field => {
-      // Skip fields not included in this update (partial updates should not create false history entries)
-      if (!(field in player)) return;
-
-      const oldValue = oldPlayer[field];
-      const newValue = player[field];
-
-      // Check if value actually changed
-      if (oldValue !== newValue) {
-        historyRecords.push({
-          player_id: id,
-          field_name: field,
-          old_value: oldValue !== null ? String(oldValue) : null,
-          new_value: newValue !== null ? String(newValue) : null,
-          changed_by: currentUserEmail || 'Unknown'
-        });
-      }
-    });
+    const historyRecords = buildHistoryRecords(id, oldPlayer, player, currentUserEmail);
 
     // Update the player
     const { data, error } = await supabase
@@ -907,7 +903,17 @@ export const database = {
 
   // Bulk update of the viático payment account (Google Form import).
   // updates: [{ id, cuenta_titular_tipo, cuenta_banco, cuenta_numero, cuenta_titular_nombre, cuenta_titular_documento }]
-  async bulkUpdateCuentaViatico(updates) {
+  async bulkUpdateCuentaViatico(updates, currentUserEmail) {
+    // Fetch current values once for history
+    const { data: oldRows, error: fetchError } = await supabase
+      .from('players')
+      .select(['id', ...CUENTA_VIATICO_FIELDS].join(', '))
+      .in('id', updates.map(u => u.id));
+
+    if (fetchError) throw fetchError;
+    const oldById = Object.fromEntries(oldRows.map(r => [r.id, r]));
+
+    const historyRecords = [];
     for (const { id, ...fields } of updates) {
       const { error } = await supabase
         .from('players')
@@ -915,6 +921,15 @@ export const database = {
         .eq('id', id);
 
       if (error) throw error;
+      if (oldById[id]) historyRecords.push(...buildHistoryRecords(id, oldById[id], fields, currentUserEmail, CUENTA_VIATICO_FIELDS));
+    }
+
+    if (historyRecords.length > 0) {
+      const { error: historyError } = await supabase
+        .from('player_history')
+        .insert(historyRecords);
+
+      if (historyError) console.error('Error saving history:', historyError);
     }
   },
 
