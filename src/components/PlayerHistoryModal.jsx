@@ -3,6 +3,7 @@ import { X, Clock, TrendingUp } from 'lucide-react';
 import { database } from '../utils/database';
 import { formatDateTime } from '../utils/dateUtils';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
+import { CUENTA_TITULAR_TIPOS } from '../utils/constants';
 
 const fieldNames = {
   contrato: 'Contrato',
@@ -11,6 +12,11 @@ const fieldNames = {
   vianda: 'Vianda',
   casita: 'Residencia',
   ficha_medica_hasta: 'Ficha Médica',
+  cuenta_titular_tipo: 'Titular de la cuenta',
+  cuenta_titular_nombre: 'Nombre del titular',
+  cuenta_titular_documento: 'Documento del titular',
+  cuenta_banco: 'Banco',
+  cuenta_numero: 'Número de cuenta',
 };
 
 const fieldKeyMap = Object.fromEntries(Object.entries(fieldNames).map(([k, v]) => [v, k]));
@@ -42,6 +48,7 @@ export const PlayerHistoryModal = ({ playerId, playerName, onClose, fetchHistory
     if (fieldName === 'contrato' || fieldName === 'casita') return value === 'true' ? 'Sí' : 'No';
     if (fieldName === 'viatico' || fieldName === 'complemento') return `$${parseInt(value).toLocaleString()}`;
     if (fieldName === 'vianda') return value;
+    if (fieldName === 'cuenta_titular_tipo') return CUENTA_TITULAR_TIPOS.find(t => t.value === value)?.label || value;
     if (fieldName === 'ficha_medica_hasta') {
       const [y, m, d] = value.split('-');
       return `${d}/${m}/${y}`;

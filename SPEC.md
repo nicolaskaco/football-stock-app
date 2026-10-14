@@ -186,7 +186,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | Table | Purpose |
 |-------|---------|
 | `players` | Player records: personal info, financials, boarding, clothing sizes. Notable columns: `tipo_documento` (text, default `'Cédula de Identidad'`), `complemento_override` (integer, nullable), `complemento_override_expira` (date, nullable), `status` (text, default `'activo'`, CHECK in `activo`/`cedido`/`transferido`/`egresado`/`dado de baja`), `status_comment` (text, nullable — free-text reason for a non-active status), `incluir_viatico_export` (boolean, default `false` — marks a contracted player as a "caso especial" to include in the Tesorero viático export with their complemento). **Cuenta de cobro de viáticos**: `cuenta_titular_tipo` (CHECK `jugador`/`familiar`), `cuenta_banco` (CHECK `Prex`/`Mi Dinero`), `cuenta_numero`, `cuenta_titular_nombre`, `cuenta_titular_documento` (the last two only for `familiar`, i.e. a padre/madre/tutor account). `bank` / `bank_account` are **legacy**: kept in the DB but no longer shown in the UI. `comet_id` (text, nullable, unique when set): the player's ID in COMET (AUF), learned when a COMET match report is imported or typed in PlayerForm |
-| `player_history` | Audit log of changes to `contrato`, `viatico`, `complemento` |
+| `player_history` | Audit log of changes to `contrato`, `viatico`, `complemento`, `vianda`, `casita`, `ficha_medica_hasta` and the viático account fields (`cuenta_*`) |
 | `player_change_requests` | Approval workflow for financial field modifications |
 | `player_documents` | Document metadata — file paths in `player-documents` storage bucket |
 | `player_responses` | Public form submissions from `/formulario` |
@@ -278,7 +278,7 @@ Used by `EstadisticasTab` to compute per-player totals (goals, cards) and standi
 
 ### Audit-Tracked Player Fields
 
-Changes to `contrato`, `viatico`, `complemento`, `vianda`, and `casita` are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call. `complemento_override` and `complemento_override_expira` are **not** audit-tracked — they are transient by design. Fields absent from a partial-update payload (e.g. inline single-field edits) are skipped entirely rather than compared, preventing false history entries from partial saves.
+Changes to `contrato`, `viatico`, `complemento`, `vianda`, `casita` and the viático account fields (`cuenta_titular_tipo`, `cuenta_titular_nombre`, `cuenta_titular_documento`, `cuenta_banco`, `cuenta_numero`) are automatically written to `player_history` (old value, new value, changed_by email, timestamp) on every `database.updatePlayer()` call. The account fields are also tracked by the Google Form import (`database.bulkUpdateCuentaViatico()`), attributed to the user who ran it. `complemento_override` and `complemento_override_expira` are **not** audit-tracked — they are transient by design. Fields absent from a partial-update payload (e.g. inline single-field edits) are skipped entirely rather than compared, preventing false history entries from partial saves.
 
 ### Row-Level Security (RLS) — `players` table
 
@@ -299,7 +299,7 @@ Migration `20261006_add_finanzas_role.sql`. The `finanzas` role never reads tabl
 - `current_user_is_finanzas()`: SECURITY DEFINER helper, same shape as `current_user_is_admin()`.
 - **`deny_finanzas`**: a RESTRICTIVE policy (`FOR ALL TO authenticated`, `NOT current_user_is_finanzas()`) on every `public` table except `user_permissions` (a user must read their own row at login) and `activity_log` (restrictive on SELECT/UPDATE/DELETE only, so login and export events can still be inserted). Restrictive policies are ANDed with the permissive ones, so existing policies are untouched. The same applies to `storage.objects` for the `player-documents` bucket. **Every new table must add its own `deny_finanzas` policy** (see CLAUDE.md).
 - `get_players_finanzas()`: SECURITY DEFINER RPC, only for `finanzas` or `admin`. Returns JSON with active (`status` null/`activo`), non-hidden players and only these columns: `id, name, date_of_birth, tipo_documento, gov_id, categoria, viatico, complemento, contrato, complemento_override, complemento_override_expira, incluir_viatico_export, cuenta_titular_tipo, cuenta_titular_nombre, cuenta_titular_documento, cuenta_banco, cuenta_numero, comentario_viatico`.
-- `get_player_history_finanzas(p_player_id)`: same guard. Returns the `viatico`/`complemento`/`contrato` entries of `player_history` without `changed_by`.
+- `get_player_history_finanzas(p_player_id)`: same guard. Returns the `viatico`/`complemento`/`contrato` and `cuenta_*` entries of `player_history` without `changed_by`.
 - `database.getPlayersFinanzas()` / `database.getPlayerHistoryFinanzas(id)` wrap the RPCs.
 
 ### Storage

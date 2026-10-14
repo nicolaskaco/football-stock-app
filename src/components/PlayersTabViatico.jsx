@@ -257,7 +257,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   }, 'Error creando solicitud', 'Solicitud enviada. Será revisada por un administrador');
 
   const handleImportCuentas = (updates) => execute(async () => {
-    await database.bulkUpdateCuentaViatico(updates);
+    await database.bulkUpdateCuentaViatico(updates, currentUser?.email);
     database.logActivity('import_cuentas_viatico', currentUser?.email, 'player', null, { count: updates.length });
     await onDataChange('players');
     setShowCuentaImport(false);
