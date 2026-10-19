@@ -11,13 +11,15 @@ import { CATEGORIAS_PARTIDO } from './constants';
  * so it cannot be trusted for ordering. A player cannot earn a yellow after
  * being sent off anyway.
  *
- * Returns { counters, suspendedAt }:
+ * Returns { counters, suspendedAt, milestones }:
  *   counters[playerId]    -> running count since that player's last reset
- *   suspendedAt[playerId] -> jornada index where their 5th yellow landed
+ *   suspendedAt[playerId] -> jornada index where their (latest) 5th yellow landed
+ *   milestones[playerId]  -> every jornada index where the counter reached 5
  */
 function walkYellowCounters(yearJornadas, categoria, uptoIdx) {
   const counters = {};
   const suspendedAt = {};
+  const milestones = {};
 
   for (let i = 0; i < uptoIdx; i++) {
     const partido = (yearJornadas[i].partidos || []).find((p) => p.categoria === categoria);
@@ -36,13 +38,14 @@ function walkYellowCounters(yearJornadas, categoria, uptoIdx) {
       if (counters[pid] === 5) {
         counters[pid] = 0;
         suspendedAt[pid] = i;
+        (milestones[pid] ||= []).push(i);
       }
     }
 
     for (const pid of expulsados) counters[pid] = 0;
   }
 
-  return { counters, suspendedAt };
+  return { counters, suspendedAt, milestones };
 }
 
 /**
@@ -209,4 +212,54 @@ export function getYellowCountsByCategory(jornadas) {
   }
 
   return result;
+}
+
+/**
+ * Every jornada of the current year a single player is (or will be) suspended for,
+ * using the same rules as getSuspensionMap():
+ *  - Red card at jornada index i with fechas_suspension=N → jornadas i+1..i+N.
+ *  - Running yellow counter reaching 5 at jornada index i → jornada i+1.
+ * A red-card suspension wins over a yellow one for the same jornada + categoria.
+ * Only jornadas that already exist are returned (upcoming ones included).
+ *
+ * Returns [{ jornadaId, categoria, reason }]
+ */
+export function getPlayerSuspensions(jornadas, playerId) {
+  if (!playerId) return [];
+  const currentYear = new Date().getFullYear();
+
+  const yearJornadas = jornadas
+    .filter((j) => new Date(j.fecha).getFullYear() === currentYear)
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const len = yearJornadas.length;
+
+  const result = new Map(); // `${jornadaId}|${categoria}` -> entry
+  const add = (idx, categoria, reason) => {
+    const jornadaId = yearJornadas[idx].id;
+    const key = `${jornadaId}|${categoria}`;
+    if (!result.has(key)) result.set(key, { jornadaId, categoria, reason });
+  };
+
+  // Red cards first so they win over a yellow suspension for the same jornada
+  yearJornadas.forEach((jornada, i) => {
+    (jornada.partidos || []).forEach((partido) => {
+      (partido.partido_eventos || [])
+        .filter((e) => e.tipo === 'roja' && e.player_id === playerId)
+        .forEach((e) => {
+          const fechas = e.fechas_suspension || 1;
+          for (let k = 1; k <= fechas && i + k < len; k++) {
+            add(i + k, partido.categoria, fechas > 1 ? `Roja · fecha ${k} de ${fechas}` : 'Roja');
+          }
+        });
+    });
+  });
+
+  for (const cat of CATEGORIAS_PARTIDO) {
+    const { milestones } = walkYellowCounters(yearJornadas, cat, len);
+    (milestones[playerId] || [])
+      .filter((i) => i + 1 < len)
+      .forEach((i) => add(i + 1, cat, '5ª amarilla'));
+  }
+
+  return [...result.values()];
 }

@@ -20,6 +20,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [x] **B5. Escudos de los rivales** — Badge image per rival in a public `rival-badges` Storage bucket (`rivales.badge_path`). Upload from RivalForm or in bulk by file name; shown in Rivales, Partidos, the jornada detail, Calendario and the torneo detail. *(PR #348 · 2026-10-10)*
 - [x] **B6. Por Rival agrupado con puntos** — Estadísticas → Por Rival shows one collapsible row per rival (escudo, PJ, G-E-P, points over possible for Apertura, Clausura and total) with a category × jornada detail grid and a totals row. Semifinal/Final don't add points. *(PR #351 · 2026-10-11)*
 - [x] **B7. Jornada en el historial de partidos del jugador** — The Historial de Partidos in the player ficha shows the jornada with its fase (`Apertura · J5`, `Clausura · Final`). On mobile each partido is a card instead of the wide table. *(PR #353 · 2026-10-19)*
+- [x] **B8. Suspensiones en el historial de partidos del jugador** — Jornadas the player is suspended for (red card or 5th yellow, upcoming ones included) appear in the Historial de Partidos as a red "Suspendido" row with the reason and the team's result, on desktop and mobile. *(PR #354 · 2026-10-19)*
 
 ### C. Inventario y Equipamiento
 

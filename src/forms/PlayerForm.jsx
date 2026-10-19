@@ -6,6 +6,8 @@ import { PlayerQuestionnaireModal } from '../components/PlayerQuestionnaireModal
 import { CATEGORIAS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
 import { CuentaViaticoFields } from '../components/ui/CuentaViaticoFields';
 import { formatDate } from '../utils/dateUtils';
+import { getPlayerSuspensions } from '../utils/suspensions';
+import { resolveMarcador } from '../utils/playerStats';
 import { database } from '../utils/database';
 
 // "Apertura · J5"; Semifinal / Final se muestran sin la "J".
@@ -13,6 +15,20 @@ const jornadaLabel = ({ fase, numero_jornada }) => {
   if (!numero_jornada) return fase || '-';
   const prefijo = Number.isNaN(Number(numero_jornada)) ? '' : 'J';
   return fase ? `${fase} · ${prefijo}${numero_jornada}` : `${prefijo}${numero_jornada}`;
+};
+
+// Datos de la jornada y del resultado del equipo, comunes a filas jugadas y de suspensión.
+const partidoInfo = (jornada, partido) => {
+  const { capGoles, rivalGoles, resultado } = partido ? resolveMarcador(partido) : {};
+  return {
+    fecha: jornada?.fecha,
+    fase: jornada?.fase || null,
+    numero_jornada: jornada?.numero_jornada || null,
+    rival: jornada?.rivales?.name || '-',
+    categoria: partido?.categoria,
+    resultado: resultado || null,
+    marcador: resultado ? `${capGoles} - ${rivalGoles}` : null,
+  };
 };
 
 const SEVERITY_BADGE = {
@@ -791,46 +807,66 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
             const goles = eventos.filter(e => e.tipo === 'gol').length;
             const amarillas = eventos.filter(e => e.tipo === 'amarilla').length;
             const rojas = eventos.filter(e => e.tipo === 'roja').length;
-            const capGoles = partido.escenario === 'Local' ? partido.goles_local : partido.goles_visitante;
-            const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
-            const hasResult = capGoles != null && rivalGoles != null;
-            let resultado = null;
-            if (hasResult) {
-              if (capGoles > rivalGoles) resultado = 'G';
-              else if (capGoles < rivalGoles) resultado = 'P';
-              else resultado = 'E';
-            }
             history.push({
               id: partido.id,
-              fecha: jornada.fecha,
-              fase: jornada.fase || null,
-              numero_jornada: jornada.numero_jornada || null,
-              rival: jornada.rivales?.name || '-',
-              categoria: partido.categoria,
+              ...partidoInfo(jornada, partido),
               tipo: pp.tipo,
-              resultado,
-              marcador: hasResult ? `${capGoles} - ${rivalGoles}` : null,
               goles,
               amarillas,
               rojas,
             });
           });
         });
+        const partidosJugados = history.length;
+        // Jornadas en las que está (o va a estar) suspendido: fila propia en rojo.
+        const suspensiones = getPlayerSuspensions(jornadas, player.id);
+        suspensiones.forEach(({ jornadaId, categoria, reason }) => {
+          const jornada = jornadas.find(j => j.id === jornadaId);
+          const partido = (jornada?.partidos || []).find(p => p.categoria === categoria);
+          // Si igual figura en el partido (dato inconsistente), se marca esa fila en vez de duplicarla
+          const jugado = partido && history.find(m => m.id === partido.id);
+          if (jugado) {
+            jugado.motivoSuspension = reason;
+            return;
+          }
+          history.push({
+            id: `susp-${jornadaId}-${categoria}`,
+            suspendido: true,
+            motivoSuspension: reason,
+            ...partidoInfo(jornada, partido),
+            categoria,
+          });
+        });
         history.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
         if (history.length === 0) return null;
         const RESULT_BADGE = { G: 'bg-green-100 text-green-800', E: 'bg-gray-100 text-gray-800', P: 'bg-red-100 text-red-800' };
         const RESULT_LABEL = { G: 'Ganado', E: 'Empate', P: 'Perdido' };
+        const SUSPENDIDO_BADGE = 'px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800';
+        const rolBadge = (m) => (m.suspendido
+          ? <span className={SUSPENDIDO_BADGE}>Suspendido</span>
+          : (
+            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'titular' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+              {m.tipo === 'titular' ? 'Titular' : 'Suplente'}
+            </span>
+          ));
+        const nSusp = suspensiones.length;
         return (
           <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Historial de Partidos {currentYear} ({history.length})</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">
+              Historial de Partidos {currentYear} ({partidosJugados}{nSusp > 0 && ` · ${nSusp} ${nSusp === 1 ? 'suspensión' : 'suspensiones'}`})
+            </h3>
             {/* Mobile: una card por partido */}
             <div className="sm:hidden space-y-2">
               {history.map(m => (
-                <div key={m.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm">
+                <div
+                  key={m.id}
+                  className={`border rounded-lg p-3 text-sm ${m.suspendido ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-200 dark:border-gray-700'}`}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-medium">{m.rival}</span>
-                    <span className={`shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'titular' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
-                      {m.tipo === 'titular' ? 'Titular' : 'Suplente'}
+                    <span className="shrink-0 flex items-center gap-1">
+                      {!m.suspendido && m.motivoSuspension && <span className={SUSPENDIDO_BADGE}>Suspendido</span>}
+                      {rolBadge(m)}
                     </span>
                   </div>
                   <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -843,11 +879,15 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                         <span className="text-gray-500 dark:text-gray-400 text-xs">{m.marcador}</span>
                       </span>
                     ) : <span className="text-gray-400 text-xs">Sin resultado</span>}
-                    <span className="flex items-center gap-3 text-xs">
-                      <span>⚽ {m.goles || '-'}</span>
-                      <span>🟨 {m.amarillas || '-'}</span>
-                      <span>🟥 {m.rojas || '-'}</span>
-                    </span>
+                    {m.suspendido ? (
+                      <span className="text-xs font-medium text-red-700 dark:text-red-300">{m.motivoSuspension}</span>
+                    ) : (
+                      <span className="flex items-center gap-3 text-xs">
+                        <span>⚽ {m.goles || '-'}</span>
+                        <span>🟨 {m.amarillas || '-'}</span>
+                        <span>🟥 {m.rojas || '-'}</span>
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -869,15 +909,19 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                 </thead>
                 <tbody>
                   {history.map(m => (
-                    <tr key={m.id} className="border-b border-gray-100 last:border-0">
+                    <tr key={m.id} className={`border-b border-gray-100 last:border-0 ${m.suspendido ? 'bg-red-50 dark:bg-red-900/20' : ''}`}>
                       <td className="py-2 pr-3 whitespace-nowrap">{formatDate(m.fecha)}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">{jornadaLabel(m)}</td>
                       <td className="py-2 pr-3 font-medium">{m.rival}</td>
                       <td className="py-2 pr-3">{m.categoria}</td>
                       <td className="py-2 pr-3">
-                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'titular' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
-                          {m.tipo === 'titular' ? 'Titular' : 'Suplente'}
+                        <span className="flex flex-wrap items-center gap-1">
+                          {rolBadge(m)}
+                          {!m.suspendido && m.motivoSuspension && <span className={SUSPENDIDO_BADGE}>Suspendido</span>}
                         </span>
+                        {m.motivoSuspension && (
+                          <div className="mt-0.5 text-xs text-red-700 dark:text-red-300 whitespace-nowrap">{m.motivoSuspension}</div>
+                        )}
                       </td>
                       <td className="py-2 pr-3 whitespace-nowrap">
                         {m.resultado ? (
