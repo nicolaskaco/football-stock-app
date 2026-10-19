@@ -8,6 +8,13 @@ import { CuentaViaticoFields } from '../components/ui/CuentaViaticoFields';
 import { formatDate } from '../utils/dateUtils';
 import { database } from '../utils/database';
 
+// "Apertura · J5"; Semifinal / Final se muestran sin la "J".
+const jornadaLabel = ({ fase, numero_jornada }) => {
+  if (!numero_jornada) return fase || '-';
+  const prefijo = Number.isNaN(Number(numero_jornada)) ? '' : 'J';
+  return fase ? `${fase} · ${prefijo}${numero_jornada}` : `${prefijo}${numero_jornada}`;
+};
+
 const SEVERITY_BADGE = {
   leve: 'bg-yellow-100 text-yellow-800',
   moderada: 'bg-orange-100 text-orange-800',
@@ -796,6 +803,8 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
             history.push({
               id: partido.id,
               fecha: jornada.fecha,
+              fase: jornada.fase || null,
+              numero_jornada: jornada.numero_jornada || null,
               rival: jornada.rivales?.name || '-',
               categoria: partido.categoria,
               tipo: pp.tipo,
@@ -814,11 +823,41 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
         return (
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Historial de Partidos {currentYear} ({history.length})</h3>
-            <div className="overflow-x-auto">
+            {/* Mobile: una card por partido */}
+            <div className="sm:hidden space-y-2">
+              {history.map(m => (
+                <div key={m.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="font-medium">{m.rival}</span>
+                    <span className={`shrink-0 px-2 py-0.5 text-xs font-semibold rounded-full ${m.tipo === 'titular' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-700'}`}>
+                      {m.tipo === 'titular' ? 'Titular' : 'Suplente'}
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    {jornadaLabel(m)} · {formatDate(m.fecha)} · {m.categoria}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    {m.resultado ? (
+                      <span className="flex items-center gap-1.5">
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${RESULT_BADGE[m.resultado]}`}>{RESULT_LABEL[m.resultado]}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">{m.marcador}</span>
+                      </span>
+                    ) : <span className="text-gray-400 text-xs">Sin resultado</span>}
+                    <span className="flex items-center gap-3 text-xs">
+                      <span>⚽ {m.goles || '-'}</span>
+                      <span>🟨 {m.amarillas || '-'}</span>
+                      <span>🟥 {m.rojas || '-'}</span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-gray-500 text-xs uppercase">
                     <th className="pb-2 pr-3">Fecha</th>
+                    <th className="pb-2 pr-3">Jornada</th>
                     <th className="pb-2 pr-3">Rival</th>
                     <th className="pb-2 pr-3">Cat.</th>
                     <th className="pb-2 pr-3">Rol</th>
@@ -832,6 +871,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                   {history.map(m => (
                     <tr key={m.id} className="border-b border-gray-100 last:border-0">
                       <td className="py-2 pr-3 whitespace-nowrap">{formatDate(m.fecha)}</td>
+                      <td className="py-2 pr-3 whitespace-nowrap">{jornadaLabel(m)}</td>
                       <td className="py-2 pr-3 font-medium">{m.rival}</td>
                       <td className="py-2 pr-3">{m.categoria}</td>
                       <td className="py-2 pr-3">
