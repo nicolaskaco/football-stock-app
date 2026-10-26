@@ -21,6 +21,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [x] **B6. Por Rival agrupado con puntos** — Estadísticas → Por Rival shows one collapsible row per rival (escudo, PJ, G-E-P, points over possible for Apertura, Clausura and total) with a category × jornada detail grid and a totals row. Semifinal/Final don't add points. *(PR #351 · 2026-10-11)*
 - [x] **B7. Jornada en el historial de partidos del jugador** — The Historial de Partidos in the player ficha shows the jornada with its fase (`Apertura · J5`, `Clausura · Final`). On mobile each partido is a card instead of the wide table. *(PR #353 · 2026-10-19)*
 - [x] **B8. Suspensiones en el historial de partidos del jugador** — Jornadas the player is suspended for (red card or 5th yellow, upcoming ones included) appear in the Historial de Partidos as a red "Suspendido" row with the reason and the team's result, on desktop and mobile. *(PR #354 · 2026-10-19)*
+- [x] **B9. Suspensiones actuales según el último partido cargado** — The Suspensiones widget (and TarjetasTab / PlayersTab) computes current suspensions for the jornada after the last loaded partido (result + lineup) of each category instead of using dates, so a 5th-yellow suspension shows the same as in the lineup until that partido is loaded. *(PR #PENDING · 2026-10-26)*
 
 ### C. Inventario y Equipamiento
 

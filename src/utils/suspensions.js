@@ -66,26 +66,23 @@ function computeYellowSuspension(yearJornadas, categoria, uptoIdx) {
 }
 
 /**
- * Returns a Map of playerId → { reason } for players suspended for a specific jornada + categoria.
- *
- * A player is suspended for jornada J if:
- *  - They received a red card in a prior jornada and the suspension still covers J
- *    (red card at jornada index i with fechas_suspension=N → suspended for i+1..i+N), OR
- *  - Their running yellow card counter (since the last reset) hit 5 in the previous jornada
- *
- * Cards count toward the partido's category (not the player's home category).
- * Yellow cards accumulate across the full year (no Apertura/Clausura reset),
- * but the running counter resets to 0 whenever the player receives a red card.
+ * Jornadas of the current year, oldest first. Suspension indexes are positions in this list.
  */
-export function getSuspensionMap(jornadas, targetJornadaId, categoria) {
+function getYearJornadas(jornadas) {
   const currentYear = new Date().getFullYear();
-  const suspensions = new Map();
-
-  const yearJornadas = jornadas
+  return jornadas
     .filter((j) => new Date(j.fecha).getFullYear() === currentYear)
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+}
 
-  const targetIdx = yearJornadas.findIndex((j) => j.id === targetJornadaId);
+/**
+ * Suspensions for the jornada at targetIdx of yearJornadas, for one categoria.
+ * targetIdx may be yearJornadas.length: a virtual jornada after the last one.
+ *
+ * Returns Map<playerId, { reason }>
+ */
+function computeSuspensionsAt(yearJornadas, categoria, targetIdx) {
+  const suspensions = new Map();
   if (targetIdx <= 0) return suspensions;
 
   // Red cards — scan backwards for active multi-game suspensions
@@ -120,70 +117,55 @@ export function getSuspensionMap(jornadas, targetJornadaId, categoria) {
 }
 
 /**
- * For TarjetasTab: computes current suspensions across all categories.
- * "Current" = suspended for the next upcoming jornada (fecha >= today).
- * If all jornadas are in the past, uses a virtual "next" jornada after the last one,
- * meaning players who got cards in the last jornada are still shown as suspended.
+ * A partido counts as played once both scores and at least one player of the lineup are loaded.
+ */
+function isPartidoCargado(partido) {
+  return partido.goles_local != null
+    && partido.goles_visitante != null
+    && (partido.partido_players?.length || 0) > 0;
+}
+
+/**
+ * Returns a Map of playerId → { reason } for players suspended for a specific jornada + categoria.
+ *
+ * A player is suspended for jornada J if:
+ *  - They received a red card in a prior jornada and the suspension still covers J
+ *    (red card at jornada index i with fechas_suspension=N → suspended for i+1..i+N), OR
+ *  - Their running yellow card counter (since the last reset) hit 5 in the previous jornada
+ *
+ * Cards count toward the partido's category (not the player's home category).
+ * Yellow cards accumulate across the full year (no Apertura/Clausura reset),
+ * but the running counter resets to 0 whenever the player receives a red card.
+ */
+export function getSuspensionMap(jornadas, targetJornadaId, categoria) {
+  const yearJornadas = getYearJornadas(jornadas);
+  const targetIdx = yearJornadas.findIndex((j) => j.id === targetJornadaId);
+  return computeSuspensionsAt(yearJornadas, categoria, targetIdx);
+}
+
+/**
+ * Current suspensions across all categories (SuspensionWidget, TarjetasTab, PlayersTab,
+ * EstadisticasJugadoresTab).
+ *
+ * "Current" = suspended for the jornada right after the last one whose partido of that
+ * categoria is loaded (result + lineup, see isPartidoCargado). Dates are not used: a jornada
+ * that already took place but is not loaded yet still shows its suspended players, exactly
+ * like the lineup of that partido does. If the last loaded jornada is the last one created,
+ * a virtual "next" jornada is used.
  *
  * Returns Map<categoria, Map<playerId, { reason }>>
  */
 export function getCurrentSuspensionsByCategory(jornadas) {
   const result = new Map();
-  const currentYear = new Date().getFullYear();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const yearJornadas = jornadas
-    .filter((j) => new Date(j.fecha).getFullYear() === currentYear)
-    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
-  if (yearJornadas.length === 0) return result;
-
-  // Find the next upcoming jornada (first with fecha >= today)
-  const nextIdx = yearJornadas.findIndex((j) => new Date(j.fecha) >= today);
+  const yearJornadas = getYearJornadas(jornadas);
 
   for (const cat of CATEGORIAS_PARTIDO) {
-    if (nextIdx >= 1) {
-      // There's a future jornada — compute suspensions for it
-      result.set(cat, getSuspensionMap(jornadas, yearJornadas[nextIdx].id, cat));
-    } else if (nextIdx === -1 && yearJornadas.length > 0) {
-      // All jornadas are in the past — simulate a virtual "next" jornada
-      // virtualTargetIdx = yearJornadas.length (one past the last)
-      const virtualTargetIdx = yearJornadas.length;
-      const suspensions = new Map();
-
-      // Red cards — scan backwards for active multi-game suspensions
-      for (let i = yearJornadas.length - 1; i >= 0; i--) {
-        const partido = (yearJornadas[i].partidos || []).find((p) => p.categoria === cat);
-        if (!partido) continue;
-
-        (partido.partido_eventos || [])
-          .filter((e) => e.tipo === 'roja' && e.player_id)
-          .forEach((e) => {
-            const fechas = e.fechas_suspension || 1;
-            // Suspended for jornadas i+1 through i+fechas
-            if (virtualTargetIdx <= i + fechas) {
-              const remaining = (i + fechas) - virtualTargetIdx + 1;
-              suspensions.set(e.player_id, {
-                reason: remaining > 1 ? `Roja (${remaining} fechas)` : 'Roja (última fecha)',
-              });
-            }
-          });
-      }
-
-      // Yellow accumulation (resets to 0 on a red card) up to and including last jornada
-      const yellowSuspensions = computeYellowSuspension(yearJornadas, cat, virtualTargetIdx);
-      for (const [playerId, info] of yellowSuspensions) {
-        if (!suspensions.has(playerId)) {
-          suspensions.set(playerId, info);
-        }
-      }
-
-      result.set(cat, suspensions);
-    } else {
-      // nextIdx === 0 means the first jornada is upcoming — no previous jornada
-      result.set(cat, new Map());
-    }
+    let lastLoadedIdx = -1;
+    yearJornadas.forEach((j, i) => {
+      const partido = (j.partidos || []).find((p) => p.categoria === cat);
+      if (partido && isPartidoCargado(partido)) lastLoadedIdx = i;
+    });
+    result.set(cat, computeSuspensionsAt(yearJornadas, cat, lastLoadedIdx + 1));
   }
 
   return result;
@@ -200,11 +182,7 @@ export function getCurrentSuspensionsByCategory(jornadas) {
  */
 export function getYellowCountsByCategory(jornadas) {
   const result = new Map();
-  const currentYear = new Date().getFullYear();
-
-  const yearJornadas = jornadas
-    .filter((j) => new Date(j.fecha).getFullYear() === currentYear)
-    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const yearJornadas = getYearJornadas(jornadas);
 
   for (const cat of CATEGORIAS_PARTIDO) {
     const { counters } = walkYellowCounters(yearJornadas, cat, yearJornadas.length);
@@ -226,11 +204,7 @@ export function getYellowCountsByCategory(jornadas) {
  */
 export function getPlayerSuspensions(jornadas, playerId) {
   if (!playerId) return [];
-  const currentYear = new Date().getFullYear();
-
-  const yearJornadas = jornadas
-    .filter((j) => new Date(j.fecha).getFullYear() === currentYear)
-    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  const yearJornadas = getYearJornadas(jornadas);
   const len = yearJornadas.length;
 
   const result = new Map(); // `${jornadaId}|${categoria}` -> entry
