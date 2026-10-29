@@ -81,6 +81,13 @@ export const CATEGORIAS_INVENTARIO = [
 export const CATEGORIAS_PARTIDO = ['4ta', '5ta', 'S16', '6ta', '7ma'];
 
 /**
+ * Días antes de la fecha de la jornada en que se juega por defecto cada categoría
+ * (4ta juega el viernes, el resto el sábado). Las que no figuran juegan el mismo día.
+ * Es el valor inicial de `partidos.fecha`, que después se puede editar a mano.
+ */
+export const DIAS_ANTES_JORNADA = { '4ta': 1 };
+
+/**
  * Duración reglamentaria (minutos) por categoría, usada como valor por defecto de
  * `partidos.duracion` al cargar minutos de entrada/salida.
  * TODO: confirmar duraciones reales de las categorías menores.

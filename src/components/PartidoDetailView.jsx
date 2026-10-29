@@ -3,15 +3,29 @@ import { Edit2 } from 'lucide-react';
 import { PartidoForm } from '../forms/PartidoForm';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { RivalBadge } from './ui/RivalBadge';
 
 export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {}, currentUser = null }) => {
   const { execute } = useMutation();
+  const canAjustarSuspensiones = currentUser?.role === 'admin';
 
-  const handleEditPartido = (partido, partidoData, titulares, suplentes, eventos, { cometIds = [], importado = false } = {}) => execute(async () => {
-    await database.updatePartido(partido.id, partidoData, titulares, suplentes, eventos);
+  // Firma comparable de los ajustes de suspensión, para loguear solo si cambiaron
+  const firmaAjustes = (list = []) => list
+    .map((a) => `${a.player_id}|${a.accion}|${a.motivo || ''}`)
+    .sort()
+    .join(';');
+
+  const handleEditPartido = (partido, partidoData, titulares, suplentes, eventos, { cometIds = [], importado = false, ajustes = null } = {}) => execute(async () => {
+    await database.updatePartido(partido.id, partidoData, titulares, suplentes, eventos, ajustes);
+    if (ajustes && firmaAjustes(ajustes) !== firmaAjustes(partido.partido_suspension_ajustes)) {
+      database.logActivity('ajuste_suspension', currentUser?.email, 'partido', partido.id, {
+        categoria: partido.categoria,
+        rival: jornada.rivales?.name || null,
+        ajustes: ajustes.map((a) => ({ player_id: a.player_id, accion: a.accion, motivo: a.motivo || null })),
+      });
+    }
     if (importado) {
       database.logActivity('import_planilla_comet', currentUser?.email, 'partido', partido.id, {
         categoria: partido.categoria,
@@ -55,6 +69,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
           jornadas={jornadas}
           jornadaId={jornada.id}
           appSettings={appSettings}
+          canAjustarSuspensiones={canAjustarSuspensiones}
           onSubmit={(data, titulares, suplentes, eventos, importMeta) =>
             handleEditPartido(partido, data, titulares, suplentes, eventos, importMeta)
           }
@@ -156,6 +171,11 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
                 {partido.escenario === 'Local' && partido.cancha && (
                   <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-yellow-100 text-yellow-800">
                     {partido.cancha}
+                  </span>
+                )}
+                {fechaPartido(partido, jornada) !== fechaPartidoDefault(jornada.fecha, partido.categoria) && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" title="Partido reprogramado">
+                    Reprog. {formatDate(fechaPartido(partido, jornada))}
                   </span>
                 )}
                 {resultado && (
