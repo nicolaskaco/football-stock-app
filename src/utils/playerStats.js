@@ -15,6 +15,8 @@
  *    cruce G/E/P.
  */
 
+import { fechaPartido } from './dateUtils';
+
 // ─── Marcador ────────────────────────────────────────────────────────────────
 
 /**
@@ -36,6 +38,31 @@ export function resolveMarcador(partido) {
 
   return { capGoles, rivalGoles, resultado };
 }
+
+/** "Apertura · J5"; Semifinal / Final se muestran sin la "J". */
+export const jornadaLabel = ({ fase, numero_jornada }) => {
+  if (!numero_jornada) return fase || '-';
+  const prefijo = Number.isNaN(Number(numero_jornada)) ? '' : 'J';
+  return fase ? `${fase} · ${prefijo}${numero_jornada}` : `${prefijo}${numero_jornada}`;
+};
+
+/**
+ * Datos de la jornada y del resultado del equipo para una fila de historial
+ * (PlayerForm, PlayerCardHistoryModal). `partido` puede faltar (suspensión en
+ * una jornada sin partido cargado).
+ */
+export const partidoInfo = (jornada, partido) => {
+  const { capGoles, rivalGoles, resultado } = partido ? resolveMarcador(partido) : {};
+  return {
+    fecha: (partido && fechaPartido(partido, jornada)) || jornada?.fecha,
+    fase: jornada?.fase || null,
+    numero_jornada: jornada?.numero_jornada || null,
+    rival: jornada?.rivales?.name || '-',
+    categoria: partido?.categoria,
+    resultado: resultado || null,
+    marcador: resultado ? `${capGoles} - ${rivalGoles}` : null,
+  };
+};
 
 /**
  * Goles de CAP en un partido agrupados por jugador: [{ name, count }].

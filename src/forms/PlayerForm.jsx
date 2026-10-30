@@ -5,31 +5,10 @@ import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner
 import { PlayerQuestionnaireModal } from '../components/PlayerQuestionnaireModal';
 import { CATEGORIAS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
 import { CuentaViaticoFields } from '../components/ui/CuentaViaticoFields';
-import { formatDate, fechaPartido } from '../utils/dateUtils';
+import { formatDate } from '../utils/dateUtils';
 import { getPlayerSuspensions } from '../utils/suspensions';
-import { resolveMarcador } from '../utils/playerStats';
+import { jornadaLabel, partidoInfo } from '../utils/playerStats';
 import { database } from '../utils/database';
-
-// "Apertura · J5"; Semifinal / Final se muestran sin la "J".
-const jornadaLabel = ({ fase, numero_jornada }) => {
-  if (!numero_jornada) return fase || '-';
-  const prefijo = Number.isNaN(Number(numero_jornada)) ? '' : 'J';
-  return fase ? `${fase} · ${prefijo}${numero_jornada}` : `${prefijo}${numero_jornada}`;
-};
-
-// Datos de la jornada y del resultado del equipo, comunes a filas jugadas y de suspensión.
-const partidoInfo = (jornada, partido) => {
-  const { capGoles, rivalGoles, resultado } = partido ? resolveMarcador(partido) : {};
-  return {
-    fecha: (partido && fechaPartido(partido, jornada)) || jornada?.fecha,
-    fase: jornada?.fase || null,
-    numero_jornada: jornada?.numero_jornada || null,
-    rival: jornada?.rivales?.name || '-',
-    categoria: partido?.categoria,
-    resultado: resultado || null,
-    marcador: resultado ? `${capGoles} - ${rivalGoles}` : null,
-  };
-};
 
 const SEVERITY_BADGE = {
   leve: 'bg-yellow-100 text-yellow-800',

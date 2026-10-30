@@ -235,6 +235,48 @@ export function getYellowCountsByCategory(jornadas) {
 }
 
 /**
+ * Partidos of the current year, in one categoria, where a player got a yellow or red card
+ * (Suspensiones widget pop up), in timeline order.
+ *
+ * `vigente` tells whether the row still counts toward the current yellow counter: it is false
+ * for the partido of the player's last reset (a red card or the 5th yellow) and every one
+ * before it. Same counting rules as walkYellowCounters, so the yellows of the vigente rows add
+ * up to the number getYellowCountsByCategory reports.
+ *
+ * Returns [{ jornada, partido, amarillas, rojas, vigente }]
+ */
+export function getPlayerCardHistory(jornadas, playerId, categoria) {
+  if (!playerId) return [];
+  const rows = [];
+  let counter = 0;
+  let lastResetIdx = -1;
+
+  getCategoriaTimeline(jornadas, categoria).forEach((jornada, i) => {
+    const partido = jornada.partidos.find((p) => p.categoria === categoria);
+    const eventos = (partido.partido_eventos || []).filter((e) => e.player_id === playerId);
+    const amarillas = eventos.filter((e) => e.tipo === 'amarilla').length;
+    const rojas = eventos.filter((e) => e.tipo === 'roja').length;
+    if (amarillas === 0 && rojas === 0) return;
+
+    if (rojas > 0) {
+      counter = 0;
+      lastResetIdx = i;
+    } else {
+      for (let k = 0; k < amarillas; k++) {
+        counter += 1;
+        if (counter === 5) {
+          counter = 0;
+          lastResetIdx = i;
+        }
+      }
+    }
+    rows.push({ idx: i, jornada, partido, amarillas, rojas });
+  });
+
+  return rows.map(({ idx, ...r }) => ({ ...r, vigente: idx > lastResetIdx }));
+}
+
+/**
  * Every jornada of the current year a single player is (or will be) suspended for,
  * using the same rules as getSuspensionMap(), per categoria timeline:
  *  - Red card at timeline index i with fechas_suspension=N → indexes i+1..i+N.

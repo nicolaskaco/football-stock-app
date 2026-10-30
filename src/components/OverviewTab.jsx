@@ -161,7 +161,7 @@ export const OverviewTab = ({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-start">
           <BirthdayWidget currentUser={currentUser} />
           {['admin','ejecutivo','presidente','presidente_categoria','delegado','comision'].includes(currentUser?.role) && <FichaMedicaWidget currentUser={currentUser} onDataChange={onDataChange} />}
-          {canViewTarjetas && <SuspensionWidget jornadas={jornadas} players={visiblePlayers} currentUser={currentUser} />}
+          {canViewTarjetas && <SuspensionWidget jornadas={jornadas} players={visiblePlayers} currentUser={currentUser} setShowModal={setShowModal} />}
           {currentUser?.role === 'admin' && <InjuredPlayersWidget players={visiblePlayers} injuries={injuries} setShowModal={setShowModal} onDataChange={onDataChange} currentUser={currentUser} />}
           <SpendingTrendsWidget players={visiblePlayers} />
           <CategoryDistributionWidget players={visiblePlayers} />
