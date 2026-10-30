@@ -19,10 +19,11 @@ const Resultado = ({ m, vacio }) => (m.resultado ? (
 
 /**
  * Partidos del año en curso, en una categoría, donde el jugador recibió amarilla o roja.
- * Abierto desde el nombre del jugador en SuspensionWidget. Las filas que ya no cuentan para
- * el acumulado (hasta el último reset por roja o 5ª amarilla) se muestran atenuadas.
+ * Abierto desde el nombre del jugador en SuspensionWidget. Si está suspendido (no manual), las
+ * tarjetas que causaron la suspensión van en rojo; el resto de las que ya no cuentan para el
+ * acumulado (hasta el último reset por roja o 5ª amarilla) se muestran atenuadas.
  */
-export const PlayerCardHistoryModal = ({ jornadas = [], player, categoria, amarillas = 0 }) => {
+export const PlayerCardHistoryModal = ({ jornadas = [], player, categoria, amarillas = 0, suspension = null }) => {
   const history = useMemo(
     () => getPlayerCardHistory(jornadas, player.id, categoria)
       .map(({ jornada, partido, ...r }) => ({ id: partido.id, ...partidoInfo(jornada, partido), ...r }))
@@ -38,13 +39,29 @@ export const PlayerCardHistoryModal = ({ jornadas = [], player, categoria, amari
     );
   }
 
-  const hayReseteadas = history.some((m) => !m.vigente);
+  const suspAuto = suspension && !suspension.manual;
+  const esCausa = (m) => suspAuto && m.causa;
+  const rowCls = (m) => {
+    if (esCausa(m)) return 'bg-red-50 dark:bg-red-900/20';
+    return m.vigente ? '' : 'opacity-50';
+  };
+  const hayGrises = history.some((m) => !m.vigente && !esCausa(m));
 
   return (
     <div className="space-y-3">
       <p className="text-sm text-gray-600 dark:text-gray-300">
-        Acumulado actual: <span className="font-semibold">{amarillas}/{AMARILLAS_PARA_SUSPENSION}</span> amarillas.
-        {hayReseteadas && ' En gris, las tarjetas que ya no cuentan (hasta el último reset por roja o 5ª amarilla).'}
+        {suspension ? (
+          <>
+            <span className="font-semibold text-red-600 dark:text-red-400">Suspendido — {suspension.reason}.</span>
+            {suspAuto && ' En rojo, las tarjetas que causaron la suspensión.'}
+            {hayGrises && ' En gris, las anteriores, que ya no cuentan.'}
+          </>
+        ) : (
+          <>
+            Acumulado actual: <span className="font-semibold">{amarillas}/{AMARILLAS_PARA_SUSPENSION}</span> amarillas.
+            {hayGrises && ' En gris, las tarjetas que ya no cuentan (hasta el último reset por roja o 5ª amarilla).'}
+          </>
+        )}
       </p>
 
       {/* Mobile: una card por partido */}
@@ -52,7 +69,7 @@ export const PlayerCardHistoryModal = ({ jornadas = [], player, categoria, amari
         {history.map((m) => (
           <div
             key={m.id}
-            className={`border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm ${m.vigente ? '' : 'opacity-50'}`}
+            className={`border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm ${rowCls(m)}`}
           >
             <div className="font-medium">{m.rival}</div>
             <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -86,7 +103,7 @@ export const PlayerCardHistoryModal = ({ jornadas = [], player, categoria, amari
             {history.map((m) => (
               <tr
                 key={m.id}
-                className={`border-b border-gray-100 dark:border-gray-800 last:border-0 ${m.vigente ? '' : 'opacity-50'}`}
+                className={`border-b border-gray-100 dark:border-gray-800 last:border-0 ${rowCls(m)}`}
               >
                 <td className="py-2 pr-3 whitespace-nowrap">{formatDate(m.fecha)}</td>
                 <td className="py-2 pr-3 whitespace-nowrap">{jornadaLabel(m)}</td>

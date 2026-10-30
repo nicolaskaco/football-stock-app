@@ -243,13 +243,18 @@ export function getYellowCountsByCategory(jornadas) {
  * before it. Same counting rules as walkYellowCounters, so the yellows of the vigente rows add
  * up to the number getYellowCountsByCategory reports.
  *
- * Returns [{ jornada, partido, amarillas, rojas, vigente }]
+ * `causa` marks the rows that produced that last reset: the red card's partido, or the
+ * partidos of the 5 yellows. If the player is currently suspended (not manually), those are
+ * the cards behind the suspension.
+ *
+ * Returns [{ jornada, partido, amarillas, rojas, vigente, causa }]
  */
 export function getPlayerCardHistory(jornadas, playerId, categoria) {
   if (!playerId) return [];
   const rows = [];
   let counter = 0;
   let lastResetIdx = -1;
+  let causaDesde = 0; // first timeline index of the last reset's cards
 
   getCategoriaTimeline(jornadas, categoria).forEach((jornada, i) => {
     const partido = jornada.partidos.find((p) => p.categoria === categoria);
@@ -260,12 +265,14 @@ export function getPlayerCardHistory(jornadas, playerId, categoria) {
 
     if (rojas > 0) {
       counter = 0;
+      causaDesde = i;
       lastResetIdx = i;
     } else {
       for (let k = 0; k < amarillas; k++) {
         counter += 1;
         if (counter === 5) {
           counter = 0;
+          causaDesde = lastResetIdx + 1;
           lastResetIdx = i;
         }
       }
@@ -273,7 +280,11 @@ export function getPlayerCardHistory(jornadas, playerId, categoria) {
     rows.push({ idx: i, jornada, partido, amarillas, rojas });
   });
 
-  return rows.map(({ idx, ...r }) => ({ ...r, vigente: idx > lastResetIdx }));
+  return rows.map(({ idx, ...r }) => ({
+    ...r,
+    vigente: idx > lastResetIdx,
+    causa: idx >= causaDesde && idx <= lastResetIdx,
+  }));
 }
 
 /**

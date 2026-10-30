@@ -54,6 +54,7 @@ export const SuspensionWidget = ({ jornadas = [], players = [], currentUser, set
           player={{ id: row.id, name: row.name }}
           categoria={row.categoria}
           amarillas={row.amarillas}
+          suspension={row.suspension}
         />
       ),
     });
