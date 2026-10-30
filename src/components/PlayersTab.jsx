@@ -32,7 +32,7 @@ import { InlineEditCell } from './ui/InlineEditCell';
 import { PlayerComparisonModal } from './PlayerComparisonModal';
 import { ChangeRequestModal } from './ChangeRequestModal';
 
-export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {}, pendingChangeRequests = [] }) => {
+export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {}, pendingChangeRequests = [], autoFocusSearch = false }) => {
   const isAdmin = currentUser?.role === 'admin';
   const viaticosCongelados = appSettings['viaticos_congelados'] === 'true';
   const pendingPlayerIds = new Set(pendingChangeRequests.map(r => r.player_id));
@@ -891,6 +891,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
             onChange={setInputValue}
             placeholder="Buscar por nombre o cédula..."
             className="flex-1 min-w-[180px]"
+            autoFocus={autoFocusSearch}
           />
           <select 
             value={filterCategoria} 
