@@ -5,6 +5,7 @@ import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { CATEGORIAS, POSICIONES_JUGADOR, DEPARTAMENTOS } from '../utils/constants';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal, CUENTA_EXPORT_LABELS, getCuentaExportValue } from '../utils/playerUtils';
+import { normalizeSearchText } from '../utils/textUtils';
 import { getCurrentSuspensionsByCategory } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye, Type, Stethoscope, Upload, Settings2 } from 'lucide-react';
@@ -318,10 +319,11 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   const safePlayers = Array.isArray(players) ? players : [];
 
   // Filter players
+  const normalizedSearch = normalizeSearchText(searchTerm);
   const filtered = safePlayers.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (p.name_visual && p.name_visual.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                          p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = normalizeSearchText(p.name).includes(normalizedSearch) ||
+                          normalizeSearchText(p.name_visual).includes(normalizedSearch) ||
+                          normalizeSearchText(p.gov_id).includes(normalizedSearch);
 
     // Check if user is 3era-only user
     const is3eraOnlyUser = currentUser?.categoria?.length === 1 && currentUser.categoria[0] === '3era';
