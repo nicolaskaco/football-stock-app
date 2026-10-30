@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { getCurrentSuspensionsByCategory, getYellowCountsByCategory } from '../utils/suspensions';
+import { PlayerCardHistoryModal } from './PlayerCardHistoryModal';
 
 // Discovers the players who received any card this year, keyed by playerId::categoria.
 // It only builds the rows — `amarillas` is filled in from getYellowCountsByCategory so the
@@ -41,8 +42,23 @@ const buildCardStats = (jornadas, players) => {
   return Object.values(map);
 };
 
-export const SuspensionWidget = ({ jornadas = [], players = [], currentUser }) => {
+export const SuspensionWidget = ({ jornadas = [], players = [], currentUser, setShowModal }) => {
   const [catFiltro, setCatFiltro] = useState(null);
+
+  const openCardHistory = (row) => {
+    setShowModal({
+      title: `Tarjetas — ${row.name} (${row.categoria})`,
+      content: (
+        <PlayerCardHistoryModal
+          jornadas={jornadas}
+          player={{ id: row.id, name: row.name }}
+          categoria={row.categoria}
+          amarillas={row.amarillas}
+          suspension={row.suspension}
+        />
+      ),
+    });
+  };
 
   const yellowCounts = useMemo(() => getYellowCountsByCategory(jornadas), [jornadas]);
 
@@ -147,7 +163,14 @@ export const SuspensionWidget = ({ jornadas = [], players = [], currentUser }) =
               className={`flex items-center justify-between border-l-4 pl-3 py-2 ${row.suspension ? 'border-red-400 bg-red-50' : 'border-yellow-400 bg-yellow-50'}`}
             >
               <div>
-                <p className="font-medium text-sm">{row.name}</p>
+                <button
+                  type="button"
+                  onClick={() => openCardHistory(row)}
+                  className="font-medium text-sm text-left hover:underline"
+                  title="Ver partidos con tarjeta"
+                >
+                  {row.name}
+                </button>
                 <p className="text-xs text-gray-500">{row.categoria}</p>
               </div>
               <div className="flex items-center gap-2">
