@@ -4,6 +4,7 @@ import { CATEGORIAS } from '../utils/constants';
 import { useDebouncedSearch } from '../hooks/useDebouncedSearch';
 import { todayISO, calculateAge } from '../utils/dateUtils';
 import { calculateTotal, getComplementoEfectivo, CUENTA_EXPORT_LABELS, getCuentaExportValue } from '../utils/playerUtils';
+import { normalizeSearchText } from '../utils/textUtils';
 import { Plus, Edit2, Trash2, Users, Download, History, Eye, Upload } from 'lucide-react';
 import { ViandaIcons } from './ui/ViandaIcons';
 import { FichaMedicaIcon } from './ui/FichaMedicaIcon';
@@ -89,10 +90,11 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
   const safePlayers = Array.isArray(players) ? players : [];
 
   // Filter players
+  const normalizedSearch = normalizeSearchText(searchTerm);
   const filtered = safePlayers.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (p.name_visual && p.name_visual.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                          p.gov_id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = normalizeSearchText(p.name).includes(normalizedSearch) ||
+                          normalizeSearchText(p.name_visual).includes(normalizedSearch) ||
+                          normalizeSearchText(p.gov_id).includes(normalizedSearch);
 
 
     // Check if user is 3era-only user
