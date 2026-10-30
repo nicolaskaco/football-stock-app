@@ -1,6 +1,6 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Menu, X, Moon, Sun, Loader2, KeyRound } from 'lucide-react';
+import { Menu, X, Moon, Sun, Loader2, KeyRound, Search } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
 import { NotificationCenter } from './NotificationCenter';
@@ -61,11 +61,27 @@ export const AdminDashboard = ({
   const isFinanzas = currentUser?.role === 'finanzas';
   const homeTab = isFinanzas ? 'finanzas' : 'overview';
   const activeTab = searchParams.get('tab') || homeTab;
-  const setActiveTab = (tab) => setSearchParams(prev => {
-    const p = new URLSearchParams(prev);
-    p.set('tab', tab);
-    return p;
-  });
+  // Atajo mobile (lupa): key remonta PlayersTab para limpiar el texto de búsqueda local
+  const [playersSearchKey, setPlayersSearchKey] = useState(0);
+  const [focusPlayersSearch, setFocusPlayersSearch] = useState(false);
+  const setActiveTab = (tab) => {
+    setFocusPlayersSearch(false);
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      p.set('tab', tab);
+      return p;
+    });
+  };
+  const goToPlayersSearch = () => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      p.set('tab', 'players');
+      p.delete('p_search');
+      return p;
+    });
+    setPlayersSearchKey(k => k + 1);
+    setFocusPlayersSearch(true);
+  };
   const [showModal, setShowModal] = useState(null);
   const [modalIsDirty, setModalIsDirty] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -157,6 +173,16 @@ export const AdminDashboard = ({
               <span className="hidden sm:inline text-sm text-gray-700">
                 👤 {currentUser?.email || currentUser?.name || 'Usuario'}
               </span>
+              {canAccessPlayers && (
+                <button
+                  onClick={goToPlayersSearch}
+                  className="sm:hidden p-2 rounded-lg hover:bg-gray-100"
+                  aria-label="Buscar jugador"
+                  title="Buscar jugador"
+                >
+                  <Search className="w-5 h-5 text-gray-600" />
+                </button>
+              )}
               <button
                 onClick={toggleDark}
                 className="p-2 rounded-lg hover:bg-gray-100"
@@ -285,6 +311,8 @@ export const AdminDashboard = ({
         )}
         {activeTab === 'players' && canAccessPlayers && (
           <PlayersTab
+            key={playersSearchKey}
+            autoFocusSearch={focusPlayersSearch}
             players={players}
             injuries={injuries}
             jornadas={jornadas}
