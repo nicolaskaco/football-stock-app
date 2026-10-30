@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
-import { CHANGE_REQUEST_STATUS, CUENTA_VIATICO_FIELDS } from './constants';
-import { parseDOB, formatDate } from './dateUtils';
+import { CHANGE_REQUEST_STATUS, CUENTA_VIATICO_FIELDS, CATEGORIAS_PARTIDO } from './constants';
+import { parseDOB, formatDate, fechaPartidoDefault } from './dateUtils';
 
 // Player fields whose changes are written to player_history
 const TRACKED_PLAYER_FIELDS = ['contrato', 'viatico', 'complemento', 'vianda', 'casita', ...CUENTA_VIATICO_FIELDS];
@@ -1319,7 +1319,8 @@ export const database = {
             id, player_id, tipo, posicion, orden, minuto_entrada, minuto_salida,
             players(id, name, name_visual, categoria)
           ),
-          partido_eventos(id, tipo, player_id, minuto, fechas_suspension)
+          partido_eventos(id, tipo, player_id, minuto, fechas_suspension),
+          partido_suspension_ajustes(id, player_id, accion, motivo)
         )
       `)
       .order('fecha', { ascending: false });
@@ -1329,6 +1330,7 @@ export const database = {
 
   /**
    * Crea una jornada y sus 5 partidos (uno por categoría) en batch.
+   * Cada partido arranca con la fecha por defecto de su categoría (ver fechaPartidoDefault).
    * @param {object} jornadaData  - { rival_id, fecha, fase }
    * @param {string} escenarioBase - 'Local' | 'Visitante'
    * Regla: 4ta/5ta/S16 → escenarioBase; 6ta/7ma → opuesto
@@ -1342,14 +1344,14 @@ export const database = {
     if (jornadaError) throw jornadaError;
 
     const CATEGORIAS_INVERTIDAS = ['6ta', '7ma'];
-    const categorias = ['4ta', '5ta', 'S16', '6ta', '7ma'];
     const opuesto = escenarioBase === 'Local' ? 'Visitante' : 'Local';
 
-    const partidos = categorias.map(categoria => {
+    const partidos = CATEGORIAS_PARTIDO.map(categoria => {
       const escenario = CATEGORIAS_INVERTIDAS.includes(categoria) ? opuesto : escenarioBase;
       return {
         jornada_id: jornada.id,
         categoria,
+        fecha: fechaPartidoDefault(jornada.fecha, categoria),
         escenario,
         cesped: escenario === 'Local' ? 'Sintético' : 'Natural',
       };
@@ -1366,11 +1368,30 @@ export const database = {
   async updateJornada(id, jornadaData) {
     // jornadaData: { rival_id, fecha, fase, numero_jornada }
     // No tocamos el escenario de los partidos existentes
+    const { data: old, error: oldError } = await supabase
+      .from('jornadas')
+      .select('fecha, partidos(id, categoria, fecha)')
+      .eq('id', id)
+      .single();
+    if (oldError) throw oldError;
+
     const { error } = await supabase
       .from('jornadas')
       .update(jornadaData)
       .eq('id', id);
     if (error) throw error;
+
+    // Si cambió la fecha, mover los partidos que seguían en su fecha por defecto.
+    // Los que se reprogramaron a mano conservan su fecha.
+    if (!jornadaData.fecha || jornadaData.fecha === old.fecha) return;
+    for (const p of old.partidos || []) {
+      if (p.fecha && p.fecha !== fechaPartidoDefault(old.fecha, p.categoria)) continue;
+      const { error: pError } = await supabase
+        .from('partidos')
+        .update({ fecha: fechaPartidoDefault(jornadaData.fecha, p.categoria) })
+        .eq('id', p.id);
+      if (pError) throw pError;
+    }
   },
 
   async deleteJornada(id) {
@@ -1389,8 +1410,10 @@ export const database = {
    * @param {Array}  titulares   - [{ player_id, posicion, orden }]  (max 11)
    * @param {Array}  suplentes   - [{ player_id, orden }]            (max 10)
    * @param {Array}  eventos     - [{ player_id, tipo }] tipo: 'gol' | 'amarilla' | 'roja'
+   * @param {Array|null} ajustes - [{ player_id, accion: 'quitar' | 'agregar', motivo }]; null = no tocar
+   *                               (solo los admins pueden escribir ajustes de suspensión)
    */
-  async updatePartido(id, partidoData, titulares = [], suplentes = [], eventos = []) {
+  async updatePartido(id, partidoData, titulares = [], suplentes = [], eventos = [], ajustes = null) {
     // 1. Actualizar datos del partido
     const { error: updateError } = await supabase
       .from('partidos')
@@ -1458,6 +1481,26 @@ export const database = {
         .from('partido_eventos')
         .insert(evRecords);
       if (evError) throw evError;
+    }
+
+    // 6. Ajustes manuales de suspensión (solo admin)
+    if (ajustes === null) return;
+    const { error: delAjError } = await supabase
+      .from('partido_suspension_ajustes')
+      .delete()
+      .eq('partido_id', id);
+    if (delAjError) throw delAjError;
+
+    if (ajustes.length > 0) {
+      const { error: ajError } = await supabase
+        .from('partido_suspension_ajustes')
+        .insert(ajustes.map(a => ({
+          partido_id: id,
+          player_id: a.player_id,
+          accion: a.accion,
+          motivo: a.motivo || null,
+        })));
+      if (ajError) throw ajError;
     }
   },
 

@@ -6,7 +6,7 @@ import { CalendarioView } from './CalendarioView';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 import { RivalBadge } from './ui/RivalBadge';
@@ -140,6 +140,8 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
     const partido = getPartidoForCategoria(jornada, cat);
     const esc = partido?.escenario || '—';
     const resultado = getResultado(partido);
+    const fechaReal = partido ? fechaPartido(partido, jornada) : null;
+    const reprogramado = fechaReal && fechaReal !== fechaPartidoDefault(jornada.fecha, cat);
     return (
       <div className="flex flex-col items-center gap-1">
         <span
@@ -158,6 +160,14 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
           </span>
         ) : (
           <span className="w-5 h-5" />
+        )}
+        {reprogramado && (
+          <span
+            className="text-[10px] leading-none font-medium text-amber-700 dark:text-amber-400"
+            title={`Reprogramado: ${formatDate(fechaReal)}`}
+          >
+            {compact ? 'R' : `Reprog. ${formatDate(fechaReal).slice(0, 5)}`}
+          </span>
         )}
       </div>
     );

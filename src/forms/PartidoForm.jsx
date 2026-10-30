@@ -3,6 +3,7 @@ import { X, FileUp, AlertTriangle } from 'lucide-react';
 import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS, PLAYER_STATUS_LABELS, DURACION_PARTIDO_DEFAULT } from '../utils/constants';
 import { getSuspensionMap } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
+import { fechaPartidoDefault, formatDate } from '../utils/dateUtils';
 import { CometImportPanel } from '../components/CometImportPanel';
 
 const MAX_TITULARES = 11;
@@ -24,7 +25,7 @@ const rankTitular = (t) => {
 };
 const sortTitulares = (slots) => [...slots].sort((a, b) => rankTitular(a) - rankTitular(b));
 
-export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [], jornadaId, appSettings = {}, onSubmit }) => {
+export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [], jornadaId, appSettings = {}, canAjustarSuspensiones = false, onSubmit }) => {
   const categoria = partido?.categoria || '';
 
   // Build active injury map
@@ -33,11 +34,21 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     if (!inj.fecha_alta && !activeInjuryMap[inj.player_id]) activeInjuryMap[inj.player_id] = inj;
   });
 
-  // Build suspension map for this jornada + category
-  const suspendedMap = jornadaId ? getSuspensionMap(jornadas, jornadaId, categoria) : new Map();
+  // Ajustes manuales de suspensión (solo admin): [{ player_id, accion: 'quitar' | 'agregar', motivo }]
+  const [ajustes, setAjustes] = useState(() =>
+    (partido?.partido_suspension_ajustes || []).map(({ player_id, accion, motivo }) => ({ player_id, accion, motivo: motivo || '' }))
+  );
+
+  // Suspensiones automáticas (sin ajustes) y las efectivas con los ajustes que se están editando
+  const autoSuspendedMap = jornadaId ? getSuspensionMap(jornadas, jornadaId, categoria, { ajustes: [] }) : new Map();
+  const suspendedMap = jornadaId ? getSuspensionMap(jornadas, jornadaId, categoria, { ajustes }) : new Map();
+
+  const fechaJornada = jornadas.find((j) => j.id === jornadaId)?.fecha || null;
+  const fechaDefault = fechaPartidoDefault(fechaJornada, categoria);
 
   // Datos básicos del partido
   const [formData, setFormData] = useState({
+    fecha: partido?.fecha || fechaDefault || '',
     escenario: partido?.escenario || '',
     cesped: partido?.cesped || 'Natural',
     cancha: partido?.cancha || 'Ciudad Deportiva',
@@ -53,7 +64,6 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
   const [showImport, setShowImport] = useState(false);
   const [importAvisos, setImportAvisos] = useState([]);
   const [importado, setImportado] = useState(false);
-  const fechaJornada = jornadas.find((j) => j.id === jornadaId)?.fecha || null;
 
   // Construir slots iniciales desde partido_players existentes
   const buildInitialTitulares = () => {
@@ -295,6 +305,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     const tieneMinutos = [...titularesData, ...suplentesData].some((x) => x.minuto_entrada != null || x.minuto_salida != null);
     const data = {
       ...formData,
+      fecha: formData.fecha || null,
       cancha: formData.escenario === 'Local' ? formData.cancha : null,
       goles_local: formData.goles_local === '' ? null : Number(formData.goles_local),
       goles_visitante: formData.goles_visitante === '' ? null : Number(formData.goles_visitante),
@@ -321,7 +332,11 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
       if (stats.roja)     eventosData.push({ player_id, tipo: 'roja',     minuto: stats.roja_minuto    ? Number(stats.roja_minuto)    : null, fechas_suspension: stats.roja_fechas || 1 });
     });
 
-    onSubmit(data, titularesData, suplentesData, eventosData, { cometIds, importado });
+    onSubmit(data, titularesData, suplentesData, eventosData, {
+      cometIds,
+      importado,
+      ajustes: canAjustarSuspensiones ? ajustes : null,
+    });
   };
 
   const titularesCount = titulares.filter((t) => t.player_id).length;
@@ -337,6 +352,17 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     const p = players.find((pl) => pl.id === player_id);
     return p?.name_visual || p?.name || '—';
   };
+
+  // Ajustes de suspensión: un ajuste por jugador
+  const ajusteDe = (player_id) => ajustes.find((a) => a.player_id === player_id);
+  const setAjuste = (player_id, accion) => setAjustes((prev) => [
+    ...prev.filter((a) => a.player_id !== player_id),
+    ...(accion ? [{ player_id, accion, motivo: '' }] : []),
+  ]);
+  const setMotivoAjuste = (player_id, motivo) =>
+    setAjustes((prev) => prev.map((a) => (a.player_id === player_id ? { ...a, motivo } : a)));
+  const agregados = ajustes.filter((a) => a.accion === 'agregar');
+  const candidatosAgregar = jugadoresCategoria.filter((p) => !autoSuspendedMap.has(p.id) && !ajusteDe(p.id));
 
   // Opción de jugador en los selects de titulares/suplentes.
   // Los jugadores no activos solo aparecen si ya estaban guardados en el slot.
@@ -383,7 +409,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
         <CometImportPanel
           categoria={categoria}
           players={players}
-          fechaJornada={fechaJornada}
+          fechaJornada={formData.fecha || fechaJornada}
           onApply={applyCometImport}
           onCancel={() => setShowImport(false)}
         />
@@ -421,6 +447,32 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Fecha del partido (por defecto sale de la jornada; se edita si se reprogramó) */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Fecha del partido</label>
+        <div className="flex flex-wrap items-center gap-3">
+          <input
+            type="date"
+            value={formData.fecha}
+            onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+          />
+          {fechaDefault && formData.fecha !== fechaDefault && (
+            <span className="text-xs text-amber-700 dark:text-amber-400">
+              Reprogramado (por defecto: {formatDate(fechaDefault)}) ·{' '}
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, fecha: fechaDefault })}
+                className="underline hover:text-amber-900 dark:hover:text-amber-300"
+              >
+                Restablecer
+              </button>
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-gray-400 mt-1">Cambiala solo si el partido se postergó o adelantó. Las suspensiones siguen el orden en que se jugaron los partidos.</p>
       </div>
 
       {/* Escenario y Césped */}
@@ -568,6 +620,93 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
           </div>
         </div>
       </div>
+
+      {/* Ajustes manuales de suspensión (solo admin) */}
+      {canAjustarSuspensiones && (
+        <details className="border border-red-200 dark:border-red-900 rounded-lg" open={ajustes.length > 0}>
+          <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium text-gray-800 dark:text-gray-200">
+            Ajustes de suspensión
+            {ajustes.length > 0 && <span className="ml-2 text-xs text-red-600 dark:text-red-400">({ajustes.length})</span>}
+          </summary>
+          <div className="px-3 pb-3 space-y-3 text-sm">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Para casos que el cálculo automático no cubre (fallos del tribunal, partidos perdidos por los puntos…).
+              Solo cambian este partido.
+            </p>
+
+            {autoSuspendedMap.size === 0 ? (
+              <p className="text-xs text-gray-400 italic">No hay suspendidos automáticos para este partido.</p>
+            ) : (
+              <ul className="space-y-2">
+                {[...autoSuspendedMap].map(([pid, info]) => {
+                  const habilitado = ajusteDe(pid)?.accion === 'quitar';
+                  return (
+                    <li key={pid} className="flex flex-wrap items-center gap-2">
+                      <span className={`font-medium ${habilitado ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}>{getPlayerName(pid)}</span>
+                      <span className="text-xs text-red-600 dark:text-red-400">{info.reason}</span>
+                      {habilitado && (
+                        <input
+                          type="text"
+                          placeholder="Motivo (opcional)"
+                          value={ajusteDe(pid).motivo}
+                          onChange={(e) => setMotivoAjuste(pid, e.target.value)}
+                          className="flex-1 min-w-[10rem] px-2 py-1 border rounded text-xs"
+                        />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setAjuste(pid, habilitado ? null : 'quitar')}
+                        className={`ml-auto text-xs px-2 py-1 rounded ${habilitado
+                          ? 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                          : 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300'}`}
+                      >
+                        {habilitado ? 'Deshacer' : 'Habilitar'}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            {agregados.length > 0 && (
+              <ul className="space-y-2">
+                {agregados.map((a) => (
+                  <li key={a.player_id} className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-gray-800 dark:text-gray-200">{getPlayerName(a.player_id)}</span>
+                    <span className="text-xs text-red-600 dark:text-red-400">Suspensión manual</span>
+                    <input
+                      type="text"
+                      placeholder="Motivo (opcional)"
+                      value={a.motivo}
+                      onChange={(e) => setMotivoAjuste(a.player_id, e.target.value)}
+                      className="flex-1 min-w-[10rem] px-2 py-1 border rounded text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setAjuste(a.player_id, null)}
+                      className="ml-auto text-gray-400 hover:text-red-600"
+                      title="Quitar suspensión manual"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <select
+              value=""
+              onChange={(e) => e.target.value && setAjuste(e.target.value, 'agregar')}
+              className="w-full sm:w-auto px-3 py-1.5 border rounded-lg text-sm"
+            >
+              <option value="">+ Agregar suspensión manual…</option>
+              {candidatosAgregar.map((p) => (
+                <option key={p.id} value={p.id}>{p.name_visual || p.name}</option>
+              ))}
+            </select>
+          </div>
+        </details>
+      )}
 
       {/* Titulares */}
       <div>

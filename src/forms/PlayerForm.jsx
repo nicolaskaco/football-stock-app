@@ -5,7 +5,7 @@ import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner
 import { PlayerQuestionnaireModal } from '../components/PlayerQuestionnaireModal';
 import { CATEGORIAS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constants';
 import { CuentaViaticoFields } from '../components/ui/CuentaViaticoFields';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, fechaPartido } from '../utils/dateUtils';
 import { getPlayerSuspensions } from '../utils/suspensions';
 import { resolveMarcador } from '../utils/playerStats';
 import { database } from '../utils/database';
@@ -21,7 +21,7 @@ const jornadaLabel = ({ fase, numero_jornada }) => {
 const partidoInfo = (jornada, partido) => {
   const { capGoles, rivalGoles, resultado } = partido ? resolveMarcador(partido) : {};
   return {
-    fecha: jornada?.fecha,
+    fecha: (partido && fechaPartido(partido, jornada)) || jornada?.fecha,
     fase: jornada?.fase || null,
     numero_jornada: jornada?.numero_jornada || null,
     rival: jornada?.rivales?.name || '-',

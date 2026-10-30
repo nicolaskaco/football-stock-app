@@ -4,6 +4,8 @@
 // Import from here instead of using inline toLocaleDateString() calls.
 // ============================================================
 
+import { DIAS_ANTES_JORNADA } from './constants';
+
 const LOCALE = 'es-UY';
 
 /**
@@ -61,6 +63,27 @@ export function formatBirthday(isoDate) {
  */
 export function todayISO() {
   return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * Default `partidos.fecha` for a categoria: the jornada's date minus
+ * DIAS_ANTES_JORNADA[categoria] days. Returns 'YYYY-MM-DD' (null without a jornada date).
+ * Works on the plain date parts so there is no timezone drift.
+ */
+export function fechaPartidoDefault(fechaJornada, categoria) {
+  if (!fechaJornada) return null;
+  const [year, month, day] = fechaJornada.split('T')[0].split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day - (DIAS_ANTES_JORNADA[categoria] || 0)));
+  return d.toISOString().split('T')[0];
+}
+
+/**
+ * Date a partido was actually played: its own `fecha` (default or edited by hand) or,
+ * for a row without one, the default from the jornada. Returns 'YYYY-MM-DD' or null.
+ */
+export function fechaPartido(partido, jornada) {
+  if (partido?.fecha) return partido.fecha.split('T')[0];
+  return fechaPartidoDefault(jornada?.fecha, partido?.categoria);
 }
 
 /**

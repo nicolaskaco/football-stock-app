@@ -206,6 +206,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `partidos` | Individual match per category (child of jornada) |
 | `partido_players` | Players convoked per partido (titulares + suplentes) |
 | `partido_eventos` | Match events (goals, yellow/red cards) per partido |
+| `partido_suspension_ajustes` | Manual admin overrides of the automatic suspension for one player in one partido |
 | `app_settings` | Global key-value feature flags toggled via ConfiguracionTab |
 | `player_injuries` | Injury log per player: tipo, severidad, dates (inicio, retorno estimado, alta) |
 | `sprints` | Weekly time-boxes for task management. `fecha_inicio` has a UNIQUE constraint — upsert-safe. |
@@ -240,6 +241,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `id` | uuid PK | |
 | `jornada_id` | uuid FK → jornadas | ON DELETE CASCADE |
 | `categoria` | text | One of `CATEGORIAS_PARTIDO` |
+| `fecha` | date | nullable — day the partido was (or will be) played. Defaults from the jornada: `fechaPartidoDefault()` = jornada date minus `DIAS_ANTES_JORNADA[categoria]` (4ta one day before, the rest the same day). Set on create, moved with the jornada when its date changes (unless it was edited by hand), editable in PartidoForm for postponed/rescheduled partidos. Backfilled for all existing partidos. Null falls back to the default. Suspensions are ordered by this date |
 | `escenario` | text | `'Local'` \| `'Visitante'` |
 | `cesped` | text | `'Natural'` \| `'Sintético'` (default: Local→Sintético, Visitante→Natural) |
 | `cancha` | text | nullable — one of `CANCHAS_LOCAL`; only set when `escenario = 'Local'`, otherwise null |
@@ -275,6 +277,18 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `fechas_suspension` | integer | default 1 — number of games suspended (only for `'roja'`) |
 
 Used by `EstadisticasTab` to compute per-player totals (goals, cards) and standings.
+
+#### `partido_suspension_ajustes`
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid PK | |
+| `partido_id` | uuid FK → partidos | ON DELETE CASCADE |
+| `player_id` | uuid FK → players | ON DELETE CASCADE |
+| `accion` | text | `'quitar'` (player is NOT suspended for this partido) \| `'agregar'` (player IS suspended for it) |
+| `motivo` | text | nullable — free text (tribunal, partido perdido por puntos…) |
+| `created_at` | timestamptz | |
+
+UNIQUE (`partido_id`, `player_id`). RLS: read for every authenticated user, write for admins only (`current_user_is_admin()`), plus `deny_finanzas`. Loaded nested under `partidos` in `getJornadas`.
 
 ### Audit-Tracked Player Fields
 
@@ -412,8 +426,8 @@ App settings (`app_settings` table) are loaded at login into `appSettings` globa
 | [TorneoForm.jsx](src/forms/TorneoForm.jsx) | Tournament add/edit (multi-select players/dirigentes/staff). Player list has a category filter and a "Seleccionar todos / Deseleccionar todos" button that bulk-selects/deselects all currently visible (filtered) players. "Resultado del Torneo" section: position (1–16), playoff result (Campeón/Subcampeón, only when position = 1), and optional result comment. |
 | [ComisionForm.jsx](src/forms/ComisionForm.jsx) | Committee add/edit |
 | [RivalForm.jsx](src/forms/RivalForm.jsx) | Rival team add/edit: name and badge image (upload, replace, remove) |
-| [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos |
-| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (active red card suspension, or running yellow counter reached 5 in the previous jornada) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. Minute in/out per slot (titulares: sale; suplentes: entra/sale) plus `duracion` (defaults to `DURACION_PARTIDO_DEFAULT[categoria]` when any minute is entered). "Importar planilla COMET" opens `CometImportPanel` (see *COMET Match Report Import*). Only players with `status = 'activo'` (or null) are offered; a non-active player already saved in a slot stays selected and is labeled with their status (e.g. `— CEDIDO`, gray background). |
+| [JornadaForm.jsx](src/forms/JornadaForm.jsx) | Jornada create/edit: rival, fecha, fase, numero_jornada; create mode adds escenario base → 5 partidos, each with its default `fecha` (4ta the day before). Changing the jornada's fecha moves the partidos still on their default date; hand-edited ones keep theirs |
+| [PartidoForm.jsx](src/forms/PartidoForm.jsx) | Individual partido: 11 titulares + posición, 10 suplentes, resultado (escenario-aware), comentario. On submit, eventos (goals/cards) are filtered to only include players currently in the lineup — removing a player from the lineup also removes their events. Injured players shown with 🏥 prefix and injury type in select dropdowns. Cross-category players shown with ⚠️ prefix and yellow background. Suspended players (active red card suspension, or running yellow counter reached 5 in the previous jornada) are disabled with 🚫 prefix and red background. Optional minute input per goal and card event. "Fecha del partido" date input (defaults to the categoría's default date; shows "Reprogramado" + "Restablecer" when changed). Admins get a collapsible "Ajustes de suspensión" section: "Habilitar" a player suspended automatically (`quitar`) or add a manual suspension (`agregar`), each with an optional motivo; the lineup selects reflect the ajustes live, and saving logs an `ajuste_suspension` activity. Minute in/out per slot (titulares: sale; suplentes: entra/sale) plus `duracion` (defaults to `DURACION_PARTIDO_DEFAULT[categoria]` when any minute is entered). "Importar planilla COMET" opens `CometImportPanel` (see *COMET Match Report Import*). Only players with `status = 'activo'` (or null) are offered; a non-active player already saved in a slot stays selected and is labeled with their status (e.g. `— CEDIDO`, gray background). |
 | [InjuryForm.jsx](src/forms/InjuryForm.jsx) | Injury registration/editing: tipo (Lesión muscular, Fractura, Esguince, Contusión, Tendinitis, Ligamentos cruzados, Meniscos, Otro), severidad (leve/moderada/grave), descripción, fecha_inicio, fecha_retorno_estimada, fecha_alta. Admin-only. |
 | [TareaForm.jsx](src/forms/TareaForm.jsx) | Task add/edit. Fields: título (required), descripción (textarea), prioridad (Urgente/Muy Alta/Alta/Media/Baja), estado (Sin Asignar/Sin Comenzar/En Progreso/Completado), asignado a (Dirigente or Funcionario — combined `<optgroup>` select; auto-advances estado from "Sin Asignar" to "Sin Comenzar" when an assignee is chosen), sprint (defaults to active sprint via `defaultSprintId` prop), fecha estimada. |
 | [UserInviteForm.jsx](src/forms/UserInviteForm.jsx) | Invite / edit-permissions form. Fields: email (disabled in edit mode), role dropdown, 18 grouped permission checkboxes with select-all/none per group, and category chip multi-select. Used by `UserManagementSection` for both invite and edit flows. |
@@ -691,9 +705,13 @@ Automatic suspension tracking based on card accumulation. A player is suspended 
 - They received a **red card** in a prior jornada and the suspension still covers J. Red cards carry a `fechas_suspension` count (default 1). A red card at jornada index `i` with `fechas_suspension=N` suspends the player for jornadas `i+1` through `i+N`. The reason shows remaining games (e.g., "Roja (3 fechas)", "Roja (última fecha)").
 - Their **running yellow card counter** reached 5 in the immediately previous jornada. The counter fires at 5 and immediately resets to 0, so the next suspension needs 5 fresh yellows.
 
+**Order = the date each partido was played, per category.** "Previous/next jornada" is not the fixture order: for each category, the jornadas are ordered by `partidos.fecha` of that category's partido (ties: jornada date, then `numero_jornada`). A postponed partido (e.g. 7ma of J10 played after J11) counts where it was actually played, so a 5th yellow in J11 is served in the replayed J10 and the player is cleared for J12. Other categories of the same jornadas are not affected.
+
+**Manual ajustes** (`partido_suspension_ajustes`, admin only, edited in PartidoForm) win over the automatic result for that one partido: `quitar` clears the player, `agregar` suspends them with reason `Manual` / `Manual: <motivo>`. They don't move or extend other suspensions and don't change the yellow counter.
+
 Yellow cards accumulate across the full calendar year (no Apertura/Clausura reset), **but any red card resets the player's counter to 0** — including yellows the player received in that same partido (the `minuto` field is optional, so it is not used for ordering). Cards count toward the match's category, not the player's home category.
 
-**Current suspensions** (SuspensionWidget, TarjetasTab, PlayersTab, EstadisticasJugadoresTab) are computed, per category, for the jornada right after the **last jornada whose partido is loaded** — a partido is loaded when it has both scores and at least one player in the lineup. Dates are not used: a jornada that already took place but isn't loaded yet still shows its suspended players, the same ones its PartidoForm lineup blocks. Once the result and lineup are loaded, the reference moves on and served suspensions disappear. If the last loaded jornada is the last one created, a virtual next jornada is used.
+**Current suspensions** (SuspensionWidget, TarjetasTab, PlayersTab, EstadisticasJugadoresTab) are computed, per category, for the jornada right after the **last jornada whose partido is loaded** (in that category's played-date order) — a partido is loaded when it has both scores and at least one player in the lineup. Today's date is not used: a jornada that already took place but isn't loaded yet still shows its suspended players, the same ones its PartidoForm lineup blocks. Once the result and lineup are loaded, the reference moves on and served suspensions disappear. If the last loaded jornada is the last one created, a virtual next jornada is used.
 
 - **`src/utils/suspensions.js`**: Core logic — `getSuspensionMap()` for a specific jornada, `getCurrentSuspensionsByCategory()` for all categories, `getYellowCountsByCategory()` for the running counters the UI displays, `getPlayerSuspensions()` for every jornada one player is suspended for.
 - **PartidoForm**: Suspended players are disabled in lineup dropdowns with 🚫 prefix, red background, and "SUSPENDIDO (reason)" label. When recording a red card, a "fechas" input lets coaches set the suspension length (default 1).
@@ -1059,10 +1077,10 @@ All shared enums are centralized here — never defined inline in components:
 
 | Export | Description |
 |--------|-------------|
-| `getSuspensionMap(jornadas, targetJornadaId, categoria)` | Returns `Map<playerId, { reason }>` for players suspended for a specific jornada + category. A player is suspended if a prior red card's `fechas_suspension` range still covers this jornada, or their running yellow counter reached 5 in the previous jornada. Yellow cards accumulate across the full calendar year, but any red card resets the counter to 0 (same-partido yellows included). Reason includes remaining games for multi-game suspensions. |
-| `getCurrentSuspensionsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, { reason }>>` for all categories. "Current" = suspended for the next upcoming jornada. If all jornadas are in the past, treats the last jornada as if there were a virtual next one. |
+| `getSuspensionMap(jornadas, targetJornadaId, categoria, { ajustes }?)` | Returns `Map<playerId, { reason, manual? }>` for players suspended for a specific jornada + category, with that partido's manual ajustes applied (`ajustes` replaces the stored ones; PartidoForm passes `[]` for the automatic result and its in-progress list for the live one). Jornadas are ordered by the category's `partidos.fecha`. A player is suspended if a prior red card's `fechas_suspension` range still covers this jornada, or their running yellow counter reached 5 in the previous jornada. Yellow cards accumulate across the full calendar year, but any red card resets the counter to 0 (same-partido yellows included). Reason includes remaining games for multi-game suspensions. |
+| `getCurrentSuspensionsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, { reason }>>` for all categories. "Current" = suspended for the jornada after the last loaded partido of that category (played-date order). If that is the last one, a virtual next jornada is used. |
 | `getYellowCountsByCategory(jornadas)` | Returns `Map<categoria, Map<playerId, number>>` with each player's **current running yellow counter** after red-card resets. This is the figure `SuspensionWidget` and `TarjetasTab` must display — the raw yearly total is not what counts toward the 5-yellow suspension. |
-| `getPlayerSuspensions(jornadas, playerId)` | Returns `[{ jornadaId, categoria, reason }]`: every current-year jornada (already loaded, upcoming included) the player is suspended for, with the same rules as `getSuspensionMap`. A red card with N fechas yields N entries (`Roja · fecha k de N`, or `Roja` when N = 1); every 5th-yellow milestone yields one `5ª amarilla` entry. Red wins over yellow for the same jornada + category. Used by the PlayerForm match history. |
+| `getPlayerSuspensions(jornadas, playerId)` | Returns `[{ jornadaId, categoria, reason }]`: every current-year jornada (already loaded, upcoming included) the player is suspended for, with the same rules as `getSuspensionMap`. A red card with N fechas yields N entries (`Roja · fecha k de N`, or `Roja` when N = 1); every 5th-yellow milestone yields one `5ª amarilla` entry. Red wins over yellow for the same jornada + category; manual ajustes win over both (`quitar` removes the entry, `agregar` adds a `Manual` one). Used by the PlayerForm match history. |
 
 ### Player Stats Utilities (`src/utils/playerStats.js`)
 
