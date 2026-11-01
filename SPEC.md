@@ -1156,6 +1156,8 @@ football-stock-app/
 ├── ROADMAP.md
 ├── Summary App.md                 ← legacy feature summary
 ├── .claude/docs/                  # architectural_patterns.md, feature_backlog.md
+├── .claude/agents/                # revisor (read-only pre-PR review subagent)
+├── .githooks/                     # Block commits and pushes to main
 ├── public/
 │   ├── logo.jpeg
 │   └── apple-touch-icon.png

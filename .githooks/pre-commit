@@ -1,0 +1,10 @@
+#!/bin/sh
+# Bloquea los commits directos a main. Ver "Git Workflow" en CLAUDE.md.
+
+branch=$(git symbolic-ref --short -q HEAD)
+
+if [ "$branch" = "main" ]; then
+  echo "Commit bloqueado: estás en main." >&2
+  echo "Creá una rama con: git checkout -b feature/<nombre>" >&2
+  exit 1
+fi
