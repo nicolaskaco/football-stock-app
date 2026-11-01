@@ -1,0 +1,10 @@
+#!/bin/sh
+# Bloquea los push a main desde cualquier rama local. Ver "Git Workflow" en CLAUDE.md.
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "Push bloqueado: main solo se actualiza mergeando un PR." >&2
+    echo "Pusheá tu rama y abrí el PR con: gh pr create" >&2
+    exit 1
+  fi
+done

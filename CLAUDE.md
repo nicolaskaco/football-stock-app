@@ -68,6 +68,8 @@ Environment: copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` / `
 | [supabase/migrations/](supabase/migrations/) | SQL migrations (only recent ones are in the repo; the base schema is described in SPEC.md) |
 | [supabase/functions/](supabase/functions/) | Edge Functions: `validate-player`, `invite-user`, `reset-password-link`, `check-ficha-medica`. `validate-employee` is deployed but its source is **not** in the repo |
 | [.claude/docs/](.claude/docs/) | `architectural_patterns.md` and `feature_backlog.md` (mark items done with the PR number and date) |
+| [.claude/agents/](.claude/agents/) | `revisor`, the read-only subagent that reviews a branch before its PR |
+| [.githooks/](.githooks/) | Git hooks that block commits and pushes to `main` |
 
 ---
 
@@ -106,6 +108,10 @@ These are summarized here. [.claude/docs/architectural_patterns.md](.claude/docs
 ## Git Workflow
 
 **IMPORTANT**: Before touching any file, run `git checkout main && git pull` and create a branch (`feature/<name>`). Never commit to `main`. When done, push and open a PR with `gh pr create`.
+
+The hooks in `.githooks/` block commits on `main` and pushes to `main`. `npm install` activates them through the `prepare` script.
+
+Before opening a PR, run the `revisor` subagent ([.claude/agents/revisor.md](.claude/agents/revisor.md)). It checks the branch against this project's rules and reports problems without editing anything.
 
 ---
 
