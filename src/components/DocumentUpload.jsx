@@ -78,9 +78,9 @@ export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
     <div className="space-y-4">
       <h3 className="font-semibold">Cédula, Pasaportes y Contrato</h3>
       
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {documentTypes.map(type => (
-            <div key={type.id} className="border rounded p-4">
+            <div key={type.id} className="border dark:border-gray-700 rounded p-3 sm:p-4 min-w-0">
             <label className="block text-sm font-medium mb-2">
                 {type.label}
             </label>
@@ -89,7 +89,7 @@ export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={(e) => handleUpload(e, type.id)}
                 disabled={readOnly || uploading}
-                className="text-sm"
+                className="block w-full min-w-0 max-w-full text-sm text-gray-600 dark:text-gray-300 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-900 file:text-yellow-400 hover:file:bg-black disabled:opacity-50"
             />
             </div>
         ))}
@@ -99,12 +99,12 @@ export const DocumentUpload = ({ playerId, playerName, readOnly }) => {
             {documents.map(doc => {
                 const docType = documentTypes.find(t => t.id === doc.document_type);
                 return (
-                <div key={doc.id} className="flex items-center justify-between border rounded p-2">
-                    <div className="flex items-center gap-2">
-                    <File className="w-4 h-4" />
-                    <span className="text-sm">{docType?.label || doc.document_type} - {playerName}</span>
+                <div key={doc.id} className="flex items-center justify-between gap-2 border dark:border-gray-700 rounded p-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                    <File className="w-4 h-4 shrink-0" />
+                    <span className="text-sm truncate">{docType?.label || doc.document_type} - {playerName}</span>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                     <a 
                         href={documentUrls[doc.id]} 
                         target="_blank" 
