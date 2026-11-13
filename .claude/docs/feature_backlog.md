@@ -43,6 +43,8 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 - [x] **E2. Filtro por temporada / año** — Year filter dropdown (2024, 2025, 2026…) on PartidosTab, EstadisticasTab, and TorneosTab. Defaults to current year. *(completed — 2026-03-18)*
 - [x] **E3. Estadísticas rápidas en modal de jugador (solo lectura)** — Compact stats row at the bottom of read-only PlayerForm: PJ | Goles | Amarillas | Rojas. Reuses `jornadas` already in global state. *(completed — 2026-03-17)*
 - [x] **E4. Cambiar contraseña desde la sesión** — KeyRound button in the AdminDashboard header opens a modal to change the logged-in user's password (current password re-verified). *(PR #340 · 2026-10-06)*
+- [x] **E5. Búsqueda de jugadores más rápida en mobile** — Magnifier button in the mobile header opens Jugadores with the search focused *(PR #358 · 2026-10-29)*, and player/viático search ignores accents (`normalizeSearchText`) *(PR #359 · 2026-10-29)*.
+- [x] **E6. Jugadores como cards en mobile** — Below `sm`, PlayersTab shows one card per player (`PlayerMobileCard`) with an "Ordenar…" selector and "Todos" select-all instead of the wide table. *(PR #363 · 2026-11-13)*
 
 ### F. Datos de Familia
 
