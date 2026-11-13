@@ -776,36 +776,36 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       {/* STATS SUMMARY */}
       {readOnly && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             {[
-              { label: 'PJ', value: playerStats.pj, color: 'text-gray-800' },
+              { label: 'PJ', value: playerStats.pj, color: 'text-gray-800 dark:text-gray-200' },
               { label: 'Goles', value: playerStats.goles, color: 'text-green-600' },
               { label: 'Amarillas', value: playerStats.amarillas, color: 'text-yellow-500' },
               { label: 'Rojas', value: playerStats.rojas, color: 'text-red-600' },
             ].map(({ label, value, color }) => (
               <div key={label} className="text-center">
                 <div className={`text-2xl sm:text-3xl font-bold ${color}`}>{value}</div>
-                <div className="text-xs text-gray-500 mt-0.5 uppercase sm:tracking-wide">{label}</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 uppercase sm:tracking-wide">{label}</div>
               </div>
             ))}
           </div>
           {Object.keys(playerStats.convocatoriasMap).length > 0 && (
-            <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-              <div className="text-xs text-gray-500 uppercase tracking-wide mb-3 font-medium">Convocatorias por año</div>
+            <div className="p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 font-medium">Convocatorias por año</div>
               <div className="space-y-3">
                 {Object.keys(playerStats.convocatoriasMap).sort().map((year) => {
                   const { byCategoria } = playerStats.convocatoriasMap[year];
                   return (
                     <div key={year}>
-                      <div className="text-sm font-semibold text-gray-700 mb-1">{year}</div>
+                      <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{year}</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 pl-2">
                         {Object.keys(byCategoria).sort().map((cat) => {
                           const { total, titular, suplente } = byCategoria[cat];
                           return (
-                            <div key={cat} className="text-sm text-gray-800">
-                              <span className="font-medium text-gray-600">{cat}:</span>{' '}
+                            <div key={cat} className="text-sm text-gray-800 dark:text-gray-200">
+                              <span className="font-medium text-gray-600 dark:text-gray-400">{cat}:</span>{' '}
                               {total}{' '}
-                              <span className="text-gray-400 text-xs">({titular}T / {suplente}S)</span>
+                              <span className="text-gray-400 dark:text-gray-500 text-xs">({titular}T / {suplente}S)</span>
                             </div>
                           );
                         })}
