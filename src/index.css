@@ -22,6 +22,7 @@
     -webkit-appearance: none;
     appearance: none;
     display: block;
+    min-height: 42px; /* keep empty date inputs as tall as text inputs on iOS */
   }
   input[type="date"]::-webkit-date-and-time-value {
     text-align: left;
