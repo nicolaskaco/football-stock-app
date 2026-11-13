@@ -119,7 +119,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
   }, [jornadas, player?.id]);
 
   return (
-    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-8 rounded-xl shadow-lg">
+    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6 sm:space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-8 rounded-xl shadow-lg min-w-0">
       {onRequestChange && (
         <div className="flex justify-end">
           {hasPendingRequest ? (
@@ -138,9 +138,9 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
         </div>
       )}
       {/* BASIC INFORMATION */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información Básica</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
           {/* Fila 1: Nombre | Categoría */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -337,9 +337,9 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       </div>
 
       {/* CONTACT INFORMATION */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Contacto y Captación</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Email del jugador
@@ -416,9 +416,9 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       </div>
 
       {/* FAMILY DATA */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Datos de Familia</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la Madre</label>
             <input
@@ -467,7 +467,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       </div>
 
       {/* FINANCIAL INFORMATION */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información Financiera</h3>
         
         {viaticosCongelados && (
@@ -498,7 +498,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
           </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Viático {(formData.contrato || financialFieldsDisabled) && <span className="text-red-500">(Deshabilitado)</span>}
@@ -536,7 +536,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
             <p className="text-xs text-yellow-700 mb-3">
               Para modificar estos valores, usá la pestaña <strong>Viático</strong>.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Valor Override</label>
                 <input
@@ -576,7 +576,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       </div>
 
       {/* BANK INFORMATION */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información Bancaria</h3>
         <CuentaViaticoFields
           value={formData}
@@ -586,9 +586,9 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       </div>
 
       {/* UNIFORM INFORMATION */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Indumentaria</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Buzo
@@ -643,9 +643,9 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       </div>
 
       {/* OTHER OPTIONS */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Residencia/Vianda</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Casita
@@ -676,9 +676,9 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       </div>
 
       {/* PASSPORT INFORMATION */}
-      <div className="bg-white p-6 rounded-lg shadow-md">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
         <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Información de Pasaporte</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
               <input 
@@ -726,7 +726,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
       {/* DOCUMENTS SECTION */}
       {player && player.id && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Documentos</h3>
           <DocumentUpload playerId={player.id} playerName={player.name} readOnly={readOnly} />
         </div>
@@ -734,7 +734,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
       {/* INJURIES RELATED LIST */}
       {player && player.id && injuries.length > 0 && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
           <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">Lesiones ({injuries.length})</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -830,7 +830,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
           ));
         const nSusp = suspensiones.length;
         return (
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
             <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-4 border-yellow-400">
               Historial de Partidos {currentYear} ({partidosJugados}{nSusp > 0 && ` · ${nSusp} ${nSusp === 1 ? 'suspensión' : 'suspensiones'}`})
             </h3>
@@ -945,7 +945,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
       {readOnly && (
         <div className="space-y-3">
-          <div className="grid grid-cols-4 gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
             {[
               { label: 'PJ', value: playerStats.pj, color: 'text-gray-800' },
               { label: 'Goles', value: playerStats.goles, color: 'text-green-600' },
@@ -953,8 +953,8 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               { label: 'Rojas', value: playerStats.rojas, color: 'text-red-600' },
             ].map(({ label, value, color }) => (
               <div key={label} className="text-center">
-                <div className={`text-3xl font-bold ${color}`}>{value}</div>
-                <div className="text-xs text-gray-500 mt-0.5 uppercase tracking-wide">{label}</div>
+                <div className={`text-2xl sm:text-3xl font-bold ${color}`}>{value}</div>
+                <div className="text-xs text-gray-500 mt-0.5 uppercase sm:tracking-wide">{label}</div>
               </div>
             ))}
           </div>

@@ -62,7 +62,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
       {viaticosCongelados && (
         <ViaticosCongeladosBanner contacto={appSettings['viaticos_congelados_contacto'] || 'Martín Arroyo'} />
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Nombre Completo *
@@ -124,7 +124,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
       </div>
 
       {/* Viático and Complemento - disabled if contrato is checked OR if presidente_categoria */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Viático {formData.contrato && <span className="text-red-500">(Deshabilitado - Tiene Contrato)</span>}
@@ -172,7 +172,7 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
           <h4 className="text-sm font-semibold text-yellow-800 mb-3">
             Override Temporal de Complemento
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Valor Override

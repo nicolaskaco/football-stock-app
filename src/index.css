@@ -15,6 +15,19 @@
     border-color: rgb(51 65 85); /* slate-700 */
   }
 
+  /* iOS Safari gives date inputs a native min-width that ignores w-full,
+     which pushes modals/forms wider than the screen on mobile */
+  input[type="date"] {
+    min-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    min-height: 42px; /* keep empty date inputs as tall as text inputs on iOS */
+  }
+  input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+  }
+
   .dark {
     color-scheme: dark;
     color: #e2e8f0; /* slate-200 — default text for elements without explicit color */
