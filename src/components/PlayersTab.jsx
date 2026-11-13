@@ -32,6 +32,7 @@ import { InjuryForm } from '../forms/InjuryForm';
 import { InlineEditCell } from './ui/InlineEditCell';
 import { PlayerComparisonModal } from './PlayerComparisonModal';
 import { ChangeRequestModal } from './ChangeRequestModal';
+import { PlayerMobileCard } from './PlayerMobileCard';
 
 export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {}, pendingChangeRequests = [], autoFocusSearch = false }) => {
   const isAdmin = currentUser?.role === 'admin';
@@ -741,6 +742,130 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
 
   const is3eraOnlyUser = currentUser?.categoria?.length === 1 && currentUser.categoria[0] === '3era';
 
+  const playerInjuries = (player) =>
+    injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio));
+
+  const openViewPlayer = (player, { withChangeRequest = false } = {}) => setShowModal({
+    title: `Ver Jugador: ${player.name}`,
+    content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={playerInjuries(player)} jornadas={jornadas} appSettings={appSettings}
+      {...(withChangeRequest && {
+        onRequestChange: currentUser?.role === 'presidente_categoria' && !viaticosCongelados ? () => {
+          setShowModal(null);
+          setShowChangeRequestModal(player);
+        } : null,
+        hasPendingRequest: pendingPlayerIds.has(player.id),
+      })}
+    />
+  });
+
+  const openEditPlayer = (player) => setShowModal({
+    title: `Editar Jugador: ${player.name}`,
+    content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={playerInjuries(player)} jornadas={jornadas} appSettings={appSettings} onDataChange={onDataChange} />
+  });
+
+  const renderStatusIcons = (player) => {
+    const cat = player.categoria_juego || player.categoria;
+    const overAge = isPlayerOverAge(player, cat, appSettings);
+    return (
+      <>
+        <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
+        {activeInjuryMap[player.id] && <InjuryIcon injury={activeInjuryMap[player.id]} />}
+        <SuspensionIcon suspension={suspensionsMap.get(cat)?.get(player.id)} />
+        {overAge.overAge && <OverAgeIcon birthYear={overAge.birthYear} minYear={overAge.minYear} />}
+        <StatusBadge status={player.status} comment={player.status_comment} />
+        <ViandaIcons count={player.vianda} />
+      </>
+    );
+  };
+
+  const renderCategoriaBadge = (player) => (
+    <>
+      <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
+        {player.categoria_juego || player.categoria}
+      </span>
+      {player.categoria_juego && player.categoria_juego !== player.categoria && (
+        <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full whitespace-nowrap" title="Categoría de cobro">
+          💰 {player.categoria}
+        </span>
+      )}
+    </>
+  );
+
+  const renderTotal = (player) => player.contrato ? (
+    <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
+      Contrato
+    </span>
+  ) : (
+    <span className="font-semibold">${calculateTotal(player).toLocaleString()}</span>
+  );
+
+  // Shared action buttons for table rows and mobile cards. `large` gives bigger tap targets.
+  const renderPlayerActions = (player, { large = false } = {}) => {
+    const icon = large ? 'w-5 h-5' : 'w-4 h-4';
+    const pad = large ? 'p-2 -m-1' : '';
+    return (
+      <>
+        {canEditPlayers ? (
+          <button onClick={() => openEditPlayer(player)} className={`text-blue-600 hover:text-blue-800 ${pad}`} title="Editar">
+            <Edit2 className={icon} />
+          </button>
+        ) : (
+          <button onClick={() => openViewPlayer(player)} className={`text-blue-600 hover:text-blue-800 ${pad}`} title="Ver detalles">
+            <Eye className={icon} />
+          </button>
+        )}
+        {canEditNameVisual && (
+          <button onClick={() => handleEditNameVisual(player)} className={`text-indigo-600 hover:text-indigo-800 ${pad}`} title="Editar nombre visual">
+            <Type className={icon} />
+          </button>
+        )}
+        {canEditPlayers && (
+          <button
+            onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
+            className={`text-purple-600 hover:text-purple-800 ${pad}`}
+            title="Ver historial"
+          >
+            <History className={icon} />
+          </button>
+        )}
+        <button
+          onClick={() => handleCheckFichaMedica(player)}
+          disabled={fichaMedicaLoading === player.id}
+          className={`text-teal-600 hover:text-teal-800 disabled:opacity-40 ${pad}`}
+          title="Consultar carné deportista (SND)"
+        >
+          {fichaMedicaLoading === player.id
+            ? <span className={`${icon} block animate-spin rounded-full border-2 border-teal-600 border-t-transparent`} />
+            : <Stethoscope className={icon} />}
+        </button>
+        {isAdmin && (
+          <button
+            onClick={() => openInjuryModal(player)}
+            className={`hover:opacity-80 ${activeInjuryMap[player.id] ? 'text-red-600' : 'text-gray-400 hover:text-red-500'} ${pad}`}
+            title={activeInjuryMap[player.id] ? 'Ver / editar lesión' : 'Registrar lesión'}
+          >
+            <svg viewBox="0 0 16 16" className={icon}><rect x="0" y="0" width="16" height="16" rx="2" fill={activeInjuryMap[player.id] ? '#dc2626' : 'currentColor'} /><rect x="6" y="2" width="4" height="12" rx="0.5" fill="white" /><rect x="2" y="6" width="12" height="4" rx="0.5" fill="white" /></svg>
+          </button>
+        )}
+      </>
+    );
+  };
+
+  const MOBILE_SORT_OPTIONS = [
+    { key: 'name', label: 'Nombre' },
+    { key: 'categoria', label: 'Categoría' },
+    { key: 'posicion', label: 'Posición' },
+    { key: 'total', label: 'Total' },
+  ];
+  // Sort keys only available from desktop column headers (may arrive via URL)
+  const DESKTOP_SORT_LABELS = {
+    celular: 'Celular',
+    departamento: 'Departamento/País',
+    casita: 'Residencia',
+    vianda: 'Vianda',
+    representante: 'Representante',
+  };
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
@@ -989,7 +1114,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-x-auto">
+      <div className="hidden sm:block bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b">
             <tr>
@@ -1103,25 +1228,11 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                     <div className="flex items-center gap-1 font-semibold min-w-0">
                       <button
                         className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
-                        onClick={() => setShowModal({
-                          title: `Ver Jugador: ${player.name}`,
-                          content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings}
-                            onRequestChange={currentUser?.role === 'presidente_categoria' && !viaticosCongelados ? () => {
-                              setShowModal(null);
-                              setShowChangeRequestModal(player);
-                            } : null}
-                            hasPendingRequest={pendingPlayerIds.has(player.id)}
-                          />
-                        })}
+                        onClick={() => openViewPlayer(player, { withChangeRequest: true })}
                       >
                         {player.name_visual || player.name}
                       </button>
-                      <FichaMedicaIcon hasta={player.ficha_medica_hasta} />
-                      {activeInjuryMap[player.id] && <InjuryIcon injury={activeInjuryMap[player.id]} />}
-                      <SuspensionIcon suspension={suspensionsMap.get(player.categoria_juego || player.categoria)?.get(player.id)} />
-                      {(() => { const cat = player.categoria_juego || player.categoria; const r = isPlayerOverAge(player, cat, appSettings); return r.overAge ? <OverAgeIcon birthYear={r.birthYear} minYear={r.minYear} /> : null; })()}
-                      <StatusBadge status={player.status} comment={player.status_comment} />
-                      <ViandaIcons count={player.vianda} />
+                      {renderStatusIcons(player)}
                     </div>
                     {player.name_visual && player.name_visual !== player.name && (
                       <div className="text-xs text-gray-500 mt-1 truncate sm:overflow-visible sm:whitespace-normal">({player.name})</div>
@@ -1156,18 +1267,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                   onStartEdit={() => setEditingCell({ playerId: player.id, field: 'categoria' })}
                   onSave={(v) => handleInlineSave(player.id, 'categoria', v)}
                   onCancel={() => setEditingCell(null)}
-                  displayValue={
-                    <>
-                      <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full">
-                        {player.categoria_juego || player.categoria}
-                      </span>
-                      {player.categoria_juego && player.categoria_juego !== player.categoria && (
-                        <span className="ml-1 px-1.5 py-0.5 text-xs bg-gray-100 text-gray-500 rounded-full whitespace-nowrap" title="Categoría de cobro">
-                          💰 {player.categoria}
-                        </span>
-                      )}
-                    </>
-                  }
+                  displayValue={renderCategoriaBadge(player)}
                 />
                 <InlineEditCell
                   value={player.departamento}
@@ -1191,15 +1291,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                     {player.vianda}
                   </span>
                 </td>*/}
-                <td className="px-6 py-4 text-sm">
-                  {player.contrato ? (
-                    <span className="px-2 py-1 text-xs font-semibold bg-green-100 text-green-800 rounded-full">
-                      Contrato
-                    </span>
-                  ) : (
-                    <span className="font-semibold">${calculateTotal(player).toLocaleString()}</span>
-                  )}
-                </td>
+                <td className="px-6 py-4 text-sm">{renderTotal(player)}</td>
                 <InlineEditCell
                   value={player.representante}
                   type="text"
@@ -1209,70 +1301,9 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                   onSave={(v) => handleInlineSave(player.id, 'representante', v)}
                   onCancel={() => setEditingCell(null)}
                 />
-                  <td className="px-3 py-4">
-                    <div className="flex gap-2">
-                      {canEditPlayers ? (
-                        <button 
-                          onClick={() => setShowModal({
-                            title: `Editar Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings} onDataChange={onDataChange} />
-                          })} 
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Editar"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                      ) : (
-                        <button 
-                          onClick={() => setShowModal({
-                            title: `Ver Jugador: ${player.name}`,
-                            content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={injuries.filter(i => i.player_id === player.id).sort((a, b) => new Date(a.fecha_inicio) - new Date(b.fecha_inicio))} jornadas={jornadas} appSettings={appSettings} />
-                          })} 
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Ver detalles"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      )}
-                      {canEditNameVisual && (
-                        <button 
-                          onClick={() => handleEditNameVisual(player)}
-                          className="text-indigo-600 hover:text-indigo-800"
-                          title="Editar nombre visual"
-                        >
-                          <Type className="w-4 h-4" />
-                        </button>
-                      )}
-                      {canEditPlayers && (
-                        <button
-                          onClick={() => setShowHistoryModal({ playerId: player.id, playerName: player.name })}
-                          className="text-purple-600 hover:text-purple-800"
-                          title="Ver historial"
-                        >
-                          <History className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleCheckFichaMedica(player)}
-                        disabled={fichaMedicaLoading === player.id}
-                        className="text-teal-600 hover:text-teal-800 disabled:opacity-40"
-                        title="Consultar carné deportista (SND)"
-                      >
-                        {fichaMedicaLoading === player.id
-                          ? <span className="w-4 h-4 block animate-spin rounded-full border-2 border-teal-600 border-t-transparent" />
-                          : <Stethoscope className="w-4 h-4" />}
-                      </button>
-                      {isAdmin && (
-                        <button
-                          onClick={() => openInjuryModal(player)}
-                          className={`hover:opacity-80 ${activeInjuryMap[player.id] ? 'text-red-600' : 'text-gray-400 hover:text-red-500'}`}
-                          title={activeInjuryMap[player.id] ? 'Ver / editar lesión' : 'Registrar lesión'}
-                        >
-                          <svg viewBox="0 0 16 16" className="w-4 h-4"><rect x="0" y="0" width="16" height="16" rx="2" fill={activeInjuryMap[player.id] ? '#dc2626' : 'currentColor'} /><rect x="6" y="2" width="4" height="12" rx="0.5" fill="white" /><rect x="2" y="6" width="12" height="4" rx="0.5" fill="white" /></svg>
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                <td className="px-3 py-4">
+                  <div className="flex gap-2">{renderPlayerActions(player)}</div>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -1280,6 +1311,67 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
 
         {sortedPlayers.length === 0 && (
           <div className="text-center py-12">
+            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">No se encontraron jugadores</p>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile: card list instead of the wide table */}
+      <div className="sm:hidden">
+        {sortedPlayers.length > 0 && (
+          <div className="flex items-center justify-between gap-2 mb-2 px-1">
+            <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={selectedPlayers.length === sortedPlayers.length}
+                onChange={handleSelectAll}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              Todos ({sortedPlayers.length})
+            </label>
+            <div className="flex items-center gap-1">
+              <select
+                value={sortConfig.key || ''}
+                onChange={(e) => setSortConfig({ key: e.target.value || null, direction: e.target.value ? sortConfig.direction : 'asc' })}
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1.5 bg-white"
+                aria-label="Ordenar por"
+              >
+                <option value="">Ordenar…</option>
+                {MOBILE_SORT_OPTIONS.map(o => <option key={o.key} value={o.key}>{o.label}</option>)}
+                {sortConfig.key && !MOBILE_SORT_OPTIONS.some(o => o.key === sortConfig.key) && (
+                  <option value={sortConfig.key}>{DESKTOP_SORT_LABELS[sortConfig.key] || sortConfig.key}</option>
+                )}
+              </select>
+              {sortConfig.key && (
+                <button
+                  onClick={() => setSortConfig({ key: sortConfig.key, direction: sortConfig.direction === 'asc' ? 'desc' : 'asc' })}
+                  className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg"
+                  title="Invertir orden"
+                >
+                  {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="space-y-2">
+          {sortedPlayers.map(player => (
+            <PlayerMobileCard
+              key={player.id}
+              player={player}
+              selected={selectedPlayers.includes(player.id)}
+              onToggleSelect={() => handleSelectPlayer(player.id)}
+              onView={() => openViewPlayer(player, { withChangeRequest: true })}
+              statusIcons={renderStatusIcons(player)}
+              categoriaBadge={renderCategoriaBadge(player)}
+              total={renderTotal(player)}
+              actions={renderPlayerActions(player, { large: true })}
+            />
+          ))}
+        </div>
+        {sortedPlayers.length === 0 && (
+          <div className="bg-white rounded-lg shadow text-center py-12">
             <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">No se encontraron jugadores</p>
           </div>
