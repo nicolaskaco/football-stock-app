@@ -5,6 +5,7 @@ import { getSuspensionMap } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
 import { fechaPartidoDefault, formatDate } from '../utils/dateUtils';
 import { CometImportPanel } from '../components/CometImportPanel';
+import { posicionesHistorial, sugerirPosiciones } from '../utils/posicionSugerida';
 
 const MAX_TITULARES = 11;
 const MAX_SUPLENTES = 10;
@@ -219,10 +220,17 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
       comet_hint: r.player_id ? null : `${r.dorsal} ${r.nombre}`,
     });
 
-    // Solo se conserva la posición de quien ya estaba en el partido; el resto queda vacío
-    const newTitulares = imp.rows.filter((r) => r.rol === 'titular').slice(0, MAX_TITULARES).map((r) => ({
+    // Posición: la que ya tenía en este partido, si no la más frecuente en sus últimos partidos,
+    // si no la de su ficha (ver posicionSugerida.js)
+    const titularesImp = imp.rows.filter((r) => r.rol === 'titular').slice(0, MAX_TITULARES);
+    const sugeridas = sugerirPosiciones(titularesImp.map((r) => r.player_id), {
+      prevPosicion,
+      historial: posicionesHistorial(jornadas, partido?.id),
+      playersById: new Map(players.map((p) => [p.id, p])),
+    });
+    const newTitulares = titularesImp.map((r, i) => ({
       player_id: r.player_id,
-      posicion: (r.player_id && prevPosicion.get(r.player_id)) || '',
+      posicion: sugeridas[i].posicion,
       minuto_salida: salida.get(r.dorsal) ?? null,
       ...cometFields(r),
     }));
@@ -281,6 +289,17 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     const avisos = [];
     const sinAsignar = imp.rows.filter((r) => !r.player_id);
     if (sinAsignar.length) avisos.push(`Sin asignar: ${sinAsignar.map((r) => `${r.dorsal} ${r.nombre}`).join(', ')}. Elegilos en su lugar de la planilla.`);
+    const origenCount = (o) => sugeridas.filter((s) => s.origen === o).length;
+    const sinPosicion = sugeridas.filter((s, i) => titularesImp[i].player_id && !s.posicion).length;
+    const posResumen = [
+      [origenCount('partido'), 'ya cargadas'],
+      [origenCount('historial'), 'de partidos anteriores'],
+      [origenCount('ficha'), 'de la ficha'],
+      [sinPosicion, 'sin posición'],
+    ].filter(([n]) => n > 0).map(([n, label]) => `${n} ${label}`);
+    if (origenCount('historial') + origenCount('ficha') + sinPosicion > 0) {
+      avisos.push(`Posiciones: ${posResumen.join(', ')}. Revisá el lado de zagueros, laterales y extremos.`);
+    }
     if (suplentesImp.length > MAX_SUPLENTES) avisos.push(`El informe trae ${suplentesImp.length} suplentes; solo entran ${MAX_SUPLENTES}.`);
     importedPlayers.filter((p) => suspendedMap.has(p.id)).forEach((p) => {
       avisos.push(`${p.name_visual || p.name} figura como suspendido (${suspendedMap.get(p.id).reason}) pero jugó según el informe.`);

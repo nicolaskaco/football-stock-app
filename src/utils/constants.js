@@ -126,6 +126,20 @@ export const POSICIONES_PARTIDO = [
   'Delantero centro',
 ];
 
+/**
+ * Posición de la ficha (POSICIONES_JUGADOR) → posiciones de partido candidatas, en orden.
+ * Se usa al importar el COMET: si la primera ya está ocupada se toma la siguiente
+ * (el segundo zaguero va a izquierdo, el segundo volante a ofensivo).
+ */
+export const POSICION_FICHA_A_PARTIDO = {
+  Arquero: ['Arquero'],
+  Zaguero: ['Zaguero derecho', 'Zaguero izquierdo'],
+  Lateral: ['Lateral derecho', 'Lateral izquierdo'],
+  Volante: ['Volante defensivo', 'Volante ofensivo'],
+  Extremo: ['Extremo derecho', 'Extremo izquierdo'],
+  Delantero: ['Delantero centro'],
+};
+
 /** Números de jornada del campeonato */
 export const NUMEROS_JORNADA = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','Semifinal','Final'];
 
