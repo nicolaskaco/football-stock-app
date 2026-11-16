@@ -290,13 +290,14 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     const sinAsignar = imp.rows.filter((r) => !r.player_id);
     if (sinAsignar.length) avisos.push(`Sin asignar: ${sinAsignar.map((r) => `${r.dorsal} ${r.nombre}`).join(', ')}. Elegilos en su lugar de la planilla.`);
     const origenCount = (o) => sugeridas.filter((s) => s.origen === o).length;
+    const sinPosicion = sugeridas.filter((s, i) => titularesImp[i].player_id && !s.posicion).length;
     const posResumen = [
       [origenCount('partido'), 'ya cargadas'],
       [origenCount('historial'), 'de partidos anteriores'],
       [origenCount('ficha'), 'de la ficha'],
-      [sugeridas.filter((s, i) => titularesImp[i].player_id && !s.posicion).length, 'sin posición'],
+      [sinPosicion, 'sin posición'],
     ].filter(([n]) => n > 0).map(([n, label]) => `${n} ${label}`);
-    if (origenCount('historial') + origenCount('ficha') > 0) {
+    if (origenCount('historial') + origenCount('ficha') + sinPosicion > 0) {
       avisos.push(`Posiciones: ${posResumen.join(', ')}. Revisá el lado de zagueros, laterales y extremos.`);
     }
     if (suplentesImp.length > MAX_SUPLENTES) avisos.push(`El informe trae ${suplentesImp.length} suplentes; solo entran ${MAX_SUPLENTES}.`);
