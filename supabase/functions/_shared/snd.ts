@@ -12,11 +12,13 @@ export function idTipoDocumento(tipoDocumento: string | null): number {
   return ({ "Cédula de Identidad": 1, "Pasaporte": 2, "Otro": 3 } as Record<string, number>)[tipoDocumento ?? ""] ?? 1;
 }
 
-/** Solo a las cédulas se les quitan los caracteres que no son dígitos. */
+/** Solo a las cédulas se les quitan los caracteres que no son dígitos (igual que database.checkFichaMedica). */
 export function normalizarDocumento(govId: string, tipoDocumento: string | null): string {
   const raw = String(govId);
-  return (tipoDocumento ?? "Cédula de Identidad") === "Cédula de Identidad" ? raw.replace(/\D/g, "") : raw.trim();
+  return tipoDocumento === "Cédula de Identidad" ? raw.replace(/\D/g, "") : raw.trim();
 }
+
+export const SND_TIMEOUT_MS = 15_000;
 
 export async function consultarSND(documento: string, idtipodocumento = 1): Promise<ConsultaSND> {
   const body = new URLSearchParams();
@@ -27,6 +29,7 @@ export async function consultarSND(documento: string, idtipodocumento = 1): Prom
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: body.toString(),
+    signal: AbortSignal.timeout(SND_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`SND respondió ${res.status}`);
   const html = await res.text();

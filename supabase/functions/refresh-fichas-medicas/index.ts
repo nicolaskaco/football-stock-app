@@ -14,12 +14,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { consultarSND, fichaFutbol, hastaToISO, idTipoDocumento, normalizarDocumento } from "../_shared/snd.ts";
+import { consultarSND, fichaFutbol, hastaToISO, idTipoDocumento, normalizarDocumento, SND_TIMEOUT_MS } from "../_shared/snd.ts";
 
 const VENTANA_DIAS = 30;
 const HORAS_ENTRE_CHEQUEOS = 20;
 const TANDA = 40;
-const PRESUPUESTO_MS = 110_000; // margen bajo el límite de 150 s de las Edge Functions
+// Límite de 150 s de las Edge Functions, menos una consulta a SND entera (timeout) y margen para el log
+const PRESUPUESTO_MS = 150_000 - SND_TIMEOUT_MS - 15_000;
 const PAUSA_MS = 500; // entre consultas, para no saturar a SND
 const AUTOR = "Sistema (SND automático)";
 
@@ -66,7 +67,13 @@ serve(async (req) => {
     .from("players")
     .select("id, name, name_visual, gov_id, tipo_documento, ficha_medica_hasta, ficha_medica_chequeada_at, status")
     .eq("hide_player", false)
-    .or(`ficha_medica_hasta.is.null,ficha_medica_hasta.lte.${limite}`);
+    // (status null o 'activo') Y (sin ficha o vence antes del límite), en un solo árbol lógico
+    .or([
+      `and(status.is.null,or(ficha_medica_hasta.is.null,ficha_medica_hasta.lte.${limite}))`,
+      `and(status.eq.activo,or(ficha_medica_hasta.is.null,ficha_medica_hasta.lte.${limite}))`,
+    ].join(","))
+    .order("ficha_medica_chequeada_at", { ascending: true, nullsFirst: true })
+    .limit(1000);
   if (error) return json({ error: error.message }, 500);
 
   const pendientes = (data as Player[])
@@ -113,12 +120,17 @@ serve(async (req) => {
         }
       }
 
-      // Se marca como chequeado aunque no haya cambios; los errores se reintentan en la próxima corrida
-      await supabase.from("players").update({ ficha_medica_chequeada_at: new Date().toISOString() }).eq("id", p.id);
     } catch (err) {
       console.error(`SND ${p.id}:`, err);
       resumen.errores.push(nombre);
     }
+    // Se marca como chequeado también si hubo error: así un documento que SND rechaza siempre no
+    // ocupa la tanda de todas las corridas. Se reintenta la noche siguiente.
+    const { error: marcaErr } = await supabase
+      .from("players")
+      .update({ ficha_medica_chequeada_at: new Date().toISOString() })
+      .eq("id", p.id);
+    if (marcaErr) console.error(`ficha_medica_chequeada_at ${p.id}:`, marcaErr.message);
     procesados++;
     await sleep(PAUSA_MS);
   }

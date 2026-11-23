@@ -613,6 +613,8 @@ Players have a `ficha_medica_hasta` (date) column that records when their SND sp
     - have a document;
     - ficha missing, expired or expiring within 30 days;
     - not checked in the last 20 h (`players.ficha_medica_chequeada_at`, never-checked first).
+  - **Errors**: each SND request has a 15 s timeout, and each run stops starting new players after 120 s. A player whose request fails is still marked as checked, so a document that SND always rejects can't block the queue; it is retried the next night.
+  - **App saves**: `database.updatePlayer` drops `ficha_medica_hasta` and `ficha_medica_chequeada_at` from the payload. Saving a player opened before the nightly run doesn't undo the new date.
   - **What it writes**: it calls SND (shared code in `supabase/functions/_shared/snd.ts`, also used by `check-ficha-medica`) and writes `ficha_medica_hasta` only when the FÚTBOL date changed. Every change goes to `player_history` with `changed_by = 'Sistema (SND automático)'`.
   - **Activity log**: each run that processed someone logs a `ficha_medica_auto` row in `activity_log` with the counts and the detail. It shows in Actividad as "Chequeo automático de fichas SND".
   - **Security**: the function is deployed with `--no-verify-jwt` and only accepts requests whose `x-cron-secret` header matches its `CRON_SECRET`. The cron reads the secret and the project URL from Vault (`cron_secret`, `project_url`).
@@ -848,7 +850,7 @@ Admin-only **Actividad** tab (`ActivityLogTab`) showing a single timeline built 
 
 | Source | Event types |
 |--------|-------------|
-| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import; the bulk import adds `masivo: true` and `archivo`, and the automatic load also adds `automatico: true`) |
+| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import; the bulk import adds `masivo: true` and `archivo`, and the automatic load also adds `automatico: true`), `ficha_medica_auto` (`refresh-fichas-medicas` Edge Function, nightly SND check: counts plus the detail per player) |
 | `player_history` | `field_change` — audited player field changes (see §4 Audit-Tracked Player Fields) |
 | `player_change_requests` (status ≠ `pending`) | `approved` / `rejected` solicitudes, with the new viático/complemento/contrato values |
 

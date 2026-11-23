@@ -211,7 +211,12 @@ export const database = {
     return data[0];
   },
 
-  async updatePlayer(id, player, currentUserEmail) {
+  async updatePlayer(id, playerData, currentUserEmail) {
+    // La ficha médica solo se escribe con saveFichaMedicaHasta (o el chequeo automático nocturno).
+    // Se saca del payload para que guardar un jugador abierto desde antes no pise la fecha nueva.
+    // eslint-disable-next-line no-unused-vars
+    const { ficha_medica_hasta, ficha_medica_chequeada_at, ...player } = playerData;
+
     // First, get the old player data
     const { data: oldPlayer, error: fetchError } = await supabase
       .from('players')

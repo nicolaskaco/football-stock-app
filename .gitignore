@@ -34,3 +34,6 @@ supabase/.temp/
 
 # PDFs generados en pruebas locales
 /*.pdf
+
+# Deno (Edge Functions): lockfile generado al chequear en local
+deno.lock
