@@ -773,7 +773,7 @@ Embedded section in `PlayerForm` showing all matches a player participated in.
   - 🏥 active injury, with its estimated return date. Only admins see the injury type; everyone else sees just "Lesionado";
   - 🩺 ficha médica missing or expired on the partido's `fecha`: `isFichaVencida`;
   - ⚠️ over-age: `isPlayerOverAge`.
-- **Disponibles**: the rest, listed by name.
+- **Disponibles**: the rest. Only their count is shown, in the screen, the text and the PDF; the list of names is too long.
 - **Actions**:
   - "Copiar texto": `parteComoTexto`, ready to paste in WhatsApp or Telegram;
   - "PDF": `exportParteDisponibilidadPDF` in `pdfExport.js`. It uses the same header as the dashboard PDF and the motivos go without emojis.

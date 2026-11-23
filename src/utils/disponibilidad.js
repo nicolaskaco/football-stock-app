@@ -93,6 +93,7 @@ export function tituloParte(jornada) {
 /**
  * Texto plano del parte, listo para pegar en WhatsApp o Telegram
  * (*negrita* funciona en WhatsApp; en Telegram se ve con asteriscos).
+ * De los disponibles va solo la cantidad: la lista completa es muy larga.
  */
 export function parteComoTexto(jornada, parte) {
   const lineas = [`*Parte de disponibilidad — ${tituloParte(jornada)}*`];
@@ -105,7 +106,6 @@ export function parteComoTexto(jornada, parte) {
     } else {
       lineas.push('• Todo el plantel disponible');
     }
-    if (disponibles.length) lineas.push(`Disponibles: ${disponibles.map(nombre).join(', ')}`);
   });
   return lineas.join('\n');
 }

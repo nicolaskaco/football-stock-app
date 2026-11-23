@@ -63,12 +63,12 @@ describe('buildParteDisponibilidad', () => {
     expect(solo4[0].noDisponibles[0].motivos[0].texto).toBe('Sin ficha médica');
   });
 
-  it('el texto lista categorías, motivos y disponibles', () => {
+  it('el texto lista categorías y motivos, y de los disponibles solo la cantidad', () => {
     const texto = parteComoTexto(j2, parte);
     expect(texto).toContain('*5ta* (15/03/2026) — 2 disponibles, 4 no disponibles');
     expect(texto).toContain('• Carlos Díaz: 🚫 Suspendido (Roja (última fecha))');
     expect(texto).toContain('🏥 Lesionado, vuelve 30/03/2026');
     expect(texto).not.toContain('Esguince');
-    expect(texto).toContain('Disponibles: Bruno Alvez, Gonzalo Hernández');
+    expect(texto).not.toContain('Bruno Alvez');
   });
 });

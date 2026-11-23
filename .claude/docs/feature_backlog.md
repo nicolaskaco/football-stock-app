@@ -62,7 +62,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 ### I. Automatización y calidad
 
 - [x] **I1. CI, tests y aviso de ficha vencida** — GitHub Actions (tests + build en cada PR; lint visible sin bloquear hasta limpiar `main`), Vitest para la lógica pura (suspensiones, stats, edad, fechas, COMET) y aviso 🩺 de ficha médica vencida en PartidoForm. Arregla `checkLowStock` (usaba `supabase.raw`). *(PR #367 · 2026-11-23)*
-- [x] **I2. Parte de disponibilidad pre-jornada** — Botón en el detalle de la jornada: por categoría, disponibles y no disponibles (suspendido, lesionado (tipo solo para admin), ficha vencida, excede edad), respetando las categorías del usuario. Copiar texto y PDF. El envío a Telegram llega con I4. También arregla la columna Lesión del PDF del dashboard, que leía `tipo_lesion` en lugar de `tipo`. *(PR #368 · 2026-11-23)*
+- [x] **I2. Parte de disponibilidad pre-jornada** — Botón en el detalle de la jornada: por categoría, disponibles y no disponibles (suspendido, lesionado (tipo solo para admin), ficha vencida, excede edad), respetando las categorías del usuario. De los disponibles va solo la cantidad. Copiar texto y PDF. El envío a Telegram llega con I4. También arregla la columna Lesión del PDF del dashboard, que leía `tipo_lesion` en lugar de `tipo`. *(PR #368 · 2026-11-23)*
 - [ ] **I3. Fichas SND automáticas** — Cron nocturno (`pg_cron` + Edge Function) que actualiza `ficha_medica_hasta` de fichas vencidas o por vencer.
 - [ ] **I4. Bot de Telegram** — Resumen semanal automático y envío del parte pre-jornada.
 - [ ] **I5. Limpiar errores de lint heredados** y volver bloqueante el lint en CI.

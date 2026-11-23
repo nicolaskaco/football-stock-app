@@ -14,7 +14,8 @@ const MOTIVO_ESTILO = {
 
 /**
  * Parte de disponibilidad de una jornada: por categoría, quiénes del plantel no pueden jugar
- * (suspendidos, lesionados, ficha vencida, excede edad) y quiénes sí. Copia como texto o PDF.
+ * (suspendidos, lesionados, ficha vencida, excede edad). De los disponibles muestra solo la cantidad.
+ * Copia como texto o PDF.
  */
 export const ParteDisponibilidadModal = ({ jornada, jornadas = [], players = [], injuries = [], appSettings = {}, currentUser = null, onBack = null }) => {
   const { showToast } = useToast();
@@ -110,11 +111,6 @@ export const ParteDisponibilidadModal = ({ jornada, jornadas = [], players = [],
               </ul>
             )}
 
-            {disponibles.length > 0 && (
-              <p className="text-sm text-gray-700 dark:text-gray-300">
-                <span className="font-semibold">Disponibles:</span> {disponibles.map(nombre).join(', ')}
-              </p>
-            )}
           </div>
         </div>
       ))}

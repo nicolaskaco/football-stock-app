@@ -300,7 +300,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
 
 /**
  * PDF del parte de disponibilidad de una jornada (ver utils/disponibilidad.js):
- * una sección por categoría con los no disponibles y su motivo, y la lista de disponibles.
+ * una sección por categoría con los no disponibles y su motivo (de los disponibles, solo la cantidad).
  * Los motivos van sin emojis porque la fuente del PDF no los dibuja.
  */
 export function exportParteDisponibilidadPDF(jornada, parte, titulo) {
@@ -340,19 +340,14 @@ export function exportParteDisponibilidadPDF(jornada, parte, titulo) {
         alternateRowStyles: { fillColor: LIGHT_GRAY },
         columnStyles: { 0: { cellWidth: 55 } },
       });
-      y = doc.lastAutoTable.finalY + 3;
+      y = doc.lastAutoTable.finalY + 8;
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...DARK_GRAY);
+      doc.text('Todo el plantel disponible.', 15, y + 3);
+      y += 10;
     }
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...DARK_GRAY);
-    const lineas = doc.splitTextToSize(`Disponibles: ${disponibles.map(nombre).join(', ') || '—'}`, pageWidth - 30);
-    if (y + 3 + lineas.length * 3.5 > doc.internal.pageSize.getHeight() - 15) {
-      doc.addPage();
-      y = 15;
-    }
-    doc.text(lineas, 15, y + 3);
-    y += 3 + lineas.length * 3.5 + 6;
   });
 
   drawFooters(doc);
