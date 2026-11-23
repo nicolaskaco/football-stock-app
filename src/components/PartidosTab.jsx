@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Eye, Trash2, Calendar, Pencil, List, ArrowUp, ArrowDown } from 'lucide-react';
 import { JornadaForm } from '../forms/JornadaForm';
 import { PartidoDetailView } from './PartidoDetailView';
+import { CometAutoImportButton } from './CometAutoImportButton';
 import { CalendarioView } from './CalendarioView';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
@@ -272,6 +273,17 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
               Calendario
             </button>
           </div>
+
+          {canEdit && (
+            <CometAutoImportButton
+              jornadas={jornadas}
+              players={players}
+              currentUser={currentUser}
+              setShowModal={setShowModal}
+              onDataChange={onDataChange}
+              onFormDirtyChange={onFormDirtyChange}
+            />
+          )}
 
           {canEdit && (
             <button
