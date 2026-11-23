@@ -763,6 +763,22 @@ Embedded section in `PlayerForm` showing all matches a player participated in.
 - **Data per match**: fecha, rival, resultado (color-coded), titular/suplente, goles and tarjetas in that match.
 - **Data source**: Joins `partido_players` → `partidos` → `jornadas` → `rivales` + `partido_eventos` for events.
 
+### Parte de disponibilidad (pre-jornada)
+
+"Parte de disponibilidad" button in the jornada detail (`PartidoDetailView`). Anyone who can open the jornada sees it, not only editors. It opens `ParteDisponibilidadModal`, built by `buildParteDisponibilidad` in `src/utils/disponibilidad.js`.
+- **Sections**: one per partido of the jornada, in `CATEGORIAS_PARTIDO` order, limited to `currentUser.categoria` when it is set.
+- **Plantel**: active players whose `categoria_juego` (or `categoria`) is the partido's category. Players who usually play in another category are not included.
+- **No disponible** when at least one of these applies (a player can have several):
+  - 🚫 suspended: `getSuspensionMap` with the partido's stored ajustes;
+  - 🏥 active injury, with its estimated return date;
+  - 🩺 ficha médica missing or expired on the partido's `fecha`: `isFichaVencida`;
+  - ⚠️ over-age: `isPlayerOverAge`.
+- **Disponibles**: the rest, listed by name.
+- **Actions**:
+  - "Copiar texto": `parteComoTexto`, ready to paste in WhatsApp or Telegram;
+  - "PDF": `exportParteDisponibilidadPDF` in `pdfExport.js`. It uses the same header as the dashboard PDF and the motivos go without emojis.
+  - "Volver a la jornada" reopens the detail.
+
 ### Dashboard PDF Export
 
 Generate a PDF report snapshot of the dashboard widgets for sharing in meetings without app access.

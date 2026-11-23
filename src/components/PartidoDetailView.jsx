@@ -1,10 +1,11 @@
 import React from 'react';
-import { Edit2, FileUp } from 'lucide-react';
+import { Edit2, FileUp, ClipboardList } from 'lucide-react';
 import { PartidoForm } from '../forms/PartidoForm';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { useToast } from '../context/ToastContext';
 import { CometBulkImportPanel } from './CometBulkImportPanel';
+import { ParteDisponibilidadModal } from './ParteDisponibilidadModal';
 import { guardarImportComet } from '../utils/cometGuardar';
 import { formatDate, fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
@@ -119,6 +120,23 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
     });
   };
 
+  const openParte = () => {
+    setShowModal({
+      title: `Parte de disponibilidad — ${jornada.rivales?.name || 'Jornada'}`,
+      content: (
+        <ParteDisponibilidadModal
+          jornada={jornada}
+          jornadas={jornadas}
+          players={players}
+          injuries={injuries}
+          appSettings={appSettings}
+          currentUser={currentUser}
+          onBack={reopenDetail ? () => reopenDetail(jornada) : null}
+        />
+      ),
+    });
+  };
+
   // Sort partidos in canonical category order
   const sortedPartidos = CATEGORIAS_PARTIDO.map((cat) =>
     (jornada.partidos || []).find((p) => p.categoria === cat)
@@ -184,11 +202,21 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
               Jornada {jornada.numero_jornada}
             </span>
           )}
+          {sortedPartidos.length > 0 && (
+            <button
+              type="button"
+              onClick={openParte}
+              className="ml-auto flex items-center gap-1 px-3 py-1 rounded-lg border border-yellow-400 text-yellow-400 text-sm font-semibold hover:bg-yellow-400 hover:text-black"
+            >
+              <ClipboardList className="w-4 h-4" />
+              Parte de disponibilidad
+            </button>
+          )}
           {canEdit && sortedPartidos.length > 0 && (
             <button
               type="button"
               onClick={openBulkImport}
-              className="ml-auto flex items-center gap-1 px-3 py-1 rounded-lg bg-yellow-400 text-black text-sm font-semibold hover:bg-yellow-300"
+              className="flex items-center gap-1 px-3 py-1 rounded-lg bg-yellow-400 text-black text-sm font-semibold hover:bg-yellow-300"
             >
               <FileUp className="w-4 h-4" />
               Importar COMETs
