@@ -51,6 +51,12 @@ describe('buildParteDisponibilidad', () => {
     expect(motivo('edad')).toEqual(['edad']);
   });
 
+  it('el tipo de lesión solo aparece con detalleLesion', () => {
+    const conDetalle = buildParteDisponibilidad({ jornada: j2, jornadas: [j1, j2], players, injuries, appSettings, detalleLesion: true });
+    const les = conDetalle.find((c) => c.categoria === '5ta').noDisponibles.find((n) => n.player.id === 'les');
+    expect(les.motivos[0].texto).toBe('Lesión: Esguince, vuelve 30/03/2026');
+  });
+
   it('respeta las categorías del usuario', () => {
     const solo4 = buildParteDisponibilidad({ jornada: j2, jornadas: [j1, j2], players, injuries, appSettings, categorias: ['4ta'] });
     expect(solo4.map((c) => c.categoria)).toEqual(['4ta']);
@@ -61,7 +67,8 @@ describe('buildParteDisponibilidad', () => {
     const texto = parteComoTexto(j2, parte);
     expect(texto).toContain('*5ta* (15/03/2026) — 2 disponibles, 4 no disponibles');
     expect(texto).toContain('• Carlos Díaz: 🚫 Suspendido (Roja (última fecha))');
-    expect(texto).toContain('🏥 Lesión: Esguince, vuelve 30/03/2026');
+    expect(texto).toContain('🏥 Lesionado, vuelve 30/03/2026');
+    expect(texto).not.toContain('Esguince');
     expect(texto).toContain('Disponibles: Bruno Alvez, Gonzalo Hernández');
   });
 });

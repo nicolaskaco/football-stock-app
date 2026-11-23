@@ -25,10 +25,11 @@ const porNombre = (a, b) => nombre(a).localeCompare(nombre(b), 'es');
  * @param {Array}  opts.injuries
  * @param {object} opts.appSettings  años mínimos por categoría
  * @param {Array}  opts.categorias   categorías visibles para el usuario ([] o null = todas)
+ * @param {boolean} opts.detalleLesion  true muestra el tipo de lesión (solo admin); si no, solo "Lesionado"
  * @returns {Array<{ categoria, fecha, disponibles, noDisponibles: Array<{ player, motivos }> }>}
  *          motivos: [{ tipo: 'suspendido'|'lesionado'|'ficha'|'edad', texto }]
  */
-export function buildParteDisponibilidad({ jornada, jornadas = [], players = [], injuries = [], appSettings = {}, categorias = null }) {
+export function buildParteDisponibilidad({ jornada, jornadas = [], players = [], injuries = [], appSettings = {}, categorias = null, detalleLesion = false }) {
   const lesionActiva = new Map();
   injuries.forEach((inj) => {
     if (!inj.fecha_alta && !lesionActiva.has(inj.player_id)) lesionActiva.set(inj.player_id, inj);
@@ -60,7 +61,8 @@ export function buildParteDisponibilidad({ jornada, jornadas = [], players = [],
         const lesion = lesionActiva.get(player.id);
         if (lesion) {
           const vuelve = lesion.fecha_retorno_estimada ? `, vuelve ${formatDate(lesion.fecha_retorno_estimada)}` : '';
-          motivos.push({ tipo: 'lesionado', texto: `Lesión: ${lesion.tipo || 'sin tipo'}${vuelve}` });
+          const texto = detalleLesion ? `Lesión: ${lesion.tipo || 'sin tipo'}` : 'Lesionado';
+          motivos.push({ tipo: 'lesionado', texto: `${texto}${vuelve}` });
         }
 
         if (isFichaVencida(player, fecha)) {

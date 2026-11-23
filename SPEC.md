@@ -770,7 +770,7 @@ Embedded section in `PlayerForm` showing all matches a player participated in.
 - **Plantel**: active players whose `categoria_juego` (or `categoria`) is the partido's category. Players who usually play in another category are not included.
 - **No disponible** when at least one of these applies (a player can have several):
   - 🚫 suspended: `getSuspensionMap` with the partido's stored ajustes;
-  - 🏥 active injury, with its estimated return date;
+  - 🏥 active injury, with its estimated return date. Only admins see the injury type; everyone else sees just "Lesionado";
   - 🩺 ficha médica missing or expired on the partido's `fecha`: `isFichaVencida`;
   - ⚠️ over-age: `isPlayerOverAge`.
 - **Disponibles**: the rest, listed by name.

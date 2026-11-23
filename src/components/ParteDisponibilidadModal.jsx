@@ -18,7 +18,7 @@ const MOTIVO_ESTILO = {
  */
 export const ParteDisponibilidadModal = ({ jornada, jornadas = [], players = [], injuries = [], appSettings = {}, currentUser = null, onBack = null }) => {
   const { showToast } = useToast();
-  const parte = buildParteDisponibilidad({ jornada, jornadas, players, injuries, appSettings, categorias: currentUser?.categoria });
+  const parte = buildParteDisponibilidad({ jornada, jornadas, players, injuries, appSettings, categorias: currentUser?.categoria, detalleLesion: currentUser?.role === 'admin' });
   const titulo = tituloParte(jornada);
 
   const copiar = async () => {
