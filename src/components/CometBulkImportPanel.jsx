@@ -1,29 +1,25 @@
 import { useState } from 'react';
 import { FileUp, AlertTriangle, Loader2, ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
-import { parseCometReport } from '../utils/cometReportParser';
-import { categoriaDeArchivo, categoriaDelTorneo, filasParaRevisar, aplicarComet } from '../utils/cometApply';
-import { initialFormData, initialTitulares, initialEventos, armarPartidoParaGuardar } from '../utils/partidoFormState';
-import { getSuspensionMap } from '../utils/suspensions';
-import { fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
+import { filasParaRevisar } from '../utils/cometApply';
+import { leerInforme, evaluarInformes, armarGuardado } from '../utils/cometLote';
 import { CometMatchTable } from './CometMatchTable';
-
-const fmtFecha = (iso) => (iso ? iso.split('-').reverse().join('/') : '');
 
 /**
  * Importación de todos los informes COMET de una jornada de una vez. Cada PDF va al partido
  * de su categoría (la del nombre del archivo; si no tiene, la del torneo del informe).
  * Se revisan los jugadores de cada uno y se guardan juntos los partidos marcados.
  *
+ * initialItems: informes ya leídos (leerInforme), p. ej. los que la carga automática dejó para revisar.
+ * resumen: bloque que se muestra arriba (resultado de la carga automática).
+ *
  * onSave (async) recibe [{ partido, archivo, data, titularesData, suplentesData, eventosData, cometIds }]
  */
-export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onSave, onCancel }) => {
+export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onSave, onCancel, initialItems = [], resumen = null }) => {
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   // { key, archivo, parsed, error, categoria, rows, incluir (null = automático), abierto }
-  const [items, setItems] = useState([]);
-
-  const partidoDe = (categoria) => (jornada.partidos || []).find((p) => p.categoria === categoria) || null;
+  const [items, setItems] = useState(initialItems);
 
   const handleFiles = async (e) => {
     const files = [...(e.target.files || [])];
@@ -31,21 +27,7 @@ export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onS
     if (files.length === 0) return;
     setLoading(true);
     const nuevos = [];
-    for (const file of files) {
-      const key = `${file.name}-${file.size}-${file.lastModified}`;
-      try {
-        const parsed = await parseCometReport(file);
-        const categoria = categoriaDeArchivo(file.name) || categoriaDelTorneo(parsed.torneo) || '';
-        nuevos.push({
-          key, archivo: file.name, parsed, error: null, categoria,
-          rows: categoria ? filasParaRevisar(parsed, players, categoria) : [],
-          incluir: null, abierto: false,
-        });
-      } catch (err) {
-        console.error('Error leyendo informe COMET:', err);
-        nuevos.push({ key, archivo: file.name, parsed: null, error: err.message || 'No se pudo leer el PDF.', categoria: '', rows: [], incluir: false, abierto: false });
-      }
-    }
+    for (const file of files) nuevos.push(await leerInforme(file, players));
     // Volver a elegir un archivo ya cargado lo reemplaza
     setItems((prev) => [...prev.filter((it) => !nuevos.some((n) => n.key === it.key)), ...nuevos]);
     setLoading(false);
@@ -62,74 +44,13 @@ export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onS
   });
   const quitar = (key) => setItems((prev) => prev.filter((it) => it.key !== key));
 
-  // Estado base del partido + informe aplicado (misma lógica que el import individual)
-  const preparar = (it, partido) => {
-    const base = {
-      formData: initialFormData(partido, fechaPartidoDefault(jornada.fecha, it.categoria)),
-      titulares: initialTitulares(partido),
-      eventos: initialEventos(partido),
-    };
-    const suspendedMap = getSuspensionMap(jornadas, jornada.id, it.categoria, { ajustes: partido.partido_suspension_ajustes || [] });
-    return aplicarComet({ ...it.parsed, rows: it.rows }, { partido, categoria: it.categoria, ...base, jornadas, players, suspendedMap });
-  };
-
-  const conteoCategoria = items.reduce((acc, it) => (it.categoria ? { ...acc, [it.categoria]: (acc[it.categoria] || 0) + 1 } : acc), {});
-
-  const evaluados = items.map((it) => {
-    const partido = it.categoria ? partidoDe(it.categoria) : null;
-    const bloqueos = [];
-    const avisos = [];
-    if (it.error) bloqueos.push(it.error);
-    else if (!it.categoria) bloqueos.push('No encontré la categoría en el nombre del archivo ni en el informe: elegila.');
-    else if (!partido) bloqueos.push(`Esta jornada no tiene partido de ${it.categoria}.`);
-    if (it.categoria && conteoCategoria[it.categoria] > 1) bloqueos.push(`Hay más de un informe para ${it.categoria}: quitá el que sobra.`);
-    const sinAsignar = it.rows.filter((r) => !r.player_id).length;
-    if (sinAsignar > 0) bloqueos.push(`${sinAsignar} jugador${sinAsignar === 1 ? '' : 'es'} sin asignar: elegilos en la tabla o importalo desde "Editar" en ese partido.`);
-    const dudosos = it.rows.filter((r) => r.player_id && r.status === 'dudoso').length;
-
-    if (it.parsed) {
-      const catArchivo = categoriaDeArchivo(it.archivo);
-      const catTorneo = categoriaDelTorneo(it.parsed.torneo);
-      if (catArchivo && catTorneo && catArchivo !== catTorneo) {
-        avisos.push(`El archivo dice ${catArchivo} pero el informe es de ${catTorneo} (${it.parsed.torneo}).`);
-      }
-      avisos.push(...it.parsed.warnings);
-    }
-    if (partido) {
-      const fecha = fechaPartido(partido, jornada);
-      if (it.parsed?.fecha && fecha && it.parsed.fecha !== fecha) {
-        avisos.push(`La fecha del informe (${fmtFecha(it.parsed.fecha)}) no coincide con la del partido (${fmtFecha(fecha)}).`);
-      }
-      if ((partido.partido_players || []).length > 0) avisos.push('Este partido ya tiene planilla cargada: se va a reemplazar.');
-    }
-    if (dudosos > 0) avisos.push(`${dudosos} match${dudosos === 1 ? '' : 'es'} para revisar.`);
-
-    const puede = bloqueos.length === 0;
-    let preview = null;
-    if (puede) {
-      preview = preparar(it, partido);
-      avisos.push(...preview.avisos);
-    }
-    const incluido = puede && (it.incluir ?? dudosos === 0);
-    return { it, partido, bloqueos, avisos, puede, incluido, preview, dudosos };
-  });
+  const evaluados = evaluarInformes(items, { jornada, jornadas, players });
 
   const aGuardar = evaluados.filter((e) => e.incluido);
 
   const handleSave = async () => {
     setIsSaving(true);
-    await onSave(aGuardar.map(({ it, partido, preview }) => ({
-      partido,
-      archivo: it.archivo,
-      ...armarPartidoParaGuardar({
-        formData: preview.formData,
-        titulares: preview.titulares,
-        suplentes: preview.suplentes,
-        eventos: preview.eventos,
-        players,
-        categoria: it.categoria,
-      }),
-    })));
+    await onSave(aGuardar.map((e) => armarGuardado(e, players)));
     setIsSaving(false);
   };
 
@@ -137,6 +58,7 @@ export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onS
 
   return (
     <div className="space-y-4">
+      {resumen}
       <p className="text-sm text-gray-600 dark:text-gray-300">
         Elegí los PDF del informe COMET de esta jornada (podés elegir varios a la vez). Cada uno va al partido de la categoría que dice el nombre del archivo.
       </p>

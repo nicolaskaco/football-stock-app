@@ -29,6 +29,20 @@ export function categoriaDeArchivo(nombre) {
   return encontradas.size === 1 ? [...encontradas][0] : null;
 }
 
+const PALABRAS_GENERICAS = new Set(['club', 'atletico', 'football', 'futbol', 'fc', 'de', 'del', 'cs', 'sc', 'ca', 'cd', 'social', 'deportivo', 'sporting', 'y']);
+const palabrasClave = (nombre) => sinTildes(nombre).toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1 && !PALABRAS_GENERICAS.has(w));
+
+/**
+ * ¿El equipo del informe COMET ("CLUB NACIONAL DE FOOTBALL") es el rival de la app ("Nacional")?
+ * Todas las palabras significativas del nombre en la app tienen que estar en el del informe.
+ */
+export function rivalCoincide(nombreComet, nombreRival) {
+  const rival = palabrasClave(nombreRival);
+  if (rival.length === 0) return false;
+  const comet = new Set(palabrasClave(nombreComet));
+  return rival.every((w) => comet.has(w));
+}
+
 /**
  * Renglones a revisar de un informe ya leído: titulares y suplentes cruzados con `players`.
  * Por defecto se guarda el COMET ID de todo jugador que no matcheó por ID.
@@ -47,7 +61,7 @@ export function filasParaRevisar(parsed, players, categoria) {
  * informe trae el detalle (si no, se conservan los cargados).
  *
  * @param imp  resultado de parseCometReport + rows (matches ya revisados)
- * @returns {{ formData, titulares, suplentes, eventos, avisos, importedPlayers }}
+ * @returns {{ formData, titulares, suplentes, eventos, avisos, importedPlayers, suspendidosQueJugaron, suplentesDeMas }}
  */
 export function aplicarComet(imp, { partido, categoria, formData, titulares: titularesPrev, eventos: eventosPrev, jornadas = [], players = [], suspendedMap = new Map() }) {
   const byDorsal = new Map(imp.rows.map((r) => [r.dorsal, r]));
@@ -137,12 +151,13 @@ export function aplicarComet(imp, { partido, categoria, formData, titulares: tit
     avisos.push(`Posiciones: ${posResumen.join(', ')}. Revisá el lado de zagueros, laterales y extremos.`);
   }
   if (suplentesImp.length > MAX_SUPLENTES) avisos.push(`El informe trae ${suplentesImp.length} suplentes; solo entran ${MAX_SUPLENTES}.`);
-  importedPlayers.filter((p) => suspendedMap.has(p.id)).forEach((p) => {
+  const suspendidosQueJugaron = importedPlayers.filter((p) => suspendedMap.has(p.id));
+  suspendidosQueJugaron.forEach((p) => {
     avisos.push(`${p.name_visual || p.name} figura como suspendido (${suspendedMap.get(p.id).reason}) pero jugó según el informe.`);
   });
   if (imp.goles.length === 0 && Number(imp.escenario === 'Local' ? imp.golesLocal : imp.golesVisitante) > 0) {
     avisos.push('El informe no trae el detalle de los goles de Peñarol: cargalos a mano.');
   }
 
-  return { formData: newFormData, titulares: sortTitulares(titulares), suplentes, eventos, avisos, importedPlayers };
+  return { formData: newFormData, titulares: sortTitulares(titulares), suplentes, eventos, avisos, importedPlayers, suspendidosQueJugaron, suplentesDeMas: Math.max(0, suplentesImp.length - MAX_SUPLENTES) };
 }

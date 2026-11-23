@@ -5,6 +5,7 @@ import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { useToast } from '../context/ToastContext';
 import { CometBulkImportPanel } from './CometBulkImportPanel';
+import { guardarImportComet } from '../utils/cometGuardar';
 import { formatDate, fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { RivalBadge } from './ui/RivalBadge';
@@ -82,32 +83,14 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
     });
   };
 
-  // Importación masiva: guarda en orden cada partido armado por CometBulkImportPanel
+  // Importación masiva: guarda los partidos armados por CometBulkImportPanel
   const handleBulkImport = (lista) => executeBulk(async () => {
-    const guardados = [];
-    const idsGuardados = new Set();
+    let guardados = [];
     try {
-      for (const { partido, archivo, data, titularesData, suplentesData, eventosData, cometIds } of lista) {
-        try {
-          await database.updatePartido(partido.id, data, titularesData, suplentesData, eventosData, null);
-        } catch (err) {
-          throw new Error(`${partido.categoria}: ${err.message}`, { cause: err });
-        }
-        guardados.push(partido.categoria);
-        // IDs de este partido sin los ya guardados por un informe anterior (un ID por jugador)
-        const nuevos = cometIds.filter((c) => !idsGuardados.has(c.player_id));
-        if (nuevos.length > 0) {
-          await database.setPlayersCometIds(nuevos);
-          nuevos.forEach((c) => idsGuardados.add(c.player_id));
-        }
-        database.logActivity('import_planilla_comet', currentUser?.email, 'partido', partido.id, {
-          categoria: partido.categoria,
-          rival: jornada.rivales?.name || null,
-          comet_ids_nuevos: nuevos.length,
-          masivo: true,
-          archivo,
-        });
-      }
+      guardados = await guardarImportComet(lista, { jornada, currentUser });
+    } catch (err) {
+      guardados = err.guardados || [];
+      throw err;
     } finally {
       if (guardados.length > 0) {
         await onDataChange('jornadas', 'players');
