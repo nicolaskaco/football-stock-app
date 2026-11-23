@@ -22,6 +22,13 @@ describe('isFichaVencida', () => {
     expect(isFichaVencida({ ficha_medica_hasta: '2026-06-14' })).toBe(true);
     expect(isFichaVencida({ ficha_medica_hasta: '2026-06-15' }, '')).toBe(false);
   });
+
+  it('usa el día local, no el UTC', () => {
+    vi.useFakeTimers();
+    const local2230 = new Date(2026, 5, 15, 22, 30); // 15/06 22:30 hora local
+    vi.setSystemTime(local2230);
+    expect(isFichaVencida({ ficha_medica_hasta: '2026-06-15' })).toBe(false);
+  });
 });
 
 describe('fechaPartidoDefault / fechaPartido', () => {

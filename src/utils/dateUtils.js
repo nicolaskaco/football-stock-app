@@ -136,5 +136,11 @@ export function calculateAge(isoDate) {
 export function isFichaVencida(player, fecha) {
   const hasta = player?.ficha_medica_hasta?.split('T')[0];
   if (!hasta) return true;
-  return hasta < (fecha?.split('T')[0] || todayISO());
+  return hasta < (fecha?.split('T')[0] || localTodayISO());
+}
+
+// Hoy en hora local (todayISO usa UTC y desde las 21:00 de Uruguay ya da el día siguiente)
+function localTodayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
