@@ -20,11 +20,15 @@ export function partir(texto: string, limite = LIMITE): string[] {
       continue;
     }
     if (actual) partes.push(actual);
-    // Un renglón solo más largo que el límite se corta a la fuerza
+    // Un renglón solo más largo que el límite se corta en las comas (las listas de nombres),
+    // así no se parte un <b>…</b> ni una entidad &amp; a la mitad.
     let resto = linea;
     while (resto.length > limite) {
-      partes.push(resto.slice(0, limite));
-      resto = resto.slice(limite);
+      let corte = resto.lastIndexOf(", ", limite);
+      if (corte <= 0) corte = resto.lastIndexOf(" ", limite);
+      if (corte <= 0) corte = limite;
+      partes.push(resto.slice(0, corte + (resto[corte] === "," ? 1 : 0)));
+      resto = resto.slice(corte).replace(/^,?\s*/, "");
     }
     actual = resto;
   }
@@ -32,7 +36,10 @@ export function partir(texto: string, limite = LIMITE): string[] {
   return partes;
 }
 
-/** Manda `html` (parse_mode HTML) al grupo configurado, en varias partes si hace falta. */
+/**
+ * Manda `html` (parse_mode HTML) al grupo configurado, en varias partes si hace falta.
+ * No es atómico: si falla una parte, las anteriores ya salieron.
+ */
 export async function sendTelegram(html: string): Promise<void> {
   const token = Deno.env.get("TELEGRAM_BOT_TOKEN");
   const chatId = Deno.env.get("TELEGRAM_CHAT_ID");

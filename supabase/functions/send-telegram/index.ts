@@ -3,6 +3,7 @@
 // presidente_categoria. Se despliega con la verificación de JWT por defecto.
 //
 // Body: { html: string }: texto con parse_mode HTML de Telegram (<b>, <i>, escapado).
+// El contenido es responsabilidad de quien llama: la función solo controla el rol.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -54,12 +55,16 @@ serve(async (req) => {
     return json({ error: String(err instanceof Error ? err.message : err) }, 502);
   }
 
-  await admin.from("activity_log").insert([{
+  const resumen = html.replace(/<[^>]+>/g, "").split("\n")[0]
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&")
+    .slice(0, 120);
+  const { error: logErr } = await admin.from("activity_log").insert([{
     action_type: "telegram_envio",
     performed_by: user.email,
     target_type: "telegram",
-    details: { caracteres: html.length, resumen: html.replace(/<[^>]+>/g, "").split("\n")[0].slice(0, 120) },
+    details: { caracteres: html.length, resumen },
   }]);
+  if (logErr) console.error("activity_log:", logErr.message);
 
   return json({ ok: true });
 });

@@ -117,11 +117,14 @@ serve(async (req) => {
     const suma = (k: string) => corridas.reduce((s, c) => s + (Number((c.details as Record<string, unknown>)?.[k]) || 0), 0);
     secciones.push(`🔄 <b>Chequeo SND automático</b> (última semana): ${suma("procesados")} consultas, ${suma("actualizadas")} fichas actualizadas, ${suma("no_encontrados")} no encontrados en SND, ${suma("errores")} con error`);
   } else {
-    secciones.push("🔄 <b>Chequeo SND automático</b>: no corrió en la última semana ⚠️");
+    // refresh-fichas-medicas solo loguea las corridas que consultaron a alguien
+    secciones.push("🔄 <b>Chequeo SND automático</b>: sin consultas en la última semana (nadie pendiente, o el cron no corrió)");
   }
 
   // ── Lesiones con retorno vencido ────────────────────────────────
+  const vistos = new Set<string>();
   const lesiones = (injuriesRes.data || [])
+    .filter((i) => !vistos.has(i.player_id) && vistos.add(i.player_id))
     .map((i) => ({ ...i, player: playersById.get(i.player_id) }))
     .filter((i) => i.player);
   if (lesiones.length) {
@@ -158,7 +161,7 @@ serve(async (req) => {
     return json({ error: String(err instanceof Error ? err.message : err) }, 502);
   }
 
-  await db.from("activity_log").insert([{
+  const { error: logErr } = await db.from("activity_log").insert([{
     action_type: "telegram_resumen",
     performed_by: AUTOR,
     target_type: "telegram",
@@ -169,6 +172,7 @@ serve(async (req) => {
       stock_bajo: stockBajo.length,
     },
   }]);
+  if (logErr) console.error("activity_log:", logErr.message);
 
   return json({ ok: true, caracteres: html.length });
 });

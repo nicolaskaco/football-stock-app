@@ -798,7 +798,8 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
 
 **`send-telegram` Edge Function** (JWT verified):
 - Checks the caller's role in `user_permissions`. Only `admin`, `ejecutivo`, `presidente` and `presidente_categoria` can send; any other role gets 403.
-- Sends `{ html }` to the group (20 000 characters max).
+- Sends `{ html }` to the group (20 000 characters max). The function only checks the role: what the message says is up to the caller. That is why the parte strips the injury type in the client.
+- Long messages go out in several parts. Sending is not atomic: if one part fails, the earlier ones were already sent.
 - Logs `telegram_envio` in `activity_log`, with the first line of the message.
 - Called through `database.sendTelegram(html)`. `textoATelegramHTML` (in `textUtils.js`) converts the WhatsApp-style `*bold*` text to Telegram HTML.
 
