@@ -8,6 +8,43 @@ const BRAND_YELLOW = [212, 160, 23]; // #D4A017
 const DARK_GRAY = [31, 41, 55];      // #1F2937
 const LIGHT_GRAY = [243, 244, 246];  // #F3F4F6
 
+/**
+ * Encabezado institucional (banda gris + línea amarilla) con título y fecha de generación.
+ * Devuelve la coordenada y donde empieza el contenido.
+ */
+function drawHeader(doc, subtitulo) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  doc.setFillColor(...DARK_GRAY);
+  doc.rect(0, 0, pageWidth, 28, 'F');
+  doc.setFillColor(...BRAND_YELLOW);
+  doc.rect(0, 28, pageWidth, 3, 'F');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text('Club Atlético Peñarol', pageWidth / 2, 12, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text(subtitulo, pageWidth / 2, 21, { align: 'center' });
+
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 150);
+  const dateStr = new Date().toLocaleDateString('es-UY', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  doc.text(`Generado: ${dateStr}`, pageWidth - 15, 37, { align: 'right' });
+  return 42;
+}
+
+/** Numera todas las páginas ("Página i de n") al pie. */
+function drawFooters(doc) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text(`Página ${i} de ${totalPages}`, pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+  }
+}
+
 const formatDatePDF = (iso) => {
   if (!iso) return '—';
   const [y, m, d] = iso.split('-');
@@ -27,27 +64,8 @@ const formatDatePDF = (iso) => {
 export async function exportDashboardPDF({ players, injuries, distributions, inventory, currentUser }) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageWidth = doc.internal.pageSize.getWidth();
-  let y = 15;
-
-  // ─── Header ───────────────────────────────────────────
-  doc.setFillColor(...DARK_GRAY);
-  doc.rect(0, 0, pageWidth, 28, 'F');
-  doc.setFillColor(...BRAND_YELLOW);
-  doc.rect(0, 28, pageWidth, 3, 'F');
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text('Club Atlético Peñarol', pageWidth / 2, 12, { align: 'center' });
-  doc.setFontSize(12);
-  doc.text('Reporte Dashboard — Divisiones Formativas', pageWidth / 2, 21, { align: 'center' });
-
-  doc.setFontSize(9);
-  doc.setTextColor(150, 150, 150);
   const now = new Date();
-  const dateStr = now.toLocaleDateString('es-UY', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  doc.text(`Generado: ${dateStr}`, pageWidth - 15, 37, { align: 'right' });
-  y = 42;
+  let y = drawHeader(doc, 'Reporte Dashboard — Divisiones Formativas');
 
   // Helper: add section title
   const addSectionTitle = (title) => {
@@ -90,7 +108,7 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
       body: injuryRows.map(r => [
         r.player.name_visual || r.player.name,
         r.player.categoria,
-        r.tipo_lesion || '—',
+        r.tipo || '—',
         r.severidad || '—',
         formatDatePDF(r.fecha_inicio),
       ]),
@@ -269,19 +287,8 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
     y = doc.lastAutoTable.finalY + 8;
   }
 
-  // ─── Footer on last page ──────────────────────────────
-  const totalPages = doc.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150, 150, 150);
-    doc.text(
-      `Página ${i} de ${totalPages}`,
-      pageWidth / 2,
-      doc.internal.pageSize.getHeight() - 8,
-      { align: 'center' }
-    );
-  }
+  // ─── Footer on every page ─────────────────────────────
+  drawFooters(doc);
 
   // ─── Save ─────────────────────────────────────────────
   const dd = String(now.getDate()).padStart(2, '0');
@@ -289,4 +296,61 @@ export async function exportDashboardPDF({ players, injuries, distributions, inv
   const yyyy = now.getFullYear();
   const fileName = `Reporte-Dashboard-${dd}-${mm}-${yyyy}.pdf`;
   doc.save(fileName);
+}
+
+/**
+ * PDF del parte de disponibilidad de una jornada (ver utils/disponibilidad.js):
+ * una sección por categoría con los no disponibles y su motivo (de los disponibles, solo la cantidad).
+ * Los motivos van sin emojis porque la fuente del PDF no los dibuja.
+ */
+export function exportParteDisponibilidadPDF(jornada, parte, titulo) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let y = drawHeader(doc, 'Parte de disponibilidad');
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...DARK_GRAY);
+  doc.text(titulo, 15, y);
+  y += 6;
+
+  const nombre = (p) => p.name_visual || p.name;
+
+  parte.forEach(({ categoria, fecha, disponibles, noDisponibles }) => {
+    if (y > doc.internal.pageSize.getHeight() - 40) {
+      doc.addPage();
+      y = 15;
+    }
+    doc.setFillColor(...BRAND_YELLOW);
+    doc.rect(15, y, pageWidth - 30, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(...DARK_GRAY);
+    doc.text(`${categoria} — ${formatDatePDF(fecha)} — ${disponibles.length} disponibles, ${noDisponibles.length} no disponibles`, 18, y + 5.5);
+    y += 10;
+
+    if (noDisponibles.length > 0) {
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 15, right: 15 },
+        head: [['No disponible', 'Motivo']],
+        body: noDisponibles.map(({ player, motivos }) => [nombre(player), motivos.map((m) => m.texto).join(' / ')]),
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: DARK_GRAY, textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: LIGHT_GRAY },
+        columnStyles: { 0: { cellWidth: 55 } },
+      });
+      y = doc.lastAutoTable.finalY + 8;
+    } else {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(...DARK_GRAY);
+      doc.text('Todo el plantel disponible.', 15, y + 3);
+      y += 10;
+    }
+  });
+
+  drawFooters(doc);
+  const nombreArchivo = `Parte-${(jornada?.rivales?.name || 'jornada').replace(/[^\w-]+/g, '_')}-${jornada?.fecha || ''}.pdf`;
+  doc.save(nombreArchivo);
 }
