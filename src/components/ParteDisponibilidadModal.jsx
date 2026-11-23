@@ -1,9 +1,16 @@
-import React from 'react';
-import { ArrowLeft, Copy, FileDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Copy, FileDown, Send } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
+import { useMutation } from '../hooks/useMutation';
+import { database } from '../utils/database';
+import { textoATelegramHTML } from '../utils/textUtils';
+import { ConfirmModal } from './ConfirmModal';
 import { buildParteDisponibilidad, parteComoTexto, tituloParte } from '../utils/disponibilidad';
 import { exportParteDisponibilidadPDF } from '../utils/pdfExport';
 import { formatDate } from '../utils/dateUtils';
+
+// Mismos roles que acepta la Edge Function send-telegram
+const ROLES_TELEGRAM = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria'];
 
 const MOTIVO_ESTILO = {
   suspendido: { emoji: '🚫', className: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' },
@@ -19,8 +26,19 @@ const MOTIVO_ESTILO = {
  */
 export const ParteDisponibilidadModal = ({ jornada, jornadas = [], players = [], injuries = [], appSettings = {}, currentUser = null, onBack = null }) => {
   const { showToast } = useToast();
-  const parte = buildParteDisponibilidad({ jornada, jornadas, players, injuries, appSettings, categorias: currentUser?.categoria, detalleLesion: currentUser?.role === 'admin' });
+  const { execute, isSaving } = useMutation((msg) => showToast(msg, 'error'));
+  const [confirmarTelegram, setConfirmarTelegram] = useState(false);
+  const opciones = { jornada, jornadas, players, injuries, appSettings, categorias: currentUser?.categoria };
+  const parte = buildParteDisponibilidad({ ...opciones, detalleLesion: currentUser?.role === 'admin' });
   const titulo = tituloParte(jornada);
+  const puedeTelegram = ROLES_TELEGRAM.includes(currentUser?.role);
+
+  // Al grupo nunca va el tipo de lesión, aunque lo mande un admin
+  const enviarTelegram = () => execute(async () => {
+    setConfirmarTelegram(false);
+    const parteGrupo = buildParteDisponibilidad({ ...opciones, detalleLesion: false });
+    await database.sendTelegram(textoATelegramHTML(parteComoTexto(jornada, parteGrupo)));
+  }, 'No se pudo enviar a Telegram', 'Parte enviado al grupo de Telegram');
 
   const copiar = async () => {
     try {
@@ -65,12 +83,33 @@ export const ParteDisponibilidadModal = ({ jornada, jornadas = [], players = [],
             <FileDown className="w-4 h-4" />
             PDF
           </button>
+          {puedeTelegram && (
+            <button
+              type="button"
+              onClick={() => setConfirmarTelegram(true)}
+              disabled={parte.length === 0 || isSaving}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-sky-600 text-white text-sm font-semibold hover:bg-sky-700 disabled:opacity-50"
+            >
+              <Send className="w-4 h-4" />
+              {isSaving ? 'Enviando…' : 'Enviar a Telegram'}
+            </button>
+          )}
         </div>
       </div>
 
       <p className="text-sm text-gray-600 dark:text-gray-300">
         {titulo}. Plantel = jugadores activos de la categoría de juego del partido. Las suspensiones incluyen los ajustes manuales guardados.
       </p>
+
+      <ConfirmModal
+        isOpen={confirmarTelegram}
+        onClose={() => setConfirmarTelegram(false)}
+        onConfirm={enviarTelegram}
+        title="Enviar a Telegram"
+        message="Se va a mandar este parte al grupo de Telegram del club. Las lesiones van sin el tipo, solo como &quot;Lesionado&quot;. ¿Lo mandás?"
+        confirmText="Enviar"
+        type="primary"
+      />
 
       {parte.length === 0 && (
         <p className="text-sm text-gray-500 dark:text-gray-400 italic">Esta jornada no tiene partidos de tus categorías.</p>

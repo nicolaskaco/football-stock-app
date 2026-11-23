@@ -79,6 +79,20 @@ function normaliseActivityLog(rows) {
         ].filter(Boolean).join(' · ');
         break;
       }
+      case 'telegram_envio':
+        label = 'Mensaje enviado a Telegram';
+        detail = r.details?.resumen || '';
+        break;
+      case 'telegram_resumen': {
+        label = 'Resumen semanal enviado a Telegram';
+        const d = r.details || {};
+        detail = [
+          d.lesiones_vencidas ? `${d.lesiones_vencidas} lesión${d.lesiones_vencidas !== 1 ? 'es' : ''} con retorno vencido` : null,
+          d.solicitudes_viejas ? `${d.solicitudes_viejas} solicitud${d.solicitudes_viejas !== 1 ? 'es' : ''} vieja${d.solicitudes_viejas !== 1 ? 's' : ''}` : null,
+          d.stock_bajo ? `${d.stock_bajo} artículo${d.stock_bajo !== 1 ? 's' : ''} con stock bajo` : null,
+        ].filter(Boolean).join(' · ');
+        break;
+      }
       default:
         label = r.action_type;
     }
@@ -145,6 +159,8 @@ const BADGE = {
   import_planilla_comet: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
   ajuste_suspension: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
   ficha_medica_auto: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+  telegram_envio: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  telegram_resumen: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
 };
 
 const TYPE_LABELS = {
@@ -159,6 +175,8 @@ const TYPE_LABELS = {
   import_planilla_comet: 'Planilla COMET',
   ajuste_suspension: 'Ajuste de suspensión',
   ficha_medica_auto: 'Fichas SND automáticas',
+  telegram_envio: 'Telegram',
+  telegram_resumen: 'Resumen Telegram',
 };
 
 const ALL_TYPES = Object.keys(TYPE_LABELS);
@@ -168,7 +186,7 @@ const ALL_TYPES = Object.keys(TYPE_LABELS);
 // Events come from 3 tables, each paged on its own and merged by timestamp.
 const PAGE_SIZE = 50;
 
-const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet', 'ajuste_suspension', 'ficha_medica_auto'];
+const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet', 'ajuste_suspension', 'ficha_medica_auto', 'telegram_envio', 'telegram_resumen'];
 const REQUEST_TYPES = ['approved', 'rejected'];
 
 // Returns the subset of `all` that is selected, null when none is (skip the

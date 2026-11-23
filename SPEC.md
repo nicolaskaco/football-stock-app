@@ -789,7 +789,32 @@ Embedded section in `PlayerForm` showing all matches a player participated in.
 - **Actions**:
   - "Copiar texto": `parteComoTexto`, ready to paste in WhatsApp or Telegram;
   - "PDF": `exportParteDisponibilidadPDF` in `pdfExport.js`. It uses the same header as the dashboard PDF and the motivos go without emojis.
+  - "Enviar a Telegram": only for `admin`, `ejecutivo`, `presidente` and `presidente_categoria`. It asks for confirmation and then sends the parte to the club group through `database.sendTelegram`. The parte sent to the group is always built with `detalleLesion: false`, even when an admin sends it, so it never carries the injury type.
   - "Volver a la jornada" reopens the detail.
+
+### Telegram
+
+Bot that posts to the club's Telegram group. Shared code is in `supabase/functions/_shared/telegram.ts`: it sends HTML with `parse_mode`, escapes text and splits messages longer than 4000 characters by line. The bot token and the group id are function secrets (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`) and never reach the repo or the frontend.
+
+**`send-telegram` Edge Function** (JWT verified):
+- Checks the caller's role in `user_permissions`. Only `admin`, `ejecutivo`, `presidente` and `presidente_categoria` can send; any other role gets 403.
+- Sends `{ html }` to the group (20 000 characters max).
+- Logs `telegram_envio` in `activity_log`, with the first line of the message.
+- Called through `database.sendTelegram(html)`. `textoATelegramHTML` (in `textUtils.js`) converts the WhatsApp-style `*bold*` text to Telegram HTML.
+
+**`weekly-digest` Edge Function** (Monday weekly summary):
+- **Trigger**: called by `pg_cron` on Mondays at 08:00 Uruguay time (migration `20261125_cron_weekly_digest.sql`), with the same `x-cron-secret` and Vault secrets as the SND check.
+- **Toggle**: it only sends when `app_settings.telegram_digest_enabled = 'true'`. The setting starts off, and admins switch it in Configuración → "Resumen semanal por Telegram".
+- **Content**:
+  - ficha médica expired or expiring in 30 days, per category (3era–7ma), with names and dates; players without a ficha are only counted;
+  - weekly totals of the automatic SND check;
+  - active injuries whose estimated return already passed, without the injury type;
+  - change requests pending for 7 days or more;
+  - inventory items with `quantity <= min_stock`.
+  
+  Suspensions are left out: they are computed in the frontend and go in the parte pre-jornada.
+- **Activity log**: logs `telegram_resumen`.
+- **Preview**: `?preview=1` returns the HTML without sending or logging.
 
 ### Dashboard PDF Export
 
@@ -850,7 +875,7 @@ Admin-only **Actividad** tab (`ActivityLogTab`) showing a single timeline built 
 
 | Source | Event types |
 |--------|-------------|
-| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import; the bulk import adds `masivo: true` and `archivo`, and the automatic load also adds `automatico: true`), `ficha_medica_auto` (`refresh-fichas-medicas` Edge Function, nightly SND check: counts plus the detail per player) |
+| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import; the bulk import adds `masivo: true` and `archivo`, and the automatic load also adds `automatico: true`), `ficha_medica_auto` (`refresh-fichas-medicas` Edge Function, nightly SND check: counts plus the detail per player), `telegram_envio` (`send-telegram`), `telegram_resumen` (`weekly-digest`) |
 | `player_history` | `field_change` — audited player field changes (see §4 Audit-Tracked Player Fields) |
 | `player_change_requests` (status ≠ `pending`) | `approved` / `rejected` solicitudes, with the new viático/complemento/contrato values |
 

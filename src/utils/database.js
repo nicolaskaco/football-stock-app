@@ -325,6 +325,19 @@ export const database = {
     return data;
   },
 
+  // Manda un mensaje (parse_mode HTML de Telegram) al grupo del club vía la Edge Function
+  // send-telegram. Solo admin, ejecutivo, presidente y presidente_categoria.
+  async sendTelegram(html) {
+    const { data, error } = await supabase.functions.invoke('send-telegram', { body: { html } });
+    if (error) {
+      // En respuestas 4xx/5xx el mensaje útil viene en el body de la función
+      const detalle = await error.context?.json?.().catch(() => null);
+      throw new Error(detalle?.error || error.message);
+    }
+    if (data?.error) throw new Error(data.error);
+    return data;
+  },
+
   async saveFichaMedicaHasta(playerId, hastaStr, currentUserEmail) {
     // hastaStr is DD/MM/YYYY — convert to YYYY-MM-DD for PostgreSQL
     const [d, m, y] = hastaStr.split('/');
