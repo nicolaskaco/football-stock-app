@@ -127,3 +127,14 @@ export function calculateAge(isoDate) {
   }
   return age;
 }
+
+/**
+ * ¿La ficha médica SND del jugador está vencida para la fecha dada ('YYYY-MM-DD')?
+ * Sin `ficha_medica_hasta` cuenta como vencida. Sin fecha se compara con hoy.
+ * La ficha vale hasta su último día inclusive.
+ */
+export function isFichaVencida(player, fecha) {
+  const hasta = player?.ficha_medica_hasta?.split('T')[0];
+  if (!hasta) return true;
+  return hasta < (fecha?.split('T')[0] || todayISO());
+}

@@ -27,7 +27,7 @@ Authoritative spec: [SPEC.md](SPEC.md) covers all roles, the DB schema, permissi
 | Icons | lucide-react |
 | Deployment | Vercel (SPA rewrites in `vercel.json`) |
 
-App source is `.js`/`.jsx`, with no TypeScript. The only `.ts` files are the Supabase Edge Functions (Deno). There is no test framework.
+App source is `.js`/`.jsx`, with no TypeScript. The only `.ts` files are the Supabase Edge Functions (Deno). Tests use Vitest and cover only pure logic in `src/utils/` (there are no component tests).
 
 ---
 
@@ -37,10 +37,11 @@ App source is `.js`/`.jsx`, with no TypeScript. The only `.ts` files are the Sup
 npm run dev       # Vite dev server (HMR)
 npm run build     # Production build → dist/
 npm run lint      # ESLint (flat config, react-hooks + react-refresh)
+npm test          # Vitest: tests de src/utils/*.test.js
 npm run preview   # Preview the production build
 ```
 
-There is no test command, so verify changes with `npm run lint`, `npm run build` and a manual check in `npm run dev`.
+Verify changes with `npm test`, `npm run lint`, `npm run build` and a manual check in `npm run dev`. When you change pure logic in `src/utils/` (suspensions, stats, COMET, dates), add or update its `*.test.js` next to it, with fixtures from `src/utils/__fixtures__/`. CI (`.github/workflows/ci.yml`) runs tests and build on every PR. Lint also runs there but does not block yet, because `main` still has inherited lint errors.
 
 Environment: copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. Production values are set in the Vercel dashboard.
 

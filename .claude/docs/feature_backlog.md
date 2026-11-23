@@ -59,6 +59,14 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 - [x] **G1. Calendario Unificado** — Enhance existing CalendarioView to show multiple event types beyond matches: birthdays (players + dirigentes), ficha médica expirations, active injuries/estimated returns. Toggle filters per event type. Color-coded indicators per event type. *(completed — PR #273 · 2026-03-23)*
 
+### I. Automatización y calidad
+
+- [ ] **I1. CI, tests y aviso de ficha vencida** — GitHub Actions (tests + build en cada PR; lint visible sin bloquear hasta limpiar `main`), Vitest para la lógica pura (suspensiones, stats, edad, fechas, COMET) y aviso 🩺 de ficha médica vencida en PartidoForm. Arregla `checkLowStock` (usaba `supabase.raw`).
+- [ ] **I2. Parte de disponibilidad pre-jornada** — Por categoría: disponibles y no disponibles (suspendido, lesionado, ficha vencida, edad). Copiar texto / PDF / Telegram.
+- [ ] **I3. Fichas SND automáticas** — Cron nocturno (`pg_cron` + Edge Function) que actualiza `ficha_medica_hasta` de fichas vencidas o por vencer.
+- [ ] **I4. Bot de Telegram** — Resumen semanal automático y envío del parte pre-jornada.
+- [ ] **I5. Limpiar errores de lint heredados** y volver bloqueante el lint en CI.
+
 ### H. Auditoría
 
 - [x] **H1. Log de Actividad Global** — App-wide audit trail: logins, permission changes, approval/rejection of change requests, bulk operations. New `activity_log` table + ActivityLogTab (admin only). *(completed — PR #281 · 2026-03-27)*

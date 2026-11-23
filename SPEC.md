@@ -814,7 +814,7 @@ Optimized layouts for small screens across tabs, modals, and forms.
 
 ### Low-Stock Alerts
 
-`database.checkLowStock()` queries inventory items where `quantity <= min_stock`. Called after every inventory save.
+`database.checkLowStock()` returns the inventory items where `quantity <= min_stock` (filtered in JS, because PostgREST cannot compare two columns).
 
 ### Activity Log
 
@@ -909,7 +909,7 @@ Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
 - **Resultado**: always displayed as Peñarol (left) vs. Rival (right), regardless of escenario. Inputs bind to `goles_local`/`goles_visitante` correctly based on escenario.
 - **Comentario**: optional freetext field for match notes.
 - Duplicate player prevention: a player already picked in any titular or suplente slot is removed from the other slots' dropdowns (and comes back when that slot is cleared).
-- **Who is offered**: only active players of the enabled categories who are **not over-age** for the match category (see §6 Age Eligibility). Suspended players are still listed but disabled, so the reason is visible. A player already saved in a slot who falls outside these filters stays visible in that slot only.
+- **Who is offered**: only active players of the enabled categories who are **not over-age** for the match category (see §6 Age Eligibility). Suspended players are still listed but disabled, so the reason is visible. A player whose SND ficha médica is missing or expired on the partido's `fecha` (`isFichaVencida`) is marked `🩺 … — FICHA VENCIDA` in the dropdowns, and the convocados in that situation are listed in an amber box above the lineup. This warns but does not block. A player already saved in a slot who falls outside these filters stays visible in that slot only.
 - After saving, the modal returns automatically to the jornada detail view with refreshed data.
 
 #### Result display
@@ -1103,6 +1103,7 @@ All shared enums are centralized here — never defined inline in components:
 | `parseDOB(str)` | Date from `YYYY-MM-DD` without timezone drift |
 | `calculateAge(isoDate)` | Timezone-safe age in years from an ISO date string; returns `'-'` for null input |
 | `daysSince(str)` | Full calendar days since a date (midnight-to-midnight, local time); returns 0 for future/null; used for SLA age badges |
+| `isFichaVencida(player, fecha)` | `true` if `ficha_medica_hasta` is null or earlier than `fecha` (`YYYY-MM-DD`, default today). Valid through its last day |
 
 ### Suspension Utilities (`src/utils/suspensions.js`)
 
