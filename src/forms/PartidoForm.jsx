@@ -3,7 +3,7 @@ import { X, FileUp, AlertTriangle } from 'lucide-react';
 import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS, PLAYER_STATUS_LABELS, DURACION_PARTIDO_DEFAULT } from '../utils/constants';
 import { getSuspensionMap } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
-import { fechaPartidoDefault, formatDate } from '../utils/dateUtils';
+import { fechaPartidoDefault, formatDate, isFichaVencida } from '../utils/dateUtils';
 import { CometImportPanel } from '../components/CometImportPanel';
 import { aplicarComet } from '../utils/cometApply';
 import {
@@ -199,6 +199,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
     const suspended = suspendedMap.has(p.id);
     const age = isPlayerOverAge(p, categoria, appSettings);
     const inactive = p.status && p.status !== 'activo';
+    const fichaVencida = isFichaVencida(p, formData.fecha);
     return (
       <option
         key={p.id}
@@ -206,10 +207,16 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
         disabled={suspended}
         style={suspended ? { backgroundColor: '#fee2e2' } : age.overAge ? { backgroundColor: '#fed7aa' } : mismatch ? { backgroundColor: '#fef3c7' } : inactive ? { backgroundColor: '#e5e7eb' } : undefined}
       >
-        {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{p.name_visual || p.name}{inactive ? ` — ${(PLAYER_STATUS_LABELS[p.status] || p.status).toUpperCase()}` : ''}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}
+        {suspended ? '🚫 ' : ''}{age.overAge ? '⚠️ ' : ''}{mismatch ? '⚠️ ' : ''}{activeInjuryMap[p.id] ? '🏥 ' : ''}{fichaVencida ? '🩺 ' : ''}{p.name_visual || p.name}{inactive ? ` — ${(PLAYER_STATUS_LABELS[p.status] || p.status).toUpperCase()}` : ''}{suspended ? ` — SUSPENDIDO (${suspendedMap.get(p.id).reason})` : ''}{age.overAge ? ` — EXCEDE EDAD (nac. ${age.birthYear}, mín: ${age.minYear})` : ''}{mismatch ? ` (${efectiva})` : ''}{activeInjuryMap[p.id] ? ` — ${activeInjuryMap[p.id].tipo}` : ''}{fichaVencida ? ' — FICHA VENCIDA' : ''}
       </option>
     );
   };
+
+  // Convocados (titulares + suplentes) sin ficha médica vigente a la fecha del partido: avisa, no bloquea
+  const playersById = new Map(players.map((p) => [p.id, p]));
+  const convocadosFichaVencida = [...new Set([...titulares, ...suplentes].map((s) => s.player_id).filter(Boolean))]
+    .map((id) => playersById.get(id))
+    .filter((p) => p && isFichaVencida(p, formData.fecha));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -248,6 +255,16 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
             <li key={i} className="flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{a}</li>
           ))}
         </ul>
+      )}
+
+      {convocadosFichaVencida.length > 0 && (
+        <div className="flex gap-2 text-sm text-amber-800 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-200 rounded-lg p-3">
+          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          <p>
+            <span className="font-semibold">Ficha médica vencida{formData.fecha ? ` al ${formatDate(formData.fecha)}` : ''}:</span>{' '}
+            {convocadosFichaVencida.map((p) => `${p.name_visual || p.name}${p.ficha_medica_hasta ? ` (venció ${formatDate(p.ficha_medica_hasta)})` : ' (sin ficha)'}`).join(', ')}
+          </p>
+        </div>
       )}
 
       {/* Filtro de categorías de jugadores */}

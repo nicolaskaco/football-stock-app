@@ -292,20 +292,14 @@ export const database = {
   },
 
   // LOW STOCK CHECK
+  // PostgREST no compara dos columnas entre sí, así que se filtra en JS.
   async checkLowStock() {
     const { data, error } = await supabase
       .from('inventory')
-      .select('*')
-      .lte('quantity', supabase.raw('min_stock'));
-    
+      .select('*');
+
     if (error) throw error;
-    
-    if (data.length > 0) {
-      console.log('Low stock alert for: nicomultimanya@gmail.com');
-      console.log('Low stock items:', data);
-    }
-    
-    return data;
+    return (data || []).filter((item) => item.min_stock != null && item.quantity <= item.min_stock);
   },
 
   // Check ficha médica via SND proxy Edge Function
