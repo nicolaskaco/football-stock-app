@@ -66,6 +66,19 @@ function normaliseActivityLog(rows) {
         detail = [r.details?.categoria, r.details?.rival && `vs ${r.details.rival}`, `${n} ajuste${n !== 1 ? 's' : ''}`].filter(Boolean).join(' ');
         break;
       }
+      case 'ficha_medica_auto': {
+        label = 'Chequeo automático de fichas SND';
+        const d = r.details || {};
+        detail = [
+          `${d.procesados ?? 0} consultado${d.procesados !== 1 ? 's' : ''}`,
+          d.actualizadas ? `${d.actualizadas} actualizada${d.actualizadas !== 1 ? 's' : ''}` : null,
+          d.sin_cambios ? `${d.sin_cambios} sin cambios` : null,
+          d.no_encontrados ? `${d.no_encontrados} no encontrado${d.no_encontrados !== 1 ? 's' : ''} en SND` : null,
+          d.sin_ficha_futbol ? `${d.sin_ficha_futbol} sin ficha de fútbol` : null,
+          d.errores ? `${d.errores} con error` : null,
+        ].filter(Boolean).join(' · ');
+        break;
+      }
       default:
         label = r.action_type;
     }
@@ -131,6 +144,7 @@ const BADGE = {
   import_cuentas_viatico: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
   import_planilla_comet: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
   ajuste_suspension: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
+  ficha_medica_auto: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
 };
 
 const TYPE_LABELS = {
@@ -144,6 +158,7 @@ const TYPE_LABELS = {
   import_cuentas_viatico: 'Importación de cuentas',
   import_planilla_comet: 'Planilla COMET',
   ajuste_suspension: 'Ajuste de suspensión',
+  ficha_medica_auto: 'Fichas SND automáticas',
 };
 
 const ALL_TYPES = Object.keys(TYPE_LABELS);
@@ -153,7 +168,7 @@ const ALL_TYPES = Object.keys(TYPE_LABELS);
 // Events come from 3 tables, each paged on its own and merged by timestamp.
 const PAGE_SIZE = 50;
 
-const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet', 'ajuste_suspension'];
+const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet', 'ajuste_suspension', 'ficha_medica_auto'];
 const REQUEST_TYPES = ['approved', 'rejected'];
 
 // Returns the subset of `all` that is selected, null when none is (skip the

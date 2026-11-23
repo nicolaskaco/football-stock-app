@@ -185,7 +185,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 
 | Table | Purpose |
 |-------|---------|
-| `players` | Player records: personal info, financials, boarding, clothing sizes. Notable columns: `tipo_documento` (text, default `'Cédula de Identidad'`), `complemento_override` (integer, nullable), `complemento_override_expira` (date, nullable), `status` (text, default `'activo'`, CHECK in `activo`/`cedido`/`transferido`/`egresado`/`dado de baja`), `status_comment` (text, nullable — free-text reason for a non-active status), `incluir_viatico_export` (boolean, default `false` — marks a contracted player as a "caso especial" to include in the Tesorero viático export with their complemento). **Cuenta de cobro de viáticos**: `cuenta_titular_tipo` (CHECK `jugador`/`familiar`), `cuenta_banco` (CHECK `Prex`/`Mi Dinero`), `cuenta_numero`, `cuenta_titular_nombre`, `cuenta_titular_documento` (the last two only for `familiar`, i.e. a padre/madre/tutor account). `bank` / `bank_account` are **legacy**: kept in the DB but no longer shown in the UI. `comet_id` (text, nullable, unique when set): the player's ID in COMET (AUF), learned when a COMET match report is imported or typed in PlayerForm |
+| `players` | Player records: personal info, financials, boarding, clothing sizes. Notable columns: `tipo_documento` (text, default `'Cédula de Identidad'`), `complemento_override` (integer, nullable), `complemento_override_expira` (date, nullable), `status` (text, default `'activo'`, CHECK in `activo`/`cedido`/`transferido`/`egresado`/`dado de baja`), `status_comment` (text, nullable — free-text reason for a non-active status), `incluir_viatico_export` (boolean, default `false` — marks a contracted player as a "caso especial" to include in the Tesorero viático export with their complemento). **Cuenta de cobro de viáticos**: `cuenta_titular_tipo` (CHECK `jugador`/`familiar`), `cuenta_banco` (CHECK `Prex`/`Mi Dinero`), `cuenta_numero`, `cuenta_titular_nombre`, `cuenta_titular_documento` (the last two only for `familiar`, i.e. a padre/madre/tutor account). `bank` / `bank_account` are **legacy**: kept in the DB but no longer shown in the UI. `comet_id` (text, nullable, unique when set): the player's ID in COMET (AUF), learned when a COMET match report is imported or typed in PlayerForm. `ficha_medica_chequeada_at` (timestamptz, nullable): last automatic SND check (written only by `refresh-fichas-medicas`) |
 | `player_history` | Audit log of changes to `contrato`, `viatico`, `complemento`, `vianda`, `casita`, `ficha_medica_hasta` and the viático account fields (`cuenta_*`) |
 | `player_change_requests` | Approval workflow for financial field modifications |
 | `player_documents` | Document metadata — file paths in `player-documents` storage bucket |
@@ -606,6 +606,16 @@ Players have a `ficha_medica_hasta` (date) column that records when their SND sp
 - When SND returns the same date already saved, FichaMedicaWidget shows "Sin cambios en SND: vence DD/MM/YYYY" in amber (instead of the green success message) and nothing is written. The bulk refresh results group these players under "Sin Cambios".
 - **PlayersTab** supports individual and bulk ficha checks for all filtered players. Admins have an additional filter option **"Sin ficha médica"** that shows all players across every category (including 3era) whose `ficha_medica_hasta` is null or in the past.
 - **FichaMedicaWidget** (home page) shows expired / expiring-soon players and lets admins trigger a per-player refresh directly from the modal.
+- **Automatic nightly check** (`refresh-fichas-medicas` Edge Function, scheduled by `pg_cron`, migration `20261124_cron_fichas_medicas.sql`):
+  - **Schedule**: runs every 20 min between 03:00 and 05:40 (Uruguay).
+  - **Who it checks**: each run takes up to 40 players that meet all of these:
+    - active and not hidden;
+    - have a document;
+    - ficha missing, expired or expiring within 30 days;
+    - not checked in the last 20 h (`players.ficha_medica_chequeada_at`, never-checked first).
+  - **What it writes**: it calls SND (shared code in `supabase/functions/_shared/snd.ts`, also used by `check-ficha-medica`) and writes `ficha_medica_hasta` only when the FÚTBOL date changed. Every change goes to `player_history` with `changed_by = 'Sistema (SND automático)'`.
+  - **Activity log**: each run that processed someone logs a `ficha_medica_auto` row in `activity_log` with the counts and the detail. It shows in Actividad as "Chequeo automático de fichas SND".
+  - **Security**: the function is deployed with `--no-verify-jwt` and only accepts requests whose `x-cron-secret` header matches its `CRON_SECRET`. The cron reads the secret and the project URL from Vault (`cron_secret`, `project_url`).
 - **PlayerHistoryModal** displays "Ficha Médica" field changes with dates formatted as DD/MM/YYYY. A "Ficha Médica" filter button appears in the per-field filter row when ficha history entries exist.
 
 ### Bulk Operations
