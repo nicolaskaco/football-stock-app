@@ -61,7 +61,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
 
 ### I. Automatización y calidad
 
-- [ ] **I1. CI, tests y aviso de ficha vencida** — GitHub Actions (tests + build en cada PR; lint visible sin bloquear hasta limpiar `main`), Vitest para la lógica pura (suspensiones, stats, edad, fechas, COMET) y aviso 🩺 de ficha médica vencida en PartidoForm. Arregla `checkLowStock` (usaba `supabase.raw`).
+- [x] **I1. CI, tests y aviso de ficha vencida** — GitHub Actions (tests + build en cada PR; lint visible sin bloquear hasta limpiar `main`), Vitest para la lógica pura (suspensiones, stats, edad, fechas, COMET) y aviso 🩺 de ficha médica vencida en PartidoForm. Arregla `checkLowStock` (usaba `supabase.raw`). *(PR #367 · 2026-11-23)*
 - [ ] **I2. Parte de disponibilidad pre-jornada** — Por categoría: disponibles y no disponibles (suspendido, lesionado, ficha vencida, edad). Copiar texto / PDF / Telegram.
 - [ ] **I3. Fichas SND automáticas** — Cron nocturno (`pg_cron` + Edge Function) que actualiza `ficha_medica_hasta` de fichas vencidas o por vencer.
 - [ ] **I4. Bot de Telegram** — Resumen semanal automático y envío del parte pre-jornada.
