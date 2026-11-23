@@ -1,14 +1,18 @@
 import React from 'react';
-import { Edit2 } from 'lucide-react';
+import { Edit2, FileUp } from 'lucide-react';
 import { PartidoForm } from '../forms/PartidoForm';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
+import { useToast } from '../context/ToastContext';
+import { CometBulkImportPanel } from './CometBulkImportPanel';
 import { formatDate, fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { RivalBadge } from './ui/RivalBadge';
 
 export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {}, currentUser = null }) => {
   const { execute } = useMutation();
+  const { showToast } = useToast();
+  const { execute: executeBulk } = useMutation((msg) => showToast(msg, 'error'));
   const canAjustarSuspensiones = currentUser?.role === 'admin';
 
   // Firma comparable de los ajustes de suspensión, para loguear solo si cambiaron
@@ -78,6 +82,60 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
     });
   };
 
+  // Importación masiva: guarda en orden cada partido armado por CometBulkImportPanel
+  const handleBulkImport = (lista) => executeBulk(async () => {
+    const guardados = [];
+    const idsGuardados = new Set();
+    try {
+      for (const { partido, archivo, data, titularesData, suplentesData, eventosData, cometIds } of lista) {
+        try {
+          await database.updatePartido(partido.id, data, titularesData, suplentesData, eventosData, null);
+        } catch (err) {
+          throw new Error(`${partido.categoria}: ${err.message}`, { cause: err });
+        }
+        guardados.push(partido.categoria);
+        // IDs de este partido sin los ya guardados por un informe anterior (un ID por jugador)
+        const nuevos = cometIds.filter((c) => !idsGuardados.has(c.player_id));
+        if (nuevos.length > 0) {
+          await database.setPlayersCometIds(nuevos);
+          nuevos.forEach((c) => idsGuardados.add(c.player_id));
+        }
+        database.logActivity('import_planilla_comet', currentUser?.email, 'partido', partido.id, {
+          categoria: partido.categoria,
+          rival: jornada.rivales?.name || null,
+          comet_ids_nuevos: nuevos.length,
+          masivo: true,
+          archivo,
+        });
+      }
+    } finally {
+      if (guardados.length > 0) {
+        await onDataChange('jornadas', 'players');
+        const allJornadas = await database.getJornadas();
+        const fresh = allJornadas.find((j) => j.id === jornada.id) || jornada;
+        if (reopenDetail) reopenDetail(fresh);
+        else setShowModal(null);
+      }
+    }
+    showToast(`${guardados.length} partido${guardados.length === 1 ? '' : 's'} importado${guardados.length === 1 ? '' : 's'} del COMET`, 'success');
+  }, 'Error al importar los informes COMET');
+
+  const openBulkImport = () => {
+    onFormDirtyChange(false);
+    setShowModal({
+      title: `Importar informes COMET — ${jornada.rivales?.name || 'Jornada'}`,
+      content: (
+        <CometBulkImportPanel
+          jornada={jornada}
+          jornadas={jornadas}
+          players={players}
+          onSave={handleBulkImport}
+          onCancel={() => (reopenDetail ? reopenDetail(jornada) : setShowModal(null))}
+        />
+      ),
+    });
+  };
+
   // Sort partidos in canonical category order
   const sortedPartidos = CATEGORIAS_PARTIDO.map((cat) =>
     (jornada.partidos || []).find((p) => p.categoria === cat)
@@ -133,7 +191,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
           <RivalBadge rival={jornada.rivales} size="md" className="text-gray-600" />
           {jornada.rivales?.name || 'Rival'}
         </h2>
-        <div className="flex items-center gap-3 mt-1">
+        <div className="flex flex-wrap items-center gap-3 mt-1">
           <span className="text-sm text-yellow-200">{formatDate(jornada.fecha)}</span>
           <span className="px-2 py-0.5 bg-yellow-400 text-black rounded-full text-xs font-semibold">
             {jornada.fase}
@@ -142,6 +200,16 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
             <span className="px-2 py-0.5 bg-yellow-200 text-black rounded-full text-xs font-semibold">
               Jornada {jornada.numero_jornada}
             </span>
+          )}
+          {canEdit && sortedPartidos.length > 0 && (
+            <button
+              type="button"
+              onClick={openBulkImport}
+              className="ml-auto flex items-center gap-1 px-3 py-1 rounded-lg bg-yellow-400 text-black text-sm font-semibold hover:bg-yellow-300"
+            >
+              <FileUp className="w-4 h-4" />
+              Importar COMETs
+            </button>
           )}
         </div>
       </div>
