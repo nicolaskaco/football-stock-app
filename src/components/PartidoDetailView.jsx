@@ -12,6 +12,7 @@ import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { RivalBadge } from './ui/RivalBadge';
 import { resolveMarcador } from '../utils/playerStats';
 import { escenarioBadgeClass } from './ui/escenario';
+import { faseLabel } from '../utils/jornadas';
 
 export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {}, currentUser = null }) => {
   const { execute } = useMutation();
@@ -193,7 +194,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
         <div className="flex flex-wrap items-center gap-3 mt-1">
           <span className="text-sm text-yellow-200">{formatDate(jornada.fecha)}</span>
           <span className="px-2 py-0.5 bg-yellow-400 text-black rounded-full text-xs font-semibold">
-            {jornada.fase}
+            {faseLabel(jornada)}
           </span>
           {jornada.numero_jornada && (
             <span className="px-2 py-0.5 bg-yellow-200 text-black rounded-full text-xs font-semibold">

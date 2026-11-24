@@ -41,3 +41,15 @@ describe('fecha por defecto en jornadas de una categoría', () => {
     expect(fechaPartido({ categoria: '4ta', fecha: null }, final4ta)).toBe('2026-12-06');
   });
 });
+
+describe('fase de la definición', () => {
+  it('Semifinal y Final no tienen fase y van después del Clausura', async () => {
+    const { esDefinicion, faseLabel, ordenFase } = await import('./jornadas');
+    expect(esDefinicion('Final')).toBe(true);
+    expect(esDefinicion('3')).toBe(false);
+    expect(faseLabel({ fase: null })).toBe('Definición');
+    expect(faseLabel({ fase: 'Apertura' })).toBe('Apertura');
+    expect(ordenFase('Apertura')).toBeLessThan(ordenFase('Clausura'));
+    expect(ordenFase(null)).toBeGreaterThan(ordenFase('Clausura'));
+  });
+});

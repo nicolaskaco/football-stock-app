@@ -11,6 +11,7 @@ import { formatDate, fechaPartido, fechaPartidoDefaultEnJornada } from '../utils
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, NUMEROS_JORNADA, ROLES_TELEGRAM } from '../utils/constants';
 import { resolveMarcador } from '../utils/playerStats';
 import { escenarioBadgeClass } from './ui/escenario';
+import { faseLabel, ordenFase } from '../utils/jornadas';
 import { buildParteDisponibilidad, parteComoTexto } from '../utils/disponibilidad';
 import { textoATelegramHTML } from '../utils/textUtils';
 import { useToast } from '../context/ToastContext';
@@ -226,11 +227,9 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
 
   const effectiveYear = availableYears.includes(yearFiltro) ? yearFiltro : (availableYears[0] ?? currentYear);
 
-  const FASES_ORDER = ['Apertura', 'Clausura'];
-
-  // Orden por defecto: fase (Apertura antes que Clausura) y después N° de jornada.
+  // Orden por defecto: fase (Apertura, Clausura, definición) y después N° de jornada.
   const compareDefault = (a, b) => {
-    const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
+    const faseDiff = ordenFase(a.fase) - ordenFase(b.fase);
     if (faseDiff !== 0) return faseDiff;
     // Por posición en NUMEROS_JORNADA, así Semifinal y Final van después de la 15
     const pos = (j) => (NUMEROS_JORNADA.includes(String(j.numero_jornada)) ? NUMEROS_JORNADA.indexOf(String(j.numero_jornada)) : 999);
@@ -400,7 +399,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                           {jornada.numero_jornada}
                         </span>
                       )}
-                      <span className="truncate">{jornada.fase} · {formatDate(jornada.fecha)}</span>
+                      <span className="truncate">{faseLabel(jornada)} · {formatDate(jornada.fecha)}</span>
                     </div>
                     <div className="whitespace-nowrap">{renderPuntos(jornada)}</div>
                   </div>
@@ -514,7 +513,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
                     </td>
                     <td className="w-px px-3 py-3 whitespace-nowrap">
                       <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">
-                        {jornada.fase}
+                        {faseLabel(jornada)}
                       </span>
                     </td>
                     <td className="w-px px-3 py-3 text-sm text-gray-700 whitespace-nowrap">{formatDate(jornada.fecha)}</td>

@@ -231,7 +231,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `rival_id` | uuid FK → rivales | ON DELETE RESTRICT |
 | `torneo_id` | uuid FK → torneos | nullable — ON DELETE SET NULL |
 | `fecha` | date | Match date |
-| `fase` | text | `'Apertura'` \| `'Clausura'` |
+| `fase` | text | `'Apertura'` \| `'Clausura'`; null for Semifinal / Final (the championship decider between the Apertura and Clausura winners and the annual table), shown as "Definición" (`faseLabel`) and sorted after Clausura (`ordenFase`). Nullable since migration `20261126_jornadas_fase_definicion.sql` |
 | `numero_jornada` | text | nullable — `'1'`–`'15'`, `'Semifinal'`, `'Final'` |
 | `created_at` | timestamptz | |
 
@@ -940,7 +940,7 @@ A "Jornada" groups 5 matches (one per category) played on the same date against 
 **Creating a jornada** — user selects:
 - Rival (from the `rivales` catalog)
 - Fecha
-- Fase (Apertura / Clausura)
+- Fase (Apertura / Clausura). Not asked for Semifinal / Final: they belong to neither phase and are saved with `fase = null` (also when editing one)
 - Número de jornada (`1`–`15`, `Semifinal`, `Final`)
 - For Semifinal / Final only: **Categoría** (one of `CATEGORIAS_PARTIDO`, required). The button reads "Crear Jornada (1 partido)".
 - Escenario base (Local / Visitante / Neutral)

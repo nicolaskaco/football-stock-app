@@ -1,4 +1,4 @@
-import { CATEGORIAS_ESCENARIO_INVERTIDO, CATEGORIAS_PARTIDO } from './constants';
+import { CATEGORIAS_ESCENARIO_INVERTIDO, CATEGORIAS_PARTIDO, FASES_CAMPEONATO, JORNADAS_UNA_CATEGORIA } from './constants';
 import { fechaPartidoDefault } from './dateUtils';
 
 /**
@@ -30,3 +30,15 @@ export function armarPartidosJornada(jornada, escenarioBase, categoria = null) {
   return CATEGORIAS_PARTIDO.map((cat) =>
     fila(cat, escenarioDeCategoria(escenarioBase, cat), fechaPartidoDefault(jornada.fecha, cat)));
 }
+
+/**
+ * Semifinal y Final definen el campeonato entre los ganadores del Apertura y el Clausura (y la
+ * tabla anual): no son de ninguna de las dos fases y se guardan con `fase` null.
+ */
+export const esDefinicion = (numeroJornada) => JORNADAS_UNA_CATEGORIA.includes(numeroJornada);
+
+/** Fase para mostrar: 'Definición' cuando la jornada no tiene fase (Semifinal / Final). */
+export const faseLabel = (jornada) => jornada?.fase || 'Definición';
+
+/** Orden de fase: Apertura, Clausura y después las jornadas sin fase (la definición). */
+export const ordenFase = (fase) => (FASES_CAMPEONATO.includes(fase) ? FASES_CAMPEONATO.indexOf(fase) : FASES_CAMPEONATO.length);

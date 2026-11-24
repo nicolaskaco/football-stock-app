@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, ESCENARIOS, NUMEROS_JORNADA, JORNADAS_UNA_CATEGORIA } from '../utils/constants';
-import { escenarioDeCategoria } from '../utils/jornadas';
+import { escenarioDeCategoria, esDefinicion } from '../utils/jornadas';
 import { escenarioBadgeClass } from '../components/ui/escenario';
 import { localTodayISO, todayISO } from '../utils/dateUtils';
 
@@ -25,16 +25,19 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
   const [escenarioBase, setEscenarioBase] = useState('');
   const [categoriaUnica, setCategoriaUnica] = useState('');
   const unaCategoria = !isEdit && JORNADAS_UNA_CATEGORIA.includes(formData.numero_jornada);
+  // Semifinal y Final no son del Apertura ni del Clausura: no se pide fase y se guarda null
+  const sinFase = esDefinicion(formData.numero_jornada);
   // null = sin tocar: se deriva de la fecha
   const [enviarTelegramElegido, setEnviarTelegramElegido] = useState(null);
   const enviarTelegram = puedeTelegram && (enviarTelegramElegido ?? formData.fecha >= localTodayISO());
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const datos = { ...formData, fase: sinFase ? null : formData.fase };
     if (isEdit) {
-      onSubmit(formData);
+      onSubmit(datos);
     } else {
-      onSubmit(formData, escenarioBase, { enviarTelegram, categoria: unaCategoria ? categoriaUnica : null });
+      onSubmit(datos, escenarioBase, { enviarTelegram, categoria: unaCategoria ? categoriaUnica : null });
     }
   };
 
@@ -45,7 +48,7 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
   };
   const categoriasPreview = unaCategoria ? (categoriaUnica ? [categoriaUnica] : []) : CATEGORIAS_PARTIDO;
 
-  const isValid = formData.rival_id && formData.fecha && formData.fase && formData.numero_jornada
+  const isValid = formData.rival_id && formData.fecha && (sinFase || formData.fase) && formData.numero_jornada
     && (isEdit || escenarioBase) && (!unaCategoria || categoriaUnica);
 
   return (
@@ -93,26 +96,28 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
         />
       </div>
 
-      {/* Fase */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Fase *</label>
-        <div className="flex gap-3">
-          {FASES_CAMPEONATO.map((fase) => (
-            <button
-              key={fase}
-              type="button"
-              onClick={() => setFormData({ ...formData, fase })}
-              className={`flex-1 py-2 rounded-lg font-medium border transition ${
-                formData.fase === fase
-                  ? 'bg-black text-yellow-400 border-black'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              {fase}
-            </button>
-          ))}
+      {/* Fase — no aplica a Semifinal / Final */}
+      {!sinFase && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Fase *</label>
+          <div className="flex gap-3">
+            {FASES_CAMPEONATO.map((fase) => (
+              <button
+                key={fase}
+                type="button"
+                onClick={() => setFormData({ ...formData, fase })}
+                className={`flex-1 py-2 rounded-lg font-medium border transition ${
+                  formData.fase === fase
+                    ? 'bg-black text-yellow-400 border-black'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                {fase}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Número de jornada */}
       <div>

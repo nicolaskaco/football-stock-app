@@ -6,6 +6,7 @@ import { AlertModal } from './AlertModal';
 import { formatDate, formatDateLong, todayISO } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { resolveMarcador } from '../utils/playerStats';
+import { faseLabel, ordenFase } from '../utils/jornadas';
 import { useAlertModal } from '../hooks/useAlertModal';
 import { RivalBadge } from './ui/RivalBadge';
 
@@ -42,10 +43,9 @@ export const TorneoDetailView = ({ torneo }) => {
   const getPartidoForCategoria = (jornada, categoria) =>
     (jornada.partidos || []).find((p) => p.categoria === categoria) || null;
 
-  const FASES_ORDER = ['Apertura', 'Clausura'];
   const sortedJornadas = [...(torneo.jornadas || [])].sort((a, b) => {
-    const faseA = FASES_ORDER.indexOf(a.fase);
-    const faseB = FASES_ORDER.indexOf(b.fase);
+    const faseA = ordenFase(a.fase);
+    const faseB = ordenFase(b.fase);
     if (faseA !== faseB) return faseA - faseB;
     const numA = parseInt(a.numero_jornada) || 99;
     const numB = parseInt(b.numero_jornada) || 99;
@@ -673,7 +673,7 @@ export const TorneoDetailView = ({ torneo }) => {
                     </td>
                     <td className="px-4 py-3">
                       <span className="px-2 py-1 text-xs font-semibold bg-gray-100 text-gray-800 rounded-full">
-                        {jornada.fase}
+                        {faseLabel(jornada)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{formatDate(jornada.fecha)}</td>
