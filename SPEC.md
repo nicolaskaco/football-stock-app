@@ -820,7 +820,18 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
 
 **`telegram-bot` Edge Function** (query bot, `--no-verify-jwt`):
 - **Webhook**: Telegram calls it for every message sent to the bot. It only runs when the `X-Telegram-Bot-Api-Secret-Token` header matches the `TELEGRAM_WEBHOOK_SECRET` secret (registered with `setWebhook`). It always answers 200, so Telegram doesn't retry.
-- **Private chats only**: it ignores the group and any other chat type.
+- **Where it answers**:
+  - private chats;
+  - the **club group**, only when the chat id equals `TELEGRAM_CHAT_ID`, the same group `send-telegram` posts to. Other groups are ignored.
+
+  In the group:
+  - it only handles commands meant for this bot. Plain chat and `/cmd@otherbot` are ignored; the bot's username comes from the optional `TELEGRAM_BOT_USERNAME` secret, which `npm run telegram:setup` loads;
+  - it replies quoting the user's message;
+  - unlinked users get a one-line hint to link from the app;
+  - `/vincular` is refused, and a code posted there is voided immediately;
+  - unknown commands (e.g. from other bots) are ignored silently.
+
+  ⚠️ In the group, **everyone sees the answer**, including data about minors. Each answer still follows the asking user's permissions.
 - **Linked users only**: a message is answered only if `user_permissions.telegram_user_id` matches the sender's Telegram id. To link: the header button **Bot de Telegram** (`TelegramVinculoPanel`, every dashboard user except `finanzas`) calls the `generar_codigo_telegram()` RPC. The RPC returns a one-time 8-character hex code valid for 10 minutes. The user sends `/vincular <código>` to the bot, or opens `t.me/<bot>?start=<código>` when `VITE_TELEGRAM_BOT_USERNAME` is set. One Telegram account links to a single app user, so linking again moves it. Once linked, the panel shows example commands (tap to copy) and, with `VITE_TELEGRAM_BOT_USERNAME`, an **Abrir el bot** link (`t.me/<bot>`). "Desvincular" calls `desvincular_telegram()`. Both RPCs are `SECURITY DEFINER`, because only admins can update `user_permissions` (migration `20261127_telegram_bot_consultas.sql`; only the SHA-256 of the code is stored, so admins reading `user_permissions` can't use someone else's code).
 - **Permissions**: the function uses the service-role client, so `telegram-bot/comandos.ts` applies the app's rules itself:
   - player commands need `can_access_players` and only show the user's categories (same rule as the `players` RLS: admin or empty `categoria` = all);
@@ -850,12 +861,12 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
   Suspensions, minutes and the parte are not offered yet, because their logic lives in the frontend (`suspensions.js`, `playerStats.js`).
 - **Setup script** (`scripts/telegram-setup.mjs`, `npm run telegram:setup`): asks for the bot token and the webhook secret, or reads them from `TELEGRAM_BOT_TOKEN` / `TELEGRAM_WEBHOOK_SECRET`, without printing or saving them. If the secret is left empty, it generates a new one and loads it with `supabase secrets set --project-ref`. The project comes from `supabase/.temp/project-ref`, or is asked for. Then it:
   - shows the bot's `@username`;
-  - registers the webhook and the command menu (`setMyCommands` with scope `all_private_chats`, built from `COMANDOS` in `logica.ts`, so the menu matches the bot);
+  - registers the webhook, `TELEGRAM_BOT_USERNAME` and the command menu (`setMyCommands` for `all_private_chats` and `all_group_chats`, built from `COMANDOS` in `logica.ts`, so the menu matches the bot);
   - shows `getWebhookInfo`;
   - checks that the function rejects a request without the secret.
 
   Options, one at a time: `--estado` (read-only), `--solo-comandos` (after adding a command), `--nuevo-secreto` (rotates the secret), `--apagar` (`deleteWebhook`). Unknown options are rejected. Needs Node ≥ 22.18, because it imports the `.ts` file directly.
-- **Activity log**: every query logs `telegram_consulta` (the command plus up to 100 characters of arguments). Linking and unlinking log `telegram_vinculo` (`details.vinculado` true/false).
+- **Activity log**: every query logs `telegram_consulta` (the command, up to 100 characters of arguments and `chat`: `grupo` or `privado`). Linking and unlinking log `telegram_vinculo` (`details.vinculado` true/false).
 - **Not covered**: the bot ignores the `app_settings` tab toggles (e.g. `estadisticas_tab_enabled`): `/goleadores`, `/tarjetas` and `/contra` only need `can_view_partidos`, since the same data is visible in Partidos. Queries aren't paginated (PostgREST returns at most 1000 rows).
 
 ### Dashboard PDF Export

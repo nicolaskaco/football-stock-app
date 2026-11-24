@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { CATEGORIAS as CATEGORIAS_APP } from '../../../src/utils/constants.js';
 import {
-  CATEGORIAS, parseMensaje, parseCategoria, separarCategoria, categoriasVisibles, veCategoria, comandosDe,
+  CATEGORIAS, parseMensaje, esParaEsteBot, parseCategoria, separarCategoria, categoriasVisibles, veCategoria, comandosDe,
   parseCodigo, edad, diasParaCumple, parseAnio, marcador, jornadaLabel, fechaPartido,
   rivalBuscado, nombreCoincide, type Permisos,
 } from './logica';
@@ -14,11 +14,21 @@ const perm = (over: Partial<Permisos> = {}): Permisos => ({
 
 describe('parseMensaje', () => {
   it('separa comando y argumentos', () => {
-    expect(parseMensaje('/nacidos 2008 5ta')).toEqual({ comando: 'nacidos', args: ['2008', '5ta'], resto: '2008 5ta' });
+    expect(parseMensaje('/nacidos 2008 5ta')).toEqual({ comando: 'nacidos', destinatario: null, args: ['2008', '5ta'], resto: '2008 5ta' });
   });
   it('ignora la mención al bot y normaliza el comando', () => {
     expect(parseMensaje('/Próximo@CapBot').comando).toBe('proximo');
     expect(parseMensaje('/jugador@CapBot  Juan  Pérez ').resto).toBe('Juan  Pérez');
+  });
+  it('devuelve el bot nombrado con @ en minúsculas', () => {
+    expect(parseMensaje('/proximo@Formativas_CAP_bot 5ta').destinatario).toBe('formativas_cap_bot');
+    expect(parseMensaje('/proximo@Formativas_CAP_bot 5ta').args).toEqual(['5ta']);
+  });
+  it('esParaEsteBot: sin @, con el nuestro, con otro', () => {
+    expect(esParaEsteBot(null, 'formativas_cap_bot')).toBe(true);
+    expect(esParaEsteBot('formativas_cap_bot', '@Formativas_CAP_bot')).toBe(true);
+    expect(esParaEsteBot('otrobot', 'formativas_cap_bot')).toBe(false);
+    expect(esParaEsteBot('otrobot', null)).toBe(true);
   });
   it('texto sin barra no es comando', () => {
     expect(parseMensaje('hola').comando).toBeNull();

@@ -38,10 +38,15 @@ export function partir(texto: string, limite = LIMITE): string[] {
 
 /**
  * Manda `html` (parse_mode HTML) en varias partes si hace falta. Sin `destino` va al grupo
- * configurado (TELEGRAM_CHAT_ID); el bot de consultas pasa el chat privado de quien preguntó.
+ * configurado (TELEGRAM_CHAT_ID); el bot de consultas pasa el chat de quien preguntó y, en el
+ * grupo, `responderA` (el mensaje al que contesta, para que se vea a quién le responde).
  * No es atómico: si falla una parte, las anteriores ya salieron.
  */
-export async function sendTelegram(html: string, destino?: number | string): Promise<void> {
+export async function sendTelegram(
+  html: string,
+  destino?: number | string,
+  { responderA }: { responderA?: number } = {},
+): Promise<void> {
   const token = Deno.env.get("TELEGRAM_BOT_TOKEN");
   const chatId = destino ?? Deno.env.get("TELEGRAM_CHAT_ID");
   if (!token || !chatId) throw new Error("Falta configurar TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID");
@@ -50,7 +55,13 @@ export async function sendTelegram(html: string, destino?: number | string): Pro
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: parte, parse_mode: "HTML", disable_web_page_preview: true }),
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: parte,
+        parse_mode: "HTML",
+        disable_web_page_preview: true,
+        ...(responderA ? { reply_parameters: { message_id: responderA, allow_sending_without_reply: true } } : {}),
+      }),
       signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) {

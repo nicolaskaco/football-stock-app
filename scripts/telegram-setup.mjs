@@ -8,6 +8,7 @@
 //   npm run telegram:setup -- --nuevo-secreto  genera otro secreto, lo carga en Supabase y registra el webhook
 //   npm run telegram:setup -- --apagar         borra el webhook (el bot deja de responder)
 //
+// TELEGRAM_CHAT_ID (opcional, el id del grupo): limita el menú de comandos de grupo a ese grupo.
 // Datos: TELEGRAM_BOT_TOKEN y TELEGRAM_WEBHOOK_SECRET de las variables de entorno o, si no
 // están, se piden por teclado (sin mostrarlos). El proyecto sale de supabase/.temp/project-ref.
 // No guarda nada en disco.
@@ -114,6 +115,17 @@ async function mostrarBot() {
   const bot = await telegram('getMe');
   ok(`Bot: @${bot.username} (${bot.first_name})`);
   console.log(`  En Vercel: VITE_TELEGRAM_BOT_USERNAME=${bot.username} (y redeploy) para el link directo de vinculación.`);
+  return bot;
+}
+
+/** El bot usa TELEGRAM_BOT_USERNAME para ignorar en el grupo los comandos dirigidos a otros bots. */
+function cargarUsuarioBot(ref, usuario) {
+  try {
+    execFileSync('supabase', ['secrets', 'set', `TELEGRAM_BOT_USERNAME=${usuario}`, '--project-ref', ref], { stdio: ['ignore', 'ignore', 'pipe'] });
+    ok(`Supabase: TELEGRAM_BOT_USERNAME=${usuario}.`);
+  } catch (err) {
+    console.log(`✗ No se pudo cargar TELEGRAM_BOT_USERNAME en Supabase (${err.stderr?.toString().trim() || err.message}). El bot funciona igual, pero en el grupo también contesta "/comando@otrobot".`);
+  }
 }
 
 async function mostrarWebhook(urlEsperada) {
@@ -137,7 +149,10 @@ async function registrarComandos() {
   const ordenados = ['ayuda', ...nombres.filter((c) => c !== 'ayuda')];
   const commands = ordenados.map((c) => ({ command: c, description: COMANDOS[c].descripcion.slice(0, 256) }));
   await telegram('setMyCommands', { scope: { type: 'all_private_chats' }, commands });
-  ok(`Menú de comandos: ${commands.length} comandos (solo en chats privados).`);
+  // En grupos el bot solo contesta en el del club: si se conoce su id, el menú va solo ahí
+  const grupo = process.env.TELEGRAM_CHAT_ID;
+  await telegram('setMyCommands', { scope: grupo ? { type: 'chat', chat_id: grupo } : { type: 'all_group_chats' }, commands });
+  ok(`Menú de comandos: ${commands.length} comandos (en privado y ${grupo ? 'en el grupo del club' : 'en grupos'}).`);
 }
 
 async function probarFuncion(url) {
@@ -176,7 +191,7 @@ async function obtenerSecreto(ref) {
 
 // ── Main ────────────────────────────────────────────────────────────
 
-await mostrarBot();
+const bot = await mostrarBot();
 
 if (modo === 'apagar') {
   await telegram('deleteWebhook');
@@ -200,6 +215,7 @@ if (modo === 'todo') {
   await telegram('setWebhook', { url, secret_token: secreto, allowed_updates: ['message'] });
   avisoSiFalla = '';
   ok(`Webhook registrado${nuevo ? ' con el secreto nuevo' : ''}.`);
+  cargarUsuarioBot(ref, bot.username);
   await registrarComandos();
 }
 
