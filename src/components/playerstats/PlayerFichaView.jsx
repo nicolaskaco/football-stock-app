@@ -7,6 +7,7 @@ import {
   getRecord, getCuandoMarca, getPorTipo, getConTarjeta, getRecordSinConvocar,
   getPorEscenario, getPorCesped, getCombinaciones, getPorRival,
   getRachas, getHitos, getDisciplina, getCategoriasJugadas,
+  getMinutos, minutosPosibles,
   AMARILLAS_PARA_SUSPENSION,
   fmtPct, fmtRatio, fmtMinuto, fmtRecord,
 } from '../../utils/playerStats';
@@ -129,24 +130,30 @@ export const PlayerFichaView = ({
 
   const stats = useMemo(() => {
     if (log.length === 0) return null;
+    // Todo lo que dice "con él en cancha" cuenta solo los partidos que jugó; los minutos y
+    // "sin jugar" usan todas las convocatorias
+    const jugados = log.filter((m) => m.jugo);
+    const categoriasConvocado = getCategoriasJugadas(log);
     return {
-      totales: getTotales(log),
-      tramos: getTramos(log),
-      tiempos: getTiempos(log),
-      minutoPromedio: getMinutoPromedioGol(log),
-      record: getRecord(log),
-      cuandoMarca: getCuandoMarca(log),
-      porTipo: getPorTipo(log),
-      conTarjeta: getConTarjeta(log),
-      porEscenario: getPorEscenario(log),
-      porCesped: getPorCesped(log),
-      combinaciones: getCombinaciones(log),
-      porRival: getPorRival(log),
-      rachas: getRachas(log),
-      hitos: getHitos(log),
-      categoriasJugadas: getCategoriasJugadas(log),
+      // Las tarjetas cuentan aunque no haya entrado (una amarilla en el banco suma para la suspensión)
+      totales: { ...getTotales(jugados), amarillas: getTotales(log).amarillas, rojas: getTotales(log).rojas },
+      minutos: getMinutos(log, minutosPosibles(jornadas, categoria ? [categoria] : categoriasConvocado, { year })),
+      tramos: getTramos(jugados),
+      tiempos: getTiempos(jugados),
+      minutoPromedio: getMinutoPromedioGol(jugados),
+      record: getRecord(jugados),
+      cuandoMarca: getCuandoMarca(jugados),
+      porTipo: getPorTipo(jugados),
+      conTarjeta: getConTarjeta(jugados),
+      porEscenario: getPorEscenario(jugados),
+      porCesped: getPorCesped(jugados),
+      combinaciones: getCombinaciones(jugados),
+      porRival: getPorRival(jugados),
+      rachas: getRachas(jugados),
+      hitos: getHitos(jugados),
+      categoriasJugadas: categoriasConvocado,
     };
-  }, [log]);
+  }, [log, jornadas, categoria, year]);
 
   // Impacto de su ausencia: convocado (titular o suplente) vs. no convocado,
   // siempre en la categoría en la que juega, sin importar el filtro de
@@ -172,7 +179,7 @@ export const PlayerFichaView = ({
     );
   }
 
-  const { totales, tramos, tiempos, minutoPromedio, record, cuandoMarca, porTipo,
+  const { totales, minutos, tramos, tiempos, minutoPromedio, record, cuandoMarca, porTipo,
           conTarjeta, porEscenario, porCesped, combinaciones, porRival, rachas, hitos } = stats;
 
   const tarjetasTramos = Object.fromEntries(
@@ -198,8 +205,12 @@ export const PlayerFichaView = ({
 
       {/* ── Lo básico ──────────────────────────────────────────────── */}
       <FichaSection title="Lo básico">
-        <div className={`grid grid-cols-2 sm:grid-cols-3 ${totales.partidosConMinutos > 0 ? 'lg:grid-cols-7' : 'lg:grid-cols-6'} gap-3`}>
-          <StatCard label="Partidos" value={totales.pj} />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <StatCard
+            label="Partidos"
+            value={totales.pj}
+            sub={minutos.sinJugar > 0 ? `${minutos.sinJugar} ${minutos.sinJugar === 1 ? 'convocatoria' : 'convocatorias'} sin jugar` : null}
+          />
           <StatCard label="Goles" value={totales.goles} tone="green" />
           <StatCard label="Goles / Partido" value={fmtRatio(totales.golesPorPartido)} />
           <StatCard label="Amarillas" value={totales.amarillas} tone="yellow" />
@@ -209,15 +220,33 @@ export const PlayerFichaView = ({
             value={fmtPct(totales.pctTitularidad)}
             sub={`${totales.titular} titular · ${totales.suplente} suplente`}
           />
-          {totales.partidosConMinutos > 0 && (
-            <StatCard
-              label="Minutos"
-              value={totales.minutos}
-              sub={`en ${totales.partidosConMinutos} ${totales.partidosConMinutos === 1 ? 'partido' : 'partidos'} con cambios cargados`}
-            />
-          )}
         </div>
       </FichaSection>
+
+      {/* ── Minutos ────────────────────────────────────────────────── */}
+      {minutos.partidosConMinutos > 0 && (
+        <FichaSection
+          title="Minutos"
+          description={`Sobre ${minutos.partidosConMinutos} ${minutos.partidosConMinutos === 1 ? 'partido' : 'partidos'} con cambios cargados. El % es sobre los minutos que jugó su categoría.`}
+        >
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <StatCard label="Minutos" value={minutos.minutos} sub={minutos.pctMinutos != null ? `${fmtPct(minutos.pctMinutos)} del total` : null} />
+            <StatCard label="Completos" value={minutos.completos} sub="titular los 90'" />
+            <StatCard
+              label="Reemplazado"
+              value={minutos.reemplazado}
+              sub={minutos.minSalidaProm != null ? `sale al ${fmtMinuto(minutos.minSalidaProm)} en promedio` : null}
+            />
+            <StatCard
+              label="Ingresos"
+              value={minutos.ingresos}
+              sub={minutos.minIngresoProm != null ? `entra al ${fmtMinuto(minutos.minIngresoProm)} en promedio` : null}
+            />
+            <StatCard label="Minutos por gol" value={minutos.minPorGol != null ? fmtMinuto(minutos.minPorGol) : '—'} tone="green" />
+            <StatCard label="Goles cada 90'" value={minutos.golesPor90 != null ? fmtRatio(minutos.golesPor90) : '—'} sub={minutos.golesPor90 == null ? "con menos de 90' jugados" : null} />
+          </div>
+        </FichaSection>
+      )}
 
       {/* ── Por minuto ─────────────────────────────────────────────── */}
       <FichaSection

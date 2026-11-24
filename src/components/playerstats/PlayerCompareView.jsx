@@ -6,6 +6,7 @@ import {
   getTotales, getTramos, getTiempos, getMinutoPromedioGol,
   getRecord, getCuandoMarca, getPorTipo, getConTarjeta,
   getPorEscenario, getPorCesped, getRachas, getHitos, getCategoriasJugadas,
+  getMinutos, minutosPosibles,
   TRAMOS, fmtPct, fmtRatio, fmtMinuto, getBestIndices,
 } from '../../utils/playerStats';
 import { Row, SectionHeader } from './CompareRow';
@@ -40,26 +41,33 @@ export const PlayerCompareView = ({
     () =>
       players.map((p) => {
         const log = buildPlayerMatchLog(jornadas, p.id, { categoria, year });
+        // Como en la ficha: las estadísticas cuentan los partidos que jugó; los minutos, todas las convocatorias
+        const jugados = log.filter((m) => m.jugo);
+        const categoriasConvocado = getCategoriasJugadas(log);
         return {
           player: p,
-          log,
-          totales: getTotales(log),
-          tramos: getTramos(log),
-          tiempos: getTiempos(log),
-          minutoPromedio: getMinutoPromedioGol(log),
-          record: getRecord(log),
-          cuandoMarca: getCuandoMarca(log),
-          porTipo: getPorTipo(log),
-          conTarjeta: getConTarjeta(log),
-          porEscenario: getPorEscenario(log),
-          porCesped: getPorCesped(log),
-          rachas: getRachas(log),
-          hitos: getHitos(log),
-          categoriasJugadas: getCategoriasJugadas(log),
+          log: jugados,
+          // Las tarjetas cuentan aunque no haya entrado (una amarilla en el banco suma para la suspensión)
+          totales: { ...getTotales(jugados), amarillas: getTotales(log).amarillas, rojas: getTotales(log).rojas },
+          minutos: getMinutos(log, minutosPosibles(jornadas, categoria ? [categoria] : categoriasConvocado, { year })),
+          tramos: getTramos(jugados),
+          tiempos: getTiempos(jugados),
+          minutoPromedio: getMinutoPromedioGol(jugados),
+          record: getRecord(jugados),
+          cuandoMarca: getCuandoMarca(jugados),
+          porTipo: getPorTipo(jugados),
+          conTarjeta: getConTarjeta(jugados),
+          porEscenario: getPorEscenario(jugados),
+          porCesped: getPorCesped(jugados),
+          rachas: getRachas(jugados),
+          hitos: getHitos(jugados),
+          categoriasJugadas: categoriasConvocado,
         };
       }),
     [players, jornadas, categoria, year]
   );
+
+  const hayMinutos = data.some((d) => d.minutos.partidosConMinutos > 0);
 
   const hayMuestraChica = data.some((d) =>
     [d.record, d.cuandoMarca.conGol, d.cuandoMarca.sinGol, d.porTipo.titular, d.porTipo.suplente,
@@ -84,6 +92,20 @@ export const PlayerCompareView = ({
     push('Titular', data.map((d) => d.totales.titular));
     push('Suplente', data.map((d) => d.totales.suplente));
     push('% Titularidad', data.map((d) => fmtPct(d.totales.pctTitularidad)));
+    push('Sin jugar', data.map((d) => d.minutos.sinJugar));
+
+    if (hayMinutos) {
+    push('Minutos', names.map(() => ''));
+    push('Minutos jugados', data.map((d) => d.minutos.minutos));
+    push('% Minutos', data.map((d) => fmtPct(d.minutos.pctMinutos)));
+    push('Completos', data.map((d) => d.minutos.completos));
+    push('Reemplazado', data.map((d) => d.minutos.reemplazado));
+    push('Minuto Promedio de Salida', data.map((d) => fmtMinuto(d.minutos.minSalidaProm)));
+    push('Ingresos', data.map((d) => d.minutos.ingresos));
+    push('Minuto Promedio de Ingreso', data.map((d) => fmtMinuto(d.minutos.minIngresoProm)));
+    push('Minutos por Gol', data.map((d) => fmtMinuto(d.minutos.minPorGol)));
+    push('Goles cada 90', data.map((d) => (d.minutos.golesPor90 == null ? '—' : fmtRatio(d.minutos.golesPor90))));
+    }
 
     push('Por Minuto', names.map(() => ''));
     TRAMOS.forEach((t) => push(`Goles ${t.label}`, data.map((d) => d.tramos.goles[t.key])));
@@ -120,7 +142,7 @@ export const PlayerCompareView = ({
     push('Goles desde el banco', data.map((d) => d.hitos.golesDesdeBanco));
 
     return rows;
-  }, [data, names, minMuestra]);
+  }, [data, names, minMuestra, hayMinutos]);
 
   const handleExportExcel = () => {
     const ws = XLSX.utils.json_to_sheet(exportRows);
@@ -165,8 +187,27 @@ export const PlayerCompareView = ({
           row('Titular',         data.map((d) => d.totales.titular), 'max'),
           row('Suplente',        data.map((d) => d.totales.suplente)),
           row('% Titularidad',   data.map((d) => d.totales.pctTitularidad ?? 0), 'max', fmtPct),
+          row('Sin jugar',       data.map((d) => d.minutos.sinJugar)),
         ],
       },
+      // Solo si alguno tiene partidos con minutos cargados
+      ...(hayMinutos ? [
+        {
+          title: 'Minutos',
+          rows: [
+            row('Minutos',          data.map((d) => d.minutos.minutos), 'max'),
+            row('% Minutos',        data.map((d) => d.minutos.pctMinutos ?? 0), 'max', (v, i) => fmtPct(data[i].minutos.pctMinutos)),
+            row('Completos',        data.map((d) => d.minutos.completos), 'max'),
+            row('Reemplazado',      data.map((d) => d.minutos.reemplazado)),
+            row('Min. prom. salida', data.map((d) => d.minutos.minSalidaProm), undefined, fmtMinuto),
+            row('Ingresos',         data.map((d) => d.minutos.ingresos)),
+            row('Min. prom. ingreso', data.map((d) => d.minutos.minIngresoProm), undefined, fmtMinuto),
+            // Menor es mejor; sin goles queda en —
+            row('Minutos por gol',  data.map((d) => d.minutos.minPorGol ?? Infinity), 'min', (v) => (v === Infinity ? '—' : fmtMinuto(v))),
+            row('Goles cada 90\'',  data.map((d) => d.minutos.golesPor90 ?? 0), 'max', (v, i) => (data[i].minutos.golesPor90 == null ? '—' : fmtRatio(v))),
+          ],
+        },
+      ] : []),
       {
         title: 'Por Minuto',
         rows: [
@@ -214,7 +255,7 @@ export const PlayerCompareView = ({
         ],
       },
     ];
-  }, [data]);
+  }, [data, hayMinutos]);
 
   const colSpan = players.length + 1;
   const gridCols = GRID_COLS[players.length] || GRID_COLS[3];
