@@ -7,6 +7,33 @@ import { useToast } from '../context/ToastContext';
 
 // Usuario del bot (sin @). Opcional: con él se ofrece el link directo t.me/<bot>?start=<código>.
 const BOT = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '';
+/**
+ * Copia texto. navigator.clipboard solo existe en https (o localhost); si no está o falla
+ * (p. ej. el celular entrando al dev server por la IP de la red), usa un textarea temporal
+ * con execCommand('copy'), que sigue andando en http y en Safari de iOS.
+ */
+async function copiarAlPortapapeles(texto) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      return;
+    } catch {
+      // seguir con el método alternativo
+    }
+  }
+  const area = document.createElement('textarea');
+  area.value = texto;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  area.select();
+  area.setSelectionRange(0, texto.length); // iOS necesita el rango explícito
+  const ok = document.execCommand('copy');
+  document.body.removeChild(area);
+  if (!ok) throw new Error('copy no soportado');
+}
+
 // Ejemplos para copiar, según el permiso que pide cada comando en el bot (logica.ts)
 const EJEMPLOS = [
   { texto: '/ayuda', puede: () => true },
@@ -61,7 +88,7 @@ export const TelegramVinculoPanel = ({ currentUser }) => {
 
   const copiar = async (texto) => {
     try {
-      await navigator.clipboard.writeText(texto);
+      await copiarAlPortapapeles(texto);
       showToast(`Copiado ${texto}: pegalo en el chat con el bot`, 'success');
     } catch {
       showToast('No se pudo copiar al portapapeles', 'error');
