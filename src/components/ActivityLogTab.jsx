@@ -83,6 +83,13 @@ function normaliseActivityLog(rows) {
         label = 'Mensaje enviado a Telegram';
         detail = r.details?.resumen || '';
         break;
+      case 'telegram_consulta':
+        label = `Consulta al bot de Telegram: /${r.details?.comando || '?'}`;
+        detail = r.details?.args || '';
+        break;
+      case 'telegram_vinculo':
+        label = r.details?.vinculado === false ? 'Telegram desvinculado del bot de consultas' : 'Telegram vinculado al bot de consultas';
+        break;
       case 'telegram_resumen': {
         label = 'Resumen semanal enviado a Telegram';
         const d = r.details || {};
@@ -161,6 +168,8 @@ const BADGE = {
   ficha_medica_auto: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
   telegram_envio: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
   telegram_resumen: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  telegram_consulta: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  telegram_vinculo: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
 };
 
 const TYPE_LABELS = {
@@ -177,6 +186,8 @@ const TYPE_LABELS = {
   ficha_medica_auto: 'Fichas SND automáticas',
   telegram_envio: 'Telegram',
   telegram_resumen: 'Resumen Telegram',
+  telegram_consulta: 'Consulta al bot',
+  telegram_vinculo: 'Vínculo con el bot',
 };
 
 const ALL_TYPES = Object.keys(TYPE_LABELS);
@@ -186,7 +197,7 @@ const ALL_TYPES = Object.keys(TYPE_LABELS);
 // Events come from 3 tables, each paged on its own and merged by timestamp.
 const PAGE_SIZE = 50;
 
-const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet', 'ajuste_suspension', 'ficha_medica_auto', 'telegram_envio', 'telegram_resumen'];
+const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet', 'ajuste_suspension', 'ficha_medica_auto', 'telegram_envio', 'telegram_resumen', 'telegram_consulta', 'telegram_vinculo'];
 const REQUEST_TYPES = ['approved', 'rejected'];
 
 // Returns the subset of `all` that is selected, null when none is (skip the

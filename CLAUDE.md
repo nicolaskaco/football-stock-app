@@ -27,7 +27,7 @@ Authoritative spec: [SPEC.md](SPEC.md) covers all roles, the DB schema, permissi
 | Icons | lucide-react |
 | Deployment | Vercel (SPA rewrites in `vercel.json`) |
 
-App source is `.js`/`.jsx`, with no TypeScript. The only `.ts` files are the Supabase Edge Functions (Deno). Tests use Vitest and cover only pure logic in `src/utils/` (there are no component tests).
+App source is `.js`/`.jsx`, with no TypeScript. The only `.ts` files are the Supabase Edge Functions (Deno). Tests use Vitest and cover only pure logic: `src/utils/` and `supabase/functions/telegram-bot/logica.ts` (there are no component tests).
 
 ---
 
@@ -67,7 +67,7 @@ Environment: copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` / `
 | [src/context/](src/context/) | `ToastContext` (`useToast().showToast(msg, type)`) and `DarkModeContext`. These are UI-only contexts; entity data does **not** go here |
 | [src/hooks/](src/hooks/) | `useMutation`, `useMountEffect`, `useFormDirty`, `useTableSort`, `useDebouncedSearch`, `useAlertModal`, `useChartPalette` |
 | [supabase/migrations/](supabase/migrations/) | SQL migrations (only recent ones are in the repo; the base schema is described in SPEC.md) |
-| [supabase/functions/](supabase/functions/) | Edge Functions: `validate-player`, `invite-user`, `reset-password-link`, `check-ficha-medica`, `refresh-fichas-medicas` (nightly, via `pg_cron`), `send-telegram` (app → club Telegram group) and `weekly-digest` (Monday summary to Telegram, via `pg_cron`). Shared Deno code lives in `_shared/`. `validate-employee` is deployed but its source is **not** in the repo |
+| [supabase/functions/](supabase/functions/) | Edge Functions: `validate-player`, `invite-user`, `reset-password-link`, `check-ficha-medica`, `refresh-fichas-medicas` (nightly, via `pg_cron`), `send-telegram` (app → club Telegram group), `weekly-digest` (Monday summary to Telegram, via `pg_cron`) and `telegram-bot` (webhook that answers queries from linked users in private chats). Shared Deno code lives in `_shared/`. `validate-employee` is deployed but its source is **not** in the repo |
 | [.claude/docs/](.claude/docs/) | `architectural_patterns.md` and `feature_backlog.md` (mark items done with the PR number and date) |
 | [.claude/agents/](.claude/agents/) | `revisor`, the read-only subagent that reviews a branch before its PR |
 | [.githooks/](.githooks/) | Git hooks that block commits and pushes to `main` |

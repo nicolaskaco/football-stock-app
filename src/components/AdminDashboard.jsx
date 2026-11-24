@@ -1,10 +1,11 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Menu, X, Moon, Sun, Loader2, KeyRound, Search } from 'lucide-react';
+import { Menu, X, Moon, Sun, Loader2, KeyRound, Search, Send } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
 import { NotificationCenter } from './NotificationCenter';
 import { ChangePasswordForm } from '../forms/ChangePasswordForm';
+import { TelegramVinculoPanel } from './TelegramVinculoPanel';
 import { useDarkMode } from '../context/DarkModeContext';
 
 // Lazy-loaded tab components — each chunk is downloaded only when the tab is first opened
@@ -206,6 +207,19 @@ export const AdminDashboard = ({
               >
                 <KeyRound className="w-5 h-5 text-gray-600" />
               </button>
+              {!isFinanzas && (
+                <button
+                  onClick={() => setShowModal({
+                    title: 'Bot de Telegram',
+                    content: <TelegramVinculoPanel currentUser={currentUser} />,
+                  })}
+                  className="p-2 rounded-lg hover:bg-gray-100"
+                  aria-label="Bot de Telegram"
+                  title="Bot de Telegram"
+                >
+                  <Send className="w-5 h-5 text-gray-600" />
+                </button>
+              )}
               {!isFinanzas && (
                 <NotificationCenter
                   currentUser={currentUser}
