@@ -53,6 +53,28 @@ describe('parseCometPages — formato iText (PDF viejo)', () => {
   });
 });
 
+describe('parseCometPages — iText con el párrafo de tarjetas justificado', () => {
+  it('lee las tarjetas aunque cada palabra venga en un fragmento', () => {
+    const pages = paginasItext();
+    const items = pages[0].items;
+    // "Tarjetas amarillas:" y el texto partidos en palabras, como en los PDF justificados
+    const partir = (label) => {
+      const i = items.findIndex((x) => x.str === label);
+      const [l] = items.splice(i, 1);
+      let x = l.x;
+      l.str.split(' ').forEach((w) => { items.push({ str: w, x, y: l.y, w: w.length * 4 }); x += w.length * 4 + 5; });
+    };
+    partir('Tarjetas amarillas:');
+    partir('PEÑAROL: 8 OCHO, JUGADOR (28 - Conducta antideportiva); RIVAL FC: 7 RIVAL7, X (80 - Retardar); 3');
+    partir('Tarjetas rojas:');
+    const r = parseCometPages(pages);
+    expect(r.tarjetas.map(({ tipo, dorsal, minuto }) => ({ tipo, dorsal, minuto }))).toEqual([
+      { tipo: 'amarilla', dorsal: 8, minuto: 28 },
+      { tipo: 'roja', dorsal: 2, minuto: null },
+    ]);
+  });
+});
+
 describe('parseCometPages — formato web sin COMET ID', () => {
   const r = parseCometPages(paginasWebSinId());
 

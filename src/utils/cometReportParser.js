@@ -455,12 +455,14 @@ function parseItext(pages) {
 
   // ── Tarjetas: párrafo "PEÑAROL: 8 PEREIRA, ESTEBAN (28 - Conducta antideportiva); RIVAL: …"
   const ETIQUETA_RE = /^(Tarjetas|Expulsiones|Advertencias|Resumen del partido|PEN:)/;
+  // El párrafo puede venir justificado, con cada palabra en un fragmento ("Tarjetas" + "amarillas:"),
+  // así que la etiqueta se busca en el texto del renglón y no en un fragmento suelto
   const parrafo = (re) => {
-    const idx = rows.findIndex((r) => r.items.some((it) => re.test(it.str)));
+    const idx = rows.findIndex((r) => re.test(rowText(r)));
     if (idx === -1) return '';
     const partes = [];
     for (let i = idx; i < rows.length; i++) {
-      if (i > idx && rows[i].items[0] && ETIQUETA_RE.test(rows[i].items[0].str)) break;
+      if (i > idx && ETIQUETA_RE.test(rowText(rows[i]))) break;
       partes.push(rowText(rows[i]));
     }
     return partes.join(' ').replace(re, '').replace(/\s+/g, ' ').trim();
