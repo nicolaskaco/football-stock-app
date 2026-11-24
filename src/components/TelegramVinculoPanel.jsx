@@ -7,6 +7,40 @@ import { useToast } from '../context/ToastContext';
 
 // Usuario del bot (sin @). Opcional: con él se ofrece el link directo t.me/<bot>?start=<código>.
 const BOT = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '';
+/**
+ * Copia texto. navigator.clipboard solo existe en https (o localhost); si no está o falla
+ * (p. ej. el celular entrando al dev server por la IP de la red), usa un textarea temporal
+ * con execCommand('copy'), que sigue andando en http y en Safari de iOS.
+ */
+async function copiarAlPortapapeles(texto) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      return;
+    } catch {
+      // seguir con el método alternativo
+    }
+  }
+  const area = document.createElement('textarea');
+  area.value = texto;
+  area.setAttribute('readonly', '');
+  area.style.position = 'fixed';
+  area.style.opacity = '0';
+  document.body.appendChild(area);
+  area.select();
+  area.setSelectionRange(0, texto.length); // iOS necesita el rango explícito
+  const ok = document.execCommand('copy');
+  document.body.removeChild(area);
+  if (!ok) throw new Error('copy no soportado');
+}
+
+// Ejemplos para copiar, según el permiso que pide cada comando en el bot (logica.ts)
+const EJEMPLOS = [
+  { texto: '/ayuda', puede: () => true },
+  { texto: '/proximo', puede: (u) => u.canViewPartidos },
+  { texto: '/resultado', puede: (u) => u.canViewPartidos },
+  { texto: '/nacidos 2008', puede: (u) => u.canAccessPlayers },
+];
 
 /**
  * Vinculación del usuario logueado con el bot de consultas de Telegram (Edge Function
@@ -52,10 +86,10 @@ export const TelegramVinculoPanel = ({ currentUser }) => {
     setEstado({ vinculado: false });
   }, 'No se pudo desvincular', 'Telegram desvinculado');
 
-  const copiar = async () => {
+  const copiar = async (texto) => {
     try {
-      await navigator.clipboard.writeText(`/vincular ${codigo}`);
-      showToast('Copiado: pegalo en el chat con el bot', 'success');
+      await copiarAlPortapapeles(texto);
+      showToast(`Copiado ${texto}: pegalo en el chat con el bot`, 'success');
     } catch {
       showToast('No se pudo copiar al portapapeles', 'error');
     }
@@ -89,18 +123,43 @@ export const TelegramVinculoPanel = ({ currentUser }) => {
       {estado.vinculado ? (
         <div className="space-y-3">
           <p className="flex items-center gap-2 text-green-700 dark:text-green-400 font-medium">
-            <CheckCircle2 className="w-4 h-4" /> Tu Telegram está vinculado. Mandale /ayuda al bot para ver las consultas.
+            <CheckCircle2 className="w-4 h-4" /> Tu Telegram está vinculado{BOT ? <> con <span className="font-semibold">@{BOT}</span></> : ''}.
           </p>
-          <button type="button" onClick={desvincular} disabled={isSaving} className={botonSecundario}>
-            Desvincular
-          </button>
+          <p>
+            Escribile en el chat privado (mandá <span className="font-mono">/</span> para ver la lista). Tocá un ejemplo para copiarlo:{' '}
+            {EJEMPLOS.filter((ej) => ej.puede(currentUser)).map(({ texto: ej }) => (
+              <button
+                key={ej}
+                type="button"
+                onClick={() => copiar(ej)}
+                className="mr-1 mt-1 px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 font-mono text-xs hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                {ej}
+              </button>
+            ))}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {BOT && (
+              <a
+                href={`https://t.me/${BOT}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`${botonPrincipal} flex items-center gap-1`}
+              >
+                <ExternalLink className="w-4 h-4" /> Abrir el bot
+              </a>
+            )}
+            <button type="button" onClick={desvincular} disabled={isSaving} className={botonSecundario}>
+              Desvincular
+            </button>
+          </div>
         </div>
       ) : codigo ? (
         <div className="space-y-3">
           <p>Abrí el chat privado con el bot{BOT ? <> (<span className="font-semibold">@{BOT}</span>)</> : ''} y mandale este mensaje. Vence en 10 minutos.</p>
           <div className="flex flex-wrap items-center gap-2">
             <code className="px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-base font-mono">/vincular {codigo}</code>
-            <button type="button" onClick={copiar} className={`${botonSecundario} flex items-center gap-1`}>
+            <button type="button" onClick={() => copiar(`/vincular ${codigo}`)} className={`${botonSecundario} flex items-center gap-1`}>
               <Copy className="w-4 h-4" /> Copiar
             </button>
             {BOT && (
