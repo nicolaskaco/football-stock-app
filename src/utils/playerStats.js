@@ -16,6 +16,7 @@
  */
 
 import { fechaPartido } from './dateUtils';
+import { CATEGORIAS_PARTIDO } from './constants';
 
 // ─── Marcador ────────────────────────────────────────────────────────────────
 
@@ -105,7 +106,7 @@ export function groupGoleadores(partido) {
  * (partidos cargados antes de registrar cambios): así no se inventan 90'
  * para quien quizás salió antes.
  */
-function calcMinutos(partido, pp, rojas = []) {
+export function calcMinutos(partido, pp, rojas = []) {
   const duracion = partido.duracion == null ? null : Number(partido.duracion);
   if (!duracion) return null;
   const rojaMin = rojas[0]?.minuto == null ? null : Number(rojas[0].minuto);
@@ -168,11 +169,16 @@ export function buildPlayerMatchLog(jornadas = [], playerId, { categoria = null,
         rojaFechas: rojas.length ? (rojas[0].fechas_suspension || 1) : null,
 
         minutos: calcMinutos(partido, pp, rojas),
+        minutoEntrada: pp.minuto_entrada ?? null,
+        minutoSalida: pp.minuto_salida ?? null,
+        duracion: partido.duracion == null ? null : Number(partido.duracion),
       });
     });
   });
 
-  return log.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  return log
+    .map((m) => ({ ...m, jugo: jugo(m) }))
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 }
 
 // ─── Record (G/E/P) ──────────────────────────────────────────────────────────
@@ -229,6 +235,167 @@ export function getTotales(log = []) {
     golesPorPartido: pj > 0 ? goles / pj : 0,
     minutos,
     partidosConMinutos: conMinutos.length,
+  };
+}
+
+// ─── Minutos ─────────────────────────────────────────────────────────────────
+
+/**
+ * ¿Entró a la cancha? Un partido sin minutos cargados (null) cuenta como jugado, y el que hizo
+ * un gol jugó aunque falte su minuto de entrada.
+ */
+export const jugo = (m) => m.minutos !== 0 || (m.goles || 0) > 0;
+
+const promedio = (nums) => (nums.length ? nums.reduce((s, n) => s + n, 0) / nums.length : null);
+
+/**
+ * Minutos y participación sobre un log (buildPlayerMatchLog, o filas con la misma forma:
+ * { tipo, minutos, minutoEntrada, minutoSalida, duracion, goles }).
+ * - jugados: entró (un partido sin minutos cargados cuenta como jugado); sinJugar: convocado
+ *   que no entró.
+ * - completos: titular que jugó toda la duración, sin salir ni ser expulsado.
+ * - reemplazado / ingresos: titular que salió / suplente que entró, con el minuto promedio.
+ * - minPorGol y golesPor90 solo con los partidos que tienen minutos; G/90 pide 90' o más.
+ * @param minutosPosibles  minutos que jugó su(s) categoría(s) (ver minutosPosibles), para el %
+ */
+export function getMinutos(log = [], minutosPosibles = null) {
+  const conDato = log.filter((m) => m.minutos != null);
+  const minutos = conDato.reduce((s, m) => s + m.minutos, 0);
+  const titulares = conDato.filter((m) => m.tipo === 'titular');
+  const reemplazos = titulares.filter((m) => m.minutoSalida != null);
+  const ingresos = conDato.filter((m) => m.tipo === 'suplente' && m.minutoEntrada != null && m.minutos > 0);
+  const golesConDato = conDato.reduce((s, m) => s + (m.goles || 0), 0);
+  return {
+    minutos,
+    partidosConMinutos: conDato.length,
+    jugados: log.filter(jugo).length,
+    sinJugar: log.filter((m) => !jugo(m)).length,
+    completos: titulares.filter((m) => m.minutoSalida == null && m.minutos >= m.duracion).length,
+    reemplazado: reemplazos.length,
+    minSalidaProm: promedio(reemplazos.map((m) => Number(m.minutoSalida))),
+    ingresos: ingresos.length,
+    minIngresoProm: promedio(ingresos.map((m) => Number(m.minutoEntrada))),
+    minPorGol: golesConDato > 0 && minutos > 0 ? minutos / golesConDato : null,
+    golesPor90: minutos >= 90 ? (golesConDato * 90) / minutos : null,
+    pctMinutos: minutosPosibles > 0 ? (minutos / minutosPosibles) * 100 : null,
+  };
+}
+
+/** Minutos que jugaron (suma de `duracion`) los partidos de esas categorías, opcionalmente de un año. */
+export function minutosPosibles(jornadas = [], categorias = [], { year = null } = {}) {
+  let total = 0;
+  jornadas.forEach((j) => {
+    if (year && (!j.fecha || new Date(j.fecha).getFullYear() !== Number(year))) return;
+    (j.partidos || []).forEach((p) => {
+      if (categorias.includes(p.categoria) && p.duracion != null) total += Number(p.duracion);
+    });
+  });
+  return total;
+}
+
+/** Filas tipo log de un partido, una por convocado (para las tablas de Estadísticas y la rotación). */
+function filasDePartido(partido) {
+  const eventos = partido.partido_eventos || [];
+  return (partido.partido_players || []).filter((pp) => pp.player_id).map((pp) => {
+    const propios = eventos.filter((e) => e.player_id === pp.player_id);
+    const rojas = propios.filter((e) => e.tipo === 'roja');
+    return {
+      player_id: pp.player_id,
+      nombre: pp.players?.name_visual || pp.players?.name || null,
+      tipo: pp.tipo,
+      minutos: calcMinutos(partido, pp, rojas),
+      minutoEntrada: pp.minuto_entrada ?? null,
+      minutoSalida: pp.minuto_salida ?? null,
+      duracion: partido.duracion == null ? null : Number(partido.duracion),
+      goles: propios.filter((e) => e.tipo === 'gol').length,
+      amarillas: propios.filter((e) => e.tipo === 'amarilla').length,
+      rojas: rojas.length,
+    };
+  });
+}
+
+/**
+ * Estadísticas por jugador para las tablas de Estadísticas (General, Goleadores, Tarjetas,
+ * Minutos). `jornadas` ya viene filtrado por año; `categoria` filtra los partidos.
+ * pj = partidos jugados (entró); convocatorias = todos en los que estuvo en la planilla.
+ * El % de minutos es sobre los minutos de las categorías en las que fue convocado.
+ */
+export function getEstadisticasJugadores(jornadas = [], players = [], categoria = null) {
+  const porJugador = new Map();
+  const duracionPorCategoria = {};
+  jornadas.forEach((j) => (j.partidos || []).forEach((partido) => {
+    if (categoria && partido.categoria !== categoria) return;
+    if (partido.duracion != null) duracionPorCategoria[partido.categoria] = (duracionPorCategoria[partido.categoria] || 0) + Number(partido.duracion);
+    filasDePartido(partido).forEach((f) => {
+      if (!porJugador.has(f.player_id)) porJugador.set(f.player_id, { nombre: f.nombre, categorias: new Set(), log: [] });
+      const acc = porJugador.get(f.player_id);
+      acc.categorias.add(partido.categoria);
+      acc.log.push(f);
+    });
+  }));
+
+  const byId = new Map(players.map((p) => [p.id, p]));
+  return [...porJugador.entries()].map(([id, { nombre, categorias, log }]) => {
+    const p = byId.get(id);
+    const cats = [...categorias];
+    const posibles = cats.reduce((s, c) => s + (duracionPorCategoria[c] || 0), 0);
+    const min = getMinutos(log, posibles);
+    const goles = log.reduce((s, m) => s + m.goles, 0);
+    const amarillas = log.reduce((s, m) => s + m.amarillas, 0);
+    const pj = min.jugados;
+    return {
+      id,
+      name_visual: p?.name_visual || p?.name || nombre || '?',
+      categoria: CATEGORIAS_PARTIDO.filter((c) => categorias.has(c)).join('/') || '—',
+      convocatorias: log.length,
+      pj,
+      titular: log.filter((m) => m.tipo === 'titular').length,
+      suplente: min.ingresos + log.filter((m) => m.tipo === 'suplente' && m.minutos == null).length,
+      goles,
+      amarillas,
+      rojas: log.reduce((s, m) => s + m.rojas, 0),
+      golesRatio: pj > 0 ? goles / pj : 0,
+      amarillasRatio: pj > 0 ? amarillas / pj : 0,
+      ...min,
+      // Sin partidos con minutos no hay dato (al ordenar va al final)
+      minutos: min.partidosConMinutos > 0 ? min.minutos : null,
+    };
+  });
+}
+
+/**
+ * Rotación de una categoría en los partidos con minutos cargados: jugadores usados, cuántos
+ * jugaron más de la mitad de los minutos, cambios por partido, minuto promedio del primer
+ * cambio y el jugador con más minutos. null si no hay partidos con minutos.
+ */
+export function getRotacion(jornadas = [], categoria) {
+  const partidos = jornadas.flatMap((j) => (j.partidos || []).filter((p) => p.categoria === categoria && p.duracion != null));
+  if (partidos.length === 0) return null;
+  const total = partidos.reduce((s, p) => s + Number(p.duracion), 0);
+  const minutos = new Map();
+  const nombres = new Map();
+  let cambios = 0;
+  const primeros = [];
+  partidos.forEach((partido) => {
+    const filas = filasDePartido(partido);
+    filas.forEach((f) => {
+      minutos.set(f.player_id, (minutos.get(f.player_id) || 0) + (f.minutos || 0));
+      if (f.nombre) nombres.set(f.player_id, f.nombre);
+    });
+    const entradas = filas.filter((f) => f.tipo === 'suplente' && f.minutoEntrada != null && f.minutos > 0).map((f) => Number(f.minutoEntrada));
+    cambios += entradas.length;
+    if (entradas.length) primeros.push(Math.min(...entradas));
+  });
+  const usados = [...minutos.entries()].filter(([, m]) => m > 0);
+  const [topId, topMin] = usados.sort((a, b) => b[1] - a[1])[0] || [null, 0];
+  return {
+    partidos: partidos.length,
+    minutosTotales: total,
+    jugadoresUsados: usados.length,
+    masDeLaMitad: usados.filter(([, m]) => m > total / 2).length,
+    cambiosPorPartido: cambios / partidos.length,
+    minutoPrimerCambio: promedio(primeros),
+    top: topId ? { player_id: topId, nombre: nombres.get(topId) || null, minutos: topMin, pct: (topMin / total) * 100 } : null,
   };
 }
 

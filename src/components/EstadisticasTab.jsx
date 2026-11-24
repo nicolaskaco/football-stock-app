@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL, CESPED_TIPOS } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
 import { escenarioBadgeClass } from './ui/escenario';
-import { resolveMarcador, groupGoleadores } from '../utils/playerStats';
+import { resolveMarcador, groupGoleadores, getEstadisticasJugadores, getRotacion, fmtRatio, fmtPct, fmtMinuto } from '../utils/playerStats';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 import { PorRivalView } from './PorRivalView';
@@ -12,69 +12,6 @@ import { CardDistributionChart } from './charts/CardDistributionChart';
 import { AgeCurveChart } from './charts/AgeCurveChart';
 import { RivalPerformanceChart } from './charts/RivalPerformanceChart';
 import { ArbitroPerformanceChart } from './charts/ArbitroPerformanceChart';
-
-// ─── Player stats helpers ────────────────────────────────────────────────────
-
-const buildStats = (jornadas, players, categoriaFiltro) => {
-  const map = {};
-
-  players.forEach((p) => {
-    map[p.id] = {
-      name_visual: p.name_visual || p.name,
-      categoriasSet: new Set(),
-      pj: 0,
-      titular: 0,
-      suplente: 0,
-      goles: 0,
-      amarillas: 0,
-      rojas: 0,
-    };
-  });
-
-  jornadas.forEach((jornada) => {
-    (jornada.partidos || []).forEach((partido) => {
-      if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
-
-      (partido.partido_players || []).forEach((pp) => {
-        if (!pp.player_id) return;
-        if (!map[pp.player_id]) {
-          map[pp.player_id] = {
-            name_visual: pp.players?.name_visual || pp.players?.name || '?',
-            categoriasSet: new Set(),
-            pj: 0, titular: 0, suplente: 0, goles: 0, amarillas: 0, rojas: 0,
-          };
-        }
-        map[pp.player_id].categoriasSet.add(partido.categoria);
-        map[pp.player_id].pj++;
-        if (pp.tipo === 'titular')  map[pp.player_id].titular++;
-        if (pp.tipo === 'suplente') map[pp.player_id].suplente++;
-      });
-
-      (partido.partido_eventos || []).forEach((e) => {
-        if (!e.player_id || !map[e.player_id]) return;
-        if (e.tipo === 'gol')      map[e.player_id].goles++;
-        if (e.tipo === 'amarilla') map[e.player_id].amarillas++;
-        if (e.tipo === 'roja')     map[e.player_id].rojas++;
-      });
-    });
-  });
-
-  return Object.entries(map)
-    .map(([id, s]) => {
-      const { categoriasSet, ...rest } = s;
-      const categoria = CATEGORIAS_PARTIDO
-        .filter((c) => categoriasSet.has(c))
-        .join('/') || '—';
-      return {
-        id,
-        ...rest,
-        categoria,
-        golesRatio:     s.pj > 0 ? (s.goles / s.pj).toFixed(2)     : '0.00',
-        amarillasRatio: s.pj > 0 ? (s.amarillas / s.pj).toFixed(2) : '0.00',
-      };
-    })
-    .filter((s) => s.pj > 0 || s.goles > 0 || s.amarillas > 0 || s.rojas > 0);
-};
 
 // ─── Convocatorias by year helper ────────────────────────────────────────────
 
@@ -340,6 +277,9 @@ const GeneralTable = ({ data, convocatoriasByYear = {}, availableYears = [] }) =
                 <th className={`${thClass} text-center`} onClick={() => handleSort('pj')}>PJ <SortIcon col="pj" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('titular')}>T <SortIcon col="titular" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('suplente')}>S <SortIcon col="suplente" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('sinJugar')} title="Convocado sin entrar">Sin jugar <SortIcon col="sinJugar" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('minutos')} title="Minutos jugados">Min <SortIcon col="minutos" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('pctMinutos')} title="Porcentaje de los minutos de su categoría">% Min <SortIcon col="pctMinutos" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('goles')}>Goles <SortIcon col="goles" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('amarillas')}>🟨 <SortIcon col="amarillas" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('rojas')}>🟥 <SortIcon col="rojas" /></th>
@@ -359,10 +299,13 @@ const GeneralTable = ({ data, convocatoriasByYear = {}, availableYears = [] }) =
                   <td className="px-3 py-2 text-center text-gray-700">{s.pj}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.titular}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.suplente}</td>
+                  <td className="px-3 py-2 text-center text-gray-500">{s.sinJugar > 0 ? s.sinJugar : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center font-semibold text-gray-800">{s.partidosConMinutos > 0 ? s.minutos : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{fmtPct(s.pctMinutos)}</td>
                   <td className="px-3 py-2 text-center font-semibold text-green-700">{s.goles > 0 ? s.goles : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.amarillas > 0 ? s.amarillas : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.rojas > 0 ? s.rojas : <span className="text-gray-300">—</span>}</td>
-                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.goles > 0 ? s.golesRatio : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.goles > 0 ? fmtRatio(s.golesRatio) : <span className="text-gray-300">—</span>}</td>
                   {availableYears.map((year) => {
                     const ydata = convocatoriasByYear[s.id]?.[year];
                     return (
@@ -380,6 +323,92 @@ const GeneralTable = ({ data, convocatoriasByYear = {}, availableYears = [] }) =
           </table>
         </div>
       )}
+    </div>
+  );
+};
+
+// Tarjeta de un dato de la rotación
+const DatoRotacion = ({ label, value, sub }) => (
+  <div>
+    <p className="text-[11px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide">{label}</p>
+    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{value}</p>
+    {sub && <p className="text-xs text-gray-500 dark:text-gray-400">{sub}</p>}
+  </div>
+);
+
+/**
+ * Subpestaña Minutos: la rotación de cada categoría y una tabla con la participación de
+ * cada jugador (completos, reemplazos, ingresos, sin jugar, minutos y % de minutos).
+ */
+const MinutosView = ({ data, jornadas, categorias }) => {
+  const { handleSort, sortFn, SortIcon } = useTableSort('minutos');
+  const sorted = sortFn(data);
+  const rotaciones = categorias.map((c) => ({ categoria: c, r: getRotacion(jornadas, c) })).filter((x) => x.r);
+  const prom = (v) => (v == null ? '' : ` (${fmtMinuto(v)})`);
+  const dash = <span className="text-gray-300 dark:text-gray-600">—</span>;
+
+  return (
+    <div className="space-y-4">
+      {rotaciones.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {rotaciones.map(({ categoria, r }) => (
+            <div key={categoria} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-3">
+              <div className="flex items-baseline justify-between">
+                <h3 className="font-bold text-gray-900 dark:text-gray-100">{categoria}</h3>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{r.partidos} partido{r.partidos === 1 ? '' : 's'} con minutos</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <DatoRotacion label="Jugadores usados" value={r.jugadoresUsados} sub={`${r.masDeLaMitad} con más del 50% de los minutos`} />
+                <DatoRotacion label="Cambios por partido" value={fmtRatio(r.cambiosPorPartido)} sub={r.minutoPrimerCambio != null ? `primer cambio al ${fmtMinuto(r.minutoPrimerCambio)} en promedio` : null} />
+              </div>
+              {r.top && (
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  Más minutos: <span className="font-semibold">{data.find((s) => s.id === r.top.player_id)?.name_visual || r.top.nombre || '—'}</span> · {r.top.minutos}' ({fmtPct(r.top.pct)})
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        {sorted.length === 0 ? (
+          <p className="text-center text-gray-500 dark:text-gray-400 py-12">No hay datos para mostrar.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 dark:bg-gray-900 border-b dark:border-gray-700">
+                <tr>
+                  <th className={thClass} onClick={() => handleSort('name_visual')}>Jugador <SortIcon col="name_visual" /></th>
+                  <th className={thClass} onClick={() => handleSort('categoria')}>Cat <SortIcon col="categoria" /></th>
+                  <th className={`${thClass} text-center`} onClick={() => handleSort('pj')} title="Partidos en los que entró">PJ <SortIcon col="pj" /></th>
+                  <th className={`${thClass} text-center`} onClick={() => handleSort('completos')} title="Titular los 90' (sin salir ni ser expulsado)">Completos <SortIcon col="completos" /></th>
+                  <th className={`${thClass} text-center`} onClick={() => handleSort('reemplazado')} title="Titular que salió reemplazado (minuto promedio de salida)">Reemplazado <SortIcon col="reemplazado" /></th>
+                  <th className={`${thClass} text-center`} onClick={() => handleSort('ingresos')} title="Entró desde el banco (minuto promedio de ingreso)">Ingresos <SortIcon col="ingresos" /></th>
+                  <th className={`${thClass} text-center`} onClick={() => handleSort('sinJugar')} title="Convocado sin entrar">Sin jugar <SortIcon col="sinJugar" /></th>
+                  <th className={`${thClass} text-center`} onClick={() => handleSort('minutos')}>Min <SortIcon col="minutos" /></th>
+                  <th className={`${thClass} text-center`} onClick={() => handleSort('pctMinutos')} title="Porcentaje de los minutos de su categoría">% Min <SortIcon col="pctMinutos" /></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                {sorted.map((s) => (
+                  <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                    <td className="px-3 py-2 font-medium text-gray-900 dark:text-gray-100">{s.name_visual}</td>
+                    <td className="px-3 py-2 text-gray-500 dark:text-gray-400 text-xs">{s.categoria}</td>
+                    <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-200">{s.pj}</td>
+                    <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-200">{s.completos > 0 ? s.completos : dash}</td>
+                    <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-200 whitespace-nowrap">{s.reemplazado > 0 ? `${s.reemplazado}${prom(s.minSalidaProm)}` : dash}</td>
+                    <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-200 whitespace-nowrap">{s.ingresos > 0 ? `${s.ingresos}${prom(s.minIngresoProm)}` : dash}</td>
+                    <td className="px-3 py-2 text-center text-gray-500 dark:text-gray-400">{s.sinJugar > 0 ? s.sinJugar : dash}</td>
+                    <td className="px-3 py-2 text-center font-semibold text-gray-900 dark:text-gray-100">{s.partidosConMinutos > 0 ? s.minutos : dash}</td>
+                    <td className="px-3 py-2 text-center text-gray-500 dark:text-gray-400 text-xs">{fmtPct(s.pctMinutos)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -404,6 +433,9 @@ const GoleadoresTable = ({ data }) => {
                 <th className={`${thClass} text-center`} onClick={() => handleSort('suplente')}>S <SortIcon col="suplente" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('goles')}>Goles <SortIcon col="goles" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('golesRatio')}>G/PJ <SortIcon col="golesRatio" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('minutos')} title="Minutos jugados">Min <SortIcon col="minutos" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('minPorGol')} title="Minutos por gol">Min/Gol <SortIcon col="minPorGol" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('golesPor90')} title="Goles cada 90 minutos">G/90 <SortIcon col="golesPor90" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -415,7 +447,10 @@ const GoleadoresTable = ({ data }) => {
                   <td className="px-3 py-2 text-center text-gray-700">{s.titular}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.suplente}</td>
                   <td className="px-3 py-2 text-center font-semibold text-green-700">{s.goles > 0 ? s.goles : <span className="text-gray-300">—</span>}</td>
-                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.goles > 0 ? s.golesRatio : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.goles > 0 ? fmtRatio(s.golesRatio) : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{s.partidosConMinutos > 0 ? s.minutos : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{s.minPorGol != null ? `${Math.round(s.minPorGol)}'` : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.golesPor90 != null ? fmtRatio(s.golesPor90) : <span className="text-gray-300">—</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -447,6 +482,7 @@ const TarjetasTable = ({ data }) => {
                 <th className={`${thClass} text-center`} onClick={() => handleSort('amarillas')}>🟨 <SortIcon col="amarillas" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('rojas')}>🟥 <SortIcon col="rojas" /></th>
                 <th className={`${thClass} text-center`} onClick={() => handleSort('amarillasRatio')}>Am/PJ <SortIcon col="amarillasRatio" /></th>
+                <th className={`${thClass} text-center`} onClick={() => handleSort('minutos')} title="Minutos jugados">Min <SortIcon col="minutos" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -459,7 +495,8 @@ const TarjetasTable = ({ data }) => {
                   <td className="px-3 py-2 text-center text-gray-700">{s.suplente}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.amarillas > 0 ? s.amarillas : <span className="text-gray-300">—</span>}</td>
                   <td className="px-3 py-2 text-center text-gray-700">{s.rojas > 0 ? s.rojas : <span className="text-gray-300">—</span>}</td>
-                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.amarillas > 0 ? s.amarillasRatio : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-500 text-xs">{s.amarillas > 0 ? fmtRatio(s.amarillasRatio) : <span className="text-gray-300">—</span>}</td>
+                  <td className="px-3 py-2 text-center text-gray-700">{s.partidosConMinutos > 0 ? s.minutos : <span className="text-gray-300">—</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -807,7 +844,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
   const [categoriaFiltroRivales, setCategoriaFiltroRivales] = useState(null);
 
   const allStats = useMemo(
-    () => buildStats(filteredJornadas, players, categoriaFiltro),
+    () => getEstadisticasJugadores(filteredJornadas, players, categoriaFiltro),
     [filteredJornadas, players, categoriaFiltro]
   );
 
@@ -833,7 +870,15 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
     [filteredJornadas, categoriaFiltroRivales]
   );
 
-  const isJugadoresTab = ['general', 'goleadores', 'tarjetas'].includes(subTab);
+  const isJugadoresTab = ['general', 'goleadores', 'tarjetas', 'minutos'].includes(subTab);
+
+  // Partidos con planilla pero sin cambios cargados: no suman minutos
+  const partidosSinMinutos = useMemo(
+    () => filteredJornadas.flatMap((j) => j.partidos || [])
+      .filter((p) => (!categoriaFiltro || p.categoria === categoriaFiltro) && p.duracion == null && (p.partido_players || []).length > 0)
+      .length,
+    [filteredJornadas, categoriaFiltro]
+  );
   const isRivalesTab   = subTab === 'rivales';
   const isCanchaTab    = subTab === 'cancha';
   const isGraficosTab  = subTab === 'graficos';
@@ -875,6 +920,7 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
         {subTabBtn('general',     'General')}
         {subTabBtn('goleadores',  'Goleadores')}
         {subTabBtn('tarjetas',    'Tarjetas')}
+        {subTabBtn('minutos',     'Minutos')}
         {subTabBtn('rivales',     'Por Rival')}
         {subTabBtn('cancha',      'Por Cancha')}
         {subTabBtn('arbitros',    'Árbitros')}
@@ -914,6 +960,12 @@ export const EstadisticasTab = ({ jornadas = [], players = [] }) => {
       {subTab === 'general'      && <GeneralTable          data={filtered} convocatoriasByYear={convocatoriasByYear} availableYears={availableYears} />}
       {subTab === 'goleadores'   && <GoleadoresTable        data={filtered.filter((s) => s.goles > 0)} />}
       {subTab === 'tarjetas'     && <TarjetasTable          data={filtered.filter((s) => s.amarillas > 0 || s.rojas > 0)} />}
+      {subTab === 'minutos'      && <MinutosView            data={filtered} jornadas={filteredJornadas} categorias={categoriaFiltro ? [categoriaFiltro] : CATEGORIAS_PARTIDO} />}
+      {isJugadoresTab && partidosSinMinutos > 0 && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          {partidosSinMinutos} partido{partidosSinMinutos === 1 ? '' : 's'} sin cambios cargados no suma{partidosSinMinutos === 1 ? '' : 'n'} minutos: ahí PJ cuenta a todos los convocados.
+        </p>
+      )}
       {subTab === 'rivales' && <PorRivalView jornadas={filteredJornadas} categoriaFiltro={categoriaFiltroRivales} />}
       {subTab === 'cancha'  && <CanchaStatsTable data={canchaStats} />}
       {isArbitrosTab && (

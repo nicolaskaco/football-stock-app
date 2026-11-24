@@ -8,6 +8,8 @@ export const SORT_DEFAULTS = {
   rival: 'asc', fecha: 'desc', fase: 'asc',
   g: 'desc', e: 'desc', p: 'desc', gf: 'desc', ga: 'asc', dif: 'desc',
   orden: 'asc', name: 'asc', ptsApertura: 'desc', ptsClausura: 'desc', ptsTotal: 'desc',
+  minutos: 'desc', pctMinutos: 'desc', sinJugar: 'desc', completos: 'desc', reemplazado: 'desc',
+  ingresos: 'desc', minPorGol: 'asc', golesPor90: 'desc', minSalidaProm: 'desc', minIngresoProm: 'asc',
 };
 
 export const thClass =
@@ -30,6 +32,8 @@ export const useTableSort = (initialKey, initialDir = 'desc') => {
     [...data].sort((a, b) => {
       const av = a[sortKey];
       const bv = b[sortKey];
+      // Sin dato (null) va siempre al final, en cualquier sentido
+      if (av == null || bv == null) return av == null ? (bv == null ? 0 : 1) : -1;
       if (typeof av === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
       return sortDir === 'asc' ? Number(av) - Number(bv) : Number(bv) - Number(av);
     });

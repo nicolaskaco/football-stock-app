@@ -7,7 +7,7 @@ import { CATEGORIAS, DEPARTAMENTOS, POSICIONES_JUGADOR } from '../utils/constant
 import { CuentaViaticoFields } from '../components/ui/CuentaViaticoFields';
 import { formatDate } from '../utils/dateUtils';
 import { getPlayerSuspensions } from '../utils/suspensions';
-import { jornadaLabel, partidoInfo } from '../utils/playerStats';
+import { jornadaLabel, partidoInfo, calcMinutos, jugo } from '../utils/playerStats';
 import { database } from '../utils/database';
 
 const SEVERITY_BADGE = {
@@ -86,25 +86,31 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
   const posiciones = POSICIONES_JUGADOR;
 
   const playerStats = useMemo(() => {
-    let pj = 0, goles = 0, amarillas = 0, rojas = 0;
+    // PJ = partidos jugados (como en Estadísticas); los minutos solo de partidos con cambios cargados
+    let pj = 0, goles = 0, amarillas = 0, rojas = 0, minutos = 0, conMinutos = 0;
     const currentYear = new Date().getFullYear();
-    const convocatoriasMap = {}; // { year: { byCategoria: { cat: { total, titular, suplente } } } }
+    const convocatoriasMap = {}; // { year: { byCategoria: { cat: { total, titular, suplente, minutos, conMinutos } } } }
 
     jornadas.forEach((jornada) => {
       const year = jornada.fecha ? new Date(jornada.fecha).getFullYear() : null;
       const isCurrentYear = year === currentYear;
       (jornada.partidos || []).forEach((partido) => {
         const pp = (partido.partido_players || []).find((p) => p.player_id === player?.id);
+        const propios = pp ? (partido.partido_eventos || []).filter((e) => e.player_id === player?.id) : [];
+        const min = pp ? calcMinutos(partido, pp, propios.filter((e) => e.tipo === 'roja')) : null;
         if (pp && year) {
           if (!convocatoriasMap[year]) convocatoriasMap[year] = { byCategoria: {} };
           const cat = partido.categoria || '—';
-          if (!convocatoriasMap[year].byCategoria[cat]) convocatoriasMap[year].byCategoria[cat] = { total: 0, titular: 0, suplente: 0 };
-          convocatoriasMap[year].byCategoria[cat].total++;
-          if (pp.tipo === 'titular') convocatoriasMap[year].byCategoria[cat].titular++;
-          else convocatoriasMap[year].byCategoria[cat].suplente++;
+          if (!convocatoriasMap[year].byCategoria[cat]) convocatoriasMap[year].byCategoria[cat] = { total: 0, titular: 0, suplente: 0, minutos: 0, conMinutos: 0 };
+          const c = convocatoriasMap[year].byCategoria[cat];
+          c.total++;
+          if (pp.tipo === 'titular') c.titular++;
+          else c.suplente++;
+          if (min != null) { c.minutos += min; c.conMinutos++; }
         }
         if (isCurrentYear) {
-          if (pp) pj++;
+          if (pp && jugo({ minutos: min, goles: propios.filter((e) => e.tipo === 'gol').length })) pj++;
+          if (min != null) { minutos += min; conMinutos++; }
           (partido.partido_eventos || []).forEach((e) => {
             if (e.player_id !== player?.id) return;
             if (e.tipo === 'gol') goles++;
@@ -115,7 +121,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       });
     });
 
-    return { pj, goles, amarillas, rojas, convocatoriasMap };
+    return { pj, goles, amarillas, rojas, minutos, conMinutos, convocatoriasMap };
   }, [jornadas, player?.id]);
 
   return (
@@ -776,9 +782,10 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
       {/* STATS SUMMARY */}
       {readOnly && (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             {[
               { label: 'PJ', value: playerStats.pj, color: 'text-gray-800 dark:text-gray-200' },
+              { label: 'Minutos', value: playerStats.conMinutos > 0 ? playerStats.minutos : '—', color: 'text-gray-800 dark:text-gray-200' },
               { label: 'Goles', value: playerStats.goles, color: 'text-green-600' },
               { label: 'Amarillas', value: playerStats.amarillas, color: 'text-yellow-500' },
               { label: 'Rojas', value: playerStats.rojas, color: 'text-red-600' },
@@ -800,12 +807,13 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                       <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">{year}</div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 pl-2">
                         {Object.keys(byCategoria).sort().map((cat) => {
-                          const { total, titular, suplente } = byCategoria[cat];
+                          const { total, titular, suplente, minutos, conMinutos } = byCategoria[cat];
                           return (
                             <div key={cat} className="text-sm text-gray-800 dark:text-gray-200">
                               <span className="font-medium text-gray-600 dark:text-gray-400">{cat}:</span>{' '}
                               {total}{' '}
                               <span className="text-gray-400 dark:text-gray-500 text-xs">({titular}T / {suplente}S)</span>
+                              {conMinutos > 0 && <span className="text-gray-600 dark:text-gray-300"> · {minutos}'</span>}
                             </div>
                           );
                         })}
@@ -836,6 +844,8 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               id: partido.id,
               ...partidoInfo(jornada, partido),
               tipo: pp.tipo,
+              // null: partido sin cambios cargados; 0: suplente que no entró
+              minutos: calcMinutos(partido, pp, eventos.filter(e => e.tipo === 'roja')),
               goles,
               amarillas,
               rojas,
@@ -908,6 +918,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                       <span className="text-xs font-medium text-red-700 dark:text-red-300">{m.motivoSuspension}</span>
                     ) : (
                       <span className="flex items-center gap-3 text-xs">
+                        <span title="Minutos jugados">⏱ {m.minutos != null ? `${m.minutos}'` : '-'}</span>
                         <span>⚽ {m.goles || '-'}</span>
                         <span>🟨 {m.amarillas || '-'}</span>
                         <span>🟥 {m.rojas || '-'}</span>
@@ -927,6 +938,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                     <th className="pb-2 pr-3">Cat.</th>
                     <th className="pb-2 pr-3">Rol</th>
                     <th className="pb-2 pr-3">Resultado</th>
+                    <th className="pb-2 pr-3 text-center" title="Minutos jugados">Min</th>
                     <th className="pb-2 pr-3 text-center">⚽</th>
                     <th className="pb-2 pr-3 text-center">🟨</th>
                     <th className="pb-2 text-center">🟥</th>
@@ -956,6 +968,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                           </span>
                         ) : <span className="text-gray-400">-</span>}
                       </td>
+                      <td className="py-2 pr-3 text-center whitespace-nowrap">{m.minutos != null ? `${m.minutos}'` : '-'}</td>
                       <td className="py-2 pr-3 text-center">{m.goles || '-'}</td>
                       <td className="py-2 pr-3 text-center">{m.amarillas || '-'}</td>
                       <td className="py-2 text-center">{m.rojas || '-'}</td>

@@ -4,7 +4,7 @@ let seq = 0;
 const id = (prefix) => `${prefix}-${++seq}`;
 
 /** Una jornada con un solo partido de `categoria`. */
-export function jornada({ fecha, numero = 1, categoria = '5ta', eventos = [], players = [], goles = [null, null], escenario = 'Local', ajustes = [], fechaPartido = null, rival = 'Nacional', fase = 'Apertura' } = {}) {
+export function jornada({ fecha, numero = 1, categoria = '5ta', eventos = [], players = [], goles = [null, null], escenario = 'Local', ajustes = [], fechaPartido = null, rival = 'Nacional', fase = 'Apertura', duracion = null } = {}) {
   const jornadaId = id('j');
   return {
     id: jornadaId,
@@ -19,6 +19,7 @@ export function jornada({ fecha, numero = 1, categoria = '5ta', eventos = [], pl
       categoria,
       escenario,
       fecha: fechaPartido,
+      duracion,
       goles_local: goles[0],
       goles_visitante: goles[1],
       partido_eventos: eventos,
@@ -31,5 +32,5 @@ export function jornada({ fecha, numero = 1, categoria = '5ta', eventos = [], pl
 export const amarilla = (player_id) => ({ tipo: 'amarilla', player_id, minuto: null });
 export const roja = (player_id, fechas_suspension = 1) => ({ tipo: 'roja', player_id, minuto: null, fechas_suspension });
 export const gol = (player_id, minuto = null) => ({ tipo: 'gol', player_id, minuto });
-export const titular = (player_id) => ({ player_id, tipo: 'titular' });
-export const suplente = (player_id, minuto_entrada = null) => ({ player_id, tipo: 'suplente', minuto_entrada });
+export const titular = (player_id, minuto_salida = null) => ({ player_id, tipo: 'titular', minuto_salida });
+export const suplente = (player_id, minuto_entrada = null, minuto_salida = null) => ({ player_id, tipo: 'suplente', minuto_entrada, minuto_salida });
