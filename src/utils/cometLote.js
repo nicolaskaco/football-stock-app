@@ -17,13 +17,15 @@ export const rivalDelInforme = (parsed) => (parsed.escenario === 'Local' ? parse
 
 /**
  * Lee un PDF y lo deja listo para evaluar.
+ * La categoría sale del nombre del archivo, si no del torneo del informe y si no de la carpeta.
+ * @param carpeta  nombre de la carpeta del archivo (importación histórica: "4ta", "sub 16")
  * @returns item { key, archivo, parsed, error, categoria, rows, incluir (null = automático), abierto }
  */
-export async function leerInforme(file, players) {
-  const key = `${file.name}-${file.size}-${file.lastModified}`;
+export async function leerInforme(file, players, { carpeta = '' } = {}) {
+  const key = `${file.webkitRelativePath || file.name}-${file.size}-${file.lastModified}`;
   try {
     const parsed = await parseCometReport(file);
-    const categoria = categoriaDeArchivo(file.name) || categoriaDelTorneo(parsed.torneo) || '';
+    const categoria = categoriaDeArchivo(file.name) || categoriaDelTorneo(parsed.torneo) || categoriaDeArchivo(carpeta) || '';
     return {
       key, archivo: file.name, parsed, error: null, categoria,
       rows: categoria ? filasParaRevisar(parsed, players, categoria) : [],
@@ -41,8 +43,12 @@ export async function leerInforme(file, players) {
  * - avisos: todo lo que se muestra (incluye la sugerencia de posiciones).
  * - motivosRevision: lo que impide guardarlo sin que alguien lo mire (carga automática).
  * - yaCargado: el partido ya tiene planilla.
+ *
+ * historico: importación de partidos viejos. Que haya jugado alguien que figura como suspendido
+ * queda como aviso (el COMET es el registro oficial), y si el informe se asignó por fecha y no
+ * por N° de jornada (item.porFecha) va a revisión.
  */
-export function evaluarInformes(items, { jornada, jornadas = [], players = [] }) {
+export function evaluarInformes(items, { jornada, jornadas = [], players = [], historico = false }) {
   const partidoDe = (categoria) => (jornada.partidos || []).find((p) => p.categoria === categoria) || null;
   const conteoCategoria = items.reduce((acc, it) => (it.categoria ? { ...acc, [it.categoria]: (acc[it.categoria] || 0) + 1 } : acc), {});
 
@@ -77,6 +83,7 @@ export function evaluarInformes(items, { jornada, jornadas = [], players = [] })
       if (yaCargado) avisos.push('Este partido ya tiene planilla cargada: se va a reemplazar.');
     }
     if (dudosos > 0) revisar(`${dudosos} match${dudosos === 1 ? '' : 'es'} para revisar.`);
+    if (it.porFecha) revisar(`El N° de fecha del informe (${it.parsed?.numeroFecha ?? '—'}) no coincide con el de la jornada (${jornada.numero_jornada ?? '—'}): se asignó por la fecha.`);
 
     const puede = bloqueos.length === 0;
     let preview = null;
@@ -89,7 +96,7 @@ export function evaluarInformes(items, { jornada, jornadas = [], players = [] })
       const suspendedMap = getSuspensionMap(jornadas, jornada.id, it.categoria, { ajustes: partido.partido_suspension_ajustes || [] });
       preview = aplicarComet({ ...it.parsed, rows: it.rows }, { partido, categoria: it.categoria, ...base, jornadas, players, suspendedMap });
       avisos.push(...preview.avisos);
-      if (preview.suspendidosQueJugaron.length > 0) motivosRevision.push('Jugó un jugador que figura como suspendido.');
+      if (preview.suspendidosQueJugaron.length > 0 && !historico) motivosRevision.push('Jugó un jugador que figura como suspendido.');
       if (preview.suplentesDeMas > 0) motivosRevision.push(`El informe trae ${preview.suplentesDeMas} suplente${preview.suplentesDeMas === 1 ? '' : 's'} de más.`);
     }
     motivosRevision.unshift(...bloqueos);

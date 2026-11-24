@@ -4,6 +4,7 @@ import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { filasParaRevisar } from '../utils/cometApply';
 import { leerInforme, evaluarInformes, armarGuardado } from '../utils/cometLote';
 import { CometMatchTable } from './CometMatchTable';
+import { DiferenciasComet } from './ui/DiferenciasComet';
 
 /**
  * Importación de todos los informes COMET de una jornada de una vez. Cada PDF va al partido
@@ -13,9 +14,12 @@ import { CometMatchTable } from './CometMatchTable';
  * initialItems: informes ya leídos (leerInforme), p. ej. los que la carga automática dejó para revisar.
  * resumen: bloque que se muestra arriba (resultado de la carga automática).
  *
+ * historico / diferencias: importación de partidos viejos (CometHistoricoImportButton). diferencias
+ * es { [item.key]: [{ tipo, texto }] } con lo que cambia respecto de la planilla cargada.
+ *
  * onSave (async) recibe [{ partido, archivo, data, titularesData, suplentesData, eventosData, cometIds }]
  */
-export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onSave, onCancel, initialItems = [], resumen = null }) => {
+export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onSave, onCancel, initialItems = [], resumen = null, historico = false, diferencias = {} }) => {
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   // { key, archivo, parsed, error, categoria, rows, incluir (null = automático), abierto }
@@ -44,7 +48,7 @@ export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onS
   });
   const quitar = (key) => setItems((prev) => prev.filter((it) => it.key !== key));
 
-  const evaluados = evaluarInformes(items, { jornada, jornadas, players });
+  const evaluados = evaluarInformes(items, { jornada, jornadas, players, historico });
 
   const aGuardar = evaluados.filter((e) => e.incluido);
 
@@ -119,6 +123,13 @@ export const CometBulkImportPanel = ({ jornada, jornadas = [], players = [], onS
                   <li key={`a${i}`} className="flex gap-2 text-amber-800 dark:text-amber-200"><AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />{a}</li>
                 ))}
               </ul>
+            )}
+
+            {diferencias[it.key]?.length > 0 && (
+              <div className="px-3 pb-2 space-y-1">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">Diferencias con lo cargado:</p>
+                <DiferenciasComet items={diferencias[it.key]} />
+              </div>
             )}
 
             {it.parsed && it.categoria && (

@@ -4,13 +4,13 @@ let seq = 0;
 const id = (prefix) => `${prefix}-${++seq}`;
 
 /** Una jornada con un solo partido de `categoria`. */
-export function jornada({ fecha, numero = 1, categoria = '5ta', eventos = [], players = [], goles = [null, null], escenario = 'Local', ajustes = [], fechaPartido = null, rival = 'Nacional' } = {}) {
+export function jornada({ fecha, numero = 1, categoria = '5ta', eventos = [], players = [], goles = [null, null], escenario = 'Local', ajustes = [], fechaPartido = null, rival = 'Nacional', fase = 'Apertura' } = {}) {
   const jornadaId = id('j');
   return {
     id: jornadaId,
     fecha,
     numero_jornada: numero,
-    fase: 'Apertura',
+    fase,
     rival_id: `r-${rival}`,
     rivales: { name: rival },
     partidos: [{

@@ -61,6 +61,11 @@ describe('matchCometPlayers', () => {
     expect(r).toMatchObject({ player_id: '', status: 'sin_match' });
   });
 
+  it('si el informe no trae COMET ID, matchea por nombre aunque el jugador ya tenga uno', () => {
+    const [r] = matchCometPlayers([{ nombre: 'PEREZ GOMEZ, JUAN', cometId: null }], players, '5ta');
+    expect(r).toMatchObject({ player_id: 'a', status: 'nombre' });
+  });
+
   it('no le da a un match por nombre un jugador con otro COMET ID', () => {
     const [r] = matchCometPlayers([{ nombre: 'PEREZ GOMEZ, JUAN', cometId: '222' }], players, '5ta');
     expect(r.player_id).not.toBe('a');
