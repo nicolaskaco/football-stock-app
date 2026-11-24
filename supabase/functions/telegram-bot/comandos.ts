@@ -456,11 +456,14 @@ async function tarjetas(ctx: Contexto) {
 
 /**
  * /minutos: jugadores ordenados por minutos jugados en el año, con partidos de titular y de
- * suplente (= tabla Minutos de Estadísticas: getEstadisticasJugadores; suplente = entró desde el
- * banco). Con categoría, el plantel entero; sin categoría, los primeros de cada una.
+ * suplente (getEstadisticasJugadores, como Estadísticas: suplente = entró desde el banco; en los
+ * partidos sin minutos cargados cuenta toda convocatoria al banco). Con categoría, el plantel
+ * entero; sin categoría, los primeros de cada una. Solo las categorías del usuario, como en la app.
  */
 async function minutos(ctx: Contexto) {
   const { categoria, otros } = separarCategoria(ctx.args);
+  const visibles = categoriasVisibles(ctx.perm);
+  if (categoria && !veCategoria(visibles, categoria)) return `No tenés acceso a ${e(categoria)}.`;
   const anio = parseAnio(otros[0]) ?? Number(ctx.hoy.slice(0, 4));
   const [jornadas, players] = await Promise.all([
     q(ctx.db.from("jornadas").select(SELECT_JORNADA_COMPLETA)),
@@ -471,7 +474,7 @@ async function minutos(ctx: Contexto) {
   const partidos: Fila[] = delAnio.flatMap((j: Fila) => j.partidos || []);
   const categorias = categoria
     ? [categoria]
-    : [...new Set<string>(partidos.map((p) => p.categoria))].sort(ordenCategoria);
+    : [...new Set<string>(partidos.map((p) => p.categoria))].filter((c) => veCategoria(visibles, c)).sort(ordenCategoria);
 
   const titulo = `⏱️ <b>Minutos ${anio}</b>${categoria ? ` de ${e(categoria)}` : ""}`;
   const fila = (j: Fila) => `${j.titular} tit · ${j.suplente} sup`;

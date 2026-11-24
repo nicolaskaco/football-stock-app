@@ -873,7 +873,7 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
   | `/contra <rival>` | G/E/P and goals per category against that rival, plus the last 6 jornadas |
   | `/goleadores [cat] [año]` | Top scorers of the year |
   | `/tarjetas [cat] [año]` | Yellow and red cards of the year |
-  | `/minutos [cat] [año]` | Players ordered by minutes played in the year, with partidos as titular and as suplente, using the app's `getEstadisticasJugadores` (same numbers as the Estadísticas → Minutos table: suplente counts only partidos where the player came in, and only partidos with `duracion` have minutes). With a category, the whole list plus a "Sin minutos cargados" line; without one, the top 5 of each category. Ties: more titular, then name. Alias: `/minuto`. Needs `can_view_partidos` |
+  | `/minutos [cat] [año]` | Players ordered by minutes played in the year, with partidos as titular and as suplente, using the app's `getEstadisticasJugadores`, the same per-player stats as the Estadísticas tables. Only partidos with `duracion` have minutes; in those, suplente counts only partidos where the player came in, and in partidos without `duracion` every call-up to the bench counts. Only the user's categories (`categoriasVisibles`, like Estadísticas); asking for another one is rejected. With a category, the whole list plus a "Sin minutos cargados" line; without one, the top 5 of each category. Ties: more titular, then name. Alias: `/minuto`. Needs `can_view_partidos` |
   | `/fichas [cat]` | Fichas médicas expired, expiring within 30 days, or missing |
   | `/tareas` | Open tareas by estado and prioridad |
   | `/ayuda` | Only the commands the user can use |
