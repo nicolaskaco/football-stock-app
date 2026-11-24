@@ -3,9 +3,11 @@ import { X, FileUp, AlertTriangle } from 'lucide-react';
 import { POSICIONES_PARTIDO, ESCENARIOS, CESPED_TIPOS, CANCHAS_LOCAL, CATEGORIAS_PARTIDO, CATEGORIAS, PLAYER_STATUS_LABELS, DURACION_PARTIDO_DEFAULT } from '../utils/constants';
 import { getSuspensionMap } from '../utils/suspensions';
 import { isPlayerOverAge } from '../utils/ageEligibility';
-import { fechaPartidoDefault, formatDate, isFichaVencida } from '../utils/dateUtils';
+import { fechaPartidoDefaultEnJornada, formatDate, isFichaVencida } from '../utils/dateUtils';
 import { CometImportPanel } from '../components/CometImportPanel';
 import { aplicarComet } from '../utils/cometApply';
+import { capEsLocal } from '../utils/playerStats';
+import { escenarioBadgeClass } from '../components/ui/escenario';
 import {
   MAX_TITULARES, MAX_SUPLENTES, emptySlot, emptySuplente, emptyEvento, toMinuto, sortTitulares,
   initialFormData, initialTitulares, initialSuplentes, initialEventos, armarPartidoParaGuardar,
@@ -29,8 +31,9 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
   const autoSuspendedMap = jornadaId ? getSuspensionMap(jornadas, jornadaId, categoria, { ajustes: [] }) : new Map();
   const suspendedMap = jornadaId ? getSuspensionMap(jornadas, jornadaId, categoria, { ajustes }) : new Map();
 
-  const fechaJornada = jornadas.find((j) => j.id === jornadaId)?.fecha || null;
-  const fechaDefault = fechaPartidoDefault(fechaJornada, categoria);
+  const jornadaActual = jornadas.find((j) => j.id === jornadaId) || null;
+  const fechaJornada = jornadaActual?.fecha || null;
+  const fechaDefault = fechaPartidoDefaultEnJornada(jornadaActual, categoria);
 
   // Datos básicos del partido
   const [formData, setFormData] = useState(() => initialFormData(partido, fechaDefault));
@@ -224,9 +227,7 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
       {/* Info del partido */}
       <div className="bg-gray-50 rounded-lg p-3 flex items-center gap-3">
         <span className="font-bold text-lg text-gray-800">{categoria}</span>
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-          formData.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-        }`}>{formData.escenario || '—'}</span>
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${escenarioBadgeClass(formData.escenario)}`}>{formData.escenario || '—'}</span>
         {!showImport && (
           <button
             type="button"
@@ -370,9 +371,9 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
               type="number"
               min="0"
               placeholder="—"
-              value={formData.escenario === 'Local' ? formData.goles_local : formData.goles_visitante}
+              value={capEsLocal(formData.escenario) ? formData.goles_local : formData.goles_visitante}
               onChange={(e) =>
-                formData.escenario === 'Local'
+                capEsLocal(formData.escenario)
                   ? setFormData({ ...formData, goles_local: e.target.value })
                   : setFormData({ ...formData, goles_visitante: e.target.value })
               }
@@ -386,9 +387,9 @@ export const PartidoForm = ({ partido, players = [], injuries = [], jornadas = [
               type="number"
               min="0"
               placeholder="—"
-              value={formData.escenario === 'Local' ? formData.goles_visitante : formData.goles_local}
+              value={capEsLocal(formData.escenario) ? formData.goles_visitante : formData.goles_local}
               onChange={(e) =>
-                formData.escenario === 'Local'
+                capEsLocal(formData.escenario)
                   ? setFormData({ ...formData, goles_visitante: e.target.value })
                   : setFormData({ ...formData, goles_local: e.target.value })
               }

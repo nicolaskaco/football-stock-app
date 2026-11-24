@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { CATEGORIAS_PARTIDO, CATEGORIAS_ESCENARIO_INVERTIDO, FASES_CAMPEONATO, ESCENARIOS, NUMEROS_JORNADA } from '../utils/constants';
+import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, ESCENARIOS, NUMEROS_JORNADA, JORNADAS_UNA_CATEGORIA } from '../utils/constants';
+import { escenarioDeCategoria, esDefinicion } from '../utils/jornadas';
+import { escenarioBadgeClass } from '../components/ui/escenario';
 import { localTodayISO, todayISO } from '../utils/dateUtils';
 
 /**
  * Formulario de jornada — funciona tanto para crear (sin `jornada`) como para editar (con `jornada`).
  * En modo edición no se muestra el selector de escenario (los partidos ya existen).
+ * Semifinal y Final (JORNADAS_UNA_CATEGORIA) se crean para una sola categoría, con su rival:
+ * si varias categorías juegan finales, es una jornada por cada una.
  * Con `puedeTelegram`, al crear ofrece mandar el parte de disponibilidad al grupo de Telegram
  * (marcado por defecto si la jornada es de hoy en adelante, para no avisar al cargar jornadas viejas).
  */
@@ -19,36 +23,33 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
     torneo_id: jornada?.torneo_id || '',
   });
   const [escenarioBase, setEscenarioBase] = useState('');
+  const [categoriaUnica, setCategoriaUnica] = useState('');
+  const unaCategoria = !isEdit && JORNADAS_UNA_CATEGORIA.includes(formData.numero_jornada);
+  // Semifinal y Final no son del Apertura ni del Clausura: no se pide fase y se guarda null
+  const sinFase = esDefinicion(formData.numero_jornada);
   // null = sin tocar: se deriva de la fecha
   const [enviarTelegramElegido, setEnviarTelegramElegido] = useState(null);
   const enviarTelegram = puedeTelegram && (enviarTelegramElegido ?? formData.fecha >= localTodayISO());
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const datos = { ...formData, fase: sinFase ? null : formData.fase };
     if (isEdit) {
-      onSubmit(formData);
+      onSubmit(datos);
     } else {
-      onSubmit(formData, escenarioBase, { enviarTelegram });
+      onSubmit(datos, escenarioBase, { enviarTelegram, categoria: unaCategoria ? categoriaUnica : null });
     }
   };
 
-  // Calcula el escenario efectivo para cada categoría según la regla de negocio
+  // Escenario efectivo de cada categoría (6ta/7ma invertidas). En Semifinal/Final va tal cual.
   const getEscenario = (categoria) => {
     if (!escenarioBase) return '—';
-    return CATEGORIAS_ESCENARIO_INVERTIDO.includes(categoria)
-      ? (escenarioBase === 'Local' ? 'Visitante' : 'Local')
-      : escenarioBase;
+    return unaCategoria ? escenarioBase : escenarioDeCategoria(escenarioBase, categoria);
   };
+  const categoriasPreview = unaCategoria ? (categoriaUnica ? [categoriaUnica] : []) : CATEGORIAS_PARTIDO;
 
-  const escenarioColor = (esc) =>
-    esc === 'Local'
-      ? 'bg-green-100 text-green-800'
-      : esc === 'Visitante'
-      ? 'bg-blue-100 text-blue-800'
-      : 'bg-gray-100 text-gray-500';
-
-  const isValid = formData.rival_id && formData.fecha && formData.fase && formData.numero_jornada
-    && (isEdit || escenarioBase);
+  const isValid = formData.rival_id && formData.fecha && (sinFase || formData.fase) && formData.numero_jornada
+    && (isEdit || escenarioBase) && (!unaCategoria || categoriaUnica);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -95,26 +96,28 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
         />
       </div>
 
-      {/* Fase */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Fase *</label>
-        <div className="flex gap-3">
-          {FASES_CAMPEONATO.map((fase) => (
-            <button
-              key={fase}
-              type="button"
-              onClick={() => setFormData({ ...formData, fase })}
-              className={`flex-1 py-2 rounded-lg font-medium border transition ${
-                formData.fase === fase
-                  ? 'bg-black text-yellow-400 border-black'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              {fase}
-            </button>
-          ))}
+      {/* Fase — no aplica a Semifinal / Final */}
+      {!sinFase && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Fase *</label>
+          <div className="flex gap-3">
+            {FASES_CAMPEONATO.map((fase) => (
+              <button
+                key={fase}
+                type="button"
+                onClick={() => setFormData({ ...formData, fase })}
+                className={`flex-1 py-2 rounded-lg font-medium border transition ${
+                  formData.fase === fase
+                    ? 'bg-black text-yellow-400 border-black'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400'
+                }`}
+              >
+                {fase}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Número de jornada */}
       <div>
@@ -136,6 +139,32 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
           ))}
         </div>
       </div>
+
+      {/* Categoría — solo al crear una Semifinal o Final */}
+      {unaCategoria && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Categoría *</label>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIAS_PARTIDO.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setCategoriaUnica(cat)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium border transition ${
+                  categoriaUnica === cat
+                    ? 'bg-black text-yellow-400 border-black'
+                    : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            La {formData.numero_jornada} se crea solo para esta categoría. Si otras categorías también juegan, creá una jornada para cada una, con su rival.
+          </p>
+        </div>
+      )}
 
       {/* Escenario base — solo al crear */}
       {!isEdit && (
@@ -161,18 +190,18 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
           </div>
 
           {/* Preview de escenarios por categoría */}
-          {escenarioBase && (
+          {escenarioBase && categoriasPreview.length > 0 && (
             <div className="bg-gray-50 rounded-lg p-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                 Vista previa — escenario por categoría
               </p>
-              <div className="grid grid-cols-5 gap-2">
-                {CATEGORIAS_PARTIDO.map((cat) => {
+              <div className={`grid gap-2 ${unaCategoria ? 'grid-cols-1' : 'grid-cols-5'}`}>
+                {categoriasPreview.map((cat) => {
                   const esc = getEscenario(cat);
                   return (
                     <div key={cat} className="text-center">
                       <p className="font-bold text-sm text-gray-800">{cat}</p>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${escenarioColor(esc)}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${escenarioBadgeClass(esc)}`}>
                         {esc}
                       </span>
                     </div>
@@ -205,7 +234,7 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
         disabled={!isValid}
         className="w-full bg-gradient-to-r from-gray-900 to-black text-yellow-400 py-4 rounded-lg hover:from-black hover:to-gray-900 font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
       >
-        {isEdit ? 'Guardar cambios' : 'Crear Jornada (5 partidos)'}
+        {isEdit ? 'Guardar cambios' : `Crear Jornada (${unaCategoria ? '1 partido' : '5 partidos'})`}
       </button>
     </form>
   );

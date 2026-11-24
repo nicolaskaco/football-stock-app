@@ -1,4 +1,4 @@
-import { CATEGORIAS_PARTIDO } from './constants';
+import { CATEGORIAS_PARTIDO, NUMEROS_JORNADA } from './constants';
 import { fechaPartido } from './dateUtils';
 
 /**
@@ -88,7 +88,7 @@ function getCategoriaTimeline(jornadas, categoria) {
     .filter((x) => x && x.fecha?.startsWith(currentYear))
     .sort((a, b) => a.fecha.localeCompare(b.fecha)
       || String(a.jornada.fecha).localeCompare(String(b.jornada.fecha))
-      || (a.jornada.numero_jornada || 0) - (b.jornada.numero_jornada || 0))
+      || NUMEROS_JORNADA.indexOf(String(a.jornada.numero_jornada)) - NUMEROS_JORNADA.indexOf(String(b.jornada.numero_jornada)))
     .map((x) => x.jornada);
 }
 

@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, CANCHAS_LOCAL, CESPED_TIPOS } from '../utils/constants';
 import { formatDate } from '../utils/dateUtils';
+import { escenarioBadgeClass } from './ui/escenario';
 import { resolveMarcador, groupGoleadores } from '../utils/playerStats';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
@@ -131,7 +132,7 @@ const buildPartidoRows = (jornadas, categoriaFiltro, faseFiltro) => {
 
 // ─── Cancha stats helper ─────────────────────────────────────────────────────
 
-const ALL_LOCATIONS = [...CANCHAS_LOCAL, 'Visitante'];
+const ALL_LOCATIONS = [...CANCHAS_LOCAL, 'Visitante', 'Neutral'];
 
 const emptyStat = (loc) => ({ loc, pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0 });
 
@@ -180,7 +181,7 @@ const buildCanchaStats = (rows) => {
     const key =
       row.escenario === 'Local'
         ? (row.cancha && map[row.cancha] ? row.cancha : 'Ciudad Deportiva')
-        : 'Visitante';
+        : row.escenario === 'Neutral' ? 'Neutral' : 'Visitante';
     const bucket = map[key];
     accumulate(bucket.total, row);
     // Partidos sin césped registrado suman sólo al total de la sede.
@@ -202,6 +203,8 @@ const buildCanchaStats = (rows) => {
     ...CANCHAS_LOCAL.map((loc) => withCespedBreakdown(map[loc].total, map[loc].porCesped)),
     withCespedBreakdown(localTotal.total, localTotal.porCesped),
     withCespedBreakdown(map['Visitante'].total, map['Visitante'].porCesped),
+    // Cancha neutral (semifinales y finales): solo si hubo partidos
+    ...(map['Neutral'].total.pj > 0 ? [withCespedBreakdown(map['Neutral'].total, map['Neutral'].porCesped)] : []),
   ];
 };
 
@@ -509,15 +512,20 @@ const CanchaStatsTable = ({ data }) => {
             {data.flatMap((row) => {
               const isLocalTotal = row.loc === 'Local Total';
               const isVisitante = row.loc === 'Visitante';
+              const isNeutral = row.loc === 'Neutral';
 
               const renderRow = (r, { isChild = false, key } = {}) => {
                 const d = r.gf - r.gc;
                 const rowBg = isChild
-                  ? isVisitante
+                  ? isNeutral
+                    ? 'bg-purple-50/50'
+                    : isVisitante
                     ? 'bg-blue-50/50'
                     : 'bg-green-50/50'
                   : isLocalTotal
                   ? 'bg-green-100'
+                  : isNeutral
+                  ? 'bg-purple-50 dark:bg-purple-900/20'
                   : isVisitante
                   ? 'bg-blue-50'
                   : 'bg-green-50';
@@ -525,6 +533,8 @@ const CanchaStatsTable = ({ data }) => {
                   ? 'text-gray-600'
                   : isLocalTotal
                   ? 'font-bold text-green-900'
+                  : isNeutral
+                  ? 'font-semibold text-purple-900 dark:text-purple-200'
                   : isVisitante
                   ? 'font-semibold text-blue-900'
                   : 'text-green-800';
@@ -542,6 +552,13 @@ const CanchaStatsTable = ({ data }) => {
                       ) : isVisitante ? (
                         <span className="inline-flex items-center gap-1">
                           <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-medium">Visitante</span>
+                          {row.cespedUnico && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{row.cespedUnico}</span>
+                          )}
+                        </span>
+                      ) : isNeutral ? (
+                        <span className="inline-flex items-center gap-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${escenarioBadgeClass('Neutral')}`}>Neutral</span>
                           {row.cespedUnico && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{row.cespedUnico}</span>
                           )}

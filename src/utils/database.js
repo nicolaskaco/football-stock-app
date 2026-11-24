@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
-import { CHANGE_REQUEST_STATUS, CUENTA_VIATICO_FIELDS, CATEGORIAS_PARTIDO } from './constants';
-import { parseDOB, formatDate, fechaPartidoDefault } from './dateUtils';
+import { CHANGE_REQUEST_STATUS, CUENTA_VIATICO_FIELDS } from './constants';
+import { parseDOB, formatDate, fechaPartidoDefaultEnJornada } from './dateUtils';
+import { armarPartidosJornada } from './jornadas';
 
 // Player fields whose changes are written to player_history
 const TRACKED_PLAYER_FIELDS = ['contrato', 'viatico', 'complemento', 'vianda', 'casita', ...CUENTA_VIATICO_FIELDS];
@@ -1341,13 +1342,12 @@ export const database = {
   },
 
   /**
-   * Crea una jornada y sus 5 partidos (uno por categoría) en batch.
-   * Cada partido arranca con la fecha por defecto de su categoría (ver fechaPartidoDefault).
-   * @param {object} jornadaData  - { rival_id, fecha, fase }
-   * @param {string} escenarioBase - 'Local' | 'Visitante'
-   * Regla: 4ta/5ta/S16 → escenarioBase; 6ta/7ma → opuesto
+   * Crea una jornada y sus partidos en batch: los 5 (uno por categoría) o, con `categoria`
+   * (Semifinal / Final), uno solo. Ver armarPartidosJornada.
+   * @param {object} jornadaData  - { rival_id, fecha, fase, numero_jornada, torneo_id }
+   * @param {string} escenarioBase - 'Local' | 'Visitante' | 'Neutral'
    */
-  async addJornada(jornadaData, escenarioBase) {
+  async addJornada(jornadaData, escenarioBase, { categoria = null } = {}) {
     const { data: jornada, error: jornadaError } = await supabase
       .from('jornadas')
       .insert([jornadaData])
@@ -1355,19 +1355,7 @@ export const database = {
       .single();
     if (jornadaError) throw jornadaError;
 
-    const CATEGORIAS_INVERTIDAS = ['6ta', '7ma'];
-    const opuesto = escenarioBase === 'Local' ? 'Visitante' : 'Local';
-
-    const partidos = CATEGORIAS_PARTIDO.map(categoria => {
-      const escenario = CATEGORIAS_INVERTIDAS.includes(categoria) ? opuesto : escenarioBase;
-      return {
-        jornada_id: jornada.id,
-        categoria,
-        fecha: fechaPartidoDefault(jornada.fecha, categoria),
-        escenario,
-        cesped: escenario === 'Local' ? 'Sintético' : 'Natural',
-      };
-    });
+    const partidos = armarPartidosJornada(jornada, escenarioBase, categoria);
 
     const { error: partidosError } = await supabase
       .from('partidos')
@@ -1397,10 +1385,10 @@ export const database = {
     // Los que se reprogramaron a mano conservan su fecha.
     if (!jornadaData.fecha || jornadaData.fecha === old.fecha) return;
     for (const p of old.partidos || []) {
-      if (p.fecha && p.fecha !== fechaPartidoDefault(old.fecha, p.categoria)) continue;
+      if (p.fecha && p.fecha !== fechaPartidoDefaultEnJornada(old, p.categoria)) continue;
       const { error: pError } = await supabase
         .from('partidos')
-        .update({ fecha: fechaPartidoDefault(jornadaData.fecha, p.categoria) })
+        .update({ fecha: fechaPartidoDefaultEnJornada({ ...old, fecha: jornadaData.fecha }, p.categoria) })
         .eq('id', p.id);
       if (pError) throw pError;
     }

@@ -125,11 +125,16 @@ export function aplicarComet(imp, { partido, categoria, formData, titulares: tit
 
   const importedPlayers = imp.rows.map((r) => players.find((p) => p.id === r.player_id)).filter(Boolean);
 
+  // En cancha neutral el informe igual pone a Peñarol de un lado: se mantiene Neutral y el
+  // marcador se guarda con Peñarol en goles_local (ver capEsLocal)
+  const neutral = formData.escenario === 'Neutral';
+  const golesCapInforme = imp.escenario === 'Local' ? imp.golesLocal : imp.golesVisitante;
+  const golesRivalInforme = imp.escenario === 'Local' ? imp.golesVisitante : imp.golesLocal;
   const newFormData = {
     ...formData,
-    escenario: imp.escenario,
-    goles_local: imp.golesLocal,
-    goles_visitante: imp.golesVisitante,
+    escenario: neutral ? 'Neutral' : imp.escenario,
+    goles_local: neutral ? golesCapInforme : imp.golesLocal,
+    goles_visitante: neutral ? golesRivalInforme : imp.golesVisitante,
     arbitro: imp.arbitro || formData.arbitro,
     primer_linea: imp.primerLinea || formData.primer_linea,
     segundo_linea: imp.segundaLinea || formData.segundo_linea,
@@ -155,7 +160,7 @@ export function aplicarComet(imp, { partido, categoria, formData, titulares: tit
   suspendidosQueJugaron.forEach((p) => {
     avisos.push(`${p.name_visual || p.name} figura como suspendido (${suspendedMap.get(p.id).reason}) pero jugó según el informe.`);
   });
-  if (imp.goles.length === 0 && Number(imp.escenario === 'Local' ? imp.golesLocal : imp.golesVisitante) > 0) {
+  if (imp.goles.length === 0 && Number(golesCapInforme) > 0) {
     avisos.push('El informe no trae el detalle de los goles de Peñarol: cargalos a mano.');
   }
 

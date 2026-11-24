@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { resolveMarcador } from '../../utils/playerStats';
 
 export const ArbitroPerformanceChart = ({ jornadas = [], categoriaFiltro }) => {
   const data = useMemo(() => {
@@ -13,8 +14,7 @@ export const ArbitroPerformanceChart = ({ jornadas = [], categoriaFiltro }) => {
         const key = partido.arbitro.trim();
         if (!arbitroMap[key]) arbitroMap[key] = { arbitro: key, G: 0, E: 0, P: 0, total: 0, g_rivals: [], e_rivals: [], p_rivals: [] };
 
-        const capGoles   = partido.escenario === 'Local' ? partido.goles_local    : partido.goles_visitante;
-        const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+        const { capGoles, rivalGoles } = resolveMarcador(partido);
         if (capGoles == null || rivalGoles == null) return;
 
         const rivalName = jornada.rivales?.name || null;

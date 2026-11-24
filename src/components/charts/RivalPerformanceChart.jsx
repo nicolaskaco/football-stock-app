@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
+import { resolveMarcador } from '../../utils/playerStats';
 
 export const RivalPerformanceChart = ({ jornadas = [], categoriaFiltro }) => {
   const data = useMemo(() => {
@@ -12,8 +13,7 @@ export const RivalPerformanceChart = ({ jornadas = [], categoriaFiltro }) => {
 
       (jornada.partidos || []).forEach((partido) => {
         if (categoriaFiltro && partido.categoria !== categoriaFiltro) return;
-        const capGoles = partido.escenario === 'Local' ? partido.goles_local : partido.goles_visitante;
-        const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+        const { capGoles, rivalGoles } = resolveMarcador(partido);
         if (capGoles == null || rivalGoles == null) return;
 
         rivalMap[rivalName].total++;

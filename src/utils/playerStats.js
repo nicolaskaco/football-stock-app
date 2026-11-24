@@ -20,6 +20,12 @@ import { fechaPartido } from './dateUtils';
 // ─── Marcador ────────────────────────────────────────────────────────────────
 
 /**
+ * ¿Los goles de Peñarol van en goles_local? Sí de Local y en cancha Neutral
+ * (por convención, Neutral se guarda como Local); solo de Visitante van en goles_visitante.
+ */
+export const capEsLocal = (escenario) => escenario !== 'Visitante';
+
+/**
  * Orienta el marcador de un partido desde la perspectiva de CAP y calcula el
  * resultado. Compartido con EstadisticasTab para que ambas superficies usen
  * exactamente el mismo criterio.
@@ -28,8 +34,9 @@ import { fechaPartido } from './dateUtils';
  * 'G' | 'E' | 'P' | null (null si falta alguno de los dos marcadores).
  */
 export function resolveMarcador(partido) {
-  const capGoles   = partido.escenario === 'Local' ? partido.goles_local     : partido.goles_visitante;
-  const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+  const local = capEsLocal(partido.escenario);
+  const capGoles   = local ? partido.goles_local     : partido.goles_visitante;
+  const rivalGoles = local ? partido.goles_visitante : partido.goles_local;
 
   let resultado = null;
   if (capGoles != null && rivalGoles != null) {
@@ -402,12 +409,15 @@ function buildContextBlock(subset) {
   };
 }
 
-export const ESCENARIOS = ['Local', 'Visitante'];
+export const ESCENARIOS = ['Local', 'Visitante', 'Neutral'];
 export const CESPEDES = ['Natural', 'Sintético'];
 
+/** Local y Visitante siempre; Neutral solo si el jugador tiene partidos en cancha neutral. */
 export function getPorEscenario(log = []) {
   return Object.fromEntries(
-    ESCENARIOS.map((esc) => [esc, buildContextBlock(log.filter((m) => m.escenario === esc))])
+    ESCENARIOS
+      .filter((esc) => esc !== 'Neutral' || log.some((m) => m.escenario === 'Neutral'))
+      .map((esc) => [esc, buildContextBlock(log.filter((m) => m.escenario === esc))])
   );
 }
 
@@ -417,7 +427,7 @@ export function getPorCesped(log = []) {
   );
 }
 
-/** Las 4 combinaciones escenario × césped, p. ej. "de visitante en sintético". */
+/** Las combinaciones escenario × césped que tienen partidos, p. ej. "de visitante en sintético". */
 export function getCombinaciones(log = []) {
   const out = [];
   ESCENARIOS.forEach((esc) => {
