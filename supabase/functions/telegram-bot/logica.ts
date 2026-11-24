@@ -14,6 +14,7 @@ export type Permisos = {
   can_view_partidos: boolean | null;
   can_access_widgets: boolean | null;
   can_access_tareas: boolean | null;
+  can_access_viatico: boolean | null;
 };
 
 /** Minúsculas y sin tildes (= normalizeSearchText de textUtils.js). */
@@ -28,11 +29,12 @@ export const normalizar = (s: unknown) =>
  */
 export function parseMensaje(texto: string | null | undefined) {
   const limpio = String(texto ?? "").trim();
-  const m = limpio.match(/^\/([\p{L}_]+)(?:@(\S+))?(?:\s+([\s\S]*))?$/u);
+  // El nombre acepta "-" ("/jugador-completo"), que Telegram no permite en el menú: se pasa a "_"
+  const m = limpio.match(/^\/([\p{L}_-]+)(?:@(\S+))?(?:\s+([\s\S]*))?$/u);
   if (!m) return { comando: null, destinatario: null, args: [] as string[], resto: limpio };
   const resto = (m[3] || "").trim();
   return {
-    comando: normalizar(m[1]),
+    comando: normalizar(m[1]).replace(/-/g, "_"),
     destinatario: m[2] ? m[2].toLowerCase() : null,
     args: resto ? resto.split(/\s+/) : [],
     resto,
@@ -101,7 +103,8 @@ const todos: Permiso = () => true;
 export const COMANDOS: Record<string, { uso: string; descripcion: string; permiso: Permiso }> = {
   nacidos: { uso: "/nacidos 2008 [categoría]", descripcion: "Jugadores nacidos ese año, con su categoría", permiso: jugadores },
   categoria: { uso: "/categoria 5ta", descripcion: "Plantel de una categoría", permiso: jugadores },
-  jugador: { uso: "/jugador Pérez", descripcion: "Ficha corta de un jugador", permiso: jugadores },
+  jugador: { uso: "/jugador Pérez", descripcion: "Datos de un jugador", permiso: jugadores },
+  ficha: { uso: "/ficha Pérez", descripcion: "Ficha completa de un jugador (por privado)", permiso: jugadores },
   lesionados: { uso: "/lesionados [categoría]", descripcion: "Lesionados sin alta", permiso: jugadores },
   cumples: { uso: "/cumples", descripcion: "Cumpleaños de los próximos 7 días", permiso: jugadores },
   proximo: { uso: "/proximo", descripcion: "Próxima jornada", permiso: partidos },
@@ -115,7 +118,10 @@ export const COMANDOS: Record<string, { uso: string; descripcion: string; permis
 };
 
 /** Alias en inglés o con otra forma que Telegram muestra en el menú. */
-export const ALIAS: Record<string, string> = { help: "ayuda", start: "ayuda", proxima: "proximo", resultados: "resultado", cumpleanos: "cumples" };
+export const ALIAS: Record<string, string> = {
+  help: "ayuda", start: "ayuda", proxima: "proximo", resultados: "resultado", cumpleanos: "cumples",
+  jugador_completo: "ficha", jugadorcompleto: "ficha",
+};
 
 export const comandosDe = (p: Permisos) => Object.keys(COMANDOS).filter((c) => COMANDOS[c].permiso(p));
 
@@ -211,4 +217,62 @@ export function nombreCoincide(busqueda: string, ...nombres: (string | null | un
   if (buscadas.length === 0) return false;
   const palabrasNombre = nombres.flatMap((n) => normalizar(n).split(/[^a-z0-9]+/).filter(Boolean));
   return buscadas.every((b) => palabrasNombre.some((w) => w.startsWith(b)));
+}
+
+// ── Jugador: viático, documento y minutos ───────────────────────────
+
+/** 12000 → "$ 12.000" */
+export const pesos = (n: number | null | undefined) =>
+  `$ ${Math.round(Number(n) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+
+type DatosViatico = {
+  viatico?: number | null; complemento?: number | null; contrato?: boolean | null;
+  complemento_override?: number | null; complemento_override_expira?: string | null;
+  incluir_viatico_export?: boolean | null;
+};
+
+/** = getComplementoEfectivo de playerUtils.js: el override vale hasta su fecha de vencimiento inclusive. */
+export function complementoEfectivo(p: DatosViatico, hoy: string) {
+  const override = p.complemento_override != null && !!p.complemento_override_expira && p.complemento_override_expira.slice(0, 10) >= hoy;
+  return { valor: override ? Number(p.complemento_override) : Number(p.complemento || 0), override };
+}
+
+/**
+ * Línea de viático (= montoViatico / calculateTotal de la app):
+ * - contrato + caso especial (incluir_viatico_export): "Contrato + Complemento $ 4.000", con el complemento
+ *   base (sin override), igual que lo que se paga en el export de Tesorero / Finanzas;
+ * - contrato: "Contrato";
+ * - si no, viático + complemento efectivo, con el detalle cuando tiene los dos.
+ */
+export function textoViatico(p: DatosViatico, hoy: string) {
+  const comp = complementoEfectivo(p, hoy);
+  const temporal = comp.override && p.complemento_override_expira ? ` (complemento temporal hasta el ${ddmm(p.complemento_override_expira)})` : "";
+  if (p.contrato) return p.incluir_viatico_export ? `Contrato + Complemento ${pesos(p.complemento)}` : "Contrato";
+  const viatico = Number(p.viatico || 0);
+  const detalle = viatico > 0 && comp.valor > 0 ? ` (${pesos(viatico)} viático + ${pesos(comp.valor)} complemento)` : "";
+  return `${pesos(viatico + comp.valor)}${detalle}${temporal}`;
+}
+
+/** Etiqueta del documento según `tipo_documento`. */
+export function etiquetaDocumento(tipo: string | null | undefined) {
+  if (!tipo || /c[ée]dula/i.test(tipo)) return "Cédula";
+  if (/pasaporte/i.test(tipo)) return "Pasaporte";
+  return "Documento";
+}
+
+/**
+ * Minutos jugados en un partido (= calcMinutos de playerStats.js). null si el partido no tiene
+ * `duracion` (sin cambios cargados); 0 si el suplente no entró.
+ */
+export function minutosJugados(
+  duracion: number | null | undefined,
+  pp: { tipo: string; minuto_entrada?: number | null; minuto_salida?: number | null },
+  rojaMinuto: number | null = null,
+) {
+  const dur = duracion == null ? null : Number(duracion);
+  if (!dur) return null;
+  const fin = pp.minuto_salida ?? rojaMinuto ?? dur;
+  const inicio = pp.tipo === "titular" ? 0 : pp.minuto_entrada;
+  if (inicio == null) return 0;
+  return Math.max(0, Math.min(fin, dur) - inicio);
 }

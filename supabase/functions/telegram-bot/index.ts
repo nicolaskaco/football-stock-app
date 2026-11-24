@@ -26,7 +26,7 @@ import { escapeHTML as e, sendTelegram } from "../_shared/telegram.ts";
 import { ALIAS, COMANDOS, esParaEsteBot, parseCodigo, parseMensaje, type Permisos } from "./logica.ts";
 import { ayuda, EJECUTORES } from "./comandos.ts";
 
-const COLUMNAS_PERMISOS = "email, role, categoria, can_access_players, can_view_partidos, can_access_widgets, can_access_tareas";
+const COLUMNAS_PERMISOS = "email, role, categoria, can_access_players, can_view_partidos, can_access_widgets, can_access_tareas, can_access_viatico";
 
 const ok = () => new Response("ok");
 const hoyUY = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Montevideo" }).format(new Date());
@@ -149,7 +149,7 @@ serve(async (req) => {
       return ok();
     }
 
-    const html = await EJECUTORES[nombre]({ db, perm, args, resto, hoy: hoyUY() });
+    const html = await EJECUTORES[nombre]({ db, perm, args, resto, hoy: hoyUY(), enGrupo });
     await responder(html);
     await registrar(db, "telegram_consulta", perm.email, { comando: nombre, args: resto.slice(0, 100) || null, chat: enGrupo ? "grupo" : "privado" });
   } catch (err) {

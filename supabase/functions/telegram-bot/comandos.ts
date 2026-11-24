@@ -7,12 +7,12 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { escapeHTML as e } from "../_shared/telegram.ts";
 import {
   CATEGORIAS, CATEGORIAS_FICHA, COMANDOS, type Permisos,
-  categoriasVisibles, comandosDe, ddmm, ddmmyyyy, diasParaCumple, edad, fechaPartido, jornadaLabel,
+  categoriasVisibles, comandosDe, ddmm, ddmmyyyy, diasParaCumple, edad, etiquetaDocumento, fechaPartido, jornadaLabel,
   marcador, nombreCoincide, normalizar, ordenCategoria, parseAnio, parseCategoria, rivalBuscado,
-  separarCategoria, sumarDias, veCategoria,
+  minutosJugados, pesos, separarCategoria, sumarDias, textoViatico, veCategoria,
 } from "./logica.ts";
 
-export type Contexto = { db: SupabaseClient; perm: Permisos; args: string[]; resto: string; hoy: string };
+export type Contexto = { db: SupabaseClient; perm: Permisos; args: string[]; resto: string; hoy: string; enGrupo: boolean };
 
 // Filas de PostgREST sin tipar (el cliente no tiene los tipos generados de la base)
 // deno-lint-ignore no-explicit-any
@@ -105,11 +105,20 @@ async function categoria(ctx: Contexto) {
   return `👥 <b>Plantel de ${e(cat)}</b>: ${jugadores.length}\n${lineas.join("\n")}`;
 }
 
-async function jugador(ctx: Contexto) {
-  if (!ctx.resto) return `Decime el nombre: <code>${COMANDOS.jugador.uso}</code>`;
+/**
+ * /jugador y /ficha. /ficha suma el documento, la ficha médica y los minutos jugados.
+ * Viático, celular, representante y documento son datos de menores: solo van por privado, y el
+ * viático además solo a quien tiene permiso de Viáticos.
+ */
+async function fichaJugador(ctx: Contexto, { completa }: { completa: boolean }) {
+  const uso = completa ? COMANDOS.ficha.uso : COMANDOS.jugador.uso;
+  if (completa && ctx.enGrupo) return "🔒 La ficha completa va por privado: escribime directamente (tocá mi nombre → Enviar mensaje).";
+  if (!ctx.resto) return `Decime el nombre: <code>${uso}</code>`;
   const todos = await jugadoresVisibles(
     ctx,
-    "id, name, name_visual, categoria, categoria_juego, posicion, date_of_birth, status, ficha_medica_hasta",
+    "id, name, name_visual, categoria, categoria_juego, posicion, date_of_birth, status, ficha_medica_hasta, " +
+      "gov_id, tipo_documento, celular, representante, viatico, complemento, contrato, complemento_override, " +
+      "complemento_override_expira, incluir_viatico_export",
     { soloActivos: false },
   );
   const encontrados = todos.filter((p) => nombreCoincide(ctx.resto, p.name, p.name_visual)).sort(porNombre);
@@ -122,24 +131,33 @@ async function jugador(ctx: Contexto) {
 
   const ids = encontrados.map((p) => p.id);
   const anio = ctx.hoy.slice(0, 4);
-  const verFicha = COMANDOS.fichas.permiso(ctx.perm);
+  const verFicha = completa && COMANDOS.fichas.permiso(ctx.perm);
   const verPartidos = !!ctx.perm.can_view_partidos;
+  const privado = !ctx.enGrupo;
+  const verViatico = privado && !!ctx.perm.can_access_viatico;
   const [lesiones, convocatorias, eventos] = await Promise.all([
     q(ctx.db.from("player_injuries").select("player_id, tipo, fecha_inicio, fecha_retorno_estimada").in("player_id", ids).is("fecha_alta", null)),
     verPartidos
-      ? q(ctx.db.from("partido_players").select("player_id, tipo, partidos!inner(fecha)").in("player_id", ids)
-        .gte("partidos.fecha", `${anio}-01-01`).lte("partidos.fecha", `${anio}-12-31`))
+      ? q(ctx.db.from("partido_players").select("player_id, partido_id, tipo, minuto_entrada, minuto_salida, partidos!inner(fecha, duracion)")
+        .in("player_id", ids).gte("partidos.fecha", `${anio}-01-01`).lte("partidos.fecha", `${anio}-12-31`))
       : Promise.resolve([] as Fila[]),
     verPartidos
-      ? q(ctx.db.from("partido_eventos").select("player_id, tipo, partidos!inner(fecha)").in("player_id", ids)
+      ? q(ctx.db.from("partido_eventos").select("player_id, partido_id, tipo, minuto, partidos!inner(fecha)").in("player_id", ids)
         .gte("partidos.fecha", `${anio}-01-01`).lte("partidos.fecha", `${anio}-12-31`))
       : Promise.resolve([] as Fila[]),
   ]);
+  const vacio = (v: unknown) => (v == null || String(v).trim() === "" ? "-" : e(String(v).trim()));
 
   const fichas = encontrados.map((p) => {
     const lineas = [`👤 <b>${nombre(p)}</b>${p.name_visual && p.name_visual !== p.name ? ` (${e(p.name)})` : ""}`];
     lineas.push(`Categoría: ${catLabel(p)}${p.posicion ? ` · ${e(p.posicion)}` : ""}`);
     if (p.date_of_birth) lineas.push(`Nacimiento: ${ddmmyyyy(p.date_of_birth)} (${edad(p.date_of_birth, ctx.hoy)} años)`);
+    if (completa) lineas.push(`${etiquetaDocumento(p.tipo_documento)}: ${vacio(p.gov_id)}`);
+    if (verViatico) lineas.push(`Viático: ${e(textoViatico(p, ctx.hoy))}`);
+    if (privado) {
+      lineas.push(`Celular: ${vacio(p.celular)}`);
+      lineas.push(`Representante: ${vacio(p.representante)}`);
+    }
     if (p.status && p.status !== "activo") lineas.push(`Estado: <b>${e(p.status)}</b>`);
     for (const l of lesiones.filter((l) => l.player_id === p.id)) {
       const tipo = ctx.perm.role === "admin" && l.tipo ? ` (${e(l.tipo)})` : "";
@@ -153,12 +171,26 @@ async function jugador(ctx: Contexto) {
       const conv = convocatorias.filter((c) => c.player_id === p.id);
       const ev = eventos.filter((x) => x.player_id === p.id);
       const cuenta = (tipo: string) => ev.filter((x) => x.tipo === tipo).length;
-      lineas.push(`⚽ ${anio}: ${plural(conv.length, "convocatoria", "convocatorias")} (${conv.filter((c) => c.tipo === "titular").length} de titular) · ${plural(cuenta("gol"), "gol", "goles")} · 🟨 ${cuenta("amarilla")} · 🟥 ${cuenta("roja")}`);
+      let minutos = "";
+      if (completa) {
+        const porPartido = conv.map((c) => {
+          const roja = ev.find((x) => x.tipo === "roja" && x.partido_id === c.partido_id);
+          return minutosJugados(c.partidos?.duracion, c, roja?.minuto ?? null);
+        }).filter((m): m is number => m != null);
+        const total = porPartido.reduce((a, b) => a + b, 0);
+        // Solo si hay partidos con cambios cargados; "1.530" con el separador de miles de pesos()
+        if (porPartido.length > 0) minutos = ` · ${pesos(total).slice(2)} ${total === 1 ? "minuto" : "minutos"}`;
+      }
+      lineas.push(`⚽ ${anio}: ${plural(conv.length, "convocatoria", "convocatorias")} (${conv.filter((c) => c.tipo === "titular").length} de titular) · ${plural(cuenta("gol"), "gol", "goles")}${minutos} · 🟨 ${cuenta("amarilla")} · 🟥 ${cuenta("roja")}`);
     }
     return lineas.join("\n");
   });
-  return fichas.join("\n\n");
+  const aviso = ctx.enGrupo ? `\n\n<i>${ctx.perm.can_access_viatico ? "Viático y contacto: pedímelos" : "Contacto: pedímelo"} por privado.</i>` : "";
+  return fichas.join("\n\n") + aviso;
 }
+
+const jugador = (ctx: Contexto) => fichaJugador(ctx, { completa: false });
+const ficha = (ctx: Contexto) => fichaJugador(ctx, { completa: true });
 
 async function lesionados(ctx: Contexto) {
   const { categoria } = separarCategoria(ctx.args);
@@ -429,5 +461,5 @@ export function ayuda(ctx: Pick<Contexto, "perm">) {
 }
 
 export const EJECUTORES: Record<string, (ctx: Contexto) => Promise<string> | string> = {
-  nacidos, categoria, jugador, lesionados, cumples, proximo, resultado, contra, goleadores, tarjetas, fichas, tareas, ayuda,
+  nacidos, categoria, jugador, ficha, lesionados, cumples, proximo, resultado, contra, goleadores, tarjetas, fichas, tareas, ayuda,
 };

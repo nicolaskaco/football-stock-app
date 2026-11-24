@@ -4,11 +4,12 @@ import {
   CATEGORIAS, parseMensaje, esParaEsteBot, parseCategoria, separarCategoria, categoriasVisibles, veCategoria, comandosDe,
   parseCodigo, edad, diasParaCumple, parseAnio, marcador, jornadaLabel, fechaPartido,
   rivalBuscado, nombreCoincide, type Permisos,
+  ALIAS, COMANDOS, textoViatico, etiquetaDocumento, minutosJugados,
 } from './logica';
 
 const perm = (over: Partial<Permisos> = {}): Permisos => ({
   email: 'x@cap.uy', role: 'delegado', categoria: [],
-  can_access_players: false, can_view_partidos: false, can_access_widgets: false, can_access_tareas: false,
+  can_access_players: false, can_view_partidos: false, can_access_widgets: false, can_access_tareas: false, can_access_viatico: false,
   ...over,
 });
 
@@ -147,5 +148,56 @@ describe('búsquedas', () => {
 describe('listas copiadas de la app', () => {
   it('CATEGORIAS igual a constants.js (Deno no puede importar src/)', () => {
     expect(CATEGORIAS).toEqual(CATEGORIAS_APP);
+  });
+});
+
+describe('/ficha y alias', () => {
+  it('acepta /jugador-completo y lo lleva a ficha', () => {
+    const m = parseMensaje('/jugador-completo tomas gemelli');
+    expect(m).toMatchObject({ comando: 'jugador_completo', resto: 'tomas gemelli' });
+    expect(ALIAS[m.comando!]).toBe('ficha');
+    expect(COMANDOS.ficha).toBeDefined();
+  });
+});
+
+describe('textoViatico', () => {
+  const hoy = '2026-11-24';
+  it('sin contrato suma viático y complemento, con el detalle', () => {
+    expect(textoViatico({ viatico: 8000 }, hoy)).toBe('$ 8.000');
+    expect(textoViatico({ viatico: 8000, complemento: 4000 }, hoy)).toBe('$ 12.000 ($ 8.000 viático + $ 4.000 complemento)');
+  });
+
+  it('usa el override del complemento mientras está vigente', () => {
+    const p = { viatico: 8000, complemento: 4000, complemento_override: 6000, complemento_override_expira: '2026-11-30' };
+    expect(textoViatico(p, hoy)).toBe('$ 14.000 ($ 8.000 viático + $ 6.000 complemento) (complemento temporal hasta el 30/11)');
+    expect(textoViatico({ ...p, complemento_override_expira: '2026-11-23' }, hoy)).toBe('$ 12.000 ($ 8.000 viático + $ 4.000 complemento)');
+  });
+
+  it('con contrato dice Contrato, y el caso especial suma el complemento', () => {
+    expect(textoViatico({ contrato: true, viatico: 8000, complemento: 4000 }, hoy)).toBe('Contrato');
+    expect(textoViatico({ contrato: true, complemento: 4000, incluir_viatico_export: true }, hoy)).toBe('Contrato + Complemento $ 4.000');
+    // Como montoViatico: el caso especial cobra el complemento base aunque haya override
+    expect(textoViatico({ contrato: true, complemento: 4000, incluir_viatico_export: true, complemento_override: 6000, complemento_override_expira: '2026-12-31' }, hoy))
+      .toBe('Contrato + Complemento $ 4.000');
+  });
+});
+
+describe('etiquetaDocumento', () => {
+  it('sale del tipo de documento', () => {
+    expect(etiquetaDocumento('Cédula de Identidad')).toBe('Cédula');
+    expect(etiquetaDocumento('Pasaporte')).toBe('Pasaporte');
+    expect(etiquetaDocumento('Otro')).toBe('Documento');
+    expect(etiquetaDocumento(null)).toBe('Cédula');
+  });
+});
+
+describe('minutosJugados', () => {
+  it('= calcMinutos de la app', () => {
+    expect(minutosJugados(90, { tipo: 'titular' })).toBe(90);
+    expect(minutosJugados(90, { tipo: 'titular', minuto_salida: 70 })).toBe(70);
+    expect(minutosJugados(90, { tipo: 'suplente', minuto_entrada: 70 })).toBe(20);
+    expect(minutosJugados(90, { tipo: 'suplente' })).toBe(0);
+    expect(minutosJugados(90, { tipo: 'titular' }, 60)).toBe(60);
+    expect(minutosJugados(null, { tipo: 'titular' })).toBeNull();
   });
 });

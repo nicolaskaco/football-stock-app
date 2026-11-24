@@ -855,14 +855,16 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
   - `/fichas` needs `can_access_widgets` plus a FichaMedicaWidget role;
   - `/tareas` needs `can_access_tareas`;
   - `finanzas` is always refused;
-  - the injury type is shown only to admins, and cédulas and viático data are never returned.
+  - the injury type is shown only to admins;
+  - document, viático, celular and representante (`/jugador`, `/ficha`) are answered **only in private chats**. In the group, `/jugador` leaves them out and `/ficha` asks to be sent by private message. The viático line also needs `can_access_viatico`.
 - **Commands** (plain parsing in `telegram-bot/logica.ts`, tested with Vitest; categories accept `5ta`, `5`, `quinta`, `sub16`…):
 
   | Command | Answer |
   |---|---|
   | `/nacidos <año> [cat]` | Players born that year, grouped by category |
   | `/categoria <cat>` | Active roster, with position and birth year |
-  | `/jugador <nombre>` | Short profile (accent-insensitive search): category, position, age, status, active injury, ficha médica, and the year's call-ups, goals and cards |
+  | `/jugador <nombre>` | Player profile (accent-insensitive search): category, position, age, viático, celular and representante (`-` when empty), status, active injury, and the year's call-ups, goals and cards. Viático follows the app (`montoViatico` / `calculateTotal`): viático + complemento efectivo (with the breakdown and a temporary override note), `Contrato`, or `Contrato + Complemento $ X` for a caso especial (`incluir_viatico_export`, with the base complemento, as paid in the Tesorero / Finanzas export) |
+  | `/ficha <nombre>` | Everything in `/jugador`, plus the document (label from `tipo_documento`: Cédula / Pasaporte / Documento), the ficha médica and the minutes played this year (`minutosJugados` = `calcMinutos`, only partidos with `duracion`). Private chats only. Aliases: `/jugador_completo`, `/jugador-completo` (the command name accepts `-`, turned into `_`) |
   | `/lesionados [cat]` | Open injuries, flagging an overdue estimated return |
   | `/cumples` | Birthdays in the next 7 days |
   | `/proximo [cat]` | Next jornada with the partidos still to play |
@@ -874,7 +876,7 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
   | `/tareas` | Open tareas by estado and prioridad |
   | `/ayuda` | Only the commands the user can use |
 
-  Suspensions, minutes and the parte are not offered yet, because their logic lives in the frontend (`suspensions.js`, `playerStats.js`).
+  Suspensions and the parte are not offered yet, because their logic lives in the frontend (`suspensions.js`, `disponibilidad.js`).
 - **Setup script** (`scripts/telegram-setup.mjs`, `npm run telegram:setup`): asks for the bot token and the webhook secret, or reads them from `TELEGRAM_BOT_TOKEN` / `TELEGRAM_WEBHOOK_SECRET`, without printing or saving them. If the secret is left empty, it generates a new one and loads it with `supabase secrets set --project-ref`. The project comes from `supabase/.temp/project-ref`, or is asked for. Then it:
   - shows the bot's `@username`;
   - registers the webhook, `TELEGRAM_BOT_USERNAME` and the command menu (`setMyCommands` for `all_private_chats` and `all_group_chats`, built from `COMANDOS` in `logica.ts`, so the menu matches the bot);
