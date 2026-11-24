@@ -21,16 +21,27 @@ export const normalizar = (s: unknown) =>
   String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 /**
- * "/goleadores@CapBot 5ta 2026" → { comando: "goleadores", args: ["5ta", "2026"], resto: "5ta 2026" }.
+ * "/goleadores@CapBot 5ta 2026" →
+ *   { comando: "goleadores", destinatario: "capbot", args: ["5ta", "2026"], resto: "5ta 2026" }.
+ * `destinatario` es el bot nombrado después de "@" (en minúsculas), o null.
  * Un texto que no empieza con "/" devuelve comando null.
  */
 export function parseMensaje(texto: string | null | undefined) {
   const limpio = String(texto ?? "").trim();
-  const m = limpio.match(/^\/([\p{L}_]+)(?:@\S+)?(?:\s+([\s\S]*))?$/u);
-  if (!m) return { comando: null, args: [] as string[], resto: limpio };
-  const resto = (m[2] || "").trim();
-  return { comando: normalizar(m[1]), args: resto ? resto.split(/\s+/) : [], resto };
+  const m = limpio.match(/^\/([\p{L}_]+)(?:@(\S+))?(?:\s+([\s\S]*))?$/u);
+  if (!m) return { comando: null, destinatario: null, args: [] as string[], resto: limpio };
+  const resto = (m[3] || "").trim();
+  return {
+    comando: normalizar(m[1]),
+    destinatario: m[2] ? m[2].toLowerCase() : null,
+    args: resto ? resto.split(/\s+/) : [],
+    resto,
+  };
 }
+
+/** ¿El comando es para este bot? Sin "@" sí; con "@otro" no. Sin usuario configurado, acepta cualquiera. */
+export const esParaEsteBot = (destinatario: string | null, usuarioBot: string | null | undefined) =>
+  !destinatario || !usuarioBot || destinatario === usuarioBot.replace(/^@/, "").toLowerCase();
 
 const PALABRAS_CATEGORIA: Record<string, string> = {
   tercera: "3era", cuarta: "4ta", quinta: "5ta", sexta: "6ta", septima: "7ma", setima: "7ma",

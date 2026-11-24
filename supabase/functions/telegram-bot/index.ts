@@ -1,10 +1,13 @@
-// Bot de consultas por Telegram: webhook que recibe los mensajes privados al bot del club
+// Bot de consultas por Telegram: webhook que recibe los mensajes al bot del club (privados y del grupo)
 // y responde con datos de la app (ver comandos.ts y SPEC.md → Telegram).
 //
 // Seguridad:
 //  - Telegram manda el header X-Telegram-Bot-Api-Secret-Token con el secreto registrado en
 //    setWebhook; sin él la función no hace nada. Se despliega con --no-verify-jwt.
-//  - Solo responde en chats privados (nunca en el grupo).
+//  - Responde en chats privados y en el grupo del club (TELEGRAM_CHAT_ID, el mismo de
+//    send-telegram); cualquier otro grupo se ignora. En el grupo solo atiende comandos para
+//    este bot (TELEGRAM_BOT_USERNAME, opcional), responde citando el mensaje y la respuesta
+//    la ve todo el grupo. /vincular nunca se acepta en el grupo.
 //  - Solo a usuarios vinculados: user_permissions.telegram_user_id = id de Telegram de quien
 //    escribe. Se vinculan con /vincular <código> (el código lo genera la app, 10 minutos).
 //  - Cliente service-role: los permisos (flags, rol, categorías) se aplican en comandos.ts.
@@ -20,7 +23,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { escapeHTML as e, sendTelegram } from "../_shared/telegram.ts";
-import { ALIAS, COMANDOS, parseCodigo, parseMensaje, type Permisos } from "./logica.ts";
+import { ALIAS, COMANDOS, esParaEsteBot, parseCodigo, parseMensaje, type Permisos } from "./logica.ts";
 import { ayuda, EJECUTORES } from "./comandos.ts";
 
 const COLUMNAS_PERMISOS = "email, role, categoria, can_access_players, can_view_partidos, can_access_widgets, can_access_tareas";
@@ -33,13 +36,13 @@ async function registrar(db: SupabaseClient, accion: string, email: string, deta
   if (error) console.error("activity_log:", error.message);
 }
 
-/** /vincular <código>: asocia este usuario de Telegram a la cuenta de la app que generó el código. */
 /** SHA-256 en hex, igual que encode(sha256(...), 'hex') en generar_codigo_telegram(). */
 async function sha256Hex(texto: string) {
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texto));
   return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** /vincular <código>: asocia este usuario de Telegram a la cuenta de la app que generó el código. */
 async function vincular(db: SupabaseClient, telegramId: number, codigoTexto: string | undefined) {
   const codigo = parseCodigo(codigoTexto);
   if (!codigo) {
@@ -81,17 +84,42 @@ serve(async (req) => {
     return ok();
   }
   const msg = update?.message;
-  if (!msg?.text || !msg.from?.id || msg.chat?.type !== "private") return ok();
+  if (!msg?.text || !msg.from?.id) return ok();
+
+  // Chats privados, o el grupo del club (el mismo de send-telegram). Cualquier otro grupo se ignora.
+  const tipo = msg.chat?.type;
+  const enGrupo = (tipo === "group" || tipo === "supergroup") && String(msg.chat.id) === Deno.env.get("TELEGRAM_CHAT_ID");
+  if (tipo !== "private" && !enGrupo) return ok();
 
   const chatId: number = msg.chat.id;
   const telegramId: number = msg.from.id;
-  const { comando, args, resto } = parseMensaje(msg.text);
+  const { comando, destinatario, args, resto } = parseMensaje(msg.text);
+  // En el grupo solo se atienden comandos de este bot: la charla, "/cmd@otrobot" y comandos
+  // que no conoce (de otros bots) se ignoran sin contestar
+  const nombre = comando ? (ALIAS[comando] ?? comando) : null;
+  if (enGrupo) {
+    if (!comando || !esParaEsteBot(destinatario, Deno.env.get("TELEGRAM_BOT_USERNAME"))) return ok();
+    if (!COMANDOS[nombre!] && comando !== "vincular" && comando !== "start") return ok();
+  }
+
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  const responder = (html: string) => sendTelegram(html, chatId);
+  const responder = (html: string) => sendTelegram(html, chatId, enGrupo ? { responderA: msg.message_id } : {});
 
   try {
     // /start <código> es el deep link t.me/<bot>?start=<código>
     if (comando === "vincular" || (comando === "start" && args.length > 0)) {
+      if (enGrupo) {
+        // El código quedó a la vista de todo el grupo: se anula para que nadie más lo use
+        const codigo = parseCodigo(args[0]);
+        if (codigo) {
+          const { error } = await db.from("user_permissions")
+            .update({ telegram_link_code: null, telegram_link_expira: null })
+            .eq("telegram_link_code", await sha256Hex(codigo));
+          if (error) throw new Error(error.message);
+        }
+        await responder(`🔒 El código va por privado: escribime directamente (tocá mi nombre → Enviar mensaje).${codigo ? " Ese código quedó anulado: generá otro en la app." : ""}`);
+        return ok();
+      }
       await responder(await vincular(db, telegramId, args[0]));
       return ok();
     }
@@ -100,6 +128,10 @@ serve(async (req) => {
       .eq("telegram_user_id", telegramId).maybeSingle<Permisos>();
     if (error) throw new Error(error.message);
     if (!perm) {
+      if (enGrupo) {
+        await responder("Para usar el bot, vinculá tu cuenta: en la app tocá el avioncito de Telegram y seguí los pasos (es por privado).");
+        return ok();
+      }
       await responder("Hola 👋 Todavía no estás vinculado.\nEn la app tocá el botón de Telegram (arriba a la derecha), generá un código y mandámelo así: <code>/vincular ABCD1234</code>");
       return ok();
     }
@@ -108,9 +140,8 @@ serve(async (req) => {
       return ok();
     }
 
-    const nombre = comando ? (ALIAS[comando] ?? comando) : null;
     if (!nombre || !COMANDOS[nombre]) {
-      await responder(`No entendí ese pedido.\n\n${ayuda({ perm })}`);
+      await responder(enGrupo ? "No conozco ese comando. Mandá /ayuda para ver la lista." : `No entendí ese pedido.\n\n${ayuda({ perm })}`);
       return ok();
     }
     if (!COMANDOS[nombre].permiso(perm)) {
@@ -120,7 +151,7 @@ serve(async (req) => {
 
     const html = await EJECUTORES[nombre]({ db, perm, args, resto, hoy: hoyUY() });
     await responder(html);
-    await registrar(db, "telegram_consulta", perm.email, { comando: nombre, args: resto.slice(0, 100) || null });
+    await registrar(db, "telegram_consulta", perm.email, { comando: nombre, args: resto.slice(0, 100) || null, chat: enGrupo ? "grupo" : "privado" });
   } catch (err) {
     console.error("telegram-bot:", err);
     try {

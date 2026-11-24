@@ -109,7 +109,7 @@ export const TelegramVinculoPanel = ({ currentUser }) => {
   return (
     <div className="space-y-4 text-sm text-gray-700 dark:text-gray-200">
       <p>
-        Con el bot del club podés consultar datos desde Telegram, en un chat privado: por ejemplo{' '}
+        Con el bot del club podés consultar datos desde Telegram, por privado o en el grupo del club: por ejemplo{' '}
         <code className="px-1 rounded bg-gray-100 dark:bg-gray-700">/nacidos 2008</code> o{' '}
         <code className="px-1 rounded bg-gray-100 dark:bg-gray-700">/goleadores 5ta</code>. Ves lo mismo que en la app, según tus permisos.
       </p>
@@ -126,7 +126,7 @@ export const TelegramVinculoPanel = ({ currentUser }) => {
             <CheckCircle2 className="w-4 h-4" /> Tu Telegram está vinculado{BOT ? <> con <span className="font-semibold">@{BOT}</span></> : ''}.
           </p>
           <p>
-            Escribile en el chat privado (mandá <span className="font-mono">/</span> para ver la lista). Tocá un ejemplo para copiarlo:{' '}
+            Escribile por privado o en el grupo (mandá <span className="font-mono">/</span> para ver la lista). Tocá un ejemplo para copiarlo:{' '}
             {EJEMPLOS.filter((ej) => ej.puede(currentUser)).map(({ texto: ej }) => (
               <button
                 key={ej}
