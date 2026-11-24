@@ -140,7 +140,7 @@ export function isFichaVencida(player, fecha) {
 }
 
 // Hoy en hora local (todayISO usa UTC y desde las 21:00 de Uruguay ya da el día siguiente)
-function localTodayISO() {
+export function localTodayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }

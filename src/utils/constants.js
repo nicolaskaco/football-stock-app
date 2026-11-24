@@ -165,3 +165,6 @@ export const PLAYER_STATUS_LABELS = {
   egresado: 'Egresado',
   'dado de baja': 'Baja',
 };
+
+// Roles que pueden mandar mensajes al grupo de Telegram (los mismos que acepta la Edge Function send-telegram)
+export const ROLES_TELEGRAM = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria'];

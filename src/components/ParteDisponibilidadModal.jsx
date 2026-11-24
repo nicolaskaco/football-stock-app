@@ -8,9 +8,7 @@ import { ConfirmModal } from './ConfirmModal';
 import { buildParteDisponibilidad, parteComoTexto, tituloParte } from '../utils/disponibilidad';
 import { exportParteDisponibilidadPDF } from '../utils/pdfExport';
 import { formatDate } from '../utils/dateUtils';
-
-// Mismos roles que acepta la Edge Function send-telegram
-const ROLES_TELEGRAM = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria'];
+import { ROLES_TELEGRAM } from '../utils/constants';
 
 const MOTIVO_ESTILO = {
   suspendido: { emoji: '🚫', className: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200' },

@@ -791,6 +791,7 @@ Embedded section in `PlayerForm` showing all matches a player participated in.
   - "PDF": `exportParteDisponibilidadPDF` in `pdfExport.js`. It uses the same header as the dashboard PDF and the motivos go without emojis.
   - "Enviar a Telegram": only for `admin`, `ejecutivo`, `presidente` and `presidente_categoria`. It asks for confirmation and then sends the parte to the club group through `database.sendTelegram`. The parte sent to the group is always built with `detalleLesion: false`, even when an admin sends it, so it never carries the injury type.
   - "Volver a la jornada" reopens the detail.
+- **Automatic send when a jornada is created**: the "Nueva Jornada" form shows the checkbox "Enviar el parte de disponibilidad al grupo de Telegram" to the same roles. It starts checked when the jornada date is today or later (local time), so loading past jornadas does not post to the group. After the jornada is created, `PartidosTab` re-reads the jornadas (suspensions need the full calendar, including the new one), builds the parte with the creator's categories and `detalleLesion: false`, and sends it. If the send fails, the jornada stays created and a toast says it can be resent from the jornada detail.
 
 ### Telegram
 
