@@ -242,7 +242,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `jornada_id` | uuid FK → jornadas | ON DELETE CASCADE |
 | `categoria` | text | One of `CATEGORIAS_PARTIDO` |
 | `fecha` | date | nullable — day the partido was (or will be) played. Defaults from the jornada: `fechaPartidoDefault()` = jornada date minus `DIAS_ANTES_JORNADA[categoria]` (4ta one day before, the rest the same day). In a single-category jornada (one partido, see Semifinal / Final) the default is the jornada date itself (`fechaPartidoDefaultEnJornada`). Set on create, moved with the jornada when its date changes (unless it was edited by hand), editable in PartidoForm for postponed/rescheduled partidos. Backfilled for all existing partidos. Null falls back to the default. Suspensions are ordered by this date |
-| `escenario` | text | `'Local'` \| `'Visitante'` \| `'Neutral'` (cancha neutral, usual in semifinals and finals). Neutral stores the score like Local: CAP's goals go in `goles_local` (`capEsLocal` in `playerStats.js`) |
+| `escenario` | text | `'Local'` \| `'Visitante'` \| `'Neutral'` (cancha neutral, usual in semifinals and finals). Neutral stores the score like Local: CAP's goals go in `goles_local` (`capEsLocal` in `playerStats.js`). Enforced by `partidos_escenario_check` (migration `20261126_escenario_neutral.sql`) |
 | `cesped` | text | `'Natural'` \| `'Sintético'` (default: Local→Sintético, Visitante and Neutral→Natural) |
 | `cancha` | text | nullable — one of `CANCHAS_LOCAL`; only set when `escenario = 'Local'`, otherwise null |
 | `goles_local` | integer | nullable — filled after the match |
