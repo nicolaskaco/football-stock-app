@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { CATEGORIAS_PARTIDO, CATEGORIAS_ESCENARIO_INVERTIDO, FASES_CAMPEONATO, ESCENARIOS, NUMEROS_JORNADA } from '../utils/constants';
-import { todayISO } from '../utils/dateUtils';
+import { localTodayISO, todayISO } from '../utils/dateUtils';
 
 /**
  * Formulario de jornada — funciona tanto para crear (sin `jornada`) como para editar (con `jornada`).
  * En modo edición no se muestra el selector de escenario (los partidos ya existen).
+ * Con `puedeTelegram`, al crear ofrece mandar el parte de disponibilidad al grupo de Telegram
+ * (marcado por defecto si la jornada es de hoy en adelante, para no avisar al cargar jornadas viejas).
  */
-export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = null }) => {
+export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = null, puedeTelegram = false }) => {
   const isEdit = !!jornada;
 
   const [formData, setFormData] = useState({
@@ -17,13 +19,16 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
     torneo_id: jornada?.torneo_id || '',
   });
   const [escenarioBase, setEscenarioBase] = useState('');
+  // null = sin tocar: se deriva de la fecha
+  const [enviarTelegramElegido, setEnviarTelegramElegido] = useState(null);
+  const enviarTelegram = puedeTelegram && (enviarTelegramElegido ?? formData.fecha >= localTodayISO());
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isEdit) {
       onSubmit(formData);
     } else {
-      onSubmit(formData, escenarioBase);
+      onSubmit(formData, escenarioBase, { enviarTelegram });
     }
   };
 
@@ -175,6 +180,22 @@ export const JornadaForm = ({ rivales = [], torneos = [], onSubmit, jornada = nu
                 })}
               </div>
             </div>
+          )}
+          {puedeTelegram && (
+            <label className="flex items-start gap-3 p-3 rounded-lg border border-sky-200 bg-sky-50 cursor-pointer dark:border-sky-800 dark:bg-sky-900/30">
+              <input
+                type="checkbox"
+                checked={enviarTelegram}
+                onChange={(e) => setEnviarTelegramElegido(e.target.checked)}
+                className="mt-1 h-4 w-4 accent-yellow-400"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-200">
+                <span className="font-medium">Enviar el parte de disponibilidad al grupo de Telegram</span>
+                <span className="block text-xs text-gray-500 dark:text-gray-400">
+                  Al crear la jornada se manda quiénes no pueden jugar en cada categoría y cuántos están disponibles. Las lesiones van sin el tipo.
+                </span>
+              </span>
+            </label>
           )}
         </>
       )}

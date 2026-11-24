@@ -8,7 +8,10 @@ import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
 import { formatDate, fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
-import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO } from '../utils/constants';
+import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, ROLES_TELEGRAM } from '../utils/constants';
+import { buildParteDisponibilidad, parteComoTexto } from '../utils/disponibilidad';
+import { textoATelegramHTML } from '../utils/textUtils';
+import { useToast } from '../context/ToastContext';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 import { RivalBadge } from './ui/RivalBadge';
 import { SortIcon } from './ui/SortIcon';
@@ -19,6 +22,7 @@ const SORT_DEFAULT = { key: null, direction: 'asc' };
 
 export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injuries = [], dirigentes = [], torneos = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {} }) => {
   const { execute } = useMutation();
+  const { showToast } = useToast();
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [view, setView] = useState('lista'); // 'lista' | 'calendario'
   const [faseFiltro, setFaseFiltro] = useState(null);
@@ -26,11 +30,36 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
 
   const canEdit = currentUser?.canEditPartidos || false;
 
-  const handleAddJornada = (formData, escenarioBase) => execute(async () => {
-    await database.addJornada(formData, escenarioBase);
+  const handleAddJornada = (formData, escenarioBase, { enviarTelegram = false } = {}) => execute(async () => {
+    const nueva = await database.addJornada(formData, escenarioBase);
     await onDataChange('jornadas');
     setShowModal(null);
+    if (enviarTelegram) enviarParteTelegram(nueva.id);
   }, 'Error al crear la jornada', 'Jornada creada correctamente');
+
+  // Parte de la jornada recién creada al grupo de Telegram. Si falla, la jornada ya quedó creada:
+  // solo se avisa, y se puede reenviar desde el detalle de la jornada.
+  const enviarParteTelegram = async (jornadaId) => {
+    try {
+      // Jornadas frescas: las props todavía no traen la nueva, y las suspensiones necesitan el calendario completo
+      const todas = await database.getJornadas();
+      const jornada = todas.find((j) => j.id === jornadaId);
+      if (!jornada) throw new Error('no se encontró la jornada nueva');
+      const parte = buildParteDisponibilidad({
+        jornada, jornadas: todas, players, injuries, appSettings,
+        categorias: currentUser?.categoria, detalleLesion: false,
+      });
+      if (!parte.length) {
+        showToast('Esta jornada no tiene partidos de tus categorías: no se envió el parte a Telegram', 'info');
+        return;
+      }
+      await database.sendTelegram(textoATelegramHTML(parteComoTexto(jornada, parte)));
+      showToast('Parte de disponibilidad enviado al grupo de Telegram', 'success');
+    } catch (error) {
+      console.error('Parte a Telegram', error);
+      showToast(`La jornada se creó, pero no se pudo enviar el parte a Telegram: ${error.message}. Podés reenviarlo desde el detalle de la jornada.`, 'error');
+    }
+  };
 
   const openEditJornada = (jornada) => {
     onFormDirtyChange(false);
@@ -68,6 +97,7 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
           rivales={rivales}
           torneos={torneos}
           onSubmit={handleAddJornada}
+          puedeTelegram={ROLES_TELEGRAM.includes(currentUser?.role)}
         />
       ),
     });
