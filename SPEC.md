@@ -873,11 +873,12 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
   | `/contra <rival>` | G/E/P and goals per category against that rival, plus the last 6 jornadas |
   | `/goleadores [cat] [año]` | Top scorers of the year |
   | `/tarjetas [cat] [año]` | Yellow and red cards of the year |
+  | `/minutos [cat] [año]` | Players ordered by minutes played in the year, with partidos as titular and as suplente, using the app's `getEstadisticasJugadores` (same numbers as the Estadísticas → Minutos table: suplente counts only partidos where the player came in, and only partidos with `duracion` have minutes). With a category, the whole list plus a "Sin minutos cargados" line; without one, the top 5 of each category. Ties: more titular, then name. Alias: `/minuto`. Needs `can_view_partidos` |
   | `/fichas [cat]` | Fichas médicas expired, expiring within 30 days, or missing |
   | `/tareas` | Open tareas by estado and prioridad |
   | `/ayuda` | Only the commands the user can use |
 
-  **Shared app code**: `/parte` imports `supabase/functions/_shared/app/*.js`, verbatim copies of `src/utils` modules (`constants`, `dateUtils`, `ageEligibility`, `suspensions`, `playerStats`, `disponibilidad`, `textUtils`; their relative imports carry the `.js` extension so Deno resolves them). `npm run sync:shared` (`scripts/sync-shared.mjs`) regenerates them, and `src/utils/sharedSync.test.js` fails in CI when a copy is stale. Suspensions, yellow-card counts and minutes per player (`/suspendidos`, `/amarillas`, `/minutos`) can now reuse the same modules but are not offered yet.
+  **Shared app code**: `/parte` imports `supabase/functions/_shared/app/*.js`, verbatim copies of `src/utils` modules (`constants`, `dateUtils`, `ageEligibility`, `suspensions`, `playerStats`, `disponibilidad`, `textUtils`; their relative imports carry the `.js` extension so Deno resolves them). `npm run sync:shared` (`scripts/sync-shared.mjs`) regenerates them, and `src/utils/sharedSync.test.js` fails in CI when a copy is stale. `/minutos` also uses them (`playerStats.getEstadisticasJugadores`). Suspensions and yellow-card counts (`/suspendidos`, `/amarillas`) can reuse the same modules but are not offered yet.
 - **Setup script** (`scripts/telegram-setup.mjs`, `npm run telegram:setup`): asks for the bot token and the webhook secret, or reads them from `TELEGRAM_BOT_TOKEN` / `TELEGRAM_WEBHOOK_SECRET`, without printing or saving them. If the secret is left empty, it generates a new one and loads it with `supabase secrets set --project-ref`. The project comes from `supabase/.temp/project-ref`, or is asked for. Then it:
   - shows the bot's `@username`;
   - registers the webhook, `TELEGRAM_BOT_USERNAME` and the command menu (`setMyCommands` for `all_private_chats` and `all_group_chats`, built from `COMANDOS` in `logica.ts`, so the menu matches the bot);
@@ -886,7 +887,7 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
 
   Options, one at a time: `--estado` (read-only), `--solo-comandos` (after adding a command), `--nuevo-secreto` (rotates the secret), `--apagar` (`deleteWebhook`). Unknown options are rejected. Needs Node ≥ 22.18, because it imports the `.ts` file directly.
 - **Activity log**: every query logs `telegram_consulta` (the command, up to 100 characters of arguments and `chat`: `grupo` or `privado`). Linking and unlinking log `telegram_vinculo` (`details.vinculado` true/false).
-- **Not covered**: the bot ignores the `app_settings` tab toggles (e.g. `estadisticas_tab_enabled`): `/goleadores`, `/tarjetas` and `/contra` only need `can_view_partidos`, since the same data is visible in Partidos. Queries aren't paginated (PostgREST returns at most 1000 rows).
+- **Not covered**: the bot ignores the `app_settings` tab toggles (e.g. `estadisticas_tab_enabled`): `/goleadores`, `/tarjetas`, `/minutos` and `/contra` only need `can_view_partidos`, since the same data is visible in Partidos. Queries aren't paginated (PostgREST returns at most 1000 rows).
 
 ### Dashboard PDF Export
 

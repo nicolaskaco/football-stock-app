@@ -9,11 +9,12 @@ import { escapeHTML as e } from "../_shared/telegram.ts";
 import { buildParteDisponibilidad, parteComoTexto } from "../_shared/app/disponibilidad.js";
 import { textoATelegramHTML } from "../_shared/app/textUtils.js";
 import { ROLES_TELEGRAM } from "../_shared/app/constants.js";
+import { getEstadisticasJugadores } from "../_shared/app/playerStats.js";
 import {
   CATEGORIAS, CATEGORIAS_FICHA, COMANDOS, type Permisos,
   categoriasVisibles, comandosDe, ddmm, ddmmyyyy, diasParaCumple, edad, etiquetaDocumento, fechaPartido, jornadaLabel,
   marcador, nombreCoincide, normalizar, ordenCategoria, parseAnio, parseCategoria, rivalBuscado,
-  minutosJugados, pesos, separarCategoria, sumarDias, textoViatico, veCategoria,
+  miles, minutosJugados, ordenarPorMinutos, pesos, separarCategoria, sumarDias, textoViatico, veCategoria,
 } from "./logica.ts";
 
 export type Contexto = { db: SupabaseClient; perm: Permisos; args: string[]; resto: string; hoy: string; enGrupo: boolean };
@@ -453,6 +454,47 @@ async function tarjetas(ctx: Contexto) {
   return `${titulo}\n\n${bloques.join("\n\n")}\n\n<i>Para las suspensiones mirá la app: dependen de las fechas cumplidas.</i>`;
 }
 
+/**
+ * /minutos: jugadores ordenados por minutos jugados en el año, con partidos de titular y de
+ * suplente (= tabla Minutos de Estadísticas: getEstadisticasJugadores; suplente = entró desde el
+ * banco). Con categoría, el plantel entero; sin categoría, los primeros de cada una.
+ */
+async function minutos(ctx: Contexto) {
+  const { categoria, otros } = separarCategoria(ctx.args);
+  const anio = parseAnio(otros[0]) ?? Number(ctx.hoy.slice(0, 4));
+  const [jornadas, players] = await Promise.all([
+    q(ctx.db.from("jornadas").select(SELECT_JORNADA_COMPLETA)),
+    q(ctx.db.from("players").select("id, name, name_visual")),
+  ]);
+  // Como EstadisticasJugadoresTab: el año es el de la jornada
+  const delAnio = jornadas.filter((j: Fila) => j.fecha && Number(j.fecha.slice(0, 4)) === anio);
+  const partidos: Fila[] = delAnio.flatMap((j: Fila) => j.partidos || []);
+  const categorias = categoria
+    ? [categoria]
+    : [...new Set<string>(partidos.map((p) => p.categoria))].sort(ordenCategoria);
+
+  const titulo = `⏱️ <b>Minutos ${anio}</b>${categoria ? ` de ${e(categoria)}` : ""}`;
+  const fila = (j: Fila) => `${j.titular} tit · ${j.suplente} sup`;
+  const bloques = categorias.flatMap((cat) => {
+    const conMinutos = partidos.filter((p) => p.categoria === cat && p.duracion != null).length;
+    const lista = ordenarPorMinutos(getEstadisticasJugadores(delAnio, players, cat));
+    if (conMinutos === 0 || lista.length === 0) return [];
+    const conDato = lista.filter((j) => j.minutos != null);
+    const sinDato = lista.filter((j) => j.minutos == null);
+    const top = categoria ? conDato : conDato.slice(0, 5);
+    const lineas = top.map((j, i) => `${i + 1}. ${e(j.name_visual)} — ${miles(j.minutos)}' · ${fila(j)}`);
+    if (categoria && sinDato.length > 0) {
+      lineas.push("", `<i>Sin minutos cargados: ${sinDato.map((j) => `${e(j.name_visual)} (${fila(j)})`).join(", ")}</i>`);
+    }
+    const encabezado = categoria
+      ? `<i>${plural(conMinutos, "partido", "partidos")} con minutos cargados</i>`
+      : `<b>${e(cat)}</b> (${plural(conMinutos, "partido", "partidos")})`;
+    return [`${encabezado}\n${lineas.join("\n")}`];
+  });
+  if (bloques.length === 0) return `${titulo}: no hay minutos cargados.`;
+  return `${titulo}\n\n${bloques.join("\n\n")}`;
+}
+
 // ── Administración ──────────────────────────────────────────────────
 
 async function fichas(ctx: Contexto) {
@@ -519,5 +561,5 @@ export function ayuda(ctx: Pick<Contexto, "perm">) {
 }
 
 export const EJECUTORES: Record<string, (ctx: Contexto) => Promise<string> | string> = {
-  nacidos, categoria, jugador, ficha, lesionados, cumples, proximo, parte, resultado, contra, goleadores, tarjetas, fichas, tareas, ayuda,
+  nacidos, categoria, jugador, ficha, lesionados, cumples, proximo, parte, resultado, contra, goleadores, tarjetas, minutos, fichas, tareas, ayuda,
 };
