@@ -223,6 +223,16 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
         ))}
       </div>
 
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6">
+        <SettingToggle
+          label="Resumen semanal por Telegram"
+          description="Los lunes a las 8:00 se manda al grupo de Telegram del club un resumen con fichas médicas vencidas o por vencer, lesionados con el retorno vencido, solicitudes pendientes hace 7 días o más y stock bajo."
+          enabled={s('telegram_digest_enabled')}
+          onToggle={() => handleToggle('telegram_digest_enabled', s('telegram_digest_enabled'))}
+          loading={loading}
+        />
+      </div>
+
       <div className="bg-white rounded-lg shadow px-6 py-4">
         <p className="font-medium text-gray-900 mb-1">Año mínimo de nacimiento por categoría</p>
         <p className="text-sm text-gray-500 mb-4">
