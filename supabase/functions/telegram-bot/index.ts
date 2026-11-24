@@ -12,12 +12,10 @@
 //
 // Siempre responde 200 a Telegram (si no, reintenta el mismo mensaje).
 //
-// Setup (una vez):
-//   supabase secrets set TELEGRAM_WEBHOOK_SECRET=<texto al azar>
+// Setup:
 //   supabase functions deploy telegram-bot --no-verify-jwt
-//   curl "https://api.telegram.org/bot<TOKEN>/setWebhook" \
-//     -d url=https://<proyecto>.supabase.co/functions/v1/telegram-bot \
-//     -d secret_token=<TELEGRAM_WEBHOOK_SECRET> -d 'allowed_updates=["message"]'
+//   npm run telegram:setup -- --nuevo-secreto   (secreto en Supabase + webhook + menú de comandos)
+// Después, al agregar comandos: npm run telegram:setup -- --solo-comandos
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";

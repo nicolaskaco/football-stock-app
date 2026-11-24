@@ -6,9 +6,8 @@
 -- user_permissions solo deja actualizar a los admins.
 --
 -- Antes de usarlo:
---   supabase secrets set TELEGRAM_WEBHOOK_SECRET=<texto al azar>
 --   supabase functions deploy telegram-bot --no-verify-jwt
---   y registrar el webhook (ver el encabezado de supabase/functions/telegram-bot/index.ts).
+--   npm run telegram:setup -- --nuevo-secreto   (secreto, webhook y menú de comandos)
 
 alter table public.user_permissions
   add column if not exists telegram_user_id bigint unique,

@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "prepare": "git config core.hooksPath .githooks || true",
-    "test": "vitest run"
+    "test": "vitest run",
+    "telegram:setup": "node scripts/telegram-setup.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
