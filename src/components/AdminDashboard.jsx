@@ -1,6 +1,6 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Menu, X, Moon, Sun, Loader2, KeyRound, Search, Send } from 'lucide-react';
+import { Menu, X, Moon, Sun, Loader2, KeyRound, Search, Send, LogOut, User } from 'lucide-react';
 import logo from '../logo.jpeg';
 import { Modal } from './Modal';
 import { NotificationCenter } from './NotificationCenter';
@@ -140,13 +140,30 @@ export const AdminDashboard = ({
 
   // Filter visible tabs
   const visibleTabs = tabs.filter(tab => tab.show);
+  const activeTabLabel = visibleTabs.find(t => t.id === activeTab)?.label;
+
+  // Acciones de la cuenta: en escritorio van en el encabezado, en mobile en el menú lateral
+  const abrirCambiarPassword = () => setShowModal({
+    title: 'Cambiar contraseña',
+    content: <ChangePasswordForm
+      currentUser={currentUser}
+      onClose={() => { setShowModal(null); setModalIsDirty(false); }}
+      onDirtyChange={setModalIsDirty}
+    />
+  });
+  const abrirTelegram = () => setShowModal({
+    title: 'Bot de Telegram',
+    content: <TelegramVinculoPanel currentUser={currentUser} />,
+  });
+  const accionMenu = (fn) => () => { setMenuOpen(false); fn(); };
+  const itemCuenta = 'w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100';
 
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white shadow-sm border-b">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               <button
                 onClick={() => setMenuOpen(true)}
                 className="sm:hidden p-2 rounded-lg hover:bg-gray-100"
@@ -164,13 +181,13 @@ export const AdminDashboard = ({
                   alt="Ropa CAP logo"
                   className="w-8 h-8 object-contain"
                 />
-                <h1 className="text-xl font-bold text-gray-800">CAP</h1>
+                <h1 className="hidden sm:block text-xl font-bold text-gray-800">CAP</h1>
               </button>
-              <span className="sm:hidden text-sm font-medium text-gray-500 truncate max-w-[120px]">
-                {visibleTabs.find(t => t.id === activeTab)?.label}
-              </span>
+              <h1 className="sm:hidden flex-1 min-w-0 truncate text-base font-semibold text-gray-800">
+                {activeTabLabel}
+              </h1>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-1 sm:gap-4 shrink-0">
               <span className="hidden sm:inline text-sm text-gray-700">
                 👤 {currentUser?.email || currentUser?.name || 'Usuario'}
               </span>
@@ -186,22 +203,15 @@ export const AdminDashboard = ({
               )}
               <button
                 onClick={toggleDark}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                className="hidden sm:block p-2 rounded-lg hover:bg-gray-100"
                 aria-label={dark ? 'Modo claro' : 'Modo oscuro'}
                 title={dark ? 'Modo claro' : 'Modo oscuro'}
               >
                 {dark ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-gray-600" />}
               </button>
               <button
-                onClick={() => setShowModal({
-                  title: 'Cambiar contraseña',
-                  content: <ChangePasswordForm
-                    currentUser={currentUser}
-                    onClose={() => { setShowModal(null); setModalIsDirty(false); }}
-                    onDirtyChange={setModalIsDirty}
-                  />
-                })}
-                className="p-2 rounded-lg hover:bg-gray-100"
+                onClick={abrirCambiarPassword}
+                className="hidden sm:block p-2 rounded-lg hover:bg-gray-100"
                 aria-label="Cambiar contraseña"
                 title="Cambiar contraseña"
               >
@@ -209,11 +219,8 @@ export const AdminDashboard = ({
               </button>
               {!isFinanzas && (
                 <button
-                  onClick={() => setShowModal({
-                    title: 'Bot de Telegram',
-                    content: <TelegramVinculoPanel currentUser={currentUser} />,
-                  })}
-                  className="p-2 rounded-lg hover:bg-gray-100"
+                  onClick={abrirTelegram}
+                  className="hidden sm:block p-2 rounded-lg hover:bg-gray-100"
                   aria-label="Bot de Telegram"
                   title="Bot de Telegram"
                 >
@@ -228,19 +235,18 @@ export const AdminDashboard = ({
                   setActiveTab={setActiveTab}
                 />
               )}
-              <button 
-                onClick={onLogout} 
-                className="px-2 sm:px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+              <button
+                onClick={onLogout}
+                className="hidden sm:block px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
               >
-                <span className="hidden sm:inline">Cerrar sesión</span>
-                <span className="sm:hidden">Salir</span>
+                Cerrar sesión
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <div className="hidden sm:flex flex-wrap gap-2 mb-6">
           {visibleTabs.map(tab => (
             <button
@@ -502,6 +508,30 @@ export const AdminDashboard = ({
                 </button>
               ))}
             </nav>
+            <div className="border-t py-2">
+              <p className="flex items-center gap-2 px-4 py-2 text-xs text-gray-500 dark:text-gray-400 truncate">
+                <User className="w-4 h-4 shrink-0" />
+                <span className="truncate">{currentUser?.email || currentUser?.name || 'Usuario'}</span>
+              </p>
+              <button onClick={accionMenu(toggleDark)} className={itemCuenta}>
+                {dark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4" />}
+                {dark ? 'Modo claro' : 'Modo oscuro'}
+              </button>
+              <button onClick={accionMenu(abrirCambiarPassword)} className={itemCuenta}>
+                <KeyRound className="w-4 h-4" /> Cambiar contraseña
+              </button>
+              {!isFinanzas && (
+                <button onClick={accionMenu(abrirTelegram)} className={itemCuenta}>
+                  <Send className="w-4 h-4" /> Bot de Telegram
+                </button>
+              )}
+              <button
+                onClick={accionMenu(onLogout)}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-gray-100"
+              >
+                <LogOut className="w-4 h-4" /> Cerrar sesión
+              </button>
+            </div>
           </div>
         </>
       )}
