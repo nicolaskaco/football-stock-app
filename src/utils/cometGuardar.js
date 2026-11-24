@@ -9,7 +9,7 @@ import { database } from './database';
  * @returns {Promise<string[]>} categorías guardadas
  * @throws Error con la categoría que falló; `error.guardados` lista las que ya quedaron guardadas
  */
-export async function guardarImportComet(lista, { jornada, currentUser, automatico = false }) {
+export async function guardarImportComet(lista, { jornada, currentUser, automatico = false, historico = false }) {
   const guardados = [];
   const idsGuardados = new Set();
   for (const { partido, archivo, data, titularesData, suplentesData, eventosData, cometIds } of lista) {
@@ -28,6 +28,7 @@ export async function guardarImportComet(lista, { jornada, currentUser, automati
         comet_ids_nuevos: nuevos.length,
         masivo: true,
         ...(automatico ? { automatico: true } : {}),
+        ...(historico ? { historico: true } : {}),
         archivo,
       });
     } catch (err) {

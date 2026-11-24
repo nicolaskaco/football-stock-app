@@ -51,7 +51,7 @@ export function matchCometPlayers(rows, players, categoria) {
 
   // Primero los matches por ID, así un match por nombre no les roba el jugador
   const result = rows.map((row) => {
-    const p = byCometId.get(String(row.cometId));
+    const p = row.cometId ? byCometId.get(String(row.cometId)) : null;
     if (p) {
       usedIds.add(p.id);
       return { ...row, player_id: p.id, status: 'id', candidatos: [] };
@@ -63,7 +63,8 @@ export function matchCometPlayers(rows, players, categoria) {
     if (result[i]) return result[i];
 
     const scored = players
-      .filter((p) => !usedIds.has(p.id) && !(p.comet_id && String(p.comet_id) !== String(row.cometId)))
+      // Un jugador con otro COMET ID no es este, salvo que el informe no traiga ID
+      .filter((p) => !usedIds.has(p.id) && !(row.cometId && p.comet_id && String(p.comet_id) !== String(row.cometId)))
       .map((p) => {
         const propia = p.categoria === categoria || p.categoria_juego === categoria;
         // Pequeño empujón a la categoría del partido para desempatar homónimos

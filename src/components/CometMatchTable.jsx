@@ -60,7 +60,7 @@ export const CometMatchTable = ({ rows, players = [], categoria, onUpdateRow }) 
                   <td className="px-2 py-2 text-gray-500 font-mono">{r.dorsal}</td>
                   <td className="px-2 py-2">
                     <p className="text-gray-800 dark:text-gray-100">{r.nombre}</p>
-                    <p className="text-xs text-gray-400 font-mono">COMET {r.cometId}</p>
+                    <p className="text-xs text-gray-400 font-mono">{r.cometId ? `COMET ${r.cometId}` : 'Sin COMET ID'}</p>
                   </td>
                   <td className="px-2 py-2 min-w-[12rem]">
                     <div className="flex items-center gap-2">
@@ -82,6 +82,8 @@ export const CometMatchTable = ({ rows, players = [], categoria, onUpdateRow }) 
                   <td className="px-2 py-2 text-center">
                     {r.status === 'id' && r.player_id ? (
                       <span className="text-xs text-gray-400">ya guardado</span>
+                    ) : !r.cometId ? (
+                      <span className="text-xs text-gray-400">—</span>
                     ) : (
                       <input
                         type="checkbox"
