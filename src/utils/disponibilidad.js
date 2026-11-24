@@ -8,11 +8,11 @@
  *  - excede edad: año de nacimiento anterior al mínimo configurado para la categoría.
  */
 
-import { CATEGORIAS_PARTIDO } from './constants';
-import { getSuspensionMap } from './suspensions';
-import { isPlayerOverAge } from './ageEligibility';
-import { fechaPartido, formatDate, isFichaVencida } from './dateUtils';
-import { jornadaLabel } from './playerStats';
+import { CATEGORIAS_PARTIDO } from './constants.js';
+import { getSuspensionMap } from './suspensions.js';
+import { isPlayerOverAge } from './ageEligibility.js';
+import { fechaPartido, formatDate, isFichaVencida } from './dateUtils.js';
+import { jornadaLabel } from './playerStats.js';
 
 const nombre = (p) => p.name_visual || p.name || '';
 const porNombre = (a, b) => nombre(a).localeCompare(nombre(b), 'es');

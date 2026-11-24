@@ -15,8 +15,8 @@
  *    cruce G/E/P.
  */
 
-import { fechaPartido } from './dateUtils';
-import { CATEGORIAS_PARTIDO } from './constants';
+import { fechaPartido } from './dateUtils.js';
+import { CATEGORIAS_PARTIDO } from './constants.js';
 
 // ─── Marcador ────────────────────────────────────────────────────────────────
 

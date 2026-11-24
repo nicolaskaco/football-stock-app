@@ -4,7 +4,7 @@
 // Import from here instead of using inline toLocaleDateString() calls.
 // ============================================================
 
-import { DIAS_ANTES_JORNADA } from './constants';
+import { DIAS_ANTES_JORNADA } from './constants.js';
 
 const LOCALE = 'es-UY';
 

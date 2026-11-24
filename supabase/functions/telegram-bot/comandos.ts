@@ -5,6 +5,10 @@
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { escapeHTML as e } from "../_shared/telegram.ts";
+// Mismo código que la app (copias de src/utils, ver scripts/sync-shared.mjs)
+import { buildParteDisponibilidad, parteComoTexto } from "../_shared/app/disponibilidad.js";
+import { textoATelegramHTML } from "../_shared/app/textUtils.js";
+import { ROLES_TELEGRAM } from "../_shared/app/constants.js";
 import {
   CATEGORIAS, CATEGORIAS_FICHA, COMANDOS, type Permisos,
   categoriasVisibles, comandosDe, ddmm, ddmmyyyy, diasParaCumple, edad, etiquetaDocumento, fechaPartido, jornadaLabel,
@@ -260,19 +264,24 @@ const lineaResultado = (p: Fila) => {
 const encabezadoJornada = (j: Fila) =>
   [jornadaLabel(j), j.torneos?.name].filter((x) => x && x !== "-").map(e).join(" · ");
 
-async function proximo(ctx: Contexto) {
-  const { categoria } = separarCategoria(ctx.args);
+/** Próxima jornada con partidos sin jugar de esas categorías (null = todas), con sus `pendientes`. */
+async function proximaJornada(ctx: Contexto, categorias: string[] | null): Promise<Fila | null> {
   const jornadas = (await q(ctx.db.from("jornadas").select(SELECT_JORNADA)
     .gte("fecha", sumarDias(ctx.hoy, -30)).order("fecha", { ascending: true })))
     .map(conFechas)
     .map((j) => ({
       ...j,
       pendientes: j.partidos.filter((p: Fila) =>
-        p.fechaReal >= ctx.hoy && marcador(p).resultado === null && (!categoria || p.categoria === categoria)),
+        p.fechaReal >= ctx.hoy && marcador(p).resultado === null && (!categorias || categorias.includes(p.categoria))),
     }))
     .filter((j) => j.pendientes.length > 0)
     .sort((a, b) => a.pendientes[0].fechaReal.localeCompare(b.pendientes[0].fechaReal));
-  const j = jornadas[0];
+  return jornadas[0] || null;
+}
+
+async function proximo(ctx: Contexto) {
+  const { categoria } = separarCategoria(ctx.args);
+  const j = await proximaJornada(ctx, categoria ? [categoria] : null);
   if (!j) return `No hay partidos${categoria ? ` de ${e(categoria)}` : ""} programados.`;
 
   const lineas = [...j.pendientes]
@@ -283,6 +292,55 @@ async function proximo(ctx: Contexto) {
     });
   const encabezado = encabezadoJornada(j);
   return `📅 <b>Próxima jornada: vs ${e(j.rivales?.name || "—")}</b>${encabezado ? `\n${encabezado}` : ""}\n${lineas.join("\n")}`;
+}
+
+// = database.getJornadas(): las suspensiones necesitan el calendario entero con planillas y tarjetas
+const SELECT_JORNADA_COMPLETA = `*, rivales(id, name, badge_path), torneos(id, name),
+  partidos(*, partido_players(id, player_id, tipo, posicion, orden, minuto_entrada, minuto_salida),
+    partido_eventos(id, tipo, player_id, minuto, fechas_suspension),
+    partido_suspension_ajustes(id, player_id, accion, motivo))`;
+
+/**
+ * /parte: el parte de disponibilidad de la próxima jornada, con el mismo cálculo y el mismo texto
+ * que la app (buildParteDisponibilidad / parteComoTexto). El tipo de lesión solo a un admin por
+ * privado; en el grupo nunca, como el parte que manda la app.
+ */
+async function parte(ctx: Contexto) {
+  // En el grupo, como en la app: solo los roles que pueden mandar el parte al grupo
+  if (ctx.enGrupo && !ROLES_TELEGRAM.includes(ctx.perm.role ?? "")) {
+    return "🔒 El parte en el grupo lo mandan admin, ejecutivo y presidentes. Pedímelo por privado.";
+  }
+  const { categoria } = separarCategoria(ctx.args);
+  const visibles = categoriasVisibles(ctx.perm);
+  if (categoria && !veCategoria(visibles, categoria)) return `No tenés acceso a ${e(categoria)}.`;
+  // Como ParteDisponibilidadModal: las categorías del usuario (aunque sea admin), o la pedida
+  const delUsuario = ctx.perm.categoria?.length ? ctx.perm.categoria : null;
+  const categorias = categoria ? [categoria] : delUsuario;
+  const proxima = await proximaJornada(ctx, categorias);
+  if (!proxima) return `No hay partidos${categoria ? ` de ${e(categoria)}` : ""} programados.`;
+
+  const [jornadas, players, injuries, ajustes] = await Promise.all([
+    q(ctx.db.from("jornadas").select(SELECT_JORNADA_COMPLETA).order("fecha", { ascending: false })),
+    q(ctx.db.from("players").select("id, name, name_visual, categoria, categoria_juego, status, date_of_birth, ficha_medica_hasta").eq("hide_player", false)),
+    // = database.getInjuries(): la más reciente primero (el parte usa la primera lesión abierta)
+    q(ctx.db.from("player_injuries").select("player_id, tipo, fecha_inicio, fecha_alta, fecha_retorno_estimada").is("fecha_alta", null)
+      .order("fecha_inicio", { ascending: false })),
+    q(ctx.db.from("app_settings").select("key, value")),
+  ]);
+  const jornada = jornadas.find((j: Fila) => j.id === proxima.id);
+  if (!jornada) return "No encontré la jornada.";
+  const appSettings = Object.fromEntries(ajustes.map((r: Fila) => [r.key, r.value]));
+  // Solo las categorías que faltan jugar, sin recortar la jornada (las fechas dependen de sus partidos)
+  const pendientes: string[] = [...new Set<string>(proxima.pendientes.map((p: Fila) => p.categoria))];
+  // Jugadores como los ve la app (RLS de players): de sus categorías o que figuran en alguna planilla
+  const enPlanillas = new Set(jornadas.flatMap((j: Fila) => (j.partidos || []).flatMap((p: Fila) => (p.partido_players || []).map((x: Fila) => x.player_id))));
+  const jugadores = visibles ? players.filter((p: Fila) => visibles.includes(p.categoria) || enPlanillas.has(p.id)) : players;
+
+  const datos = buildParteDisponibilidad({
+    jornada, jornadas, players: jugadores, injuries, appSettings, categorias: pendientes,
+    detalleLesion: ctx.perm.role === "admin" && !ctx.enGrupo,
+  });
+  return textoATelegramHTML(parteComoTexto(jornada, datos));
 }
 
 async function resultado(ctx: Contexto) {
@@ -461,5 +519,5 @@ export function ayuda(ctx: Pick<Contexto, "perm">) {
 }
 
 export const EJECUTORES: Record<string, (ctx: Contexto) => Promise<string> | string> = {
-  nacidos, categoria, jugador, ficha, lesionados, cumples, proximo, resultado, contra, goleadores, tarjetas, fichas, tareas, ayuda,
+  nacidos, categoria, jugador, ficha, lesionados, cumples, proximo, parte, resultado, contra, goleadores, tarjetas, fichas, tareas, ayuda,
 };

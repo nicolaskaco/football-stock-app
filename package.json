@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "prepare": "git config core.hooksPath .githooks || true",
     "test": "vitest run",
-    "telegram:setup": "node scripts/telegram-setup.mjs"
+    "telegram:setup": "node scripts/telegram-setup.mjs",
+    "sync:shared": "node scripts/sync-shared.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",

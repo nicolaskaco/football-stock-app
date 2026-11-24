@@ -39,7 +39,10 @@ npm run build     # Production build → dist/
 npm run lint      # ESLint (flat config, react-hooks + react-refresh)
 npm test          # Vitest: tests de src/utils/*.test.js
 npm run preview   # Preview the production build
+npm run sync:shared  # Copia módulos de src/utils a supabase/functions/_shared/app (el bot los usa)
 ```
+
+If you change `constants`, `dateUtils`, `ageEligibility`, `suspensions`, `playerStats`, `disponibilidad` or `textUtils` in `src/utils`, run `npm run sync:shared`: the Telegram bot uses copies of them, and `sharedSync.test.js` fails until they match. Keep their relative imports with the `.js` extension, and redeploy `telegram-bot` after merging, or the bot keeps the old logic.
 
 Verify changes with `npm test`, `npm run lint`, `npm run build` and a manual check in `npm run dev`. When you change pure logic in `src/utils/` (suspensions, stats, COMET, dates), add or update its `*.test.js` next to it, with fixtures from `src/utils/__fixtures__/`. CI (`.github/workflows/ci.yml`) runs tests and build on every PR. Lint also runs there but does not block yet, because `main` still has inherited lint errors.
 

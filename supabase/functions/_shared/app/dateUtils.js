@@ -1,0 +1,159 @@
+// Generado desde src/utils — no editar a mano: corré npm run sync:shared.
+// ============================================================
+// Centralised date utilities for the CAP internal app.
+// All formatting uses the 'es-UY' locale to match the app's language.
+// Import from here instead of using inline toLocaleDateString() calls.
+// ============================================================
+
+import { DIAS_ANTES_JORNADA } from './constants.js';
+
+const LOCALE = 'es-UY';
+
+/**
+ * ISO string (or null/undefined) → 'DD/MM/YYYY'
+ * Use for table cells, list items, form labels.
+ */
+export function formatDate(isoString) {
+  if (!isoString) return '-';
+  const [year, month, day] = isoString.split('T')[0].split('-');
+  return new Date(Number(year), Number(month) - 1, Number(day))
+    .toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+/**
+ * ISO string (or null/undefined) → 'DD de mes de YYYY'
+ * Use where a longer, human-readable date is preferred (e.g. tournament dates).
+ */
+export function formatDateLong(isoString) {
+  if (!isoString) return '-';
+  const [year, month, day] = isoString.split('T')[0].split('-');
+  return new Date(Number(year), Number(month) - 1, Number(day))
+    .toLocaleDateString(LOCALE, { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+/**
+ * ISO timestamp (or null/undefined) → 'DD de mes de YYYY, HH:MM'
+ * Use for audit trail entries that include a time component.
+ */
+export function formatDateTime(isoString) {
+  if (!isoString) return '-';
+  return new Date(isoString).toLocaleString(LOCALE, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+/**
+ * ISO date string 'YYYY-MM-DD' → 'DD de mes' (no year)
+ * Use for birthday displays. Parses without timezone drift by
+ * constructing the Date from explicit year/month/day parts.
+ */
+export function formatBirthday(isoDate) {
+  if (!isoDate) return '-';
+  const [year, month, day] = isoDate.split('-');
+  return new Date(Number(year), Number(month) - 1, Number(day))
+    .toLocaleDateString(LOCALE, { month: 'long', day: 'numeric' });
+}
+
+/**
+ * Returns today's date as 'YYYY-MM-DD' for use in HTML <input type="date">
+ * default values and file-name timestamps.
+ */
+export function todayISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
+/**
+ * Default `partidos.fecha` for a categoria: the jornada's date minus
+ * DIAS_ANTES_JORNADA[categoria] days. Returns 'YYYY-MM-DD' (null without a jornada date).
+ * Works on the plain date parts so there is no timezone drift.
+ */
+export function fechaPartidoDefault(fechaJornada, categoria) {
+  if (!fechaJornada) return null;
+  const [year, month, day] = fechaJornada.split('T')[0].split('-').map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day - (DIAS_ANTES_JORNADA[categoria] || 0)));
+  return d.toISOString().split('T')[0];
+}
+
+/**
+ * Date a partido was actually played: its own `fecha` (default or edited by hand) or,
+ * for a row without one, the default from the jornada. Returns 'YYYY-MM-DD' or null.
+ */
+export function fechaPartido(partido, jornada) {
+  if (partido?.fecha) return partido.fecha.split('T')[0];
+  return fechaPartidoDefaultEnJornada(jornada, partido?.categoria);
+}
+
+/**
+ * Fecha por defecto de un partido dentro de su jornada. En una jornada de una sola categoría
+ * (Semifinal / Final, ver JORNADAS_UNA_CATEGORIA) el partido se juega el día de la jornada,
+ * sin el corrimiento de DIAS_ANTES_JORNADA.
+ */
+export function fechaPartidoDefaultEnJornada(jornada, categoria) {
+  return fechaPartidoDefault(jornada?.fecha, esJornadaUnaCategoria(jornada) ? null : categoria);
+}
+
+/** Jornada con un solo partido (Semifinal / Final de una categoría). */
+export const esJornadaUnaCategoria = (jornada) => (jornada?.partidos || []).length === 1;
+
+/**
+ * Parses a 'YYYY-MM-DD' date-of-birth string into a Date object without
+ * timezone drift. Always prefer this over `new Date(dobString)` for DOB fields.
+ */
+export function parseDOB(isoDate) {
+  const [year, month, day] = isoDate.split('-');
+  return new Date(Number(year), Number(month) - 1, Number(day));
+}
+
+/**
+ * ISO timestamp → number of full calendar days since that date.
+ * Returns 0 if the date is today or in the future.
+ * Compares midnight-to-midnight in local time so a request made at
+ * 5pm yesterday always returns 1, not 0.
+ * Use for SLA/age indicators on pending items.
+ */
+export function daysSince(dateStr) {
+  if (!dateStr) return 0;
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const then = new Date(dateStr);
+  const thenMidnight = new Date(then.getFullYear(), then.getMonth(), then.getDate());
+  return Math.max(0, Math.floor((todayMidnight - thenMidnight) / 86_400_000));
+}
+
+/**
+ * 'YYYY-MM-DD' date-of-birth → integer age in full years.
+ * Returns '-' for null/undefined input.
+ * Uses parseDOB to avoid timezone drift (safe for all UTC offsets).
+ */
+export function calculateAge(isoDate) {
+  if (!isoDate) return '-';
+  const today = new Date();
+  const birthDate = parseDOB(isoDate);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+/**
+ * ¿La ficha médica SND del jugador está vencida para la fecha dada ('YYYY-MM-DD')?
+ * Sin `ficha_medica_hasta` cuenta como vencida. Sin fecha se compara con hoy.
+ * La ficha vale hasta su último día inclusive.
+ */
+export function isFichaVencida(player, fecha) {
+  const hasta = player?.ficha_medica_hasta?.split('T')[0];
+  if (!hasta) return true;
+  return hasta < (fecha?.split('T')[0] || localTodayISO());
+}
+
+// Hoy en hora local (todayISO usa UTC y desde las 21:00 de Uruguay ya da el día siguiente)
+export function localTodayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}

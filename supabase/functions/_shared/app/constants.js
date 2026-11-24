@@ -1,0 +1,177 @@
+// Generado desde src/utils — no editar a mano: corré npm run sync:shared.
+// ============================================================
+// Centralised constants for the CAP internal app.
+// Import from here instead of defining inline in components.
+// ============================================================
+
+/** Categorías de jugadores/empleados (orden canónico) */
+export const CATEGORIAS = ['3era', '4ta', '5ta', 'S16', '6ta', '7ma', 'Sub13'];
+
+/** Departamentos de Uruguay + países extranjeros */
+export const DEPARTAMENTOS = [
+  'Montevideo',
+  'Canelones (Ciudad de la Costa)',
+  'Canelones',
+  'Artigas',
+  'Cerro Largo',
+  'Colonia',
+  'Durazno',
+  'Flores',
+  'Florida',
+  'Lavalleja',
+  'Maldonado',
+  'Paysandú',
+  'Río Negro',
+  'Rivera',
+  'Rocha',
+  'Salto',
+  'San José',
+  'Soriano',
+  'Tacuarembó',
+  'Treinta y Tres',
+  'Argentina',
+  'Brasil',
+  'Colombia',
+  'España',
+  'Estados Unidos',
+  'Venezuela',
+];
+
+/** LEGACY: bancos de las columnas players.bank / bank_account, ya no se muestran en la UI */
+export const BANCOS = ['Itau', 'Prex', 'Mi Dinero', 'BROU', 'Santander', 'Scotia', 'HSBC', 'Otro'];
+
+/** Bancos habilitados para el cobro de viáticos */
+export const BANCOS_VIATICO = ['Prex', 'Mi Dinero'];
+
+/** Titular de la cuenta de cobro de viáticos */
+export const CUENTA_TITULAR_TIPOS = [
+  { value: 'jugador', label: 'Cuenta propia (del jugador)' },
+  { value: 'familiar', label: 'Padre, madre o tutor' },
+];
+
+/** Columnas de la cuenta de viáticos en la tabla players */
+export const CUENTA_VIATICO_FIELDS = [
+  'cuenta_titular_tipo',
+  'cuenta_banco',
+  'cuenta_numero',
+  'cuenta_titular_nombre',
+  'cuenta_titular_documento',
+];
+
+/** Posiciones de jugadores (orden para ordenamiento en tabla) */
+export const POSICIONES_JUGADOR = ['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero'];
+
+/** Tallas de ropa */
+export const TALLAS_ROPA = ['S', 'M', 'L', 'XL', 'XXL'];
+
+/** Categorías de inventario */
+export const CATEGORIAS_INVENTARIO = [
+  'Remeras',
+  'Shorts',
+  'Pantalones',
+  'Camperas de invierno',
+  'Ropa de entrenamiento',
+  'Otro',
+];
+
+// ============================================================
+// Constantes del módulo Partidos / Campeonato
+// ============================================================
+
+/** Categorías que participan en el campeonato juvenil */
+export const CATEGORIAS_PARTIDO = ['4ta', '5ta', 'S16', '6ta', '7ma'];
+
+/**
+ * Días antes de la fecha de la jornada en que se juega por defecto cada categoría
+ * (4ta juega el viernes, el resto el sábado). Las que no figuran juegan el mismo día.
+ * Es el valor inicial de `partidos.fecha`, que después se puede editar a mano.
+ */
+export const DIAS_ANTES_JORNADA = { '4ta': 1 };
+
+/**
+ * Duración reglamentaria (minutos) por categoría, usada como valor por defecto de
+ * `partidos.duracion` al cargar minutos de entrada/salida.
+ * TODO: confirmar duraciones reales de las categorías menores.
+ */
+export const DURACION_PARTIDO_DEFAULT = { '4ta': 90, '5ta': 90, 'S16': 90, '6ta': 90, '7ma': 90 };
+
+/**
+ * Categorías "mayores" que invierten el escenario respecto al valor base.
+ * Si la jornada se crea como Local → estas categorías juegan Visitante.
+ */
+export const CATEGORIAS_ESCENARIO_INVERTIDO = ['6ta', '7ma'];
+
+/** Fases del campeonato */
+export const FASES_CAMPEONATO = ['Apertura', 'Clausura'];
+
+/**
+ * Escenarios posibles. Neutral (cancha neutral, típico de semifinales y finales) guarda el
+ * marcador como Local: los goles de Peñarol van en goles_local (ver capEsLocal en playerStats).
+ */
+export const ESCENARIOS = ['Local', 'Visitante', 'Neutral'];
+
+/** Tipos de césped */
+export const CESPED_TIPOS = ['Natural', 'Sintético'];
+
+/** Canchas propias (solo aplica cuando escenario = Local) */
+export const CANCHAS_LOCAL = ['Ciudad Deportiva', 'Las Acacias', 'CAR'];
+
+/** Posiciones específicas para la planilla de partidos, en el orden de la formación titular */
+export const POSICIONES_PARTIDO = [
+  'Arquero',
+  'Lateral derecho',
+  'Zaguero derecho',
+  'Zaguero izquierdo',
+  'Lateral izquierdo',
+  'Volante defensivo',
+  'Extremo derecho',
+  'Volante ofensivo',
+  'Extremo izquierdo',
+  'Delantero centro',
+];
+
+/**
+ * Posición de la ficha (POSICIONES_JUGADOR) → posiciones de partido candidatas, en orden.
+ * Se usa al importar el COMET: si la primera ya está ocupada se toma la siguiente
+ * (el segundo zaguero va a izquierdo, el segundo volante a ofensivo).
+ */
+export const POSICION_FICHA_A_PARTIDO = {
+  Arquero: ['Arquero'],
+  Zaguero: ['Zaguero derecho', 'Zaguero izquierdo'],
+  Lateral: ['Lateral derecho', 'Lateral izquierdo'],
+  Volante: ['Volante defensivo', 'Volante ofensivo'],
+  Extremo: ['Extremo derecho', 'Extremo izquierdo'],
+  Delantero: ['Delantero centro'],
+};
+
+/** Números de jornada del campeonato */
+export const NUMEROS_JORNADA = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','Semifinal','Final'];
+
+/** Jornadas que se crean para una sola categoría (cada una con su rival), no las 5 */
+export const JORNADAS_UNA_CATEGORIA = ['Semifinal', 'Final'];
+
+/** Estados de solicitudes de cambio financiero */
+export const CHANGE_REQUEST_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+};
+
+/** Tipos de evento del calendario unificado */
+export const CALENDAR_EVENT_TYPES = {
+  PARTIDOS: 'partidos',
+  CUMPLEANOS: 'cumpleanos',
+  FICHA_MEDICA: 'ficha_medica',
+  LESIONES: 'lesiones',
+};
+
+// Etiquetas de estado de jugador (players.status) distintos de 'activo'
+export const PLAYER_STATUS_LABELS = {
+  cedido: 'Cedido',
+  transferido: 'Transferido',
+  egresado: 'Egresado',
+  'dado de baja': 'Baja',
+};
+
+// Roles que pueden mandar mensajes al grupo de Telegram (los mismos que acepta la Edge Function send-telegram)
+export const ROLES_TELEGRAM = ['admin', 'ejecutivo', 'presidente', 'presidente_categoria'];
