@@ -37,12 +37,13 @@ export function partir(texto: string, limite = LIMITE): string[] {
 }
 
 /**
- * Manda `html` (parse_mode HTML) al grupo configurado, en varias partes si hace falta.
+ * Manda `html` (parse_mode HTML) en varias partes si hace falta. Sin `destino` va al grupo
+ * configurado (TELEGRAM_CHAT_ID); el bot de consultas pasa el chat privado de quien preguntó.
  * No es atómico: si falla una parte, las anteriores ya salieron.
  */
-export async function sendTelegram(html: string): Promise<void> {
+export async function sendTelegram(html: string, destino?: number | string): Promise<void> {
   const token = Deno.env.get("TELEGRAM_BOT_TOKEN");
-  const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
+  const chatId = destino ?? Deno.env.get("TELEGRAM_CHAT_ID");
   if (!token || !chatId) throw new Error("Falta configurar TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID");
 
   for (const parte of partir(html)) {

@@ -339,6 +339,30 @@ export const database = {
     return data;
   },
 
+  // Bot de consultas por Telegram: estado de la vinculación del usuario logueado
+  // (la RLS users_select_own deja leer su propia fila).
+  async getTelegramVinculo(email) {
+    const { data, error } = await supabase
+      .from('user_permissions')
+      .select('telegram_user_id')
+      .eq('email', email)
+      .maybeSingle();
+    if (error) throw error;
+    return { vinculado: !!data?.telegram_user_id };
+  },
+
+  // Código de un solo uso (10 minutos) para mandarle al bot con /vincular <código>.
+  async generarCodigoTelegram() {
+    const { data, error } = await supabase.rpc('generar_codigo_telegram');
+    if (error) throw error;
+    return data;
+  },
+
+  async desvincularTelegram() {
+    const { error } = await supabase.rpc('desvincular_telegram');
+    if (error) throw error;
+  },
+
   async saveFichaMedicaHasta(playerId, hastaStr, currentUserEmail) {
     // hastaStr is DD/MM/YYYY — convert to YYYY-MM-DD for PostgreSQL
     const [d, m, y] = hastaStr.split('/');

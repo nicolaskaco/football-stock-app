@@ -212,7 +212,7 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `sprints` | Weekly time-boxes for task management. `fecha_inicio` has a UNIQUE constraint — upsert-safe. |
 | `tareas` | Tasks for the Tareas module (see §6 Tareas). FK `sprint_id → sprints.id ON DELETE SET NULL`. |
 | `activity_log` | App-wide audit trail written by `database.logActivity()`: `action_type`, `performed_by` (email), `target_type`, `target_id`, `details` (jsonb), `created_at`. Shown in the Actividad tab |
-| `user_permissions` | Role and permission flags per user email. RLS enabled: `users_select_own` (a user can read their own row), `admins_select_all`/`admins_update`/`admins_delete` (admins can read/update/delete any row, gated by the `current_user_is_admin()` SECURITY DEFINER helper to avoid RLS recursion). No INSERT policy — row creation goes through the `invite-user` Edge Function's service-role client, which bypasses RLS. |
+| `user_permissions` | Role and permission flags per user email. RLS enabled: `users_select_own` (a user can read their own row), `admins_select_all`/`admins_update`/`admins_delete` (admins can read/update/delete any row, gated by the `current_user_is_admin()` SECURITY DEFINER helper to avoid RLS recursion). No INSERT policy — row creation goes through the `invite-user` Edge Function's service-role client, which bypasses RLS. `telegram_user_id` / `telegram_link_code` / `telegram_link_expira` link the user to the Telegram query bot (written only by the `generar_codigo_telegram()` / `desvincular_telegram()` RPCs and the `telegram-bot` function). |
 
 ### Campeonato Juvenil Tables Detail
 
@@ -818,6 +818,39 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
 - **Activity log**: logs `telegram_resumen`.
 - **Preview**: `?preview=1` returns the HTML without sending or logging.
 
+**`telegram-bot` Edge Function** (query bot, `--no-verify-jwt`):
+- **Webhook**: Telegram calls it for every message sent to the bot. It only runs when the `X-Telegram-Bot-Api-Secret-Token` header matches the `TELEGRAM_WEBHOOK_SECRET` secret (registered with `setWebhook`, see the header of `telegram-bot/index.ts`). It always answers 200, so Telegram doesn't retry.
+- **Private chats only**: it ignores the group and any other chat type.
+- **Linked users only**: a message is answered only if `user_permissions.telegram_user_id` matches the sender's Telegram id. To link: the header button **Bot de Telegram** (`TelegramVinculoPanel`, every dashboard user except `finanzas`) calls the `generar_codigo_telegram()` RPC. The RPC returns a one-time 8-character hex code valid for 10 minutes. The user sends `/vincular <código>` to the bot, or opens `t.me/<bot>?start=<código>` when `VITE_TELEGRAM_BOT_USERNAME` is set. One Telegram account links to a single app user, so linking again moves it. "Desvincular" calls `desvincular_telegram()`. Both RPCs are `SECURITY DEFINER`, because only admins can update `user_permissions` (migration `20261127_telegram_bot_consultas.sql`; only the SHA-256 of the code is stored, so admins reading `user_permissions` can't use someone else's code).
+- **Permissions**: the function uses the service-role client, so `telegram-bot/comandos.ts` applies the app's rules itself:
+  - player commands need `can_access_players` and only show the user's categories (same rule as the `players` RLS: admin or empty `categoria` = all);
+  - partido commands need `can_view_partidos`;
+  - `/fichas` needs `can_access_widgets` plus a FichaMedicaWidget role;
+  - `/tareas` needs `can_access_tareas`;
+  - `finanzas` is always refused;
+  - the injury type is shown only to admins, and cédulas and viático data are never returned.
+- **Commands** (plain parsing in `telegram-bot/logica.ts`, tested with Vitest; categories accept `5ta`, `5`, `quinta`, `sub16`…):
+
+  | Command | Answer |
+  |---|---|
+  | `/nacidos <año> [cat]` | Players born that year, grouped by category |
+  | `/categoria <cat>` | Active roster, with position and birth year |
+  | `/jugador <nombre>` | Short profile (accent-insensitive search): category, position, age, status, active injury, ficha médica, and the year's call-ups, goals and cards |
+  | `/lesionados [cat]` | Open injuries, flagging an overdue estimated return |
+  | `/cumples` | Birthdays in the next 7 days |
+  | `/proximo [cat]` | Next jornada with the partidos still to play |
+  | `/resultado [cat]` | Last jornada with a result, with scorers |
+  | `/contra <rival>` | G/E/P and goals per category against that rival, plus the last 6 jornadas |
+  | `/goleadores [cat] [año]` | Top scorers of the year |
+  | `/tarjetas [cat] [año]` | Yellow and red cards of the year |
+  | `/fichas [cat]` | Fichas médicas expired, expiring within 30 days, or missing |
+  | `/tareas` | Open tareas by estado and prioridad |
+  | `/ayuda` | Only the commands the user can use |
+
+  Suspensions, minutes and the parte are not offered yet, because their logic lives in the frontend (`suspensions.js`, `playerStats.js`).
+- **Activity log**: every query logs `telegram_consulta` (the command plus up to 100 characters of arguments). Linking and unlinking log `telegram_vinculo` (`details.vinculado` true/false).
+- **Not covered**: the bot ignores the `app_settings` tab toggles (e.g. `estadisticas_tab_enabled`): `/goleadores`, `/tarjetas` and `/contra` only need `can_view_partidos`, since the same data is visible in Partidos. Queries aren't paginated (PostgREST returns at most 1000 rows).
+
 ### Dashboard PDF Export
 
 Generate a PDF report snapshot of the dashboard widgets for sharing in meetings without app access.
@@ -877,7 +910,7 @@ Admin-only **Actividad** tab (`ActivityLogTab`) showing a single timeline built 
 
 | Source | Event types |
 |--------|-------------|
-| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import; the bulk import adds `masivo: true` and `archivo`, and the automatic load also adds `automatico: true`), `ficha_medica_auto` (`refresh-fichas-medicas` Edge Function, nightly SND check: counts plus the detail per player), `telegram_envio` (`send-telegram`), `telegram_resumen` (`weekly-digest`) |
+| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import; the bulk import adds `masivo: true` and `archivo`, and the automatic load also adds `automatico: true`), `ficha_medica_auto` (`refresh-fichas-medicas` Edge Function, nightly SND check: counts plus the detail per player), `telegram_envio` (`send-telegram`), `telegram_resumen` (`weekly-digest`), `telegram_consulta` / `telegram_vinculo` (`telegram-bot`) |
 | `player_history` | `field_change` — audited player field changes (see §4 Audit-Tracked Player Fields) |
 | `player_change_requests` (status ≠ `pending`) | `approved` / `rejected` solicitudes, with the new viático/complemento/contrato values |
 
