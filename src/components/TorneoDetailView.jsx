@@ -5,6 +5,7 @@ import { ExportConfigModal } from './ExportConfigModal';
 import { AlertModal } from './AlertModal';
 import { formatDate, formatDateLong, todayISO } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
+import { resolveMarcador } from '../utils/playerStats';
 import { useAlertModal } from '../hooks/useAlertModal';
 import { RivalBadge } from './ui/RivalBadge';
 
@@ -30,8 +31,7 @@ export const TorneoDetailView = ({ torneo }) => {
   // Helpers para resultado de partidos
   const getResultado = (partido) => {
     if (!partido || partido.goles_local == null || partido.goles_visitante == null) return null;
-    const capGoles = partido.escenario === 'Local' ? partido.goles_local : partido.goles_visitante;
-    const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+    const { capGoles, rivalGoles } = resolveMarcador(partido);
     if (capGoles > rivalGoles) return 'win';
     if (capGoles < rivalGoles) return 'loss';
     return 'draw';

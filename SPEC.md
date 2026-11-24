@@ -241,9 +241,9 @@ The "Solicitudes" tab is visible to roles: `admin`, `ejecutivo`, `presidente`, `
 | `id` | uuid PK | |
 | `jornada_id` | uuid FK → jornadas | ON DELETE CASCADE |
 | `categoria` | text | One of `CATEGORIAS_PARTIDO` |
-| `fecha` | date | nullable — day the partido was (or will be) played. Defaults from the jornada: `fechaPartidoDefault()` = jornada date minus `DIAS_ANTES_JORNADA[categoria]` (4ta one day before, the rest the same day). Set on create, moved with the jornada when its date changes (unless it was edited by hand), editable in PartidoForm for postponed/rescheduled partidos. Backfilled for all existing partidos. Null falls back to the default. Suspensions are ordered by this date |
-| `escenario` | text | `'Local'` \| `'Visitante'` |
-| `cesped` | text | `'Natural'` \| `'Sintético'` (default: Local→Sintético, Visitante→Natural) |
+| `fecha` | date | nullable — day the partido was (or will be) played. Defaults from the jornada: `fechaPartidoDefault()` = jornada date minus `DIAS_ANTES_JORNADA[categoria]` (4ta one day before, the rest the same day). In a single-category jornada (one partido, see Semifinal / Final) the default is the jornada date itself (`fechaPartidoDefaultEnJornada`). Set on create, moved with the jornada when its date changes (unless it was edited by hand), editable in PartidoForm for postponed/rescheduled partidos. Backfilled for all existing partidos. Null falls back to the default. Suspensions are ordered by this date |
+| `escenario` | text | `'Local'` \| `'Visitante'` \| `'Neutral'` (cancha neutral, usual in semifinals and finals). Neutral stores the score like Local: CAP's goals go in `goles_local` (`capEsLocal` in `playerStats.js`) |
+| `cesped` | text | `'Natural'` \| `'Sintético'` (default: Local→Sintético, Visitante and Neutral→Natural) |
 | `cancha` | text | nullable — one of `CANCHAS_LOCAL`; only set when `escenario = 'Local'`, otherwise null |
 | `goles_local` | integer | nullable — filled after the match |
 | `goles_visitante` | integer | nullable — filled after the match |
@@ -935,25 +935,31 @@ Manages the internal youth football championship (Apertura / Clausura, round-rob
 
 #### Jornada management
 
-A "Jornada" groups 5 matches (one per category) played on the same date against the same rival.
+A "Jornada" groups 5 matches (one per category) played on the same date against the same rival. **Semifinal** and **Final** jornadas (`JORNADAS_UNA_CATEGORIA`) are the exception: each one has a single partido, because in the playoffs each category plays on its own, often on the same day as others but against different rivals. Several categories in finals on the same day = one jornada per category, each with its rival.
 
 **Creating a jornada** — user selects:
 - Rival (from the `rivales` catalog)
 - Fecha
 - Fase (Apertura / Clausura)
 - Número de jornada (`1`–`15`, `Semifinal`, `Final`)
-- Escenario base (Local / Visitante)
+- For Semifinal / Final only: **Categoría** (one of `CATEGORIAS_PARTIDO`, required). The button reads "Crear Jornada (1 partido)".
+- Escenario base (Local / Visitante / Neutral)
 
-**Editing a jornada** — same fields except escenario (the 5 existing partidos are not recreated).
+The partidos are built by `armarPartidosJornada` (`utils/jornadas.js`) and inserted by `database.addJornada(jornadaData, escenarioBase, { categoria })`.
 
-The escenario is automatically derived per category:
+**Editing a jornada** — same fields except escenario and categoría (existing partidos are not recreated, added or removed).
+
+In a regular jornada the escenario is automatically derived per category (`escenarioDeCategoria`):
 
 | Escenario base | 4ta | 5ta | S16 | 6ta | 7ma |
 |----------------|-----|-----|-----|-----|-----|
 | Local | Local | Local | Local | Visitante | Visitante |
 | Visitante | Visitante | Visitante | Visitante | Local | Local |
+| Neutral | Neutral | Neutral | Neutral | Neutral | Neutral |
 
-Default césped: `Sintético` for Local matches, `Natural` for Visitante.
+In a Semifinal / Final the chosen escenario applies as is (no inversion for 6ta/7ma).
+
+Default césped: `Sintético` for Local matches, `Natural` for Visitante and Neutral. The cancha field is only for Local.
 
 #### Individual partido editing
 
@@ -961,7 +967,8 @@ Each of the 5 partidos in a jornada is edited independently via `PartidoForm`:
 - **Titulares**: up to 11 slots, each with a player dropdown (filtered by category) + position dropdown. Positions are never filled in automatically (the shirt number doesn't always match the position played). Choosing a position immediately moves the player to their place in the formation order (`POSICIONES_PARTIDO`: Arquero, Lateral derecho, Zaguero derecho, Zaguero izquierdo, Lateral izquierdo, Volante defensivo ×2, Extremo derecho, Volante ofensivo, Extremo izquierdo, Delantero centro). The sort is stable, so repeated positions keep their relative order; players without a position go after those with one, and empty slots go last. The saved `orden` follows this order. Clearing the slot (X) also clears its position.
 - **Suplentes**: up to 10 slots, player dropdown only
 - **Category filter**: defaults to the partido's own category; can be expanded to include other categories (e.g. 3era, 5ta playing up in 4ta). Players from other categories are labeled with their category in parentheses.
-- **Resultado**: always displayed as Peñarol (left) vs. Rival (right), regardless of escenario. Inputs bind to `goles_local`/`goles_visitante` correctly based on escenario.
+- **Resultado**: always displayed as Peñarol (left) vs. Rival (right), regardless of escenario. Inputs bind to `goles_local`/`goles_visitante` correctly based on escenario (Neutral like Local).
+- **COMET import on a Neutral partido**: the report always puts Peñarol on one side; the import keeps `Neutral` and stores CAP's goals in `goles_local`.
 - **Comentario**: optional freetext field for match notes.
 - Duplicate player prevention: a player already picked in any titular or suplente slot is removed from the other slots' dropdowns (and comes back when that slot is cleared).
 - **Who is offered**: only active players of the enabled categories who are **not over-age** for the match category (see §6 Age Eligibility). Suspended players are still listed but disabled, so the reason is visible. A player whose SND ficha médica is missing or expired on the partido's `fecha` (`isFichaVencida`) is marked `🩺 … — FICHA VENCIDA` in the dropdowns, and the convocados in that situation are listed in an amber box above the lineup. This warns but does not block. A player already saved in a slot who falls outside these filters stays visible in that slot only.
@@ -981,10 +988,10 @@ A year filter dropdown (defaults to current year) scopes all jornadas to the sel
 
 The default list view shows a table with columns: N° · Fase · Fecha · Rival · Pts · Torneo · one column per category (4ta · 5ta · S16 · 6ta · 7ma) · Acciones. Below `lg`, each jornada is a card instead.
 
-**Pts** (tooltip "Puntos") is CAP's total for the jornada (3 per win, 1 per draw, every category added up) shown as `X/15`: green above 10, red below 7, and `—` when no score is loaded yet.
+**Pts** (tooltip "Puntos") is CAP's total for the jornada (3 per win, 1 per draw, every category added up) over the possible points: `X/15` in a regular jornada, `X/3` in a single-category Semifinal / Final. Green above 10/15 of the possible points, red below 7/15, and `—` when no score is loaded yet. The default order puts Semifinal and Final after jornada 15.
 
 Each category cell displays:
-- **Escenario badge** — Local (green) or Visitante (blue)
+- **Escenario badge** — Local (green), Visitante (blue) or Neutral (purple); `—` when the jornada has no partido of that category (Semifinal / Final)
 - **Result circle** — only shown when a result has been recorded:
   - 🟢 **G** (green) — Ganamos
   - 🔴 **P** (red) — Perdimos
@@ -1124,7 +1131,8 @@ All shared enums are centralized here — never defined inline in components:
 | `NUMEROS_JORNADA` | `['1'…'15', 'Semifinal', 'Final']` |
 | `CATEGORIAS_ESCENARIO_INVERTIDO` | `['6ta', '7ma']` |
 | `FASES_CAMPEONATO` | `['Apertura', 'Clausura']` |
-| `ESCENARIOS` | `['Local', 'Visitante']` |
+| `ESCENARIOS` | `['Local', 'Visitante', 'Neutral']` |
+| `JORNADAS_UNA_CATEGORIA` | `['Semifinal', 'Final']` (created for one category) |
 | `CESPED_TIPOS` | `['Natural', 'Sintético']` |
 | `POSICIONES_JUGADOR` | `['Arquero', 'Zaguero', 'Lateral', 'Volante', 'Extremo', 'Delantero']` |
 | `POSICIONES_PARTIDO` | 10 specific match positions (Arquero, Lateral derecho/izquierdo, Zaguero derecho/izquierdo, Volante defensivo, Extremo derecho, Volante ofensivo, Extremo izquierdo, Delantero centro). Their order is the lineup order PartidoForm sorts titulares by |

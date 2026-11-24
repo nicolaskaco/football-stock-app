@@ -83,8 +83,20 @@ export function fechaPartidoDefault(fechaJornada, categoria) {
  */
 export function fechaPartido(partido, jornada) {
   if (partido?.fecha) return partido.fecha.split('T')[0];
-  return fechaPartidoDefault(jornada?.fecha, partido?.categoria);
+  return fechaPartidoDefaultEnJornada(jornada, partido?.categoria);
 }
+
+/**
+ * Fecha por defecto de un partido dentro de su jornada. En una jornada de una sola categoría
+ * (Semifinal / Final, ver JORNADAS_UNA_CATEGORIA) el partido se juega el día de la jornada,
+ * sin el corrimiento de DIAS_ANTES_JORNADA.
+ */
+export function fechaPartidoDefaultEnJornada(jornada, categoria) {
+  return fechaPartidoDefault(jornada?.fecha, esJornadaUnaCategoria(jornada) ? null : categoria);
+}
+
+/** Jornada con un solo partido (Semifinal / Final de una categoría). */
+export const esJornadaUnaCategoria = (jornada) => (jornada?.partidos || []).length === 1;
 
 /**
  * Parses a 'YYYY-MM-DD' date-of-birth string into a Date object without

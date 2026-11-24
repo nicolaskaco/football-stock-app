@@ -103,8 +103,11 @@ export const CATEGORIAS_ESCENARIO_INVERTIDO = ['6ta', '7ma'];
 /** Fases del campeonato */
 export const FASES_CAMPEONATO = ['Apertura', 'Clausura'];
 
-/** Escenarios posibles */
-export const ESCENARIOS = ['Local', 'Visitante'];
+/**
+ * Escenarios posibles. Neutral (cancha neutral, típico de semifinales y finales) guarda el
+ * marcador como Local: los goles de Peñarol van en goles_local (ver capEsLocal en playerStats).
+ */
+export const ESCENARIOS = ['Local', 'Visitante', 'Neutral'];
 
 /** Tipos de césped */
 export const CESPED_TIPOS = ['Natural', 'Sintético'];
@@ -142,6 +145,9 @@ export const POSICION_FICHA_A_PARTIDO = {
 
 /** Números de jornada del campeonato */
 export const NUMEROS_JORNADA = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','Semifinal','Final'];
+
+/** Jornadas que se crean para una sola categoría (cada una con su rival), no las 5 */
+export const JORNADAS_UNA_CATEGORIA = ['Semifinal', 'Final'];
 
 /** Estados de solicitudes de cambio financiero */
 export const CHANGE_REQUEST_STATUS = {

@@ -2,7 +2,7 @@ import { parseCometReport } from './cometReportParser';
 import { categoriaDeArchivo, categoriaDelTorneo, filasParaRevisar, aplicarComet } from './cometApply';
 import { initialFormData, initialTitulares, initialEventos, armarPartidoParaGuardar } from './partidoFormState';
 import { getSuspensionMap } from './suspensions';
-import { fechaPartido, fechaPartidoDefault } from './dateUtils';
+import { fechaPartido, fechaPartidoDefaultEnJornada } from './dateUtils';
 
 /**
  * Varios informes COMET contra los partidos de una jornada: lectura, evaluación y armado
@@ -82,7 +82,7 @@ export function evaluarInformes(items, { jornada, jornadas = [], players = [] })
     let preview = null;
     if (puede) {
       const base = {
-        formData: initialFormData(partido, fechaPartidoDefault(jornada.fecha, it.categoria)),
+        formData: initialFormData(partido, fechaPartidoDefaultEnJornada(jornada, it.categoria)),
         titulares: initialTitulares(partido),
         eventos: initialEventos(partido),
       };

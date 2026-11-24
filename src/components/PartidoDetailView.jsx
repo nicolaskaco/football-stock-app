@@ -7,9 +7,11 @@ import { useToast } from '../context/ToastContext';
 import { CometBulkImportPanel } from './CometBulkImportPanel';
 import { ParteDisponibilidadModal } from './ParteDisponibilidadModal';
 import { guardarImportComet } from '../utils/cometGuardar';
-import { formatDate, fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
+import { formatDate, fechaPartido, fechaPartidoDefaultEnJornada } from '../utils/dateUtils';
 import { CATEGORIAS_PARTIDO } from '../utils/constants';
 import { RivalBadge } from './ui/RivalBadge';
+import { resolveMarcador } from '../utils/playerStats';
+import { escenarioBadgeClass } from './ui/escenario';
 
 export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {}, currentUser = null }) => {
   const { execute } = useMutation();
@@ -142,10 +144,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
     (jornada.partidos || []).find((p) => p.categoria === cat)
   ).filter(Boolean);
 
-  const escenarioBadge = (esc) =>
-    esc === 'Local'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-blue-100 text-blue-800';
+  const escenarioBadge = escenarioBadgeClass;
 
   const cespedBadge = (cesped) =>
     cesped === 'Natural'
@@ -154,8 +153,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
 
   // Peñarol siempre a la izquierda
   const getCapRivalGoles = (p) => {
-    const cap   = p.escenario === 'Local' ? p.goles_local    : p.goles_visitante;
-    const rival = p.escenario === 'Local' ? p.goles_visitante : p.goles_local;
+    const { capGoles: cap, rivalGoles: rival } = resolveMarcador(p);
     return { cap, rival };
   };
 
@@ -252,7 +250,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
                     {partido.cancha}
                   </span>
                 )}
-                {fechaPartido(partido, jornada) !== fechaPartidoDefault(jornada.fecha, partido.categoria) && (
+                {fechaPartido(partido, jornada) !== fechaPartidoDefaultEnJornada(jornada, partido.categoria) && (
                   <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" title="Partido reprogramado">
                     Reprog. {formatDate(fechaPartido(partido, jornada))}
                   </span>

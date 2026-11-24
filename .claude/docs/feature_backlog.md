@@ -68,6 +68,8 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
   - "Enviar a Telegram" en el parte pre-jornada, para admin, ejecutivo y presidentes, con confirmación y sin el tipo de lesión.
   - Resumen de los lunes a las 8:00 por `pg_cron`: fichas, chequeo SND, lesiones con el retorno vencido, solicitudes viejas y stock bajo. Se prende con un toggle en Configuración y tiene un modo `?preview=1`.
 - [x] **I7. Parte a Telegram al crear la jornada** — Casilla en "Nueva Jornada" (marcada si la fecha es hoy o futura) que manda el parte de disponibilidad al grupo apenas se crea la jornada. Si el envío falla, la jornada queda creada y se avisa. *(PR #371 · 2026-11-24)*
+- [x] **I8. Semifinales y finales por categoría, y escenario Neutral** — Semifinal y Final se crean para una sola categoría (con su rival; varias finales el mismo día son varias jornadas), con la fecha de la jornada también para la 4ta. Nuevo escenario `Neutral` (marcador guardado como Local, sin inversión en 6ta/7ma), con su badge, su fila en Por Cancha y en la ficha del jugador. Pts sobre el máximo real de la jornada. *(PR #? · 2026-11-24)*
+- [ ] **I9. "Cargar COMETs" con varias jornadas el mismo día** — Hoy toma una sola "última jornada"; con varias finales el mismo día debería tomar todas las de esa fecha y repartir los informes por rival y categoría.
 - [ ] **I6. Detalle del chequeo SND en Actividad** — Ver desde Actividad, con nombres, qué fichas se actualizaron y quiénes no se encontraron en SND en cada corrida automática.
 - [ ] **I5. Limpiar errores de lint heredados** y volver bloqueante el lint en CI.
 

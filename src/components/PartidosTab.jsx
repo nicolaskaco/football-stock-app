@@ -7,8 +7,10 @@ import { CalendarioView } from './CalendarioView';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
-import { formatDate, fechaPartido, fechaPartidoDefault } from '../utils/dateUtils';
-import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, ROLES_TELEGRAM } from '../utils/constants';
+import { formatDate, fechaPartido, fechaPartidoDefaultEnJornada } from '../utils/dateUtils';
+import { CATEGORIAS_PARTIDO, FASES_CAMPEONATO, NUMEROS_JORNADA, ROLES_TELEGRAM } from '../utils/constants';
+import { resolveMarcador } from '../utils/playerStats';
+import { escenarioBadgeClass } from './ui/escenario';
 import { buildParteDisponibilidad, parteComoTexto } from '../utils/disponibilidad';
 import { textoATelegramHTML } from '../utils/textUtils';
 import { useToast } from '../context/ToastContext';
@@ -30,8 +32,8 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
 
   const canEdit = currentUser?.canEditPartidos || false;
 
-  const handleAddJornada = (formData, escenarioBase, { enviarTelegram = false } = {}) => execute(async () => {
-    const nueva = await database.addJornada(formData, escenarioBase);
+  const handleAddJornada = (formData, escenarioBase, { enviarTelegram = false, categoria = null } = {}) => execute(async () => {
+    const nueva = await database.addJornada(formData, escenarioBase, { categoria });
     await onDataChange('jornadas');
     setShowModal(null);
     if (enviarTelegram) enviarParteTelegram(nueva.id);
@@ -128,16 +130,9 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
   const getPartidoForCategoria = (jornada, categoria) =>
     (jornada.partidos || []).find((p) => p.categoria === categoria) || null;
 
-  const escenarioBadge = (esc) => {
-    if (esc === 'Local') return 'bg-green-100 text-green-800';
-    if (esc === 'Visitante') return 'bg-blue-100 text-blue-800';
-    return 'bg-gray-100 text-gray-500';
-  };
-
   const getResultado = (partido) => {
     if (!partido || partido.goles_local == null || partido.goles_visitante == null) return null;
-    const capGoles = partido.escenario === 'Local' ? partido.goles_local : partido.goles_visitante;
-    const rivalGoles = partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+    const { capGoles, rivalGoles } = resolveMarcador(partido);
     if (capGoles > rivalGoles) return 'win';
     if (capGoles < rivalGoles) return 'loss';
     return 'draw';
@@ -146,7 +141,9 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
   const RESULT_DOT = { win: 'bg-green-500', loss: 'bg-red-500', draw: 'bg-gray-400' };
   const RESULT_LABEL = { win: 'G', loss: 'P', draw: 'E' };
   const RESULT_PUNTOS = { win: 3, draw: 1, loss: 0 };
-  const MAX_PUNTOS_JORNADA = CATEGORIAS_PARTIDO.length * RESULT_PUNTOS.win;
+  // Puntos posibles: 3 por partido de la jornada (15 en una común, 3 en una Semifinal/Final de una categoría)
+  const maxPuntosJornada = (jornada) =>
+    CATEGORIAS_PARTIDO.filter((cat) => getPartidoForCategoria(jornada, cat)).length * RESULT_PUNTOS.win;
 
   // Puntos de la jornada: 3 por victoria, 1 por empate. null si no hay ningún marcador cargado.
   const getPuntosJornada = (jornada) => {
@@ -157,11 +154,12 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
     return resultados.reduce((sum, r) => sum + RESULT_PUNTOS[r], 0);
   };
 
-  // Verde con más de 10 puntos, rojo con menos de 7.
-  const puntosColor = (puntos) => {
-    if (puntos > 10) return 'text-green-600';
-    if (puntos < 7) return 'text-red-600';
-    return 'text-gray-900';
+  // Verde con más de 10/15 de los puntos posibles, rojo con menos de 7/15 (proporcional al máximo de la jornada).
+  const puntosColor = (puntos, max) => {
+    if (!max) return 'text-gray-900 dark:text-gray-100';
+    if (puntos / max > 10 / 15) return 'text-green-600';
+    if (puntos / max < 7 / 15) return 'text-red-600';
+    return 'text-gray-900 dark:text-gray-100';
   };
 
   const RESULT_TITLE = { win: 'Ganamos', loss: 'Perdimos', draw: 'Empate' };
@@ -172,11 +170,11 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
     const esc = partido?.escenario || '—';
     const resultado = getResultado(partido);
     const fechaReal = partido ? fechaPartido(partido, jornada) : null;
-    const reprogramado = fechaReal && fechaReal !== fechaPartidoDefault(jornada.fecha, cat);
+    const reprogramado = fechaReal && fechaReal !== fechaPartidoDefaultEnJornada(jornada, cat);
     return (
       <div className="flex flex-col items-center gap-1">
         <span
-          className={`text-xs py-0.5 rounded-full font-medium ${compact ? 'px-1.5' : 'px-2'} ${escenarioBadge(esc)}`}
+          className={`text-xs py-0.5 rounded-full font-medium ${compact ? 'px-1.5' : 'px-2'} ${escenarioBadgeClass(esc)}`}
           title={compact ? esc : undefined}
           aria-label={compact ? esc : undefined}
         >
@@ -209,8 +207,8 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
     if (puntos == null) return '—';
     return (
       <>
-        <span className={`font-bold ${puntosColor(puntos)}`}>{puntos}</span>
-        <span className="text-xs text-gray-400">/{MAX_PUNTOS_JORNADA}</span>
+        <span className={`font-bold ${puntosColor(puntos, maxPuntosJornada(jornada))}`}>{puntos}</span>
+        <span className="text-xs text-gray-400">/{maxPuntosJornada(jornada)}</span>
       </>
     );
   };
@@ -234,7 +232,9 @@ export const PartidosTab = ({ jornadas = [], rivales = [], players = [], injurie
   const compareDefault = (a, b) => {
     const faseDiff = FASES_ORDER.indexOf(a.fase) - FASES_ORDER.indexOf(b.fase);
     if (faseDiff !== 0) return faseDiff;
-    return (a.numero_jornada ?? 999) - (b.numero_jornada ?? 999);
+    // Por posición en NUMEROS_JORNADA, así Semifinal y Final van después de la 15
+    const pos = (j) => (NUMEROS_JORNADA.includes(String(j.numero_jornada)) ? NUMEROS_JORNADA.indexOf(String(j.numero_jornada)) : 999);
+    return pos(a) - pos(b);
   };
 
   const getSortValue = (jornada, key) => {

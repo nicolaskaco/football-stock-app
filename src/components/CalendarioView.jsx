@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Cake, ShieldAlert, HeartPulse, Trophy, X } from 'lucide-react';
 import { CATEGORIAS_PARTIDO, CALENDAR_EVENT_TYPES } from '../utils/constants';
 import { RivalBadge } from './ui/RivalBadge';
+import { resolveMarcador } from '../utils/playerStats';
 
 /**
  * Determina si CAP ganó, empatamos, o perdimos un partido individual.
@@ -9,10 +10,7 @@ import { RivalBadge } from './ui/RivalBadge';
  */
 function getResultado(partido) {
   if (partido.goles_local == null || partido.goles_visitante == null) return null;
-  const capGoles =
-    partido.escenario === 'Local' ? partido.goles_local : partido.goles_visitante;
-  const rivalGoles =
-    partido.escenario === 'Local' ? partido.goles_visitante : partido.goles_local;
+  const { capGoles, rivalGoles } = resolveMarcador(partido);
   if (capGoles > rivalGoles) return 'win';
   if (capGoles < rivalGoles) return 'loss';
   return 'draw';
@@ -25,7 +23,7 @@ const RESULT_DOT = {
   null: 'bg-gray-200',
 };
 
-/** Resumen de la jornada: cuenta G/E/P entre los 5 partidos con resultado */
+/** Resumen de la jornada: cuenta G/E/P entre sus partidos con resultado */
 function ResumenBadge({ jornada }) {
   const resultados = (jornada.partidos || []).map(getResultado).filter(Boolean);
   if (resultados.length === 0) return null;
@@ -41,11 +39,12 @@ function ResumenBadge({ jornada }) {
   );
 }
 
-/** 5 dots coloreados, uno por categoría en orden canónico */
+/** Un dot coloreado por categoría que juega la jornada (5, o 1 en Semifinal/Final), en orden canónico */
 function CategoryDots({ jornada }) {
+  const categorias = CATEGORIAS_PARTIDO.filter((cat) => (jornada.partidos || []).some((p) => p.categoria === cat));
   return (
     <div className="flex gap-0.5 mt-1 flex-wrap">
-      {CATEGORIAS_PARTIDO.map((cat) => {
+      {categorias.map((cat) => {
         const partido = (jornada.partidos || []).find((p) => p.categoria === cat);
         const res = partido ? getResultado(partido) : null;
         return (

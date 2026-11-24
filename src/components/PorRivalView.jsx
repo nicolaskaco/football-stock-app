@@ -6,6 +6,7 @@ import { resolveMarcador, groupGoleadores } from '../utils/playerStats';
 import { useTableSort, thClass } from '../hooks/useTableSort.jsx';
 import { RivalBadge } from './ui/RivalBadge';
 import { ResultadoBadge } from './ui/ResultadoBadge';
+import { escenarioBadgeClass } from './ui/escenario';
 
 // ─── Stats helpers ───────────────────────────────────────────────────────────
 
@@ -172,7 +173,7 @@ const PartidoCell = ({ partido }) => {
   if (!partido) return <span className="text-gray-400">—</span>;
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${partido.escenario === 'Local' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${escenarioBadgeClass(partido.escenario)}`}>
         {partido.escenario}
       </span>
       <ResultadoBadge resultado={partido.resultado} capGoles={partido.capGoles} rivalGoles={partido.rivalGoles} />

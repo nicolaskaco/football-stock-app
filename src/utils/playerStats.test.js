@@ -6,6 +6,7 @@ const P = 'player-1';
 
 describe('resolveMarcador', () => {
   it('orienta el marcador desde CAP según el escenario', () => {
+    expect(resolveMarcador({ escenario: 'Neutral', goles_local: 2, goles_visitante: 1 })).toEqual({ capGoles: 2, rivalGoles: 1, resultado: 'G' });
     expect(resolveMarcador({ escenario: 'Local', goles_local: 2, goles_visitante: 1 })).toEqual({ capGoles: 2, rivalGoles: 1, resultado: 'G' });
     expect(resolveMarcador({ escenario: 'Visitante', goles_local: 2, goles_visitante: 1 })).toEqual({ capGoles: 1, rivalGoles: 2, resultado: 'P' });
     expect(resolveMarcador({ escenario: 'Local', goles_local: 0, goles_visitante: 0 }).resultado).toBe('E');
