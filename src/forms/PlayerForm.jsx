@@ -844,6 +844,8 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
               id: partido.id,
               ...partidoInfo(jornada, partido),
               tipo: pp.tipo,
+              // null: partido sin cambios cargados; 0: suplente que no entró
+              minutos: calcMinutos(partido, pp, eventos.filter(e => e.tipo === 'roja')),
               goles,
               amarillas,
               rojas,
@@ -916,6 +918,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                       <span className="text-xs font-medium text-red-700 dark:text-red-300">{m.motivoSuspension}</span>
                     ) : (
                       <span className="flex items-center gap-3 text-xs">
+                        <span title="Minutos jugados">⏱ {m.minutos != null ? `${m.minutos}'` : '-'}</span>
                         <span>⚽ {m.goles || '-'}</span>
                         <span>🟨 {m.amarillas || '-'}</span>
                         <span>🟥 {m.rojas || '-'}</span>
@@ -935,6 +938,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                     <th className="pb-2 pr-3">Cat.</th>
                     <th className="pb-2 pr-3">Rol</th>
                     <th className="pb-2 pr-3">Resultado</th>
+                    <th className="pb-2 pr-3 text-center" title="Minutos jugados">Min</th>
                     <th className="pb-2 pr-3 text-center">⚽</th>
                     <th className="pb-2 pr-3 text-center">🟨</th>
                     <th className="pb-2 text-center">🟥</th>
@@ -964,6 +968,7 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
                           </span>
                         ) : <span className="text-gray-400">-</span>}
                       </td>
+                      <td className="py-2 pr-3 text-center whitespace-nowrap">{m.minutos != null ? `${m.minutos}'` : '-'}</td>
                       <td className="py-2 pr-3 text-center">{m.goles || '-'}</td>
                       <td className="py-2 pr-3 text-center">{m.amarillas || '-'}</td>
                       <td className="py-2 text-center">{m.rojas || '-'}</td>
