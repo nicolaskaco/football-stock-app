@@ -4,7 +4,7 @@ import {
   CATEGORIAS, parseMensaje, esParaEsteBot, parseCategoria, separarCategoria, categoriasVisibles, veCategoria, comandosDe,
   parseCodigo, edad, diasParaCumple, parseAnio, marcador, jornadaLabel, fechaPartido,
   rivalBuscado, nombreCoincide, type Permisos,
-  ALIAS, COMANDOS, textoViatico, etiquetaDocumento, minutosJugados,
+  ALIAS, COMANDOS, textoViatico, etiquetaDocumento, minutosJugados, miles, ordenarPorMinutos,
 } from './logica';
 
 const perm = (over: Partial<Permisos> = {}): Permisos => ({
@@ -199,5 +199,30 @@ describe('minutosJugados', () => {
     expect(minutosJugados(90, { tipo: 'suplente' })).toBe(0);
     expect(minutosJugados(90, { tipo: 'titular' }, 60)).toBe(60);
     expect(minutosJugados(null, { tipo: 'titular' })).toBeNull();
+  });
+});
+
+describe('/minutos', () => {
+  it('parseo, alias y permiso', () => {
+    expect(parseMensaje('/minutos 4ta 2025')).toMatchObject({ comando: 'minutos', args: ['4ta', '2025'] });
+    expect(ALIAS[parseMensaje('/minuto 5ta').comando!]).toBe('minutos');
+    expect(COMANDOS.minutos.permiso(perm())).toBe(false);
+    expect(COMANDOS.minutos.permiso(perm({ can_view_partidos: true }))).toBe(true);
+  });
+  it('miles', () => {
+    expect(miles(1180)).toBe('1.180');
+    expect(miles(90)).toBe('90');
+    expect(miles(null)).toBe('0');
+  });
+  it('ordena por minutos, sin dato al final, y desempata por titular y nombre', () => {
+    const filas = [
+      { name_visual: 'Zeta', minutos: 90, titular: 1 },
+      { name_visual: 'Sin dato', minutos: null, titular: 3 },
+      { name_visual: 'Álvarez', minutos: 90, titular: 1 },
+      { name_visual: 'Titular', minutos: 90, titular: 2 },
+      { name_visual: 'Más', minutos: 300, titular: 0 },
+      { name_visual: 'Cero', minutos: 0, titular: 0 },
+    ];
+    expect(ordenarPorMinutos(filas).map((f) => f.name_visual)).toEqual(['Más', 'Titular', 'Álvarez', 'Zeta', 'Cero', 'Sin dato']);
   });
 });

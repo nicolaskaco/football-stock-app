@@ -113,6 +113,7 @@ export const COMANDOS: Record<string, { uso: string; descripcion: string; permis
   contra: { uso: "/contra Nacional", descripcion: "Historial contra un rival", permiso: partidos },
   goleadores: { uso: "/goleadores [categoría] [año]", descripcion: "Goleadores del año", permiso: partidos },
   tarjetas: { uso: "/tarjetas [categoría] [año]", descripcion: "Amarillas y rojas del año", permiso: partidos },
+  minutos: { uso: "/minutos [categoría] [año]", descripcion: "Jugadores ordenados por minutos jugados", permiso: partidos },
   fichas: { uso: "/fichas [categoría]", descripcion: "Fichas médicas vencidas o por vencer en 30 días", permiso: fichas },
   tareas: { uso: "/tareas", descripcion: "Tareas abiertas", permiso: tareas },
   ayuda: { uso: "/ayuda", descripcion: "Esta lista", permiso: todos },
@@ -121,7 +122,7 @@ export const COMANDOS: Record<string, { uso: string; descripcion: string; permis
 /** Alias en inglés o con otra forma que Telegram muestra en el menú. */
 export const ALIAS: Record<string, string> = {
   help: "ayuda", start: "ayuda", proxima: "proximo", resultados: "resultado", cumpleanos: "cumples",
-  jugador_completo: "ficha", jugadorcompleto: "ficha",
+  jugador_completo: "ficha", jugadorcompleto: "ficha", minuto: "minutos",
 };
 
 export const comandosDe = (p: Permisos) => Object.keys(COMANDOS).filter((c) => COMANDOS[c].permiso(p));
@@ -222,9 +223,12 @@ export function nombreCoincide(busqueda: string, ...nombres: (string | null | un
 
 // ── Jugador: viático, documento y minutos ───────────────────────────
 
+/** 1180 → "1.180" */
+export const miles = (n: number | null | undefined) =>
+  Math.round(Number(n) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
 /** 12000 → "$ 12.000" */
-export const pesos = (n: number | null | undefined) =>
-  `$ ${Math.round(Number(n) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
+export const pesos = (n: number | null | undefined) => `$ ${miles(n)}`;
 
 type DatosViatico = {
   viatico?: number | null; complemento?: number | null; contrato?: boolean | null;
@@ -276,4 +280,18 @@ export function minutosJugados(
   const inicio = pp.tipo === "titular" ? 0 : pp.minuto_entrada;
   if (inicio == null) return 0;
   return Math.max(0, Math.min(fin, dur) - inicio);
+}
+
+type FilaMinutos = { name_visual: string; minutos: number | null; titular: number };
+
+/**
+ * Orden de /minutos: más minutos primero, los que no tienen minutos cargados (null) al final;
+ * a igual minutos, más partidos de titular y después por nombre.
+ */
+export function ordenarPorMinutos<T extends FilaMinutos>(filas: T[]): T[] {
+  return [...filas].sort((a, b) => {
+    if ((a.minutos == null) !== (b.minutos == null)) return a.minutos == null ? 1 : -1;
+    return (b.minutos ?? 0) - (a.minutos ?? 0) || b.titular - a.titular
+      || normalizar(a.name_visual).localeCompare(normalizar(b.name_visual));
+  });
 }
