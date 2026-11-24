@@ -108,6 +108,7 @@ export const COMANDOS: Record<string, { uso: string; descripcion: string; permis
   lesionados: { uso: "/lesionados [categoría]", descripcion: "Lesionados sin alta", permiso: jugadores },
   cumples: { uso: "/cumples", descripcion: "Cumpleaños de los próximos 7 días", permiso: jugadores },
   proximo: { uso: "/proximo", descripcion: "Próxima jornada", permiso: partidos },
+  parte: { uso: "/parte [categoría]", descripcion: "Disponibles y no disponibles para la próxima jornada", permiso: partidos },
   resultado: { uso: "/resultado", descripcion: "Resultados de la última jornada jugada", permiso: partidos },
   contra: { uso: "/contra Nacional", descripcion: "Historial contra un rival", permiso: partidos },
   goleadores: { uso: "/goleadores [categoría] [año]", descripcion: "Goleadores del año", permiso: partidos },

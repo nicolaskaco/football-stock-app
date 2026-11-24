@@ -1,5 +1,5 @@
-import { CATEGORIAS_PARTIDO, NUMEROS_JORNADA } from './constants';
-import { fechaPartido } from './dateUtils';
+import { CATEGORIAS_PARTIDO, NUMEROS_JORNADA } from './constants.js';
+import { fechaPartido } from './dateUtils.js';
 
 /**
  * All the functions below work on a categoria TIMELINE (see getCategoriaTimeline): the

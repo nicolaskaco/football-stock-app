@@ -868,6 +868,7 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
   | `/lesionados [cat]` | Open injuries, flagging an overdue estimated return |
   | `/cumples` | Birthdays in the next 7 days |
   | `/proximo [cat]` | Next jornada with the partidos still to play |
+  | `/parte [cat]` | Parte de disponibilidad of the next jornada (same jornada as `/proximo`, only its partidos still to play), with the app's own code: `buildParteDisponibilidad` + `parteComoTexto` + `textoATelegramHTML`, over the full jornadas payload (same `select` as `database.getJornadas`), active non-hidden players, open injuries and `app_settings`. The jornada is the next one with partidos still to play **in the user's categories** (`user_permissions.categoria`, as `ParteDisponibilidadModal` passes them, or the requested one), and only those categories are listed; players are limited like the `players` RLS (their categories or present in a planilla); injuries are ordered like `getInjuries` (newest first). The injury type only for an admin in a private chat; in the group never, like the parte the app sends. Needs `can_view_partidos`; in the group only `ROLES_TELEGRAM` (the roles that can send the parte from the app), the rest are told to ask in private |
   | `/resultado [cat]` | Last jornada with a result, with scorers |
   | `/contra <rival>` | G/E/P and goals per category against that rival, plus the last 6 jornadas |
   | `/goleadores [cat] [año]` | Top scorers of the year |
@@ -876,7 +877,7 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
   | `/tareas` | Open tareas by estado and prioridad |
   | `/ayuda` | Only the commands the user can use |
 
-  Suspensions and the parte are not offered yet, because their logic lives in the frontend (`suspensions.js`, `disponibilidad.js`).
+  **Shared app code**: `/parte` imports `supabase/functions/_shared/app/*.js`, verbatim copies of `src/utils` modules (`constants`, `dateUtils`, `ageEligibility`, `suspensions`, `playerStats`, `disponibilidad`, `textUtils`; their relative imports carry the `.js` extension so Deno resolves them). `npm run sync:shared` (`scripts/sync-shared.mjs`) regenerates them, and `src/utils/sharedSync.test.js` fails in CI when a copy is stale. Suspensions, yellow-card counts and minutes per player (`/suspendidos`, `/amarillas`, `/minutos`) can now reuse the same modules but are not offered yet.
 - **Setup script** (`scripts/telegram-setup.mjs`, `npm run telegram:setup`): asks for the bot token and the webhook secret, or reads them from `TELEGRAM_BOT_TOKEN` / `TELEGRAM_WEBHOOK_SECRET`, without printing or saving them. If the secret is left empty, it generates a new one and loads it with `supabase secrets set --project-ref`. The project comes from `supabase/.temp/project-ref`, or is asked for. Then it:
   - shows the bot's `@username`;
   - registers the webhook, `TELEGRAM_BOT_USERNAME` and the command menu (`setMyCommands` for `all_private_chats` and `all_group_chats`, built from `COMANDOS` in `logica.ts`, so the menu matches the bot);
