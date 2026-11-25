@@ -100,6 +100,12 @@ function normaliseActivityLog(rows) {
         ].filter(Boolean).join(' · ');
         break;
       }
+      case 'telegram_fichas_cambios': {
+        const n = r.details?.cambios || 0;
+        label = 'Cambios de fichas médicas enviados a Telegram';
+        detail = `${n} ficha${n !== 1 ? 's' : ''} avisada${n !== 1 ? 's' : ''} al grupo`;
+        break;
+      }
       case 'telegram_parte_auto':
         label = 'Parte semanal enviado a Telegram';
         detail = r.details?.hay_jornada === false ? 'Sin próxima jornada: avisó que no hay siguiente partido' : '';
@@ -172,6 +178,7 @@ const BADGE = {
   ficha_medica_auto: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
   telegram_envio: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
   telegram_resumen: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  telegram_fichas_cambios: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
   telegram_parte_auto: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
   telegram_consulta: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
   telegram_vinculo: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
@@ -192,6 +199,7 @@ const TYPE_LABELS = {
   telegram_envio: 'Telegram',
   telegram_resumen: 'Resumen Telegram',
   telegram_parte_auto: 'Parte automático',
+  telegram_fichas_cambios: 'Fichas a Telegram',
   telegram_consulta: 'Consulta al bot',
   telegram_vinculo: 'Vínculo con el bot',
 };
@@ -203,7 +211,7 @@ const ALL_TYPES = Object.keys(TYPE_LABELS);
 // Events come from 3 tables, each paged on its own and merged by timestamp.
 const PAGE_SIZE = 50;
 
-const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet', 'ajuste_suspension', 'ficha_medica_auto', 'telegram_envio', 'telegram_resumen', 'telegram_parte_auto', 'telegram_consulta', 'telegram_vinculo'];
+const ACTIVITY_TYPES = ['login', 'permission_change', 'bulk_approve', 'bulk_reject', 'import_cuentas_viatico', 'import_planilla_comet', 'ajuste_suspension', 'ficha_medica_auto', 'telegram_envio', 'telegram_resumen', 'telegram_parte_auto', 'telegram_fichas_cambios', 'telegram_consulta', 'telegram_vinculo'];
 const REQUEST_TYPES = ['approved', 'rejected'];
 
 // Returns the subset of `all` that is selected, null when none is (skip the
