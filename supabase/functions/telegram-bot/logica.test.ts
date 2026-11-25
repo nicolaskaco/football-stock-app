@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { CATEGORIAS as CATEGORIAS_APP } from '../../../src/utils/constants.js';
 import {
-  CATEGORIAS, parseMensaje, esParaEsteBot, parseCategoria, separarCategoria, categoriasVisibles, veCategoria, comandosDe,
+  CATEGORIAS, parseMensaje, esParaEsteBot, parseCategoria, separarCategoria, categoriasVisibles, veCategoria, comandosDe, ordenMenu,
   parseCodigo, edad, diasParaCumple, parseAnio, marcador, jornadaLabel, fechaPartido,
   rivalBuscado, nombreCoincide, type Permisos,
   ALIAS, COMANDOS, textoViatico, etiquetaDocumento, minutosJugados, miles, ordenarPorMinutos,
@@ -283,5 +283,20 @@ describe('pedir el dato que falta', () => {
   });
   it('todos los comandos que piden dato existen', () => {
     for (const c of Object.keys(PIDE_DATO)) expect(COMANDOS[c]).toBeDefined();
+  });
+});
+
+describe('orden del menú', () => {
+  it('/pregunta primero, /ayuda segundo y el resto en el orden de COMANDOS', () => {
+    const orden = ordenMenu();
+    expect(orden.slice(0, 2)).toEqual(['pregunta', 'ayuda']);
+    expect(orden.slice(2)).toEqual(Object.keys(COMANDOS).filter((c) => c !== 'pregunta' && c !== 'ayuda'));
+  });
+  it('tiene todos los comandos, sin repetidos', () => {
+    expect([...ordenMenu()].sort()).toEqual(Object.keys(COMANDOS).sort());
+  });
+  it('/ayuda sigue el mismo orden', () => {
+    expect(comandosDe({ email: 'x', role: 'admin', categoria: null, can_access_players: true, can_view_partidos: false, can_access_widgets: false, can_access_tareas: false, can_access_viatico: false }).slice(0, 2))
+      .toEqual(['pregunta', 'ayuda']);
   });
 });
