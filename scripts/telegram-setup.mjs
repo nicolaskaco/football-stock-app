@@ -88,7 +88,8 @@ const tapar = (s) => String(s).split(token).join('<TOKEN>');
 
 let avisoSiFalla = ''; // se agrega a cualquier error de Telegram (p. ej. secreto ya cambiado)
 
-async function telegram(metodo, body) {
+/** Llama a la Bot API. Si falla, sale del script; con `{ tolerante: true }` devuelve `{ error }`. */
+async function telegram(metodo, body, { tolerante = false } = {}) {
   let res;
   try {
     res = await fetch(`https://api.telegram.org/bot${token}/${metodo}`, {
@@ -97,11 +98,17 @@ async function telegram(metodo, body) {
       body: JSON.stringify(body ?? {}),
     });
   } catch (err) {
-    salir(`${metodo}: no se pudo conectar con Telegram (${tapar(err.message)}).`);
+    const error = `${metodo}: no se pudo conectar con Telegram (${tapar(err.message)}).`;
+    if (tolerante) return { error };
+    salir(error);
   }
   const data = await res.json().catch(() => ({}));
-  if (!data.ok) salir(`${metodo}: ${tapar(data.description || `HTTP ${res.status}`)}`);
-  return data.result;
+  if (!data.ok) {
+    const error = `${metodo}: ${tapar(data.description || `HTTP ${res.status}`)}`;
+    if (tolerante) return { error };
+    salir(error);
+  }
+  return tolerante ? { result: data.result } : data.result;
 }
 
 function salir(mensaje) {
@@ -161,8 +168,22 @@ const nombreAlcance = (a) => a.type + (a.chat_id ? ` (${a.chat_id})` : '');
 async function registrarComandos() {
   // Mismo orden que /ayuda: /pregunta y /ayuda arriba (ORDEN_MENU en logica.ts)
   const commands = ordenMenu().map((c) => ({ command: c, description: COMANDOS[c].descripcion.slice(0, 256) }));
-  for (const scope of ALCANCES) await telegram('setMyCommands', { scope, commands });
-  for (const scope of ALCANCES_A_BORRAR) await telegram('deleteMyCommands', { scope });
+  const fallas = [];
+  for (const scope of ALCANCES) {
+    const { error } = await telegram('setMyCommands', { scope, commands }, { tolerante: true });
+    if (error) fallas.push(`${nombreAlcance(scope)}: ${error}`);
+    // Un menú en español del mismo alcance le gana al que no tiene idioma: se borra
+    await telegram('deleteMyCommands', { scope, language_code: 'es' }, { tolerante: true });
+  }
+  for (const scope of ALCANCES_A_BORRAR) {
+    await telegram('deleteMyCommands', { scope }, { tolerante: true });
+    await telegram('deleteMyCommands', { scope, language_code: 'es' }, { tolerante: true });
+  }
+  if (fallas.length) {
+    console.log(`✗ No se pudo escribir el menú en:\n  ${fallas.join('\n  ')}`);
+    if (GRUPO) console.log('  ¿El TELEGRAM_CHAT_ID es el del grupo y el bot está en él?');
+    return;
+  }
   ok(`Menú de comandos: ${commands.length} comandos (en privado, en grupos${GRUPO ? ' y en el grupo del club' : ''}).`);
   if (!GRUPO) console.log('  Si el grupo muestra un menú viejo, corré con TELEGRAM_CHAT_ID=<id del grupo> para pisar el suyo.');
 }
@@ -170,8 +191,9 @@ async function registrarComandos() {
 /** Cuántos comandos hay en cada alcance y cuál va primero, para ver si alguno quedó viejo. */
 async function mostrarComandos() {
   for (const scope of [...ALCANCES, ...ALCANCES_A_BORRAR]) {
-    const cmds = await telegram('getMyCommands', { scope });
-    console.log(`  Menú ${nombreAlcance(scope)}: ${cmds.length ? `${cmds.length} comandos, primero /${cmds[0].command}` : 'vacío'}`);
+    const { result: cmds, error } = await telegram('getMyCommands', { scope }, { tolerante: true });
+    if (error) console.log(`  ✗ Menú ${nombreAlcance(scope)}: ${error}`);
+    else console.log(`  Menú ${nombreAlcance(scope)}: ${cmds.length ? `${cmds.length} comandos, primero /${cmds[0].command}` : 'vacío'}`);
   }
 }
 
