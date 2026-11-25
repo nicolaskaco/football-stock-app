@@ -3,10 +3,13 @@
 // usuario, y se aplica sobre los datos: los números y las comparaciones los hace este código,
 // nunca la IA. Es lógica pura (sin red), con tests en filtros.test.ts.
 
-import { CATEGORIAS, CATEGORIAS_FICHA, ROLES_FICHA, type Permisos, categoriasVisibles, ddmmyyyy, edad, normalizar, pesos, miles, textoViatico, complementoEfectivo } from "./logica.ts";
-import { DEPARTAMENTOS, POSICIONES_JUGADOR } from "../_shared/app/constants.js";
+import {
+  CATEGORIAS, CATEGORIAS_FICHA, ROLES_FICHA, type Permisos, categoriasVisibles, ddmmyyyy, edad, normalizar, pesos, miles,
+  sumarDias, textoViatico, complementoEfectivo,
+} from "./logica.ts";
+import { DEPARTAMENTOS, PLAYER_STATUS_LABELS, POSICIONES_JUGADOR } from "../_shared/app/constants.js";
 
-export const ESTADOS = ["activo", "cedido", "transferido", "egresado", "dado de baja"];
+export const ESTADOS = ["activo", ...Object.keys(PLAYER_STATUS_LABELS)];
 export const MAX_RESULTADOS = 30;
 const DIAS_FICHA_DEFAULT = 30;
 
@@ -51,14 +54,19 @@ export type Filtro = {
   orden: { campo: CampoOrden | null; descendente: boolean | null };
 };
 
-// ── Esquema para la IA (structured outputs: todo requerido, lo opcional como null) ──
+// ── Esquema para la IA ──────────────────────────────────────────────
+// Structured outputs limita los parámetros opcionales (24) y los de tipo unión (16, anyOf o
+// ["x","null"]). Por eso todo es requerido y sin uniones: "sin valor" se expresa con un
+// centinela que validarFiltro convierte en null (-1 en enteros, "" en textos y fechas,
+// "cualquiera" en sí/no, "ninguna"/"ninguno" en los enum).
 
-const nullable = (schema: Record<string, unknown>) => ({ anyOf: [schema, { type: "null" }] });
-const rango = { type: "object", properties: { min: nullable({ type: "integer" }), max: nullable({ type: "integer" }) }, required: ["min", "max"], additionalProperties: false };
+/** Centinelas de "sin valor" que usa la IA. */
+export const SIN_ENTERO = -1;
+const rango = { type: "object", properties: { min: { type: "integer" }, max: { type: "integer" } }, required: ["min", "max"], additionalProperties: false };
 const lista = (items: Record<string, unknown>) => ({ type: "array", items });
-const fecha = nullable({ type: "string", format: "date" });
-const bool = nullable({ type: "boolean" });
-const entero = nullable({ type: "integer" });
+const fecha = { type: "string" };
+const bool = { type: "string", enum: ["si", "no", "cualquiera"] };
+const entero = { type: "integer" };
 
 const PROPIEDADES_FILTRO: Record<string, unknown> = {
   categorias: lista({ type: "string", enum: CATEGORIAS }),
@@ -75,7 +83,7 @@ const PROPIEDADES_FILTRO: Record<string, unknown> = {
   departamentos: lista({ type: "string", enum: DEPARTAMENTOS }),
   casita: bool,
   vianda_min: entero,
-  ficha: nullable({ type: "string", enum: ["vencida", "por_vencer", "sin_ficha"] }),
+  ficha: { type: "string", enum: ["vencida", "por_vencer", "sin_ficha", "ninguna"] },
   ficha_dias: entero,
   anio_stats: entero,
   ...Object.fromEntries([...CAMPOS_STATS, ...CAMPOS_VIATICO].map((c) => [c, rango])),
@@ -84,7 +92,7 @@ const PROPIEDADES_FILTRO: Record<string, unknown> = {
   caso_especial: bool,
   orden: {
     type: "object",
-    properties: { campo: nullable({ type: "string", enum: CAMPOS_ORDEN }), descendente: bool },
+    properties: { campo: { type: "string", enum: [...CAMPOS_ORDEN, "ninguno"] }, descendente: bool },
     required: ["campo", "descendente"],
     additionalProperties: false,
   },
@@ -95,7 +103,7 @@ export const ESQUEMA_RESPUESTA_IA = {
   type: "object",
   properties: {
     entendido: { type: "boolean" },
-    aclaracion: nullable({ type: "string" }),
+    aclaracion: { type: "string" },
     filtro: { type: "object", properties: PROPIEDADES_FILTRO, required: Object.keys(PROPIEDADES_FILTRO), additionalProperties: false },
   },
   required: ["entendido", "aclaracion", "filtro"],
@@ -115,7 +123,7 @@ const rangoValido = (v: unknown): Rango => {
   const r = (v && typeof v === "object" ? v : {}) as Record<string, unknown>;
   return { min: enteroValido(r.min), max: enteroValido(r.max) };
 };
-const boolValido = (v: unknown): boolean | null => (typeof v === "boolean" ? v : null);
+const boolValido = (v: unknown): boolean | null => (typeof v === "boolean" ? v : v === "si" ? true : v === "no" ? false : null);
 const fechaValida = (v: unknown): string | null => (typeof v === "string" && FECHA_ISO.test(v) ? v : null);
 /** Los valores de la lista que están en `validos` (sin tildes ni mayúsculas), con su forma canónica. */
 const enLista = (v: unknown, validos: readonly string[]): string[] => {
@@ -125,7 +133,9 @@ const enLista = (v: unknown, validos: readonly string[]): string[] => {
 };
 const usaRango = (r: Rango) => r.min != null || r.max != null;
 
-export const usaStats = (f: Filtro) => CAMPOS_STATS.some((c) => usaRango(f[c])) || f.suspendido_hoy != null;
+export const usaStats = (f: Filtro) =>
+  CAMPOS_STATS.some((c) => usaRango(f[c])) || f.suspendido_hoy != null ||
+  (f.orden.campo != null && (CAMPOS_STATS as readonly string[]).includes(f.orden.campo));
 export const usaViatico = (f: Filtro) =>
   CAMPOS_VIATICO.some((c) => usaRango(f[c])) || f.contrato != null || f.caso_especial != null ||
   (f.orden.campo != null && (CAMPOS_VIATICO as readonly string[]).includes(f.orden.campo));
@@ -221,18 +231,17 @@ const SIN_STATS: StatsJugador = { goles: 0, amarillas: 0, rojas: 0, minutos: 0, 
 const catEfectiva = (p: Jugador) => p.categoria_juego || p.categoria || "";
 const nombreDe = (p: Jugador) => p.name_visual || p.name;
 
-const sumarDias = (iso: string, dias: number) => {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d + dias)).toISOString().slice(0, 10);
-};
-
 const enRango = (v: number | null, r: Rango) => {
   if (!usaRango(r)) return true;
   if (v == null) return false;
   return (r.min == null || v >= r.min) && (r.max == null || v <= r.max);
 };
 
-/** Montos de viático como en la app: total = calculateTotal (contrato → 0; caso especial → complemento base). */
+/**
+ * Montos de viático. El total es lo que se paga (= montoViatico del export de Tesorero/Finanzas y
+ * textoViatico del bot): viático + complemento efectivo; con contrato 0, salvo caso especial
+ * (contrato + incluir_viatico_export), que cobra el complemento base.
+ */
 export function montosViatico(p: Jugador, hoy: string) {
   const viatico = Number(p.viatico || 0);
   const comp = complementoEfectivo(p, hoy).valor;

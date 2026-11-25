@@ -3,7 +3,7 @@
 // filtros.ts, que después se valida (validarFiltro) y se aplica en código (filtrarJugadores).
 // Clave: secreto ANTHROPIC_API_KEY de las funciones (supabase secrets set ANTHROPIC_API_KEY=...).
 
-import Anthropic from "npm:@anthropic-ai/sdk";
+import Anthropic from "npm:@anthropic-ai/sdk@1.14.0";
 import { CATEGORIAS } from "./logica.ts";
 import { ESQUEMA_RESPUESTA_IA, ESTADOS } from "./filtros.ts";
 import { DEPARTAMENTOS, POSICIONES_JUGADOR } from "../_shared/app/constants.js";
@@ -17,12 +17,12 @@ export type Interpretacion = {
   usage: { input_tokens: number; output_tokens: number };
 };
 
-// Fijo (sin fecha ni datos del usuario) para que el prefijo se pueda cachear; la fecha va en el mensaje.
+// Fijo (sin fecha ni datos del usuario); la fecha va en el mensaje.
 const SISTEMA = `Sos el traductor de preguntas del bot de las divisiones formativas del Club Atlético Peñarol.
 Tu única tarea: convertir una pregunta sobre jugadores en un filtro JSON con el esquema dado. No respondés la pregunta ni inventás datos: el sistema busca con tu filtro.
 
 Reglas:
-- Campos que la pregunta no menciona: null, o lista vacía.
+- Todos los campos son obligatorios. Los que la pregunta no menciona van "sin valor": -1 en números (también en min/max), "" en textos y fechas, "cualquiera" en los campos si/no, "ninguna" en ficha, "ninguno" en orden.campo, lista vacía en las listas.
 - Números enteros. "más de 7" → min 8; "al menos 7" o "7 o más" → min 7; "menos de 200" → max 199; "mayor a 10000" → min 10001; "hasta 5" → max 5; "exactamente 3" → min 3 y max 3; "ninguna/nunca" → max 0.
 - Categorías válidas: ${CATEGORIAS.join(", ")}. Sinónimos: quinta=5ta, cuarta=4ta, tercera=3era, sexta=6ta, séptima=7ma, sub16/sub-16=S16, sub13=Sub13. "categorias" es la categoría del jugador; "categorias_juego" solo si se pregunta en qué categoría juega distinta de la suya.
 - Posiciones válidas: ${POSICIONES_JUGADOR.join(", ")} (arqueros → Arquero, defensas centrales → Zaguero, etc.).
@@ -34,7 +34,8 @@ Reglas:
 - Ficha médica: "ficha vencida" → ficha "vencida"; "por vencer"/"vence pronto" → "por_vencer" (ficha_dias si dicen cuántos días); "sin ficha" → "sin_ficha".
 - casita: viven en la casita del club. vianda_min: cantidad mínima de viandas.
 - orden: solo si piden un orden ("los que más goles", "ordenados por edad"); si no, campo null y descendente null.
-- entendido false (con una aclaración corta en español rioplatense, voseo) si la pregunta no es una búsqueda de jugadores con estos filtros: opiniones ("quién rinde mejor"), lesiones o lesionados (no disponible), modificar datos, cálculos sobre el resultado (promedios, totales), funcionarios, dirigentes o inventario. Si es una búsqueda válida, aclaracion null.`;
+- Campos si/no (casita, contrato, caso_especial, suspendido_hoy, orden.descendente): "si", "no" o "cualquiera".
+- entendido false (con una aclaración corta en español rioplatense, voseo) si la pregunta no es una búsqueda de jugadores con estos filtros: opiniones ("quién rinde mejor"), lesiones o lesionados (no disponible), modificar datos, cálculos sobre el resultado (promedios, totales), funcionarios, dirigentes o inventario. Si es una búsqueda válida, aclaracion "".`;
 
 let cliente: Anthropic | null = null;
 const clienteIA = () => {
@@ -54,7 +55,7 @@ export async function interpretarPregunta(texto: string, { hoy }: { hoy: string 
   const respuesta = await ia.messages.create({
     model: MODELO_IA,
     max_tokens: 4000,
-    system: [{ type: "text", text: SISTEMA, cache_control: { type: "ephemeral" } }],
+    system: SISTEMA,
     output_config: { effort: "low", format: { type: "json_schema", schema: ESQUEMA_RESPUESTA_IA } },
     messages: [{ role: "user", content: `Hoy es ${hoy}.\nPregunta: ${texto}` }],
   });

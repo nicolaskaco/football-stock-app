@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   campoDeOrden, describirCriterio, detalleResultado, ESQUEMA_RESPUESTA_IA, type Filtro, filtrarJugadores, filtroVacio,
-  type Jugador, montosViatico, type StatsJugador, validarFiltro,
+  type Jugador, montosViatico, type StatsJugador, usaStats, validarFiltro,
 } from './filtros';
 import type { Permisos } from './logica';
 
@@ -57,6 +57,40 @@ describe('esquema de la IA', () => {
     expect(f.additionalProperties).toBe(false);
     expect(f.required.sort()).toEqual(Object.keys(f.properties).sort());
   });
+  it('no usa tipos unión (límite de 16 en structured outputs) ni propiedades opcionales', () => {
+    const json = JSON.stringify(ESQUEMA_RESPUESTA_IA);
+    expect(json).not.toContain('anyOf');
+    expect(json).not.toContain('"null"');
+    const opcionales = (s: unknown): number => {
+      if (!s || typeof s !== 'object') return 0;
+      const o = s as Record<string, unknown>;
+      const props = (o.properties || {}) as Record<string, unknown>;
+      const req = new Set((o.required as string[]) || []);
+      return Object.keys(props).filter((k) => !req.has(k)).length +
+        Object.values(props).reduce((n: number, v) => n + opcionales(v) + opcionales((v as Record<string, unknown>)?.items), 0);
+    };
+    expect(opcionales(ESQUEMA_RESPUESTA_IA)).toBe(0);
+  });
+});
+
+describe('centinelas de la IA', () => {
+  it('-1, "", "cualquiera", "ninguna" y "ninguno" son "sin valor"', () => {
+    const f = filtro({
+      categorias: ['5ta'], vianda_min: -1, cumple_mes: -1, nacimiento_desde: '', casita: 'cualquiera', ficha: 'ninguna',
+      amarillas: { min: -1, max: -1 }, orden: { campo: 'ninguno', descendente: 'cualquiera' },
+    });
+    expect(f.vianda_min).toBeNull();
+    expect(f.cumple_mes).toBeNull();
+    expect(f.nacimiento_desde).toBeNull();
+    expect(f.casita).toBeNull();
+    expect(f.ficha).toBeNull();
+    expect(f.amarillas).toEqual({ min: null, max: null });
+    expect(f.orden).toEqual({ campo: null, descendente: null });
+  });
+  it('"si" y "no" son booleanos', () => {
+    expect(filtro({ casita: 'si' }).casita).toBe(true);
+    expect(filtro({ casita: 'no' }).casita).toBe(false);
+  });
 });
 
 describe('validarFiltro', () => {
@@ -92,6 +126,12 @@ describe('validarFiltro', () => {
   it('ordenar por viático también cuenta como pregunta de viático', () => {
     const r = validarFiltro(crudo({ categorias: ['5ta'], orden: { campo: 'viatico_total', descendente: true } }), perm(), { enGrupo: true });
     expect(r.ok).toBe(false);
+  });
+  it('ordenar por una estadística cuenta como pregunta de estadísticas', () => {
+    const crudoOrden = crudo({ orden: { campo: 'goles', descendente: 'si' } });
+    const r = validarFiltro(crudoOrden, perm(), { enGrupo: false });
+    expect(r.ok && usaStats(r.filtro)).toBe(true);
+    expect(validarFiltro(crudoOrden, perm({ can_view_partidos: false }), { enGrupo: false }).ok).toBe(false);
   });
   it('ficha médica solo para los roles que la ven', () => {
     const r = validarFiltro(crudo({ ficha: 'vencida' }), perm({ role: 'presidente', can_access_widgets: false }), { enGrupo: false });

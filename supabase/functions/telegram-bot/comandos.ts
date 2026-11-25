@@ -578,8 +578,6 @@ async function tareas(ctx: Contexto) {
   return `📋 <b>Tareas abiertas</b>: ${lista.length}\n\n${bloques.join("\n\n")}${mas}`;
 }
 
-// ── Ayuda ───────────────────────────────────────────────────────────
-
 // ── /pregunta (IA) ──────────────────────────────────────────────────
 
 const EJEMPLOS_PREGUNTA = [
@@ -615,22 +613,32 @@ async function pregunta(ctx: Contexto) {
   if (texto.length > 300) return "La pregunta es muy larga: resumila en una línea.";
 
   // Tope diario por usuario, contado desde las 00:00 de Uruguay (UTC-3)
-  const limite = Number(await ajuste(ctx, "bot_ia_limite_diario")) || LIMITE_DIARIO_DEFAULT;
+  const limite = Math.min(Math.max(Math.trunc(Number(await ajuste(ctx, "bot_ia_limite_diario"))) || LIMITE_DIARIO_DEFAULT, 1), 500);
   const { count, error: errCount } = await ctx.db.from("activity_log").select("id", { count: "exact", head: true })
     .eq("action_type", "telegram_pregunta").eq("performed_by", ctx.perm.email).gte("created_at", `${ctx.hoy}T03:00:00Z`);
   if (errCount) throw new Error(errCount.message);
   if ((count ?? 0) >= limite) return `Llegaste al tope de ${limite} preguntas por hoy. Mañana podés seguir.`;
 
-  const ia = await interpretarPregunta(texto, { hoy: ctx.hoy });
+  let ia: Awaited<ReturnType<typeof interpretarPregunta>>;
+  try {
+    ia = await interpretarPregunta(texto, { hoy: ctx.hoy });
+  } catch (err) {
+    // También cuenta para el tope: la llamada pudo haberse cobrado
+    await registrarPregunta(ctx, { pregunta: texto, resultados: null, motivo: "error", error: String(err instanceof Error ? err.message : err).slice(0, 200) });
+    throw err;
+  }
   const base = { pregunta: texto, input_tokens: ia.usage.input_tokens, output_tokens: ia.usage.output_tokens };
-  const sinRespuesta = async (motivo: string, extra: Record<string, unknown> = {}) => {
-    await registrarPregunta(ctx, { ...base, resultados: null, motivo, ...extra });
+  if (!ia.entendido) {
+    const motivo = ia.aclaracion || "No puedo responder esa pregunta con los datos que manejo.";
+    await registrarPregunta(ctx, { ...base, resultados: null, motivo });
     return `🤔 ${e(motivo)}\n\nProbá con algo así:\n${EJEMPLOS_PREGUNTA.map((x) => `<code>${e(x)}</code>`).join("\n")}`;
-  };
-  if (!ia.entendido) return await sinRespuesta(ia.aclaracion || "No puedo responder esa pregunta con los datos que manejo.");
+  }
 
   const validado = validarFiltro(ia.filtro, ctx.perm, { enGrupo: ctx.enGrupo });
-  if (!validado.ok) return await sinRespuesta(validado.error, { filtro: ia.filtro });
+  if (!validado.ok) {
+    await registrarPregunta(ctx, { ...base, resultados: null, motivo: validado.error, filtro: ia.filtro });
+    return e(validado.error);
+  }
   const filtro = validado.filtro;
   const anioActual = Number(ctx.hoy.slice(0, 4));
   const anioStats = filtro.anio_stats ?? anioActual;
@@ -664,6 +672,8 @@ async function pregunta(ctx: Contexto) {
   const mas = resultados.length > MAX_RESULTADOS ? `\n… y ${resultados.length - MAX_RESULTADOS} más` : "";
   return `🔎 <b>${e(criterio)}</b>: ${resultados.length}\n${lineas.join("\n")}${mas}`;
 }
+
+// ── Ayuda ───────────────────────────────────────────────────────────
 
 export function ayuda(ctx: Pick<Contexto, "perm">) {
   const lineas = comandosDe(ctx.perm).map((c) => `${e(COMANDOS[c].uso)} — ${e(COMANDOS[c].descripcion)}`);
