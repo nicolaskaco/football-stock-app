@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { PlayerPhotoHeader } from '../components/ui/PlayerAvatar';
+import { fotosJugadoresActivas } from '../utils/playerPhotos';
 import { useFormDirty } from '../hooks/useFormDirty';
 import { DocumentUpload } from '../components/DocumentUpload';
 import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner';
@@ -16,7 +18,7 @@ const SEVERITY_BADGE = {
   grave: 'bg-red-100 text-red-800',
 };
 
-export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {}, onRequestChange = null, hasPendingRequest = false, onDataChange = null }) => {
+export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, onDirtyChange, injuries = [], jornadas = [], appSettings = {}, onRequestChange = null, hasPendingRequest = false, onDataChange = null, canEditPhoto = false, onPhotoChange = null }) => {
   const [formData, setFormData] = useState(player ? { ...player, categoria_juego: player.categoria_juego ?? null, status: player.status || 'activo' } : {
     name: '',
     gov_id: '',
@@ -126,6 +128,13 @@ export const PlayerForm = ({ player, onSubmit, readOnly = false, currentUser, on
 
   return (
     <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6 sm:space-y-8 max-w-5xl mx-auto bg-gradient-to-br from-gray-50 to-gray-100 p-3 sm:p-8 rounded-xl shadow-lg min-w-0">
+      <PlayerPhotoHeader
+        player={player}
+        enabled={fotosJugadoresActivas(appSettings)}
+        editable={canEditPhoto}
+        onChanged={onPhotoChange}
+        className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-md"
+      />
       {onRequestChange && (
         <div className="flex justify-end">
           {hasPendingRequest ? (

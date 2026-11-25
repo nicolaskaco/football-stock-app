@@ -8,6 +8,8 @@ import { SearchInput } from './ui/SearchInput';
 import { FilterButtonGroup } from './ui/FilterButtonGroup';
 import { PlayerFichaView } from './playerstats/PlayerFichaView';
 import { PlayerCompareView } from './playerstats/PlayerCompareView';
+import { PlayerAvatar } from './ui/PlayerAvatar';
+import { fotosJugadoresActivas } from '../utils/playerPhotos';
 
 const MAX_SELECCION = 3;
 const MIN_MUESTRA_DEFAULT = 5;
@@ -50,6 +52,7 @@ export const EstadisticasJugadoresTab = ({
   const [inputValue, setInputValue] = useDebouncedSearch(searchTerm, (v) => setParam('ej_q', v, ''));
 
   const minMuestra = Number(appSettings.stats_min_muestra) || MIN_MUESTRA_DEFAULT;
+  const fotos = fotosJugadoresActivas(appSettings);
 
   // ── Años disponibles ──────────────────────────────────────────────
   const currentYear = new Date().getFullYear();
@@ -187,7 +190,10 @@ export const EstadisticasJugadoresTab = ({
                         isSelected ? 'bg-yellow-50' : isFull ? 'opacity-40 cursor-not-allowed' : 'hover:bg-gray-50'
                       }`}
                     >
-                      <span className="text-sm font-medium text-gray-800">{nombreDe(p)}</span>
+                      <span className="text-sm font-medium text-gray-800">
+                        <PlayerAvatar player={p} enabled={fotos} size="xs" className="mr-2 align-middle" />
+                        {nombreDe(p)}
+                      </span>
                       <span className="text-xs text-gray-400">
                         {p.categoriasJugadas.join(' / ')}
                         {isSelected && <span className="ml-2 font-bold text-yellow-600">Seleccionado</span>}
@@ -211,6 +217,7 @@ export const EstadisticasJugadoresTab = ({
               onClick={() => toggleSelected(p.id)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black text-yellow-400 text-sm font-medium"
             >
+              <PlayerAvatar player={p} enabled={fotos} size="xs" className="-ml-1" />
               {nombreDe(p)}
               <X className="w-3.5 h-3.5" />
             </button>
@@ -240,6 +247,7 @@ export const EstadisticasJugadoresTab = ({
           minMuestra={minMuestra}
           yellowCounts={yellowCounts}
           suspensions={suspensions}
+          fotos={fotos}
         />
       )}
 
@@ -250,6 +258,7 @@ export const EstadisticasJugadoresTab = ({
           categoria={filterCat}
           year={filterYear}
           minMuestra={minMuestra}
+          fotos={fotos}
         />
       )}
     </div>

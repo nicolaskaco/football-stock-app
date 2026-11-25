@@ -22,8 +22,13 @@ import { AlertModal } from './AlertModal';
 import { useMutation } from '../hooks/useMutation';
 import { ConfirmModal } from './ConfirmModal';
 import { useAlertModal } from '../hooks/useAlertModal';
+import { PlayerAvatar } from './ui/PlayerAvatar';
+import { fotosJugadoresActivas } from '../utils/playerPhotos';
 
 export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {}, pendingChangeRequests = [] }) => {
+  const fotos = fotosJugadoresActivas(appSettings);
+  const canEditPhoto = currentUser?.canEditPlayers || false;
+  const refrescarJugadores = () => onDataChange('players');
   const [searchParams, setSearchParams] = useSearchParams();
   const searchTerm = searchParams.get('v_search') || '';
   const filterCategoria = searchParams.get('v_cat') || 'all';
@@ -560,13 +565,15 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                   />
                 </td>
                 <td className="px-3 py-4 font-medium sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-200 max-w-[160px] sm:max-w-none">
-                  <div>
+                  <div className={fotos ? 'flex items-center gap-2' : undefined}>
+                    <PlayerAvatar player={player} enabled={fotos} size="sm" editable={canEditPhoto} onUploaded={refrescarJugadores} />
+                  <div className={fotos ? 'min-w-0' : undefined}>
                     <div className="flex items-center gap-1 font-semibold min-w-0">
                       <button
                         className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
                         onClick={() => setShowModal({
                           title: `Ver Jugador: ${player.name}`,
-                          content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} appSettings={appSettings}
+                          content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} appSettings={appSettings} canEditPhoto={canEditPhoto} onPhotoChange={refrescarJugadores}
                             onRequestChange={!canDirectEdit && !viaticosCongelados ? () => {
                               setShowModal(null);
                               setShowChangeRequestModal(player);
@@ -583,6 +590,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                     {player.name_visual && player.name_visual !== player.name && (
                       <div className="text-xs text-gray-500 mt-1 truncate sm:overflow-visible sm:whitespace-normal">({player.name})</div>
                     )}
+                  </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-sm">{player.gov_id}</td>
@@ -655,7 +663,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                     <button 
                       onClick={() => setShowModal({
                         title: `Ver Jugador: ${player.name}`,
-                        content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} appSettings={appSettings} />
+                        content: <PlayerFormViatico player={player} onSubmit={() => {}} currentUser={currentUser} readOnly={true} appSettings={appSettings} canEditPhoto={canEditPhoto} onPhotoChange={refrescarJugadores} />
                       })} 
                       className="text-blue-600 hover:text-blue-800"
                       title="Ver información"
@@ -667,7 +675,7 @@ export const PlayersTabViatico = ({ players = [], setShowModal, onDataChange, cu
                       <button 
                         onClick={() => setShowModal({
                           title: `Editar Jugador: ${player.name}`,
-                          content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} appSettings={appSettings} />
+                          content: <PlayerFormViatico player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} appSettings={appSettings} canEditPhoto={canEditPhoto} onPhotoChange={refrescarJugadores} />
                         })} 
                         className="text-yellow-600 hover:text-yellow-800"
                         title="Editar"

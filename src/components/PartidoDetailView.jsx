@@ -1,4 +1,6 @@
 import React from 'react';
+import { PlayerAvatar } from './ui/PlayerAvatar';
+import { fotosJugadoresActivas } from '../utils/playerPhotos';
 import { Edit2, FileUp, ClipboardList } from 'lucide-react';
 import { PartidoForm } from '../forms/PartidoForm';
 import { database } from '../utils/database';
@@ -15,6 +17,9 @@ import { escenarioBadgeClass } from './ui/escenario';
 import { faseLabel } from '../utils/jornadas';
 
 export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuries = [], canEdit, setShowModal, onDataChange, onFormDirtyChange, reopenDetail = null, appSettings = {}, currentUser = null }) => {
+  const fotos = fotosJugadoresActivas(appSettings);
+  // La planilla trae los jugadores sin foto_path: la foto se busca en la lista completa
+  const jugadorConFoto = (pp) => players.find((p) => p.id === pp.player_id) || pp.players;
   const { execute } = useMutation();
   const { showToast } = useToast();
   const { execute: executeBulk } = useMutation((msg) => showToast(msg, 'error'));
@@ -292,6 +297,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
                       return (
                         <div key={pp.id} className="flex items-center gap-2 text-sm flex-wrap">
                           <span className="w-5 text-right text-gray-400 shrink-0 text-xs">{pp.orden || i + 1}</span>
+                          <PlayerAvatar player={jugadorConFoto(pp)} enabled={fotos} size="xs" />
                           <span className="font-medium text-gray-800">
                             {pp.players?.name_visual || pp.players?.name || '—'}
                           </span>
@@ -335,6 +341,7 @@ export const PartidoDetailView = ({ jornada, jornadas = [], players = [], injuri
                       return (
                         <div key={pp.id} className="flex items-center gap-2 text-sm flex-wrap">
                           <span className="w-5 text-right text-gray-400 shrink-0 text-xs">{pp.orden || i + 1}</span>
+                          <PlayerAvatar player={jugadorConFoto(pp)} enabled={fotos} size="xs" />
                           <span className="font-medium text-gray-800">
                             {pp.players?.name_visual || pp.players?.name || '—'}
                           </span>

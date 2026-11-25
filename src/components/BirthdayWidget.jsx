@@ -3,8 +3,9 @@ import { useMountEffect } from '../hooks/useMountEffect';
 import { Cake, Users, Shield } from 'lucide-react';
 import { database } from '../utils/database';
 import { formatBirthday } from '../utils/dateUtils';
+import { PlayerAvatar } from './ui/PlayerAvatar';
 
-export const BirthdayWidget = ({ currentUser }) => {
+export const BirthdayWidget = ({ currentUser, fotos = false }) => {
   const [birthdays, setBirthdays] = useState([]);
 
   const loadBirthdays = async () => {
@@ -47,7 +48,7 @@ export const BirthdayWidget = ({ currentUser }) => {
           >
             <div className="flex items-center gap-2 flex-1">
               {person.type === 'player' ? (
-                <Users className="w-4 h-4 text-yellow-600" />
+                fotos ? <PlayerAvatar player={person} size="sm" /> : <Users className="w-4 h-4 text-yellow-600" />
               ) : (
                 <Shield className="w-4 h-4 text-cyan-600" />
               )}

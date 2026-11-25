@@ -223,6 +223,16 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
         ))}
       </div>
 
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6">
+        <SettingToggle
+          label="Fotos de jugadores"
+          description="Muestra la foto de cada jugador (o una silueta si no tiene) en Jugadores, Viático, los modales del jugador, Estadísticas Jugador, la planilla del partido y los widgets de lesionados y cumpleaños. Quien puede editar jugadores sube o cambia la foto tocándola. Apagado, no se muestra nada."
+          enabled={s('jugadores_fotos_enabled')}
+          onToggle={() => handleToggle('jugadores_fotos_enabled', s('jugadores_fotos_enabled'))}
+          loading={loading}
+        />
+      </div>
+
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-100 dark:divide-gray-700 px-6">
         <SettingToggle
           label="Resumen semanal por Telegram"

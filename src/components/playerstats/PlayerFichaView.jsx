@@ -13,6 +13,7 @@ import {
 } from '../../utils/playerStats';
 import { StatCard, PctStatCard, PctInline, RecordBar, FichaSection, SinMinutoNota } from './StatCard';
 import { GolesPorTramoChart } from '../charts/GolesPorTramoChart';
+import { PlayerAvatar } from '../ui/PlayerAvatar';
 
 const cardCls = 'bg-white rounded-lg shadow p-4';
 
@@ -122,6 +123,7 @@ export const PlayerFichaView = ({
   minMuestra = 5,
   yellowCounts = null,
   suspensions = null,
+  fotos = false,
 }) => {
   const log = useMemo(
     () => buildPlayerMatchLog(jornadas, player.id, { categoria, year }),
@@ -190,9 +192,13 @@ export const PlayerFichaView = ({
     <div className="space-y-8">
       {/* ── Encabezado ─────────────────────────────────────────────── */}
       <div className="bg-white rounded-lg shadow p-5 flex items-center gap-4">
-        <div className="w-14 h-14 rounded-full bg-black text-yellow-400 flex items-center justify-center text-2xl font-bold flex-shrink-0">
-          {(player.name_visual || player.name || '?').charAt(0)}
-        </div>
+        {fotos ? (
+          <PlayerAvatar player={player} size="lg" />
+        ) : (
+          <div className="w-14 h-14 rounded-full bg-black text-yellow-400 flex items-center justify-center text-2xl font-bold flex-shrink-0">
+            {(player.name_visual || player.name || '?').charAt(0)}
+          </div>
+        )}
         <div>
           <h2 className="text-xl font-bold text-gray-900">{player.name_visual || player.name}</h2>
           <p className="text-sm text-gray-500">
