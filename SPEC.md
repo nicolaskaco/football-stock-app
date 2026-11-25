@@ -834,6 +834,14 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
 - **Activity log**: logs `telegram_resumen`.
 - **Preview**: `?preview=1` returns the HTML without sending or logging.
 
+**`parte-semanal` Edge Function** (Wednesday parte):
+- **Trigger**: called by `pg_cron` on Wednesdays at 12:59 Uruguay time (15:59 UTC, migration `20261125_cron_parte_semanal.sql`), with the same `x-cron-secret` and Vault secrets as `weekly-digest`.
+- **Toggle**: it only sends when `app_settings.parte_semanal_enabled = 'true'`. The setting starts on, and admins switch it in Configuración → "Parte semanal por Telegram".
+- **Content**: the same text as the bot's `/parte` (it reuses `proximaJornada` and `parte` from `telegram-bot/comandos.ts`), for every category with a pending partido in the next jornada and without the injury type. When there is no next jornada it sends "No hay siguiente partido cargado en la app."
+- **Activity log**: logs `telegram_parte_auto` (`hay_jornada`, `jornada_id`).
+- **Preview**: `?preview=1` returns the HTML without sending or logging.
+- Changes to `/parte` in `comandos.ts` also change this message: redeploy both functions.
+
 **`telegram-bot` Edge Function** (query bot, `--no-verify-jwt`):
 - **Webhook**: Telegram calls it for every message sent to the bot. It only runs when the `X-Telegram-Bot-Api-Secret-Token` header matches the `TELEGRAM_WEBHOOK_SECRET` secret (registered with `setWebhook`). It always answers 200, so Telegram doesn't retry.
 - **Where it answers**:
@@ -948,7 +956,7 @@ Admin-only **Actividad** tab (`ActivityLogTab`) showing a single timeline built 
 
 | Source | Event types |
 |--------|-------------|
-| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import; the bulk import adds `masivo: true` and `archivo`, the automatic load also adds `automatico: true`, and the historical import adds `historico: true`), `ficha_medica_auto` (`refresh-fichas-medicas` Edge Function, nightly SND check: counts plus the detail per player), `telegram_envio` (`send-telegram`), `telegram_resumen` (`weekly-digest`), `telegram_consulta` / `telegram_vinculo` (`telegram-bot`) |
+| `activity_log` | `login` (App.jsx, on admin login), `permission_change` (`database.updateUserPermissions`), `bulk_approve` / `bulk_reject` (ChangeRequestsTab), `import_cuentas_viatico` (PlayersTabViatico, after a Google Form import), `import_planilla_comet` (PartidoDetailView, when a partido saved from a COMET import; the bulk import adds `masivo: true` and `archivo`, the automatic load also adds `automatico: true`, and the historical import adds `historico: true`), `ficha_medica_auto` (`refresh-fichas-medicas` Edge Function, nightly SND check: counts plus the detail per player), `telegram_envio` (`send-telegram`), `telegram_resumen` (`weekly-digest`), `telegram_parte_auto` (`parte-semanal`), `telegram_consulta` / `telegram_vinculo` (`telegram-bot`) |
 | `player_history` | `field_change` — audited player field changes (see §4 Audit-Tracked Player Fields) |
 | `player_change_requests` (status ≠ `pending`) | `approved` / `rejected` solicitudes, with the new viático/complemento/contrato values |
 
