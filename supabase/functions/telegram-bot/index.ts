@@ -192,7 +192,8 @@ serve(async (req) => {
     const respuesta = await EJECUTORES[nombre]({ db, perm, args, resto, hoy: hoyUY(), enGrupo });
     const fotos = await enviarRespuesta(db, respuesta, responder, (foto, caption) =>
       sendTelegramPhoto(foto, caption, chatId, enGrupo ? { responderA: msg.message_id } : {}));
-    await registrar(db, "telegram_consulta", perm.email, {
+    // /pregunta deja su propio registro (telegram_pregunta, con el filtro y los tokens)
+    if (nombre !== "pregunta") await registrar(db, "telegram_consulta", perm.email, {
       comando: nombre, args: resto.slice(0, 100) || null, chat: enGrupo ? "grupo" : "privado", ...(fotos ? { fotos } : {}),
     });
   } catch (err) {

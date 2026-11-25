@@ -255,6 +255,13 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
           onToggle={() => handleToggle('telegram_fichas_cambios_enabled', s('telegram_fichas_cambios_enabled'))}
           loading={loading}
         />
+        <SettingToggle
+          label="Preguntas con IA en el bot"
+          description="Habilita /pregunta en el bot de Telegram para admin, ejecutivo y presidente: búsquedas de jugadores en lenguaje natural (ej. «jugadores con más de 7 amarillas»). La IA solo arma el filtro; los datos y los permisos los resuelve la app. Cada pregunta cuesta una fracción de centavo de dólar y queda en Actividad."
+          enabled={s('bot_ia_enabled')}
+          onToggle={() => handleToggle('bot_ia_enabled', s('bot_ia_enabled'))}
+          loading={loading}
+        />
       </div>
 
       <div className="bg-white rounded-lg shadow px-6 py-4">
@@ -301,6 +308,30 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
             execute(
               async () => {
                 await database.updateAppSetting('stats_min_muestra', val);
+                await onDataChange('appSettings');
+              },
+              'Error al guardar',
+              'Configuración actualizada'
+            )
+          }
+        />
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6 py-4">
+        <p className="font-medium text-gray-900 dark:text-white mb-1">Tope diario de preguntas con IA</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          Cantidad máxima de /pregunta por usuario por día en el bot de Telegram. Default: 30.
+        </p>
+        <NumberSettingInput
+          value={appSettings['bot_ia_limite_diario'] || ''}
+          placeholder="30"
+          min={1}
+          max={500}
+          loading={loading}
+          onSave={(val) =>
+            execute(
+              async () => {
+                await database.updateAppSetting('bot_ia_limite_diario', val);
                 await onDataChange('appSettings');
               },
               'Error al guardar',

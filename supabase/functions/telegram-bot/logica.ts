@@ -98,6 +98,9 @@ const partidos: Permiso = (p) => !!p.can_view_partidos;
 const fichas: Permiso = (p) => !!p.can_access_widgets && ROLES_FICHA.includes(p.role ?? "");
 const tareas: Permiso = (p) => !!p.can_access_tareas;
 const todos: Permiso = () => true;
+/** /pregunta (IA): admin, ejecutivo y presidente (no presidente_categoria). */
+export const ROLES_PREGUNTA = ["admin", "ejecutivo", "presidente"];
+const pregunta: Permiso = (p) => !!p.can_access_players && ROLES_PREGUNTA.includes(p.role ?? "");
 
 /** Comandos de consulta: nombre → uso, descripción y quién lo puede usar. El orden es el de /ayuda. */
 export const COMANDOS: Record<string, { uso: string; descripcion: string; permiso: Permiso }> = {
@@ -116,6 +119,7 @@ export const COMANDOS: Record<string, { uso: string; descripcion: string; permis
   minutos: { uso: "/minutos [categoría] [año]", descripcion: "Jugadores ordenados por minutos jugados", permiso: partidos },
   fichas: { uso: "/fichas [categoría]", descripcion: "Fichas médicas vencidas o por vencer en 30 días", permiso: fichas },
   tareas: { uso: "/tareas", descripcion: "Tareas abiertas", permiso: tareas },
+  pregunta: { uso: "/pregunta jugadores de 5ta con más de 7 amarillas", descripcion: "Búsqueda de jugadores en lenguaje natural (con IA)", permiso: pregunta },
   ayuda: { uso: "/ayuda", descripcion: "Esta lista", permiso: todos },
 };
 

@@ -10,6 +10,11 @@ import { buildParteDisponibilidad, parteComoTexto } from "../_shared/app/disponi
 import { textoATelegramHTML } from "../_shared/app/textUtils.js";
 import { ROLES_TELEGRAM } from "../_shared/app/constants.js";
 import { getEstadisticasJugadores } from "../_shared/app/playerStats.js";
+import { getCurrentSuspensionsByCategory } from "../_shared/app/suspensions.js";
+import {
+  describirCriterio, detalleResultado, filtrarJugadores, MAX_RESULTADOS, type StatsJugador, usaStats, usaViatico, validarFiltro,
+} from "./filtros.ts";
+import { iaConfigurada, interpretarPregunta, MODELO_IA } from "./pregunta.ts";
 import {
   CATEGORIAS, CATEGORIAS_FICHA, COMANDOS, type Permisos,
   categoriasVisibles, comandosDe, ddmm, ddmmyyyy, diasParaCumple, edad, etiquetaDocumento, fechaPartido, jornadaLabel,
@@ -573,6 +578,101 @@ async function tareas(ctx: Contexto) {
   return `📋 <b>Tareas abiertas</b>: ${lista.length}\n\n${bloques.join("\n\n")}${mas}`;
 }
 
+// ── /pregunta (IA) ──────────────────────────────────────────────────
+
+const EJEMPLOS_PREGUNTA = [
+  "/pregunta jugadores con más de 7 amarillas",
+  "/pregunta nacidos entre enero y junio de 2009",
+  "/pregunta arqueros de 5ta con más de 500 minutos",
+];
+const LIMITE_DIARIO_DEFAULT = 30;
+
+async function ajuste(ctx: Contexto, key: string): Promise<string | null> {
+  const { data } = await ctx.db.from("app_settings").select("value").eq("key", key).maybeSingle();
+  return data?.value ?? null;
+}
+
+/** Registro de la pregunta en Actividad (también cuenta para el tope diario). */
+async function registrarPregunta(ctx: Contexto, details: Record<string, unknown>) {
+  const { error } = await ctx.db.from("activity_log").insert([{
+    action_type: "telegram_pregunta", performed_by: ctx.perm.email, target_type: "telegram",
+    details: { ...details, chat: ctx.enGrupo ? "grupo" : "privado", modelo: MODELO_IA },
+  }]);
+  if (error) console.error("activity_log:", error.message);
+}
+
+/**
+ * /pregunta <texto>: la IA traduce la pregunta a un filtro (pregunta.ts), se valida contra los
+ * permisos del usuario y se aplica en código (filtros.ts). La IA nunca ve los datos.
+ */
+async function pregunta(ctx: Contexto) {
+  if (await ajuste(ctx, "bot_ia_enabled") !== "true") return "Las preguntas con IA están apagadas. Se prenden en la app: Configuración → \"Preguntas con IA en el bot\".";
+  if (!iaConfigurada()) return "La IA todavía no está configurada (falta la clave de la API).";
+  const texto = ctx.resto.trim();
+  if (!texto) return `Escribí la pregunta después del comando. Por ejemplo:\n${EJEMPLOS_PREGUNTA.map((x) => `<code>${e(x)}</code>`).join("\n")}`;
+  if (texto.length > 300) return "La pregunta es muy larga: resumila en una línea.";
+
+  // Tope diario por usuario, contado desde las 00:00 de Uruguay (UTC-3)
+  const limite = Math.min(Math.max(Math.trunc(Number(await ajuste(ctx, "bot_ia_limite_diario"))) || LIMITE_DIARIO_DEFAULT, 1), 500);
+  const { count, error: errCount } = await ctx.db.from("activity_log").select("id", { count: "exact", head: true })
+    .eq("action_type", "telegram_pregunta").eq("performed_by", ctx.perm.email).gte("created_at", `${ctx.hoy}T03:00:00Z`);
+  if (errCount) throw new Error(errCount.message);
+  if ((count ?? 0) >= limite) return `Llegaste al tope de ${limite} preguntas por hoy. Mañana podés seguir.`;
+
+  let ia: Awaited<ReturnType<typeof interpretarPregunta>>;
+  try {
+    ia = await interpretarPregunta(texto, { hoy: ctx.hoy });
+  } catch (err) {
+    // También cuenta para el tope: la llamada pudo haberse cobrado
+    await registrarPregunta(ctx, { pregunta: texto, resultados: null, motivo: "error", error: String(err instanceof Error ? err.message : err).slice(0, 200) });
+    throw err;
+  }
+  const base = { pregunta: texto, input_tokens: ia.usage.input_tokens, output_tokens: ia.usage.output_tokens };
+  if (!ia.entendido) {
+    const motivo = ia.aclaracion || "No puedo responder esa pregunta con los datos que manejo.";
+    await registrarPregunta(ctx, { ...base, resultados: null, motivo });
+    return `🤔 ${e(motivo)}\n\nProbá con algo así:\n${EJEMPLOS_PREGUNTA.map((x) => `<code>${e(x)}</code>`).join("\n")}`;
+  }
+
+  const validado = validarFiltro(ia.filtro, ctx.perm, { enGrupo: ctx.enGrupo });
+  if (!validado.ok) {
+    await registrarPregunta(ctx, { ...base, resultados: null, motivo: validado.error, filtro: ia.filtro });
+    return e(validado.error);
+  }
+  const filtro = validado.filtro;
+  const anioActual = Number(ctx.hoy.slice(0, 4));
+  const anioStats = filtro.anio_stats ?? anioActual;
+
+  const columnas = "id, name, name_visual, categoria, categoria_juego, posicion, date_of_birth, status, departamento, casita, vianda, ficha_medica_hasta" +
+    (usaViatico(filtro) ? ", viatico, complemento, contrato, complemento_override, complemento_override_expira, incluir_viatico_export" : "");
+  const jugadores = await jugadoresVisibles(ctx, columnas, { soloActivos: false });
+
+  const stats = new Map<string, StatsJugador>();
+  const suspendidos = new Set<string>();
+  if (usaStats(filtro)) {
+    const jornadas = await q(ctx.db.from("jornadas").select(SELECT_JORNADA_COMPLETA).order("fecha", { ascending: true }));
+    const delAnio = jornadas.filter((j: Fila) => String(j.fecha || "").startsWith(String(anioStats)));
+    for (const s of getEstadisticasJugadores(delAnio, jugadores)) {
+      stats.set(s.id, { goles: s.goles, amarillas: s.amarillas, rojas: s.rojas, minutos: s.minutos, convocatorias: s.convocatorias, titular: s.titular });
+    }
+    if (filtro.suspendido_hoy != null) {
+      for (const porJugador of getCurrentSuspensionsByCategory(jornadas).values()) for (const id of porJugador.keys()) suspendidos.add(id);
+    }
+  }
+
+  const resultados = filtrarJugadores(jugadores, filtro, { hoy: ctx.hoy, stats, suspendidos });
+  await registrarPregunta(ctx, { ...base, filtro, resultados: resultados.length });
+
+  const criterio = describirCriterio(filtro, { anio: anioActual, visibles: categoriasVisibles(ctx.perm) });
+  if (resultados.length === 0) return `🔎 <b>${e(criterio)}</b>\nNo encontré jugadores con ese criterio.`;
+  const lineas = resultados.slice(0, MAX_RESULTADOS).map((r) => {
+    const detalle = detalleResultado(r, filtro, ctx.hoy);
+    return `• ${nombre(r.jugador)} (${catLabel(r.jugador)})${detalle ? `: ${e(detalle)}` : ""}`;
+  });
+  const mas = resultados.length > MAX_RESULTADOS ? `\n… y ${resultados.length - MAX_RESULTADOS} más` : "";
+  return `🔎 <b>${e(criterio)}</b>: ${resultados.length}\n${lineas.join("\n")}${mas}`;
+}
+
 // ── Ayuda ───────────────────────────────────────────────────────────
 
 export function ayuda(ctx: Pick<Contexto, "perm">) {
@@ -586,5 +686,5 @@ export function ayuda(ctx: Pick<Contexto, "perm">) {
 }
 
 export const EJECUTORES: Record<string, (ctx: Contexto) => Promise<Respuesta> | Respuesta> = {
-  nacidos, categoria, jugador, ficha, lesionados, cumples, proximo, parte, resultado, contra, goleadores, tarjetas, minutos, fichas, tareas, ayuda,
+  nacidos, categoria, jugador, ficha, lesionados, cumples, proximo, parte, resultado, contra, goleadores, tarjetas, minutos, fichas, tareas, pregunta, ayuda,
 };
