@@ -25,6 +25,7 @@ Reglas:
 - Todos los campos son obligatorios. Los que la pregunta no menciona van "sin valor": -1 en números (también en min/max), "" en textos y fechas, "cualquiera" en los campos si/no, "ninguna" en ficha, "ninguno" en orden.campo, lista vacía en las listas.
 - Números enteros. "más de 7" → min 8; "al menos 7" o "7 o más" → min 7; "menos de 200" → max 199; "mayor a 10000" → min 10001; "hasta 5" → max 5; "exactamente 3" → min 3 y max 3; "ninguna/nunca" → max 0.
 - Categorías válidas: ${CATEGORIAS.join(", ")}. Sinónimos: quinta=5ta, cuarta=4ta, tercera=3era, sexta=6ta, séptima=7ma, sub16/sub-16=S16, sub13=Sub13. "categorias" es la categoría del jugador; "categorias_juego" solo si se pregunta en qué categoría juega distinta de la suya.
+- nombre: "llamados Facundo", "de apellido Pérez", "el jugador Suárez", "los Facundos" → nombre "Facundo" (solo el nombre o apellido, sin palabras extra ni plural). Si no mencionan un nombre, "".
 - Posiciones válidas: ${POSICIONES_JUGADOR.join(", ")} (arqueros → Arquero, defensas centrales → Zaguero, etc.).
 - Departamentos válidos: ${DEPARTAMENTOS.join(", ")}.
 - Estados válidos: ${ESTADOS.join(", ")}. Si no se piden estados, lista vacía (el sistema usa solo activos). "Incluyendo cedidos" → ["activo","cedido"].

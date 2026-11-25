@@ -17,7 +17,7 @@ const perm = (over: Partial<Permisos> = {}): Permisos => ({
 const crudo = (over: Record<string, unknown> = {}) => {
   const vacio = { min: null, max: null };
   return {
-    categorias: [], categorias_juego: [], posiciones: [], anios_nacimiento: [], nacimiento_desde: null, nacimiento_hasta: null,
+    nombre: '', categorias: [], categorias_juego: [], posiciones: [], anios_nacimiento: [], nacimiento_desde: null, nacimiento_hasta: null,
     mes_nacimiento_desde: null, mes_nacimiento_hasta: null, edad: vacio, cumple_mes: null, estados: [], departamentos: [],
     casita: null, vianda_min: null, ficha: null, ficha_dias: null, anio_stats: null,
     goles: vacio, amarillas: vacio, rojas: vacio, minutos: vacio, convocatorias: vacio, titular: vacio, suspendido_hoy: null,
@@ -237,5 +237,34 @@ describe('orden y texto', () => {
     const f = filtro({ amarillas: { min: 8, max: null } });
     const [primero] = filtrarJugadores(jugadores, f, { hoy: HOY, stats });
     expect(detalleResultado(primero, f, HOY)).toBe('9 🟨');
+  });
+});
+
+describe('filtro por nombre', () => {
+  const lista: Jugador[] = [
+    J({ id: 'f1', name: 'Facundo Pérez', categoria: '5ta' }),
+    J({ id: 'f2', name: 'Juan Rodríguez', name_visual: 'Facu Rodríguez', categoria: '4ta' }),
+    J({ id: 'f3', name: 'Martín Facundez', categoria: '5ta' }),
+    J({ id: 'f4', name: 'Pedro Gómez', categoria: '5ta' }),
+  ];
+  const correr = (over: Record<string, unknown>) => ids(filtrarJugadores(lista, filtro(over), { hoy: HOY }));
+
+  it('el nombre solo ya es un filtro', () => {
+    expect(validarFiltro(crudo({ nombre: 'Facundo' }), perm(), { enGrupo: false }).ok).toBe(true);
+  });
+  it('vacío o con espacios pasa a null', () => {
+    expect(filtro({ nombre: '   ', categorias: ['5ta'] }).nombre).toBeNull();
+    expect(validarFiltro(crudo({ nombre: '' }), perm(), { enGrupo: false }).ok).toBe(false);
+  });
+  it('matchea sin tildes ni mayúsculas, por prefijo de palabra y en el nombre visual', () => {
+    expect(correr({ nombre: 'facundo' })).toEqual(['f1']);
+    expect(correr({ nombre: 'Facu' }).sort()).toEqual(['f1', 'f2', 'f3']);
+    expect(correr({ nombre: 'rodriguez' })).toEqual(['f2']);
+  });
+  it('se combina con la categoría', () => {
+    expect(correr({ nombre: 'Facu', categorias: ['5ta'] }).sort()).toEqual(['f1', 'f3']);
+  });
+  it('el criterio muestra el nombre', () => {
+    expect(describirCriterio(filtro({ nombre: 'Facundo' }), { anio: 2026, visibles: null })).toBe('todas las categorías · llamados "Facundo" · solo activos');
   });
 });
