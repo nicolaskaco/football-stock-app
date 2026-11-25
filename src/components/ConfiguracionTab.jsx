@@ -238,6 +238,13 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
           onToggle={() => handleToggle('parte_semanal_enabled', s('parte_semanal_enabled'))}
           loading={loading}
         />
+        <SettingToggle
+          label="Cambios de fichas médicas por Telegram"
+          description="Todos los días a las 6:00, si el chequeo automático de SND de la madrugada actualizó alguna ficha médica, se manda al grupo de Telegram del club la lista de cambios. Si no hubo cambios, no se manda nada."
+          enabled={s('telegram_fichas_cambios_enabled')}
+          onToggle={() => handleToggle('telegram_fichas_cambios_enabled', s('telegram_fichas_cambios_enabled'))}
+          loading={loading}
+        />
       </div>
 
       <div className="bg-white rounded-lg shadow px-6 py-4">
