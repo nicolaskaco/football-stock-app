@@ -70,3 +70,38 @@ export async function sendTelegram(
     }
   }
 }
+
+/**
+ * Manda una foto (sendPhoto, multipart) con un pie en HTML opcional. El pie tiene que entrar en
+ * los 1024 caracteres de Telegram (ver planFoto en telegram-bot/logica.ts).
+ */
+export async function sendTelegramPhoto(
+  foto: Blob,
+  captionHtml: string | null | undefined,
+  destino?: number | string,
+  { responderA }: { responderA?: number } = {},
+): Promise<void> {
+  const token = Deno.env.get("TELEGRAM_BOT_TOKEN");
+  const chatId = destino ?? Deno.env.get("TELEGRAM_CHAT_ID");
+  if (!token || !chatId) throw new Error("Falta configurar TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID");
+
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  const ext = foto.type === "image/jpeg" ? "jpg" : foto.type === "image/png" ? "png" : "webp";
+  form.append("photo", foto, `foto.${ext}`);
+  if (captionHtml) {
+    form.append("caption", captionHtml);
+    form.append("parse_mode", "HTML");
+  }
+  if (responderA) form.append("reply_parameters", JSON.stringify({ message_id: responderA, allow_sending_without_reply: true }));
+
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    method: "POST",
+    body: form,
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Telegram respondió ${res.status}: ${body.slice(0, 200)}`);
+  }
+}

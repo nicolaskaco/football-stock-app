@@ -22,9 +22,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { escapeHTML as e, sendTelegram } from "../_shared/telegram.ts";
-import { ALIAS, COMANDOS, esParaEsteBot, parseCodigo, parseMensaje, type Permisos } from "./logica.ts";
-import { ayuda, EJECUTORES } from "./comandos.ts";
+import { escapeHTML as e, sendTelegram, sendTelegramPhoto } from "../_shared/telegram.ts";
+import { ALIAS, COMANDOS, esParaEsteBot, parseCodigo, parseMensaje, planFoto, type Permisos } from "./logica.ts";
+import { ayuda, EJECUTORES, type Respuesta } from "./comandos.ts";
 
 const COLUMNAS_PERMISOS = "email, role, categoria, can_access_players, can_view_partidos, can_access_widgets, can_access_tareas, can_access_viatico";
 
@@ -68,6 +68,46 @@ async function vincular(db: SupabaseClient, telegramId: number, codigoTexto: str
 
   await registrar(db, "telegram_vinculo", fila.email, { vinculado: true });
   return `✅ Listo, quedaste vinculado como <b>${e(fila.email)}</b>.\nMandá /ayuda para ver qué podés consultar.`;
+}
+
+/**
+ * Manda la respuesta de un comando. Con fotos (/jugador y /ficha): un mensaje por jugador, foto con
+ * sus datos de pie; si la foto no se puede bajar o mandar, ese bloque va como texto.
+ * Devuelve cuántas fotos se mandaron.
+ */
+async function enviarRespuesta(
+  db: SupabaseClient,
+  respuesta: Respuesta,
+  responder: (html: string) => Promise<void>,
+  mandarFoto: (foto: Blob, caption: string) => Promise<void>,
+): Promise<number> {
+  if (typeof respuesta === "string") {
+    await responder(respuesta);
+    return 0;
+  }
+  let enviadas = 0;
+  for (const { html, foto } of respuesta.mensajes) {
+    if (foto) {
+      const { caption, textoAparte } = planFoto(html);
+      let salio = false;
+      try {
+        const { data, error } = await db.storage.from("player-photos").download(foto);
+        if (error || !data) throw error ?? new Error("Foto vacía");
+        await mandarFoto(data, caption);
+        salio = true;
+      } catch (err) {
+        console.error("telegram-bot (foto):", err);
+      }
+      if (salio) {
+        enviadas++;
+        // Fuera del try: si falla este texto, no se reintenta como si hubiera fallado la foto
+        if (textoAparte) await responder(textoAparte);
+        continue;
+      }
+    }
+    await responder(html);
+  }
+  return enviadas;
 }
 
 serve(async (req) => {
@@ -149,9 +189,12 @@ serve(async (req) => {
       return ok();
     }
 
-    const html = await EJECUTORES[nombre]({ db, perm, args, resto, hoy: hoyUY(), enGrupo });
-    await responder(html);
-    await registrar(db, "telegram_consulta", perm.email, { comando: nombre, args: resto.slice(0, 100) || null, chat: enGrupo ? "grupo" : "privado" });
+    const respuesta = await EJECUTORES[nombre]({ db, perm, args, resto, hoy: hoyUY(), enGrupo });
+    const fotos = await enviarRespuesta(db, respuesta, responder, (foto, caption) =>
+      sendTelegramPhoto(foto, caption, chatId, enGrupo ? { responderA: msg.message_id } : {}));
+    await registrar(db, "telegram_consulta", perm.email, {
+      comando: nombre, args: resto.slice(0, 100) || null, chat: enGrupo ? "grupo" : "privado", ...(fotos ? { fotos } : {}),
+    });
   } catch (err) {
     console.error("telegram-bot:", err);
     try {

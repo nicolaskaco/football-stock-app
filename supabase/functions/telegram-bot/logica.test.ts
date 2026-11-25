@@ -5,6 +5,7 @@ import {
   parseCodigo, edad, diasParaCumple, parseAnio, marcador, jornadaLabel, fechaPartido,
   rivalBuscado, nombreCoincide, type Permisos,
   ALIAS, COMANDOS, textoViatico, etiquetaDocumento, minutosJugados, miles, ordenarPorMinutos,
+  armarMensajesJugadores, planFoto, largoVisible, LIMITE_CAPTION,
 } from './logica';
 
 const perm = (over: Partial<Permisos> = {}): Permisos => ({
@@ -224,5 +225,31 @@ describe('/minutos', () => {
       { name_visual: 'Cero', minutos: 0, titular: 0 },
     ];
     expect(ordenarPorMinutos(filas).map((f) => f.name_visual)).toEqual(['Más', 'Titular', 'Álvarez', 'Zeta', 'Cero', 'Sin dato']);
+  });
+});
+
+describe('fotos de jugadores', () => {
+  it('arma un mensaje por jugador con su foto y el pie en el último', () => {
+    expect(armarMensajesJugadores(['A', 'B'], ['p1/1.webp', null], '\n\naviso')).toEqual([
+      { html: 'A', foto: 'p1/1.webp' },
+      { html: 'B\n\naviso', foto: null },
+    ]);
+  });
+  it('sin pie y con menos fotos que bloques', () => {
+    expect(armarMensajesJugadores(['A'], [])).toEqual([{ html: 'A', foto: null }]);
+  });
+  it('cuenta los caracteres visibles, sin etiquetas y con las entidades como uno', () => {
+    expect(largoVisible('👤 <b>Pérez &amp; Cía</b>')).toBe('👤 Pérez x Cía'.length);
+  });
+  it('pone el bloque entero como pie si entra', () => {
+    expect(planFoto('👤 <b>Pérez</b>\nCategoría: 5ta')).toEqual({ caption: '👤 <b>Pérez</b>\nCategoría: 5ta', textoAparte: null });
+  });
+  it('si no entra, el nombre va de pie y el bloque aparte', () => {
+    const largo = `👤 <b>Pérez</b>\n${'x'.repeat(LIMITE_CAPTION)}`;
+    expect(planFoto(largo)).toEqual({ caption: '👤 <b>Pérez</b>', textoAparte: largo });
+  });
+  it('las etiquetas no cuentan para el límite', () => {
+    const justo = `<b>${'x'.repeat(LIMITE_CAPTION)}</b>`;
+    expect(planFoto(justo).textoAparte).toBeNull();
   });
 });

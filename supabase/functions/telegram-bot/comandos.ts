@@ -13,11 +13,15 @@ import { getEstadisticasJugadores } from "../_shared/app/playerStats.js";
 import {
   CATEGORIAS, CATEGORIAS_FICHA, COMANDOS, type Permisos,
   categoriasVisibles, comandosDe, ddmm, ddmmyyyy, diasParaCumple, edad, etiquetaDocumento, fechaPartido, jornadaLabel,
-  marcador, nombreCoincide, normalizar, ordenCategoria, parseAnio, parseCategoria, rivalBuscado,
+  marcador, nombreCoincide, normalizar, ordenCategoria, parseAnio, parseCategoria, rivalBuscado, armarMensajesJugadores,
+  type MensajeJugador,
   miles, minutosJugados, ordenarPorMinutos, pesos, separarCategoria, sumarDias, textoViatico, veCategoria,
 } from "./logica.ts";
 
 export type Contexto = { db: SupabaseClient; perm: Permisos; args: string[]; resto: string; hoy: string; enGrupo: boolean };
+
+/** Lo que devuelve un comando: el HTML de un mensaje, o varios mensajes con foto (/jugador y /ficha). */
+export type Respuesta = string | { mensajes: MensajeJugador[] };
 
 // Filas de PostgREST sin tipar (el cliente no tiene los tipos generados de la base)
 // deno-lint-ignore no-explicit-any
@@ -191,7 +195,25 @@ async function fichaJugador(ctx: Contexto, { completa }: { completa: boolean }) 
     return lineas.join("\n");
   });
   const aviso = ctx.enGrupo ? `\n\n<i>${ctx.perm.can_access_viatico ? "Viático y contacto: pedímelos" : "Contacto: pedímelo"} por privado.</i>` : "";
+  const fotos = await fotosDe(ctx, ids);
+  if (fotos.some(Boolean)) return { mensajes: armarMensajesJugadores(fichas, fotos, aviso) };
   return fichas.join("\n\n") + aviso;
+}
+
+/**
+ * Ruta de la foto de cada jugador (en el orden de `ids`), si el toggle "Fotos de jugadores" está
+ * prendido. Es una consulta aparte que no rompe /jugador si falla (por ejemplo, sin la columna).
+ */
+async function fotosDe(ctx: Contexto, ids: string[]): Promise<(string | null)[]> {
+  const { data: setting } = await ctx.db.from("app_settings").select("value").eq("key", "jugadores_fotos_enabled").maybeSingle();
+  if (setting?.value !== "true") return ids.map(() => null);
+  const { data, error } = await ctx.db.from("players").select("id, foto_path").in("id", ids);
+  if (error) {
+    console.error("fotos de jugadores:", error.message);
+    return ids.map(() => null);
+  }
+  const porId = new Map((data || []).map((p: Fila) => [p.id, p.foto_path || null]));
+  return ids.map((id) => porId.get(id) ?? null);
 }
 
 const jugador = (ctx: Contexto) => fichaJugador(ctx, { completa: false });
@@ -306,7 +328,7 @@ const SELECT_JORNADA_COMPLETA = `*, rivales(id, name, badge_path), torneos(id, n
  * que la app (buildParteDisponibilidad / parteComoTexto). El tipo de lesión solo a un admin por
  * privado; en el grupo nunca, como el parte que manda la app.
  */
-async function parte(ctx: Contexto) {
+export async function parte(ctx: Contexto): Promise<string> {
   // En el grupo, como en la app: solo los roles que pueden mandar el parte al grupo
   if (ctx.enGrupo && !ROLES_TELEGRAM.includes(ctx.perm.role ?? "")) {
     return "🔒 El parte en el grupo lo mandan admin, ejecutivo y presidentes. Pedímelo por privado.";
@@ -563,6 +585,6 @@ export function ayuda(ctx: Pick<Contexto, "perm">) {
   ].join("\n");
 }
 
-export const EJECUTORES: Record<string, (ctx: Contexto) => Promise<string> | string> = {
+export const EJECUTORES: Record<string, (ctx: Contexto) => Promise<Respuesta> | Respuesta> = {
   nacidos, categoria, jugador, ficha, lesionados, cumples, proximo, parte, resultado, contra, goleadores, tarjetas, minutos, fichas, tareas, ayuda,
 };

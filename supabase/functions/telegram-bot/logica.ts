@@ -295,3 +295,33 @@ export function ordenarPorMinutos<T extends FilaMinutos>(filas: T[]): T[] {
       || normalizar(a.name_visual).localeCompare(normalizar(b.name_visual));
   });
 }
+
+// ── Fotos de jugadores (/jugador y /ficha) ──────────────────────────
+
+/** Máximo del pie de una foto en Telegram (caracteres visibles, sin las etiquetas HTML). */
+export const LIMITE_CAPTION = 1024;
+
+export type MensajeJugador = { html: string; foto: string | null };
+
+/** Caracteres que Telegram cuenta en un texto HTML: sin etiquetas y con las entidades como 1. */
+export const largoVisible = (html: string) => html.replace(/<[^>]+>/g, "").replace(/&(amp|lt|gt|quot|#\d+);/g, "x").length;
+
+/**
+ * Un mensaje por jugador, en el mismo orden, con su foto (o null). El pie (el aviso del grupo)
+ * va pegado al último.
+ */
+export function armarMensajesJugadores(bloques: string[], fotos: (string | null)[], pie = ""): MensajeJugador[] {
+  return bloques.map((html, i) => ({
+    html: i === bloques.length - 1 ? html + pie : html,
+    foto: fotos[i] ?? null,
+  }));
+}
+
+/**
+ * Cómo mandar la foto de un jugador: con todo su bloque como pie si entra; si no, con la primera
+ * línea (el nombre) como pie y el bloque entero como texto aparte.
+ */
+export function planFoto(html: string): { caption: string; textoAparte: string | null } {
+  if (largoVisible(html) <= LIMITE_CAPTION) return { caption: html, textoAparte: null };
+  return { caption: html.split("\n")[0], textoAparte: html };
+}
