@@ -199,12 +199,14 @@ export function validarFiltro(crudo: unknown, perm: Permisos, { enGrupo }: { enG
     },
   };
 
-  // "Con más goles / amarillas / rojas" ordena de mayor a menor: sin un rango pedido, se listan solo
-  // los que tienen al menos 1 (los de 0 no responden la pregunta). En partidos y minutos sí van los de 0.
+  // "Con más goles / amarillas / rojas" ordena de mayor a menor: si ningún dato numérico filtra, se
+  // listan solo los que tienen al menos 1 (los de 0 no responden la pregunta). Si otro rango ya filtra
+  // ("al menos 5 amarillas, ordenados por goles") el orden solo ordena. En partidos y minutos van los de 0.
   const campoOrden = filtro.orden.campo;
   if (campoOrden && (CAMPOS_SIN_CERO as readonly string[]).includes(campoOrden) && filtro.orden.descendente !== false) {
     const campo = campoOrden as typeof CAMPOS_SIN_CERO[number];
-    if (!usaRango(filtro[campo])) filtro[campo] = { min: 1, max: null };
+    const otroRango = [...CAMPOS_STATS, ...CAMPOS_VIATICO].some((c) => usaRango(filtro[c]));
+    if (!otroRango) filtro[campo] = { min: 1, max: null };
   }
 
   if (filtroVacio(filtro)) return { ok: false, error: "No encontré qué filtrar en la pregunta." };

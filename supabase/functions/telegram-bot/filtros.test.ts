@@ -204,7 +204,16 @@ describe('ordenar por goles y tarjetas sin rango', () => {
     expect(ids(correr({ orden: { campo: 'convocatorias', descendente: 'si' } }))).toHaveLength(4);
   });
   it('un rango pedido se respeta', () => {
-    expect(ids(correr({ goles: { min: -1, max: 0 }, orden: { campo: 'goles', descendente: 'si' } }))).toEqual(['a', 'e']);
+    expect(ids(correr({ goles: { min: null, max: 0 }, orden: { campo: 'goles', descendente: 'si' } }))).toEqual(['a', 'e']);
+    expect(filtro({ goles: { min: 0, max: null }, orden: { campo: 'goles', descendente: 'si' } }).goles).toEqual({ min: 0, max: null });
+  });
+  it('si otro rango ya filtra, el orden solo ordena', () => {
+    const f = filtro({ amarillas: { min: 8, max: null }, orden: { campo: 'goles', descendente: 'si' } });
+    expect(f.goles).toEqual({ min: null, max: null });
+    expect(ids(filtrarJugadores(jugadores, f, { hoy: HOY, stats }))).toEqual(['b', 'a']);
+  });
+  it('minutos de mayor a menor incluye a los de 0', () => {
+    expect(filtro({ orden: { campo: 'minutos', descendente: 'si' } }).minutos).toEqual({ min: null, max: null });
   });
   it('de menor a mayor no agrega el mínimo', () => {
     expect(filtro({ orden: { campo: 'goles', descendente: 'no' } }).goles).toEqual({ min: null, max: null });
