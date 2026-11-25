@@ -88,16 +88,21 @@ async function enviarRespuesta(
   let enviadas = 0;
   for (const { html, foto } of respuesta.mensajes) {
     if (foto) {
+      const { caption, textoAparte } = planFoto(html);
+      let salio = false;
       try {
         const { data, error } = await db.storage.from("player-photos").download(foto);
         if (error || !data) throw error ?? new Error("Foto vacía");
-        const { caption, textoAparte } = planFoto(html);
         await mandarFoto(data, caption);
-        enviadas++;
-        if (textoAparte) await responder(textoAparte);
-        continue;
+        salio = true;
       } catch (err) {
         console.error("telegram-bot (foto):", err);
+      }
+      if (salio) {
+        enviadas++;
+        // Fuera del try: si falla este texto, no se reintenta como si hubiera fallado la foto
+        if (textoAparte) await responder(textoAparte);
+        continue;
       }
     }
     await responder(html);
