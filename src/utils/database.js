@@ -1262,25 +1262,41 @@ export const database = {
       .upload(path, blob, { contentType: blob.type, cacheControl: '31536000' });
     if (uploadError) throw uploadError;
 
-    const { error } = await supabase
-      .from('players')
-      .update({ foto_path: path })
-      .eq('id', player.id);
-    if (error) {
+    try {
+      await this.setPlayerFotoPath(player.id, path);
+    } catch (err) {
       await this.removePlayerPhotoFile(path);
-      throw error;
+      throw err;
     }
     if (player.foto_path) await this.removePlayerPhotoFile(player.foto_path);
+    this.logPlayerPhoto('player_photo_uploaded', player);
     return path;
   },
 
   async removePlayerPhoto(player) {
-    const { error } = await supabase
-      .from('players')
-      .update({ foto_path: null })
-      .eq('id', player.id);
-    if (error) throw error;
+    await this.setPlayerFotoPath(player.id, null);
     if (player.foto_path) await this.removePlayerPhotoFile(player.foto_path);
+    this.logPlayerPhoto('player_photo_removed', player);
+  },
+
+  // Si la RLS de players filtra la fila, el update no da error: afecta 0 filas. Se controla para
+  // no borrar la foto vigente ni dejar foto_path apuntando a un archivo que ya no existe.
+  async setPlayerFotoPath(playerId, path) {
+    const { data, error } = await supabase
+      .from('players')
+      .update({ foto_path: path })
+      .eq('id', playerId)
+      .select('id');
+    if (error) throw error;
+    if (!data?.length) throw new Error('No tenés permiso para cambiar la foto de este jugador');
+  },
+
+  // Registro en Actividad (fire-and-forget): son fotos de menores
+  async logPlayerPhoto(action, player) {
+    const { data } = await supabase.auth.getSession();
+    this.logActivity(action, data?.session?.user?.email || null, 'player', player.id, {
+      jugador: player.name_visual || player.name,
+    });
   },
 
   // Un archivo huérfano no rompe nada: se registra y se sigue

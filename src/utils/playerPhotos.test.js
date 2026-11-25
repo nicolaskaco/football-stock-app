@@ -3,7 +3,8 @@ import {
   crearResolvedorFotos, PLAYER_PHOTO_URL_VIGENCIA_S, recorteCuadrado, urlVigente, validarFotoJugador,
 } from './playerPhotos';
 
-const DIA = 24 * 3600 * 1000;
+const HORA = 3600 * 1000;
+const DIA = 24 * HORA;
 
 function storageFalso(inicial = {}) {
   const datos = { ...inicial };
@@ -11,6 +12,7 @@ function storageFalso(inicial = {}) {
     datos,
     getItem: (k) => datos[k] ?? null,
     setItem: (k, v) => { datos[k] = v; },
+    removeItem: (k) => { delete datos[k]; },
   };
 }
 
@@ -59,11 +61,11 @@ describe('recorteCuadrado', () => {
 });
 
 describe('urlVigente', () => {
-  it('sirve si le queda más de un día', () => {
-    expect(urlVigente({ url: 'u', expira: 10 * DIA }, 8 * DIA)).toBe(true);
+  it('sirve si le queda más de una hora', () => {
+    expect(urlVigente({ url: 'u', expira: 10 * HORA }, 8 * HORA)).toBe(true);
   });
-  it('no sirve si le queda menos de un día, si no hay url o si no hay entrada', () => {
-    expect(urlVigente({ url: 'u', expira: 10 * DIA }, 9.5 * DIA)).toBe(false);
+  it('no sirve si le queda menos de una hora, si no hay url o si no hay entrada', () => {
+    expect(urlVigente({ url: 'u', expira: 10 * HORA }, 9.5 * HORA)).toBe(false);
     expect(urlVigente({ url: '', expira: 10 * DIA }, 0)).toBe(false);
     expect(urlVigente(undefined, 0)).toBe(false);
   });
@@ -95,13 +97,13 @@ describe('crearResolvedorFotos', () => {
     expect(firmar).toHaveBeenCalledTimes(1);
   });
 
-  it('renueva el link cuando le queda menos de un día', async () => {
+  it('renueva el link cuando le queda menos de una hora', async () => {
     const firmar = firmarOk();
     const { resolvedor, reloj, flush } = armar({ firmar });
     const primera = resolvedor.getUrl('p1/1.webp');
     await flush();
     await primera;
-    reloj.t += PLAYER_PHOTO_URL_VIGENCIA_S * 1000 - DIA / 2;
+    reloj.t += PLAYER_PHOTO_URL_VIGENCIA_S * 1000 - HORA / 2;
     expect(resolvedor.peek('p1/1.webp')).toBeNull();
     const segunda = resolvedor.getUrl('p1/1.webp');
     await flush();
@@ -117,7 +119,7 @@ describe('crearResolvedorFotos', () => {
     await p;
 
     const firmar = firmarOk();
-    const dos = armar({ firmar, storage, t: uno.reloj.t + DIA });
+    const dos = armar({ firmar, storage, t: uno.reloj.t + HORA });
     expect(dos.resolvedor.peek('p1/1.webp')).toBe('https://x/p1/1.webp?t=1');
     expect(firmar).not.toHaveBeenCalled();
   });
@@ -143,6 +145,27 @@ describe('crearResolvedorFotos', () => {
     await flush();
     expect(await bueno).toBe('https://x/p1/1.webp');
     expect(await malo).toBeNull();
+  });
+
+  it('no recupera links vencidos de otra sesión', async () => {
+    const storage = storageFalso();
+    const uno = armar({ firmar: firmarOk(), storage });
+    const p = uno.resolvedor.getUrl('p1/1.webp');
+    await uno.flush();
+    await p;
+    const dos = armar({ firmar: firmarOk(), storage, t: uno.reloj.t + DIA });
+    expect(dos.resolvedor.peek('p1/1.webp')).toBeNull();
+  });
+
+  it('olvidar() borra los links de la memoria y del storage', async () => {
+    const { resolvedor, storage, flush } = armar({ firmar: firmarOk() });
+    const p = resolvedor.getUrl('p1/1.webp');
+    await flush();
+    await p;
+    expect(storage.datos.cap_fotos_jugadores).toBeDefined();
+    resolvedor.olvidar();
+    expect(resolvedor.peek('p1/1.webp')).toBeNull();
+    expect(storage.datos.cap_fotos_jugadores).toBeUndefined();
   });
 
   it('ignora una caché rota en el storage', () => {

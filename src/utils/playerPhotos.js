@@ -1,18 +1,20 @@
 // Fotos de jugadores: validación, compresión en el navegador y links firmados con caché.
 // El bucket `player-photos` es privado (ver migración 20261126_player_photos.sql): cada foto
 // se lee con un link firmado. Para no pedir un link por jugador ni bajar la misma foto en
-// cada visita, los pedidos del mismo momento se juntan en una sola llamada y los links se
-// guardan (memoria + localStorage) hasta un día antes de vencer. La ruta cambia con cada
-// subida, así que un link guardado nunca apunta a una foto vieja.
+// cada pantalla, los pedidos del mismo momento se juntan en una sola llamada y los links se
+// guardan (memoria + sessionStorage) hasta una hora antes de vencer. Son fotos de menores y un
+// link firmado anda sin sesión: por eso viven poco, se guardan solo en la pestaña (no en
+// localStorage) y se borran al cerrar sesión. La ruta cambia con cada subida, así que un link
+// guardado nunca apunta a una foto vieja.
 
 export const PLAYER_PHOTO_ACCEPT = 'image/*';
 export const PLAYER_PHOTO_MAX_INPUT_BYTES = 10 * 1024 * 1024;
 /** Lado en píxeles de la foto que se sube (cuadrada). */
 export const PLAYER_PHOTO_LADO = 400;
 /** Vigencia de los links firmados, en segundos. */
-export const PLAYER_PHOTO_URL_VIGENCIA_S = 7 * 24 * 3600;
+export const PLAYER_PHOTO_URL_VIGENCIA_S = 12 * 3600;
 /** Un link se renueva si le queda menos que esto. */
-const RENOVAR_ANTES_MS = 24 * 3600 * 1000;
+const RENOVAR_ANTES_MS = 3600 * 1000;
 const STORAGE_KEY = 'cap_fotos_jugadores';
 
 /** true si el toggle "Fotos de jugadores" de Configuración está prendido. */
@@ -32,7 +34,7 @@ export function recorteCuadrado(ancho, alto) {
   return { sx: Math.round((ancho - lado) / 2), sy: Math.round((alto - lado) / 2), lado };
 }
 
-/** true si el link guardado sigue sirviendo (le queda más de un día). */
+/** true si el link guardado sigue sirviendo (le queda más de una hora). */
 export function urlVigente(entrada, ahora) {
   return !!entrada?.url && entrada.expira - ahora > RENOVAR_ANTES_MS;
 }
@@ -67,12 +69,23 @@ export async function comprimirFoto(file) {
 
 const storageSeguro = {
   getItem(key) {
-    try { return globalThis.localStorage?.getItem(key) ?? null; } catch { return null; }
+    try { return globalThis.sessionStorage?.getItem(key) ?? null; } catch { return null; }
   },
   setItem(key, value) {
-    try { globalThis.localStorage?.setItem(key, value); } catch { /* sin localStorage: solo memoria */ }
+    try { globalThis.sessionStorage?.setItem(key, value); } catch { /* sin sessionStorage: solo memoria */ }
+  },
+  removeItem(key) {
+    try { globalThis.sessionStorage?.removeItem(key); } catch { /* nada que borrar */ }
   },
 };
+
+const resolvedores = new Set();
+
+/** Olvida todos los links guardados (al cerrar sesión). */
+export function olvidarFotosGuardadas() {
+  resolvedores.forEach((r) => r.olvidar());
+  storageSeguro.removeItem(STORAGE_KEY);
+}
 
 /**
  * Resolvedor de links firmados con lotes y caché.
@@ -132,7 +145,12 @@ export function crearResolvedorFotos({
     }
   };
 
-  return {
+  const resolvedor = {
+    /** Borra los links guardados en memoria y en el storage. */
+    olvidar() {
+      cache = new Map();
+      storage.removeItem?.(STORAGE_KEY);
+    },
     /** El link guardado y vigente, sin pedir nada (para el primer render). */
     peek(path) {
       if (!path) return null;
@@ -153,4 +171,6 @@ export function crearResolvedorFotos({
       });
     },
   };
+  resolvedores.add(resolvedor);
+  return resolvedor;
 }

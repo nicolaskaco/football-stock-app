@@ -10,6 +10,7 @@ import PlayerLoginView from './components/PlayerLoginView';
 import PlayerQuestionnaire from './forms/PlayerQuestionnaire';
 import { database } from './utils/database';
 import { supabase } from './supabaseClient';
+import { olvidarFotosGuardadas } from './utils/playerPhotos';
 import { ToastProvider } from './context/ToastContext';
 import { Toast } from './components/Toast';
 
@@ -362,6 +363,7 @@ const App = () => {
   };
 
   const handleLogout = async () => {
+    olvidarFotosGuardadas();
     if (currentUser?.isAdmin) {
       await supabase.auth.signOut();
     }

@@ -1,8 +1,9 @@
 -- Fotos de jugadores: columna con la ruta del archivo + bucket PRIVADO en Storage.
 --
--- Son fotos de menores: el bucket es privado y se leen con links firmados. Puede ver la foto
--- quien puede ver al jugador (la RLS de players decide), y subirla / cambiarla / borrarla quien
--- además es admin o tiene can_edit_players. El rol finanzas no ve ni toca nada.
+-- Son fotos de menores: el bucket es privado y se leen con links firmados.
+--  - Ver la foto: quien puede ver al jugador (la RLS de players decide). Nunca finanzas.
+--  - Subirla / cambiarla / borrarla: admin, o can_edit_players con el jugador en sus categorías
+--    (no alcanza con verlo en una planilla de partido). Nunca finanzas.
 -- Ruta de cada archivo: <player_id>/<timestamp>.webp
 --
 -- No crea tablas (players ya tiene grants, RLS y deny_finanzas).
@@ -23,9 +24,37 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- 3. Policies de Storage.
--- Lectura (links firmados): el jugador de la carpeta tiene que ser visible para el usuario.
--- El subquery sobre players pasa por su RLS, así que respeta las categorías del usuario.
+-- 3. ¿El usuario actual puede cambiar la foto de este jugador?
+-- SECURITY DEFINER: lee players y user_permissions sin depender de sus policies de SELECT
+-- (que dejan ver jugadores de otras categorías si figuran en una planilla).
+CREATE OR REPLACE FUNCTION public.puede_editar_foto_jugador(p_player_id text)
+  RETURNS boolean
+  LANGUAGE sql
+  STABLE
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM   public.user_permissions u
+    JOIN   public.players p ON p.id::text = p_player_id
+    WHERE  u.email = auth.email()
+      AND  coalesce(u.role, '') <> 'finanzas'
+      AND  (
+             u.role = 'admin'
+             OR (
+               u.can_edit_players
+               AND (u.categoria IS NULL OR u.categoria = '{}' OR p.categoria = ANY (u.categoria))
+             )
+           )
+  );
+$$;
+
+REVOKE ALL ON FUNCTION public.puede_editar_foto_jugador(text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.puede_editar_foto_jugador(text) TO authenticated;
+
+-- 4. Policies de Storage.
+-- Ojo: dentro del subquery sobre players, `name` sería players.name; por eso objects.name.
 DROP POLICY IF EXISTS player_photos_select ON storage.objects;
 CREATE POLICY player_photos_select
   ON storage.objects
@@ -34,14 +63,13 @@ CREATE POLICY player_photos_select
   USING (
     bucket_id = 'player-photos'
     AND NOT (SELECT public.current_user_is_finanzas())
+    -- El subquery pasa por la RLS de players: mismo acceso que al jugador
     AND EXISTS (
       SELECT 1 FROM public.players p
-      WHERE p.id::text = (storage.foldername(name))[1]
+      WHERE p.id::text = (storage.foldername(objects.name))[1]
     )
   );
 
--- Escritura: además, admin o can_edit_players.
--- El subquery lee la fila propia de user_permissions (policy users_select_own).
 DROP POLICY IF EXISTS player_photos_insert ON storage.objects;
 CREATE POLICY player_photos_insert
   ON storage.objects
@@ -49,15 +77,7 @@ CREATE POLICY player_photos_insert
   TO authenticated
   WITH CHECK (
     bucket_id = 'player-photos'
-    AND NOT (SELECT public.current_user_is_finanzas())
-    AND EXISTS (
-      SELECT 1 FROM public.players p
-      WHERE p.id::text = (storage.foldername(name))[1]
-    )
-    AND EXISTS (
-      SELECT 1 FROM public.user_permissions
-      WHERE email = auth.email() AND (role = 'admin' OR can_edit_players)
-    )
+    AND public.puede_editar_foto_jugador((storage.foldername(name))[1])
   );
 
 DROP POLICY IF EXISTS player_photos_update ON storage.objects;
@@ -67,27 +87,11 @@ CREATE POLICY player_photos_update
   TO authenticated
   USING (
     bucket_id = 'player-photos'
-    AND NOT (SELECT public.current_user_is_finanzas())
-    AND EXISTS (
-      SELECT 1 FROM public.players p
-      WHERE p.id::text = (storage.foldername(name))[1]
-    )
-    AND EXISTS (
-      SELECT 1 FROM public.user_permissions
-      WHERE email = auth.email() AND (role = 'admin' OR can_edit_players)
-    )
+    AND public.puede_editar_foto_jugador((storage.foldername(name))[1])
   )
   WITH CHECK (
     bucket_id = 'player-photos'
-    AND NOT (SELECT public.current_user_is_finanzas())
-    AND EXISTS (
-      SELECT 1 FROM public.players p
-      WHERE p.id::text = (storage.foldername(name))[1]
-    )
-    AND EXISTS (
-      SELECT 1 FROM public.user_permissions
-      WHERE email = auth.email() AND (role = 'admin' OR can_edit_players)
-    )
+    AND public.puede_editar_foto_jugador((storage.foldername(name))[1])
   );
 
 DROP POLICY IF EXISTS player_photos_delete ON storage.objects;
@@ -97,18 +101,10 @@ CREATE POLICY player_photos_delete
   TO authenticated
   USING (
     bucket_id = 'player-photos'
-    AND NOT (SELECT public.current_user_is_finanzas())
-    AND EXISTS (
-      SELECT 1 FROM public.players p
-      WHERE p.id::text = (storage.foldername(name))[1]
-    )
-    AND EXISTS (
-      SELECT 1 FROM public.user_permissions
-      WHERE email = auth.email() AND (role = 'admin' OR can_edit_players)
-    )
+    AND public.puede_editar_foto_jugador((storage.foldername(name))[1])
   );
 
--- 4. Toggle en Configuración → "Fotos de jugadores". Arranca apagado.
+-- 5. Toggle en Configuración → "Fotos de jugadores". Arranca apagado.
 INSERT INTO public.app_settings (key, value)
 VALUES ('jugadores_fotos_enabled', 'false')
 ON CONFLICT (key) DO NOTHING;
