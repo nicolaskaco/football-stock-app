@@ -33,7 +33,7 @@ Reglas:
 - Viático: "viático" sin más → viatico_total (viático + complemento); "solo viático" → viatico; "complemento" → complemento. "Con contrato" → contrato true; "casos especiales" → caso_especial true.
 - Ficha médica: "ficha vencida" → ficha "vencida"; "por vencer"/"vence pronto" → "por_vencer" (ficha_dias si dicen cuántos días); "sin ficha" → "sin_ficha".
 - casita: viven en la casita del club. vianda_min: cantidad mínima de viandas.
-- orden: solo si piden un orden ("los que más goles", "ordenados por edad"); si no, campo null y descendente null.
+- orden: solo si piden un orden ("ordenados por edad"). "Con más goles", "los que más amarillas", "goleadores" → orden.campo con descendente "si", sin inventar un rango (el sistema ya excluye a los que tienen 0). Si no piden orden: campo "ninguno" y descendente "cualquiera".
 - Campos si/no (casita, contrato, caso_especial, suspendido_hoy, orden.descendente): "si", "no" o "cualquiera".
 - entendido false (con una aclaración corta en español rioplatense, voseo) si la pregunta no es una búsqueda de jugadores con estos filtros: opiniones ("quién rinde mejor"), lesiones o lesionados (no disponible), modificar datos, cálculos sobre el resultado (promedios, totales), funcionarios, dirigentes o inventario. Si es una búsqueda válida, aclaracion "".`;
 

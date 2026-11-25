@@ -16,6 +16,8 @@ const DIAS_FICHA_DEFAULT = 30;
 export type Rango = { min: number | null; max: number | null };
 export const CAMPOS_STATS = ["goles", "amarillas", "rojas", "minutos", "convocatorias", "titular"] as const;
 export const CAMPOS_VIATICO = ["viatico_total", "viatico", "complemento"] as const;
+/** Al ordenar de mayor a menor por estos campos sin un rango, se excluyen los que tienen 0. */
+export const CAMPOS_SIN_CERO = ["goles", "amarillas", "rojas"] as const;
 type CampoStats = typeof CAMPOS_STATS[number];
 type CampoViatico = typeof CAMPOS_VIATICO[number];
 export const CAMPOS_ORDEN = [...CAMPOS_STATS, ...CAMPOS_VIATICO, "vianda", "edad", "nacimiento", "nombre"] as const;
@@ -196,6 +198,14 @@ export function validarFiltro(crudo: unknown, perm: Permisos, { enGrupo }: { enG
       descendente: boolValido(ordenCrudo.descendente),
     },
   };
+
+  // "Con más goles / amarillas / rojas" ordena de mayor a menor: sin un rango pedido, se listan solo
+  // los que tienen al menos 1 (los de 0 no responden la pregunta). En partidos y minutos sí van los de 0.
+  const campoOrden = filtro.orden.campo;
+  if (campoOrden && (CAMPOS_SIN_CERO as readonly string[]).includes(campoOrden) && filtro.orden.descendente !== false) {
+    const campo = campoOrden as typeof CAMPOS_SIN_CERO[number];
+    if (!usaRango(filtro[campo])) filtro[campo] = { min: 1, max: null };
+  }
 
   if (filtroVacio(filtro)) return { ok: false, error: "No encontré qué filtrar en la pregunta." };
 
