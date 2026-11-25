@@ -129,7 +129,13 @@ export const ALIAS: Record<string, string> = {
   jugador_completo: "ficha", jugadorcompleto: "ficha", minuto: "minutos",
 };
 
-export const comandosDe = (p: Permisos) => Object.keys(COMANDOS).filter((c) => COMANDOS[c].permiso(p));
+/** Comandos que van arriba en el menú de Telegram y en /ayuda; el resto sigue en el orden de COMANDOS. */
+export const ORDEN_MENU = ["pregunta", "ayuda"];
+
+/** Orden del menú de comandos (scripts/telegram-setup.mjs) y de /ayuda. */
+export const ordenMenu = () => [...ORDEN_MENU, ...Object.keys(COMANDOS).filter((c) => !ORDEN_MENU.includes(c))];
+
+export const comandosDe = (p: Permisos) => ordenMenu().filter((c) => COMANDOS[c].permiso(p));
 
 /** Código de vinculación que genera la app (8 caracteres hex, ver generar_codigo_telegram). */
 export const parseCodigo = (s: string | null | undefined) => {

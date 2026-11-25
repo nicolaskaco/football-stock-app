@@ -23,7 +23,7 @@ if (major < 22 || (major === 22 && minor < 18)) {
   console.error(`✗ Necesitás Node 22.18 o más nuevo (tenés ${process.versions.node}): el script lee los comandos de logica.ts.`);
   process.exit(1);
 }
-const { COMANDOS } = await import('../supabase/functions/telegram-bot/logica.ts');
+const { COMANDOS, ordenMenu } = await import('../supabase/functions/telegram-bot/logica.ts');
 
 const OPCIONES = ['--estado', '--solo-comandos', '--nuevo-secreto', '--apagar'];
 const args = new Set(process.argv.slice(2));
@@ -145,9 +145,8 @@ async function mostrarWebhook(urlEsperada) {
 }
 
 async function registrarComandos() {
-  const nombres = Object.keys(COMANDOS);
-  const ordenados = ['ayuda', ...nombres.filter((c) => c !== 'ayuda')];
-  const commands = ordenados.map((c) => ({ command: c, description: COMANDOS[c].descripcion.slice(0, 256) }));
+  // Mismo orden que /ayuda: /pregunta y /ayuda arriba (ORDEN_MENU en logica.ts)
+  const commands = ordenMenu().map((c) => ({ command: c, description: COMANDOS[c].descripcion.slice(0, 256) }));
   await telegram('setMyCommands', { scope: { type: 'all_private_chats' }, commands });
   // En grupos el bot solo contesta en el del club: si se conoce su id, el menú va solo ahí
   const grupo = process.env.TELEGRAM_CHAT_ID;
