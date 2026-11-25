@@ -8,7 +8,8 @@
 //   npm run telegram:setup -- --nuevo-secreto  genera otro secreto, lo carga en Supabase y registra el webhook
 //   npm run telegram:setup -- --apagar         borra el webhook (el bot deja de responder)
 //
-// TELEGRAM_CHAT_ID (opcional, el id del grupo): limita el menú de comandos de grupo a ese grupo.
+// TELEGRAM_CHAT_ID (opcional, el id del grupo): además del menú de todos los grupos, escribe el de ese
+// grupo (y el de sus admins), que pisa cualquier menú viejo que haya quedado ahí.
 // Datos: TELEGRAM_BOT_TOKEN y TELEGRAM_WEBHOOK_SECRET de las variables de entorno o, si no
 // están, se piden por teclado (sin mostrarlos). El proyecto sale de supabase/.temp/project-ref.
 // No guarda nada en disco.
@@ -87,7 +88,8 @@ const tapar = (s) => String(s).split(token).join('<TOKEN>');
 
 let avisoSiFalla = ''; // se agrega a cualquier error de Telegram (p. ej. secreto ya cambiado)
 
-async function telegram(metodo, body) {
+/** Llama a la Bot API. Si falla, sale del script; con `{ tolerante: true }` devuelve `{ error }`. */
+async function telegram(metodo, body, { tolerante = false } = {}) {
   let res;
   try {
     res = await fetch(`https://api.telegram.org/bot${token}/${metodo}`, {
@@ -96,11 +98,17 @@ async function telegram(metodo, body) {
       body: JSON.stringify(body ?? {}),
     });
   } catch (err) {
-    salir(`${metodo}: no se pudo conectar con Telegram (${tapar(err.message)}).`);
+    const error = `${metodo}: no se pudo conectar con Telegram (${tapar(err.message)}).`;
+    if (tolerante) return { error };
+    salir(error);
   }
   const data = await res.json().catch(() => ({}));
-  if (!data.ok) salir(`${metodo}: ${tapar(data.description || `HTTP ${res.status}`)}`);
-  return data.result;
+  if (!data.ok) {
+    const error = `${metodo}: ${tapar(data.description || `HTTP ${res.status}`)}`;
+    if (tolerante) return { error };
+    salir(error);
+  }
+  return tolerante ? { result: data.result } : data.result;
 }
 
 function salir(mensaje) {
@@ -144,14 +152,49 @@ async function mostrarWebhook(urlEsperada) {
   }
 }
 
+// Telegram muestra el menú del alcance más específico que exista (chat_administrators → chat →
+// all_chat_administrators → all_group_chats → default). Un menú viejo en un alcance más
+// específico tapa al nuevo, así que se escriben todos los de grupo y se borra el de admins.
+const GRUPO = process.env.TELEGRAM_CHAT_ID || '';
+const ALCANCES = [
+  { type: 'default' },
+  { type: 'all_private_chats' },
+  { type: 'all_group_chats' },
+  ...(GRUPO ? [{ type: 'chat', chat_id: GRUPO }, { type: 'chat_administrators', chat_id: GRUPO }] : []),
+];
+const ALCANCES_A_BORRAR = [{ type: 'all_chat_administrators' }];
+const nombreAlcance = (a) => a.type + (a.chat_id ? ` (${a.chat_id})` : '');
+
 async function registrarComandos() {
   // Mismo orden que /ayuda: /pregunta y /ayuda arriba (ORDEN_MENU en logica.ts)
   const commands = ordenMenu().map((c) => ({ command: c, description: COMANDOS[c].descripcion.slice(0, 256) }));
-  await telegram('setMyCommands', { scope: { type: 'all_private_chats' }, commands });
-  // En grupos el bot solo contesta en el del club: si se conoce su id, el menú va solo ahí
-  const grupo = process.env.TELEGRAM_CHAT_ID;
-  await telegram('setMyCommands', { scope: grupo ? { type: 'chat', chat_id: grupo } : { type: 'all_group_chats' }, commands });
-  ok(`Menú de comandos: ${commands.length} comandos (en privado y ${grupo ? 'en el grupo del club' : 'en grupos'}).`);
+  const fallas = [];
+  for (const scope of ALCANCES) {
+    const { error } = await telegram('setMyCommands', { scope, commands }, { tolerante: true });
+    if (error) fallas.push(`${nombreAlcance(scope)}: ${error}`);
+    // Un menú en español del mismo alcance le gana al que no tiene idioma: se borra
+    await telegram('deleteMyCommands', { scope, language_code: 'es' }, { tolerante: true });
+  }
+  for (const scope of ALCANCES_A_BORRAR) {
+    await telegram('deleteMyCommands', { scope }, { tolerante: true });
+    await telegram('deleteMyCommands', { scope, language_code: 'es' }, { tolerante: true });
+  }
+  if (fallas.length) {
+    console.log(`✗ No se pudo escribir el menú en:\n  ${fallas.join('\n  ')}`);
+    if (GRUPO) console.log('  ¿El TELEGRAM_CHAT_ID es el del grupo y el bot está en él?');
+    return;
+  }
+  ok(`Menú de comandos: ${commands.length} comandos (en privado, en grupos${GRUPO ? ' y en el grupo del club' : ''}).`);
+  if (!GRUPO) console.log('  Si el grupo muestra un menú viejo, corré con TELEGRAM_CHAT_ID=<id del grupo> para pisar el suyo.');
+}
+
+/** Cuántos comandos hay en cada alcance y cuál va primero, para ver si alguno quedó viejo. */
+async function mostrarComandos() {
+  for (const scope of [...ALCANCES, ...ALCANCES_A_BORRAR]) {
+    const { result: cmds, error } = await telegram('getMyCommands', { scope }, { tolerante: true });
+    if (error) console.log(`  ✗ Menú ${nombreAlcance(scope)}: ${error}`);
+    else console.log(`  Menú ${nombreAlcance(scope)}: ${cmds.length ? `${cmds.length} comandos, primero /${cmds[0].command}` : 'vacío'}`);
+  }
 }
 
 async function probarFuncion(url) {
@@ -200,6 +243,7 @@ if (modo === 'apagar') {
 
 if (modo === 'comandos') {
   await registrarComandos();
+  await mostrarComandos();
   process.exit(0);
 }
 
@@ -219,4 +263,5 @@ if (modo === 'todo') {
 }
 
 await mostrarWebhook(url);
+await mostrarComandos();
 await probarFuncion(url);
