@@ -5,7 +5,7 @@ import {
   parseCodigo, edad, diasParaCumple, parseAnio, marcador, jornadaLabel, fechaPartido,
   rivalBuscado, nombreCoincide, type Permisos,
   ALIAS, COMANDOS, textoViatico, etiquetaDocumento, minutosJugados, miles, ordenarPorMinutos,
-  armarMensajesJugadores, planFoto, largoVisible, LIMITE_CAPTION,
+  armarMensajesJugadores, planFoto, largoVisible, LIMITE_CAPTION, PIDE_DATO, textoPideDato, comandoDesdeRespuesta,
 } from './logica';
 
 const perm = (over: Partial<Permisos> = {}): Permisos => ({
@@ -251,5 +251,37 @@ describe('fotos de jugadores', () => {
   it('las etiquetas no cuentan para el límite', () => {
     const justo = `<b>${'x'.repeat(LIMITE_CAPTION)}</b>`;
     expect(planFoto(justo).textoAparte).toBeNull();
+  });
+});
+
+describe('pedir el dato que falta', () => {
+  // Telegram devuelve el texto del mensaje del bot sin las etiquetas HTML
+  const sinHTML = (html: string) => html.replace(/<[^>]+>/g, '');
+
+  it('arma el pedido con el comando, la pregunta y un ejemplo', () => {
+    expect(textoPideDato('pregunta')).toBe('✍️ <b>/pregunta</b>: ¿Qué querés saber?\n<i>Respondé a este mensaje, por ejemplo: jugadores con más de 7 amarillas</i>');
+  });
+  it('la respuesta al pedido se toma como el dato del comando', () => {
+    expect(comandoDesdeRespuesta(sinHTML(textoPideDato('pregunta')), ' jugadores con más de 7 amarillas ')).toBe('/pregunta jugadores con más de 7 amarillas');
+    expect(comandoDesdeRespuesta(sinHTML(textoPideDato('jugador')), 'Pérez')).toBe('/jugador Pérez');
+  });
+  it('ignora respuestas a otros mensajes del bot', () => {
+    expect(comandoDesdeRespuesta('🔎 5ta · al menos 8 amarillas', 'gracias')).toBeNull();
+    expect(comandoDesdeRespuesta(null, 'Pérez')).toBeNull();
+  });
+  it('reconoce el lápiz con o sin selector de variación', () => {
+    expect(comandoDesdeRespuesta('\u270D /jugador: ¿Qué jugador?', 'Pérez')).toBe('/jugador Pérez');
+  });
+  it('ignora comandos que no piden dato', () => {
+    expect(comandoDesdeRespuesta('✍️ /lesionados: ¿Qué?', '5ta')).toBeNull();
+  });
+  it('si la respuesta ya es un comando, se respeta ese comando', () => {
+    expect(comandoDesdeRespuesta(sinHTML(textoPideDato('jugador')), '/ayuda')).toBeNull();
+  });
+  it('una respuesta vacía no arma nada', () => {
+    expect(comandoDesdeRespuesta(sinHTML(textoPideDato('jugador')), '  ')).toBeNull();
+  });
+  it('todos los comandos que piden dato existen', () => {
+    for (const c of Object.keys(PIDE_DATO)) expect(COMANDOS[c]).toBeDefined();
   });
 });

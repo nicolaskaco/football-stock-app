@@ -23,7 +23,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { escapeHTML as e, sendTelegram, sendTelegramPhoto } from "../_shared/telegram.ts";
-import { ALIAS, COMANDOS, esParaEsteBot, parseCodigo, parseMensaje, planFoto, type Permisos } from "./logica.ts";
+import {
+  ALIAS, COMANDOS, comandoDesdeRespuesta, esParaEsteBot, parseCodigo, parseMensaje, PIDE_DATO, planFoto, textoPideDato, type Permisos,
+} from "./logica.ts";
 import { ayuda, EJECUTORES, type Respuesta } from "./comandos.ts";
 
 const COLUMNAS_PERMISOS = "email, role, categoria, can_access_players, can_view_partidos, can_access_widgets, can_access_tareas, can_access_viatico";
@@ -133,7 +135,11 @@ serve(async (req) => {
 
   const chatId: number = msg.chat.id;
   const telegramId: number = msg.from.id;
-  const { comando, destinatario, args, resto } = parseMensaje(msg.text);
+  // Respuesta a un pedido de dato del bot ("✍️ /pregunta: ¿Qué querés saber?"): se arma el comando completo
+  const idBot = Number((Deno.env.get("TELEGRAM_BOT_TOKEN") || "").split(":")[0]);
+  const respondeAlBot = !!idBot && msg.reply_to_message?.from?.id === idBot;
+  const texto = (respondeAlBot && comandoDesdeRespuesta(msg.reply_to_message?.text, msg.text)) || msg.text;
+  const { comando, destinatario, args, resto } = parseMensaje(texto);
   // En el grupo solo se atienden comandos de este bot: la charla, "/cmd@otrobot" y comandos
   // que no conoce (de otros bots) se ignoran sin contestar
   const nombre = comando ? (ALIAS[comando] ?? comando) : null;
@@ -186,6 +192,15 @@ serve(async (req) => {
     }
     if (!COMANDOS[nombre].permiso(perm)) {
       await responder(`No tenés permiso para /${e(nombre)}. Mandá /ayuda para ver lo que podés consultar.`);
+      return ok();
+    }
+
+    // Sin el dato que necesita: se pide, y la respuesta vuelve como el comando completo
+    if (PIDE_DATO[nombre] && !resto) {
+      await sendTelegram(textoPideDato(nombre), chatId, {
+        ...(enGrupo ? { responderA: msg.message_id } : {}),
+        replyMarkup: { force_reply: true, selective: true, input_field_placeholder: PIDE_DATO[nombre].ejemplo.slice(0, 64) },
+      });
       return ok();
     }
 

@@ -40,18 +40,19 @@ export function partir(texto: string, limite = LIMITE): string[] {
  * Manda `html` (parse_mode HTML) en varias partes si hace falta. Sin `destino` va al grupo
  * configurado (TELEGRAM_CHAT_ID); el bot de consultas pasa el chat de quien preguntó y, en el
  * grupo, `responderA` (el mensaje al que contesta, para que se vea a quién le responde).
+ * `replyMarkup` va en el primer mensaje (por ejemplo, force_reply para pedir un dato).
  * No es atómico: si falla una parte, las anteriores ya salieron.
  */
 export async function sendTelegram(
   html: string,
   destino?: number | string,
-  { responderA }: { responderA?: number } = {},
+  { responderA, replyMarkup }: { responderA?: number; replyMarkup?: Record<string, unknown> } = {},
 ): Promise<void> {
   const token = Deno.env.get("TELEGRAM_BOT_TOKEN");
   const chatId = destino ?? Deno.env.get("TELEGRAM_CHAT_ID");
   if (!token || !chatId) throw new Error("Falta configurar TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID");
 
-  for (const parte of partir(html)) {
+  for (const [i, parte] of partir(html).entries()) {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -61,6 +62,7 @@ export async function sendTelegram(
         parse_mode: "HTML",
         disable_web_page_preview: true,
         ...(responderA ? { reply_parameters: { message_id: responderA, allow_sending_without_reply: true } } : {}),
+        ...(replyMarkup && i === 0 ? { reply_markup: replyMarkup } : {}),
       }),
       signal: AbortSignal.timeout(15_000),
     });
