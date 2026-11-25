@@ -12,7 +12,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendTelegram } from "../_shared/telegram.ts";
-import { type Contexto, EJECUTORES, proximaJornada } from "../telegram-bot/comandos.ts";
+import { type Contexto, parte, proximaJornada } from "../telegram-bot/comandos.ts";
 
 const AUTOR = "Sistema (parte semanal)";
 const SIN_PARTIDO = "📅 No hay siguiente partido cargado en la app.";
@@ -58,7 +58,7 @@ serve(async (req) => {
   try {
     const proxima = await proximaJornada(ctx, null);
     jornadaId = proxima?.id ?? null;
-    html = proxima ? await EJECUTORES.parte(ctx) : SIN_PARTIDO;
+    html = proxima ? await parte(ctx) : SIN_PARTIDO;
   } catch (err) {
     console.error("parte-semanal:", err);
     return json({ error: String(err instanceof Error ? err.message : err) }, 500);

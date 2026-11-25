@@ -881,6 +881,7 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
   - `finanzas` is always refused;
   - the injury type is shown only to admins;
   - document, viático, celular and representante (`/jugador`, `/ficha`) are answered **only in private chats**. In the group, `/jugador` leaves them out and `/ficha` asks to be sent by private message. The viático line also needs `can_access_viatico`.
+- **Player photos** (`/jugador` and `/ficha` only): when `app_settings.jugadores_fotos_enabled = 'true'` and at least one matched player has `foto_path`, the answer becomes one message per player, in order: the photo (downloaded from `player-photos` with the service role and sent with `sendPhoto`) with that player's block as caption. A block longer than Telegram's 1024-character caption goes as the name caption plus a separate text message (`planFoto`). Players without a photo get a text message. The group footer goes at the end of the last message. If a photo can't be downloaded or sent, that block goes as text. `foto_path` is read in a separate query that tolerates errors, so `/jugador` keeps working without the column. Photos also go to the group with `/jugador` (`/ficha` stays private-only). The `telegram_consulta` log adds `fotos` (how many were sent). Every other command is unchanged.
 - **Commands** (plain parsing in `telegram-bot/logica.ts`, tested with Vitest; categories accept `5ta`, `5`, `quinta`, `sub16`…):
 
   | Command | Answer |
