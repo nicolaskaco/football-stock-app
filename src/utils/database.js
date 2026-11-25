@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient';
 import { CHANGE_REQUEST_STATUS, CUENTA_VIATICO_FIELDS } from './constants';
 import { parseDOB, formatDate, fechaPartidoDefaultEnJornada } from './dateUtils';
 import { armarPartidosJornada } from './jornadas';
+import { PLAYER_PHOTO_URL_VIGENCIA_S } from './playerPhotos';
 
 // Player fields whose changes are written to player_history
 const TRACKED_PLAYER_FIELDS = ['contrato', 'viatico', 'complemento', 'vianda', 'casita', ...CUENTA_VIATICO_FIELDS];
@@ -213,10 +214,11 @@ export const database = {
   },
 
   async updatePlayer(id, playerData, currentUserEmail) {
-    // La ficha médica solo se escribe con saveFichaMedicaHasta (o el chequeo automático nocturno).
-    // Se saca del payload para que guardar un jugador abierto desde antes no pise la fecha nueva.
+    // La ficha médica solo se escribe con saveFichaMedicaHasta (o el chequeo automático nocturno),
+    // y la foto con uploadPlayerPhoto / removePlayerPhoto. Se sacan del payload para que guardar un
+    // jugador abierto desde antes no pise la fecha ni la foto nuevas.
     // eslint-disable-next-line no-unused-vars
-    const { ficha_medica_hasta, ficha_medica_chequeada_at, ...player } = playerData;
+    const { ficha_medica_hasta, ficha_medica_chequeada_at, foto_path, ...player } = playerData;
 
     // First, get the old player data
     const { data: oldPlayer, error: fetchError } = await supabase
@@ -1235,6 +1237,56 @@ export const database = {
   async removeRivalBadgeFile(path) {
     const { error } = await supabase.storage.from('rival-badges').remove([path]);
     if (error) console.error('Error al borrar el escudo:', error);
+  },
+
+  // ============================================================
+  // FOTOS DE JUGADORES (bucket privado `player-photos`)
+  // ============================================================
+
+  // Links firmados de varias fotos en una sola llamada (ver utils/playerPhotos.js)
+  async getPlayerPhotoUrls(paths) {
+    if (!paths?.length) return [];
+    const { data, error } = await supabase.storage
+      .from('player-photos')
+      .createSignedUrls(paths, PLAYER_PHOTO_URL_VIGENCIA_S);
+    if (error) throw error;
+    return data;
+  },
+
+  async uploadPlayerPhoto(player, blob) {
+    const ext = blob.type === 'image/webp' ? 'webp' : 'jpg';
+    // Nombre único por subida: no hace falta upsert y los links guardados nunca muestran la foto vieja
+    const path = `${player.id}/${Date.now()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from('player-photos')
+      .upload(path, blob, { contentType: blob.type, cacheControl: '31536000' });
+    if (uploadError) throw uploadError;
+
+    const { error } = await supabase
+      .from('players')
+      .update({ foto_path: path })
+      .eq('id', player.id);
+    if (error) {
+      await this.removePlayerPhotoFile(path);
+      throw error;
+    }
+    if (player.foto_path) await this.removePlayerPhotoFile(player.foto_path);
+    return path;
+  },
+
+  async removePlayerPhoto(player) {
+    const { error } = await supabase
+      .from('players')
+      .update({ foto_path: null })
+      .eq('id', player.id);
+    if (error) throw error;
+    if (player.foto_path) await this.removePlayerPhotoFile(player.foto_path);
+  },
+
+  // Un archivo huérfano no rompe nada: se registra y se sigue
+  async removePlayerPhotoFile(path) {
+    const { error } = await supabase.storage.from('player-photos').remove([path]);
+    if (error) console.error('Error al borrar la foto:', error);
   },
 
   // ============================================================

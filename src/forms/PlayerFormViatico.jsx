@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { PlayerPhotoHeader } from '../components/ui/PlayerAvatar';
+import { fotosJugadoresActivas } from '../utils/playerPhotos';
 import { useFormDirty } from '../hooks/useFormDirty';
 import { CATEGORIAS } from '../utils/constants';
 import { ViaticosCongeladosBanner } from '../components/ViaticosCongeladosBanner';
 import { CuentaViaticoFields } from '../components/ui/CuentaViaticoFields';
 
-export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false, onDirtyChange, appSettings = {}, onRequestChange = null, hasPendingRequest = false }) => {
+export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = false, onDirtyChange, appSettings = {}, onRequestChange = null, hasPendingRequest = false, canEditPhoto = false, onPhotoChange = null }) => {
   const [formData, setFormData] = useState(player || {
     name: '',
     gov_id: '',
@@ -42,6 +44,12 @@ export const PlayerFormViatico = ({ player, onSubmit, currentUser, readOnly = fa
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <PlayerPhotoHeader
+        player={player}
+        enabled={fotosJugadoresActivas(appSettings)}
+        editable={canEditPhoto}
+        onChanged={onPhotoChange}
+      />
       {onRequestChange && (
         <div className="flex justify-end">
           {hasPendingRequest ? (

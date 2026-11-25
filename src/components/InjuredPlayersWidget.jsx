@@ -3,6 +3,7 @@ import { CATEGORIAS } from '../utils/constants';
 import { InjuryForm } from '../forms/InjuryForm';
 import { database } from '../utils/database';
 import { useMutation } from '../hooks/useMutation';
+import { PlayerAvatar } from './ui/PlayerAvatar';
 
 const severityBadge = {
   leve: 'bg-yellow-100 text-yellow-800',
@@ -10,7 +11,7 @@ const severityBadge = {
   grave: 'bg-red-100 text-red-800',
 };
 
-export const InjuredPlayersWidget = ({ players = [], injuries = [], setShowModal, onDataChange, currentUser }) => {
+export const InjuredPlayersWidget = ({ players = [], injuries = [], setShowModal, onDataChange, currentUser, fotos = false }) => {
   const [catFiltro, setCatFiltro] = useState(null);
   const { execute } = useMutation();
 
@@ -122,7 +123,9 @@ export const InjuredPlayersWidget = ({ players = [], injuries = [], setShowModal
       <div className="space-y-2 overflow-y-auto">
         {rows.map(r => (
           <div key={r.id} className="flex items-center justify-between gap-3 p-2 rounded-lg bg-gray-50">
-            <div className="min-w-0">
+            <div className={fotos ? 'flex items-center gap-2 min-w-0' : 'min-w-0'}>
+              <PlayerAvatar player={r.player} enabled={fotos} size="sm" />
+            <div className={fotos ? 'min-w-0' : undefined}>
               <p className="text-sm font-semibold text-gray-800 truncate">
                 {setShowModal ? (
                   <button
@@ -137,6 +140,7 @@ export const InjuredPlayersWidget = ({ players = [], injuries = [], setShowModal
                 <span className="ml-2 text-xs font-normal text-gray-500">{r.player.categoria}</span>
               </p>
               <p className="text-xs text-gray-500">{r.tipo} — desde {formatDate(r.fecha_inicio)}</p>
+            </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${severityBadge[r.severidad] || 'bg-gray-100 text-gray-600'}`}>

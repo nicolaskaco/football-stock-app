@@ -7,6 +7,7 @@ import { Download, Copy } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { Row, SectionHeader } from './playerstats/CompareRow';
 import { useChartPalette, contrastText } from '../hooks/useChartPalette';
+import { PlayerAvatar } from './ui/PlayerAvatar';
 
 const buildPlayerStats = (jornadas, playerIds) => {
   const map = {};
@@ -66,7 +67,7 @@ const buildGoalTimeline = (jornadas, playerIds, playerNames) => {
   return data;
 };
 
-export const PlayerComparisonModal = ({ players = [], jornadas = [], injuries = [] }) => {
+export const PlayerComparisonModal = ({ players = [], jornadas = [], injuries = [], fotos = false }) => {
   const playerIds = players.map(p => p.id);
   const playerNames = players.map(p => p.name_visual || p.name);
   const palette = useChartPalette();
@@ -171,12 +172,18 @@ export const PlayerComparisonModal = ({ players = [], jornadas = [], injuries = 
               {players.map((p, i) => (
                 <th key={p.id} className="py-3 px-3 text-center">
                   <div className="flex flex-col items-center gap-1">
+                    {fotos ? (
+                      <span className="inline-flex rounded-full" style={{ boxShadow: `0 0 0 2px ${palette[i]}` }}>
+                        <PlayerAvatar player={p} size="md" />
+                      </span>
+                    ) : (
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg"
                       style={{ backgroundColor: palette[i], color: contrastText(palette[i]) }}
                     >
                       {(p.name_visual || p.name).charAt(0)}
                     </div>
+                    )}
                     <span className="text-sm font-bold text-gray-900">{p.name_visual || p.name}</span>
                     <span className="text-xs text-gray-500">{p.categoria}</span>
                   </div>

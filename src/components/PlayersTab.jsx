@@ -33,6 +33,8 @@ import { InlineEditCell } from './ui/InlineEditCell';
 import { PlayerComparisonModal } from './PlayerComparisonModal';
 import { ChangeRequestModal } from './ChangeRequestModal';
 import { PlayerMobileCard } from './PlayerMobileCard';
+import { PlayerAvatar } from './ui/PlayerAvatar';
+import { fotosJugadoresActivas } from '../utils/playerPhotos';
 
 export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShowModal, onDataChange, currentUser, onFormDirtyChange, appSettings = {}, pendingChangeRequests = [], autoFocusSearch = false }) => {
   const isAdmin = currentUser?.role === 'admin';
@@ -312,6 +314,8 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   });
 
   const canEditPlayers = currentUser?.canEditPlayers || false;
+  const fotos = fotosJugadoresActivas(appSettings);
+  const refrescarJugadores = () => onDataChange('players');
   const canEditNameVisual = currentUser?.canEditNameVisual || false;
 
   const categorias = CATEGORIAS;
@@ -748,6 +752,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
   const openViewPlayer = (player, { withChangeRequest = false } = {}) => setShowModal({
     title: `Ver Jugador: ${player.name}`,
     content: <PlayerForm player={player} onSubmit={() => {}} readOnly={true} currentUser={currentUser} injuries={playerInjuries(player)} jornadas={jornadas} appSettings={appSettings}
+      canEditPhoto={canEditPlayers} onPhotoChange={refrescarJugadores}
       {...(withChangeRequest && {
         onRequestChange: currentUser?.role === 'presidente_categoria' && !viaticosCongelados ? () => {
           setShowModal(null);
@@ -760,7 +765,8 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
 
   const openEditPlayer = (player) => setShowModal({
     title: `Editar Jugador: ${player.name}`,
-    content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={playerInjuries(player)} jornadas={jornadas} appSettings={appSettings} onDataChange={onDataChange} />
+    content: <PlayerForm player={player} onSubmit={handleEdit} currentUser={currentUser} onDirtyChange={onFormDirtyChange} injuries={playerInjuries(player)} jornadas={jornadas} appSettings={appSettings} onDataChange={onDataChange}
+      canEditPhoto={canEditPlayers} onPhotoChange={refrescarJugadores} />
   });
 
   const renderStatusIcons = (player) => {
@@ -893,7 +899,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                 const selected = players.filter(p => selectedPlayers.includes(p.id));
                 setShowModal({
                   title: 'Comparar Jugadores',
-                  content: <PlayerComparisonModal players={selected} jornadas={jornadas} injuries={injuries} />
+                  content: <PlayerComparisonModal players={selected} jornadas={jornadas} injuries={injuries} fotos={fotos} />
                 });
               }}
               className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm"
@@ -1224,7 +1230,9 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                   />
                 </td>
                 <td className="px-3 py-4 font-medium sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-200 max-w-[160px] sm:max-w-none">
-                  <div>
+                  <div className={fotos ? 'flex items-center gap-2' : undefined}>
+                    <PlayerAvatar player={player} enabled={fotos} size="sm" editable={canEditPlayers} onUploaded={refrescarJugadores} />
+                  <div className={fotos ? 'min-w-0' : undefined}>
                     <div className="flex items-center gap-1 font-semibold min-w-0">
                       <button
                         className="text-left truncate sm:overflow-visible sm:whitespace-normal hover:text-blue-700 hover:underline cursor-pointer"
@@ -1237,6 +1245,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
                     {player.name_visual && player.name_visual !== player.name && (
                       <div className="text-xs text-gray-500 mt-1 truncate sm:overflow-visible sm:whitespace-normal">({player.name})</div>
                     )}
+                  </div>
                   </div>
                 </td>
                 <InlineEditCell
@@ -1367,6 +1376,7 @@ export const PlayersTab = ({ players = [], injuries = [], jornadas = [], setShow
               categoriaBadge={renderCategoriaBadge(player)}
               total={renderTotal(player)}
               actions={renderPlayerActions(player, { large: true })}
+              avatar={<PlayerAvatar player={player} enabled={fotos} size="md" editable={canEditPlayers} onUploaded={refrescarJugadores} />}
             />
           ))}
         </div>

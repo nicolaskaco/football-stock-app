@@ -12,6 +12,7 @@ import {
 import { Row, SectionHeader } from './CompareRow';
 import { GolesPorTramoChart } from '../charts/GolesPorTramoChart';
 import { useChartPalette, contrastText } from '../../hooks/useChartPalette';
+import { PlayerAvatar } from '../ui/PlayerAvatar';
 
 /** Clases estáticas para que Tailwind las incluya en el build. */
 const GRID_COLS = { 2: 'grid-cols-2', 3: 'grid-cols-3' };
@@ -33,6 +34,7 @@ export const PlayerCompareView = ({
   categoria = null,
   year = null,
   minMuestra = 5,
+  fotos = false,
 }) => {
   const names = players.map((p) => p.name_visual || p.name);
   const palette = useChartPalette();
@@ -292,6 +294,11 @@ export const PlayerCompareView = ({
         <div className={`sticky top-0 z-10 bg-white grid ${gridCols} gap-2 py-3 border-b-2 border-gray-200`}>
           {data.map((d, i) => (
             <div key={d.player.id} className="flex flex-col items-center gap-1 min-w-0">
+              {fotos ? (
+                <span className="inline-flex rounded-full" style={{ boxShadow: `0 0 0 2px ${palette[i % palette.length]}` }}>
+                  <PlayerAvatar player={d.player} size="sm" />
+                </span>
+              ) : (
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center font-bold"
                 style={{
@@ -301,6 +308,7 @@ export const PlayerCompareView = ({
               >
                 {names[i].charAt(0)}
               </div>
+              )}
               <span className="w-full text-xs font-bold text-gray-900 text-center truncate">{names[i]}</span>
               <span className="text-[11px] text-gray-500 truncate">
                 {d.categoriasJugadas.join('/') || d.player.categoria || '—'}
@@ -338,6 +346,11 @@ export const PlayerCompareView = ({
               {data.map((d, i) => (
                 <th key={d.player.id} className="py-3 px-3 text-center">
                   <div className="flex flex-col items-center gap-1">
+                    {fotos ? (
+                      <span className="inline-flex rounded-full" style={{ boxShadow: `0 0 0 2px ${palette[i % palette.length]}` }}>
+                        <PlayerAvatar player={d.player} size="md" />
+                      </span>
+                    ) : (
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg"
                       style={{
@@ -347,6 +360,7 @@ export const PlayerCompareView = ({
                     >
                       {names[i].charAt(0)}
                     </div>
+                    )}
                     <span className="text-sm font-bold text-gray-900">{names[i]}</span>
                     <span className="text-xs text-gray-500">
                       {d.categoriasJugadas.join('/') || d.player.categoria || '—'}

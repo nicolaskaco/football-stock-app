@@ -11,6 +11,7 @@ import { DepartamentoWidget } from './DepartamentoWidget';
 import { PendingChangeRequestsWidget } from './PendingChangeRequestsWidget';
 import { FichaMedicaWidget } from './FichaMedicaWidget';
 import { InjuredPlayersWidget } from './InjuredPlayersWidget';
+import { fotosJugadoresActivas } from '../utils/playerPhotos';
 import { SuspensionWidget } from './SuspensionWidget';
 import { CalendarioView } from './CalendarioView';
 import { PartidoDetailView } from './PartidoDetailView';
@@ -159,10 +160,10 @@ export const OverviewTab = ({
       {/* Analytics Widgets Grid */}
       {canAccessWidgets && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 items-start">
-          <BirthdayWidget currentUser={currentUser} />
+          <BirthdayWidget currentUser={currentUser} fotos={fotosJugadoresActivas(appSettings)} />
           {['admin','ejecutivo','presidente','presidente_categoria','delegado','comision'].includes(currentUser?.role) && <FichaMedicaWidget currentUser={currentUser} onDataChange={onDataChange} />}
           {canViewTarjetas && <SuspensionWidget jornadas={jornadas} players={visiblePlayers} currentUser={currentUser} setShowModal={setShowModal} />}
-          {currentUser?.role === 'admin' && <InjuredPlayersWidget players={visiblePlayers} injuries={injuries} setShowModal={setShowModal} onDataChange={onDataChange} currentUser={currentUser} />}
+          {currentUser?.role === 'admin' && <InjuredPlayersWidget players={visiblePlayers} injuries={injuries} setShowModal={setShowModal} onDataChange={onDataChange} currentUser={currentUser} fotos={fotosJugadoresActivas(appSettings)} />}
           <SpendingTrendsWidget players={visiblePlayers} />
           <CategoryDistributionWidget players={visiblePlayers} />
           <AgeDistributionWidget players={visiblePlayers} />

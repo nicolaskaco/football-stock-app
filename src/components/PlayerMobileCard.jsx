@@ -3,7 +3,7 @@ import { Phone } from 'lucide-react';
 
 // Compact player card shown instead of the players table on small screens.
 // Presentational only: PlayersTab passes the shared icons, badges and action buttons.
-export function PlayerMobileCard({ player, selected, onToggleSelect, onView, statusIcons, categoriaBadge, total, actions }) {
+export function PlayerMobileCard({ player, selected, onToggleSelect, onView, statusIcons, categoriaBadge, total, actions, avatar = null }) {
   const showFullName = player.name_visual && player.name_visual !== player.name;
 
   return (
@@ -16,6 +16,7 @@ export function PlayerMobileCard({ player, selected, onToggleSelect, onView, sta
           className="mt-1 w-4 h-4 shrink-0 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
           aria-label={`Seleccionar ${player.name}`}
         />
+        {avatar}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1">
             <button
