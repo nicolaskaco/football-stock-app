@@ -266,7 +266,7 @@ const encabezadoJornada = (j: Fila) =>
   [jornadaLabel(j), j.torneos?.name].filter((x) => x && x !== "-").map(e).join(" · ");
 
 /** Próxima jornada con partidos sin jugar de esas categorías (null = todas), con sus `pendientes`. */
-async function proximaJornada(ctx: Contexto, categorias: string[] | null): Promise<Fila | null> {
+export async function proximaJornada(ctx: Contexto, categorias: string[] | null): Promise<Fila | null> {
   const jornadas = (await q(ctx.db.from("jornadas").select(SELECT_JORNADA)
     .gte("fecha", sumarDias(ctx.hoy, -30)).order("fecha", { ascending: true })))
     .map(conFechas)

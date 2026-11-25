@@ -223,12 +223,19 @@ export const ConfiguracionTab = ({ appSettings = {}, onDataChange }) => {
         ))}
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow px-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-100 dark:divide-gray-700 px-6">
         <SettingToggle
           label="Resumen semanal por Telegram"
           description="Los lunes a las 8:00 se manda al grupo de Telegram del club un resumen con fichas médicas vencidas o por vencer, lesionados con el retorno vencido, solicitudes pendientes hace 7 días o más y stock bajo."
           enabled={s('telegram_digest_enabled')}
           onToggle={() => handleToggle('telegram_digest_enabled', s('telegram_digest_enabled'))}
+          loading={loading}
+        />
+        <SettingToggle
+          label="Parte semanal por Telegram"
+          description="Los miércoles a las 12:59 se manda al grupo de Telegram del club el parte de disponibilidad de la próxima jornada. Si no hay jornada cargada, avisa que no hay siguiente partido."
+          enabled={s('parte_semanal_enabled')}
+          onToggle={() => handleToggle('parte_semanal_enabled', s('parte_semanal_enabled'))}
           loading={loading}
         />
       </div>
