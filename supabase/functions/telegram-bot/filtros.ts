@@ -5,7 +5,7 @@
 
 import {
   CATEGORIAS, CATEGORIAS_FICHA, ROLES_FICHA, type Permisos, categoriasVisibles, ddmmyyyy, edad, normalizar, pesos, miles,
-  sumarDias, textoViatico, complementoEfectivo,
+  sumarDias, textoViatico, complementoEfectivo, nombreCoincide,
 } from "./logica.ts";
 import { DEPARTAMENTOS, PLAYER_STATUS_LABELS, POSICIONES_JUGADOR } from "../_shared/app/constants.js";
 
@@ -24,6 +24,7 @@ export const CAMPOS_ORDEN = [...CAMPOS_STATS, ...CAMPOS_VIATICO, "vianda", "edad
 type CampoOrden = typeof CAMPOS_ORDEN[number];
 
 export type Filtro = {
+  nombre: string | null;
   categorias: string[];
   categorias_juego: string[];
   posiciones: string[];
@@ -71,6 +72,7 @@ const bool = { type: "string", enum: ["si", "no", "cualquiera"] };
 const entero = { type: "integer" };
 
 const PROPIEDADES_FILTRO: Record<string, unknown> = {
+  nombre: { type: "string" },
   categorias: lista({ type: "string", enum: CATEGORIAS }),
   categorias_juego: lista({ type: "string", enum: CATEGORIAS }),
   posiciones: lista({ type: "string", enum: POSICIONES_JUGADOR }),
@@ -144,7 +146,7 @@ export const usaViatico = (f: Filtro) =>
 
 /** true si el filtro no pide nada (ni siquiera una categoría). */
 export function filtroVacio(f: Filtro) {
-  return !f.categorias.length && !f.categorias_juego.length && !f.posiciones.length && !f.anios_nacimiento.length &&
+  return !f.nombre && !f.categorias.length && !f.categorias_juego.length && !f.posiciones.length && !f.anios_nacimiento.length &&
     !f.nacimiento_desde && !f.nacimiento_hasta && f.mes_nacimiento_desde == null && f.mes_nacimiento_hasta == null &&
     !usaRango(f.edad) && f.cumple_mes == null && !f.estados.length && !f.departamentos.length && f.casita == null &&
     f.vianda_min == null && f.ficha == null && !usaStats(f) && !usaViatico(f);
@@ -162,6 +164,7 @@ export function validarFiltro(crudo: unknown, perm: Permisos, { enGrupo }: { enG
   const ordenCrudo = (c.orden && typeof c.orden === "object" ? c.orden : {}) as Record<string, unknown>;
   const mes = (v: unknown) => enteroValido(v, 1, 12);
   const filtro: Filtro = {
+    nombre: typeof c.nombre === "string" && c.nombre.trim() ? c.nombre.trim().slice(0, 60) : null,
     categorias: enLista(c.categorias, CATEGORIAS),
     categorias_juego: enLista(c.categorias_juego, CATEGORIAS),
     posiciones: enLista(c.posiciones, POSICIONES_JUGADOR),
@@ -209,7 +212,7 @@ export function validarFiltro(crudo: unknown, perm: Permisos, { enGrupo }: { enG
     if (!otroRango) filtro[campo] = { min: 1, max: null };
   }
 
-  if (filtroVacio(filtro)) return { ok: false, error: "No encontré qué filtrar en la pregunta." };
+  if (filtroVacio(filtro)) return { ok: false, error: "No encontré qué filtrar en la pregunta. Probá con categoría, posición, nombre, año de nacimiento, goles o tarjetas." };
 
   const visibles = categoriasVisibles(perm);
   const ajenas = [...filtro.categorias, ...filtro.categorias_juego].filter((cat) => visibles && !visibles.includes(cat));
@@ -274,6 +277,7 @@ export function filtrarJugadores(
 
   for (const p of jugadores) {
     if (!estados.includes(p.status || "activo")) continue;
+    if (filtro.nombre && !nombreCoincide(filtro.nombre, p.name, p.name_visual)) continue;
     if (filtro.categorias.length && !filtro.categorias.includes(p.categoria || "")) continue;
     if (filtro.categorias_juego.length && !filtro.categorias_juego.includes(p.categoria_juego || "")) continue;
     if (filtro.posiciones.length && !filtro.posiciones.includes(p.posicion || "")) continue;
@@ -374,6 +378,7 @@ export function describirCriterio(f: Filtro, { anio, visibles }: { anio: number;
   const partes: string[] = [];
   if (f.categorias.length) partes.push(f.categorias.join(", "));
   else partes.push(visibles ? `tus categorías (${visibles.join(", ")})` : "todas las categorías");
+  if (f.nombre) partes.push(`llamados "${f.nombre}"`);
   if (f.categorias_juego.length) partes.push(`juegan en ${f.categorias_juego.join(", ")}`);
   if (f.posiciones.length) partes.push(f.posiciones.join(", ").toLowerCase());
   if (f.anios_nacimiento.length) partes.push(`nacidos en ${f.anios_nacimiento.join(", ")}`);

@@ -87,6 +87,7 @@ Move items to **Completado** when shipped (change `- [ ]` to `- [x]` and add PR 
   - [x] "Con más goles / amarillas / rojas" lista solo a los que tienen al menos 1 (partidos y minutos siguen con los de 0). *(PR #388 · 2026-11-25)*
 - [x] **I20. Bot: pedir el dato que falta** — Si `/pregunta`, `/jugador`, `/ficha`, `/nacidos`, `/categoria` o `/contra` llegan sin dato (como pasa al tocarlos en el menú), el bot pregunta y abre la respuesta (ForceReply); lo que se responde se toma como el dato. *(PR #389 · 2026-11-25)*
 - [x] **I21. Bot: /pregunta primero en el menú** — El menú de Telegram y `/ayuda` muestran `/pregunta` y `/ayuda` arriba (`ORDEN_MENU`). *(PR #390 · 2026-11-25)*
+- [x] **I22. Bot: /pregunta por nombre** — `/pregunta` filtra por nombre o apellido ("jugadores llamados Facundo de 5ta") con el mismo criterio que `/jugador`, y el mensaje de filtro vacío sugiere qué preguntar. *(PR #391 · 2026-11-25)*
 - [ ] **I9. "Cargar COMETs" con varias jornadas el mismo día** — Hoy toma una sola "última jornada"; con varias finales el mismo día debería tomar todas las de esa fecha y repartir los informes por rival y categoría.
 - [ ] **I6. Detalle del chequeo SND en Actividad** — Ver desde Actividad, con nombres, qué fichas se actualizaron y quiénes no se encontraron en SND en cada corrida automática.
 - [ ] **I5. Limpiar errores de lint heredados** y volver bloqueante el lint en CI.

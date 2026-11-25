@@ -584,6 +584,7 @@ const EJEMPLOS_PREGUNTA = [
   "/pregunta jugadores con más de 7 amarillas",
   "/pregunta nacidos entre enero y junio de 2009",
   "/pregunta arqueros de 5ta con más de 500 minutos",
+  "/pregunta jugadores llamados Facundo de 5ta",
 ];
 const LIMITE_DIARIO_DEFAULT = 30;
 
