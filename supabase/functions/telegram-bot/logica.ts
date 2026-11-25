@@ -359,7 +359,8 @@ export function textoPideDato(comando: string): string {
  * Si la respuesta ya es un comando, se respeta ese comando.
  */
 export function comandoDesdeRespuesta(textoDelBot: string | null | undefined, textoUsuario: string | null | undefined): string | null {
-  const m = String(textoDelBot ?? "").match(new RegExp(`^${MARCA_PIDE_DATO}\\s*/([a-z_]+):`));
+  // "✍" con o sin el selector de variación (U+FE0F), por si Telegram lo normaliza
+  const m = String(textoDelBot ?? "").match(/^\u270D\uFE0F?\s*\/([a-z_]+):/);
   const dato = String(textoUsuario ?? "").trim();
   if (!m || !PIDE_DATO[m[1]] || !dato || dato.startsWith("/")) return null;
   return `/${m[1]} ${dato}`;

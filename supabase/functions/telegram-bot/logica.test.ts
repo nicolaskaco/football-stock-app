@@ -269,6 +269,9 @@ describe('pedir el dato que falta', () => {
     expect(comandoDesdeRespuesta('🔎 5ta · al menos 8 amarillas', 'gracias')).toBeNull();
     expect(comandoDesdeRespuesta(null, 'Pérez')).toBeNull();
   });
+  it('reconoce el lápiz con o sin selector de variación', () => {
+    expect(comandoDesdeRespuesta('\u270D /jugador: ¿Qué jugador?', 'Pérez')).toBe('/jugador Pérez');
+  });
   it('ignora comandos que no piden dato', () => {
     expect(comandoDesdeRespuesta('✍️ /lesionados: ¿Qué?', '5ta')).toBeNull();
   });
