@@ -329,3 +329,38 @@ export function planFoto(html: string): { caption: string; textoAparte: string |
   if (largoVisible(html) <= LIMITE_CAPTION) return { caption: html, textoAparte: null };
   return { caption: html.split("\n")[0], textoAparte: html };
 }
+
+// ── Pedir el dato que falta (ForceReply) ────────────────────────────
+// Tocar un comando en el menú de Telegram lo manda sin dato. Para los comandos que lo necesitan,
+// el bot pregunta y Telegram abre la respuesta a ese mensaje; la respuesta se toma como el dato.
+// No se guarda estado: el comando sale del propio mensaje del bot al que se responde.
+
+/** Comandos que necesitan un dato: qué se pregunta y un ejemplo (también va como placeholder). */
+export const PIDE_DATO: Record<string, { pregunta: string; ejemplo: string }> = {
+  nacidos: { pregunta: "¿De qué año?", ejemplo: "2008 o 2008 5ta" },
+  categoria: { pregunta: "¿Qué categoría?", ejemplo: "5ta" },
+  jugador: { pregunta: "¿Qué jugador?", ejemplo: "Pérez" },
+  ficha: { pregunta: "¿Qué jugador?", ejemplo: "Pérez" },
+  contra: { pregunta: "¿Contra qué rival?", ejemplo: "Nacional" },
+  pregunta: { pregunta: "¿Qué querés saber?", ejemplo: "jugadores con más de 7 amarillas" },
+};
+
+const MARCA_PIDE_DATO = "✍️";
+
+/** Mensaje con el que el bot pide el dato. Empieza con "✍️ /comando:" (así se reconoce la respuesta). */
+export function textoPideDato(comando: string): string {
+  const { pregunta, ejemplo } = PIDE_DATO[comando];
+  return `${MARCA_PIDE_DATO} <b>/${comando}</b>: ${pregunta}\n<i>Respondé a este mensaje, por ejemplo: ${ejemplo}</i>`;
+}
+
+/**
+ * Si el usuario respondió a un pedido de dato del bot, el texto del comando completo
+ * ("/pregunta jugadores con…"); si no, null. `textoDelBot` llega sin HTML (como lo da Telegram).
+ * Si la respuesta ya es un comando, se respeta ese comando.
+ */
+export function comandoDesdeRespuesta(textoDelBot: string | null | undefined, textoUsuario: string | null | undefined): string | null {
+  const m = String(textoDelBot ?? "").match(new RegExp(`^${MARCA_PIDE_DATO}\\s*/([a-z_]+):`));
+  const dato = String(textoUsuario ?? "").trim();
+  if (!m || !PIDE_DATO[m[1]] || !dato || dato.startsWith("/")) return null;
+  return `/${m[1]} ${dato}`;
+}
