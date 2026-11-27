@@ -78,7 +78,8 @@ function normaliseActivityLog(rows) {
           d.no_encontrados ? `${d.no_encontrados} no encontrado${d.no_encontrados !== 1 ? 's' : ''} en SND` : null,
           d.sin_ficha_futbol ? `${d.sin_ficha_futbol} sin ficha de fútbol` : null,
           d.errores ? `${d.errores} con error` : null,
-          d.terminado === false ? 'cortado antes de terminar' : null,
+          // A run takes ~2 min; after 5 an unfinished row was cut short
+          d.terminado === false ? (Date.now() - new Date(r.created_at).getTime() > 5 * 60_000 ? 'cortado antes de terminar' : 'en curso') : null,
         ].filter(Boolean).join(' · ');
         break;
       }

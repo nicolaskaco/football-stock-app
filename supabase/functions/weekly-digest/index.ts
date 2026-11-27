@@ -122,7 +122,7 @@ serve(async (req) => {
     const suma = (k: string) => consultas.reduce((s, d) => s + (Number(d[k]) || 0), 0);
     const partes = [`${suma("procesados")} consultas, ${suma("actualizadas")} fichas actualizadas, ${suma("no_encontrados")} no encontrados en SND, ${suma("errores")} con error`];
     if (sinPendientes) partes.push(`${sinPendientes} noche${sinPendientes !== 1 ? "s" : ""} sin pendientes`);
-    if (fallidas) partes.push(`⚠️ ${fallidas} corrida${fallidas !== 1 ? "s" : ""} fallaron`);
+    if (fallidas) partes.push(`⚠️ ${fallidas} corrida${fallidas !== 1 ? "s fallidas" : " fallida"}`);
     secciones.push(`🔄 <b>Chequeo SND automático</b> (última semana): ${partes.join(" · ")}`);
   } else {
     secciones.push("🔄 <b>Chequeo SND automático</b>: ⚠️ no corrió en la última semana");
