@@ -2,12 +2,17 @@
 //
 // La llama pg_cron (ver supabase/migrations/20261124_cron_fichas_medicas.sql) varias veces
 // por noche. Cada corrida toma una tanda de jugadores activos con la ficha vencida, sin
-// ficha o por vencer en VENTANA_DIAS días, que no se hayan chequeado en las últimas
-// HORAS_ENTRE_CHEQUEOS horas, y consulta SND de a uno. Así el plantel entero se recorre en
+// ficha o por vencer en VENTANA_DIAS días, que no se hayan chequeado en esta madrugada
+// (desde las INICIO_NOCHE_UTC), y consulta SND de a uno. Así cada madrugada se chequea a
+// todos, aunque ese día haya habido una corrida manual. Con body {"forzar": true} (corrida
+// manual) se chequea también a los que ya se chequearon esta madrugada. Así el plantel entero se recorre en
 // varias corridas cortas, sin pasar el tiempo máximo de una Edge Function.
 //
 // Mismo criterio que database.saveFichaMedicaHasta: solo escribe si la fecha cambió y deja el
-// cambio en player_history. Cada corrida que procesó a alguien deja un resumen en activity_log.
+// cambio en player_history. Cada corrida que procesó a alguien deja un resumen en activity_log,
+// que se va actualizando jugador por jugador (terminado: false hasta el final), así queda rastro
+// aunque la plataforma corte la función. La primera corrida de la noche deja una fila aunque no
+// haya pendientes (sin_pendientes: true), y una consulta que falla deja una fila con error.
 //
 // Se despliega sin verificación de JWT (--no-verify-jwt) y se protege con el header
 // x-cron-secret, que tiene que coincidir con el secreto CRON_SECRET de la función.
@@ -17,12 +22,15 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { consultarSND, fichaFutbol, hastaToISO, idTipoDocumento, normalizarDocumento, SND_TIMEOUT_MS } from "../_shared/snd.ts";
 
 const VENTANA_DIAS = 30;
-const HORAS_ENTRE_CHEQUEOS = 20;
+// Una hora antes de la primera corrida del cron (06:00 UTC)
+const INICIO_NOCHE_UTC = 5;
 const TANDA = 40;
 // Límite de 150 s de las Edge Functions, menos una consulta a SND entera (timeout) y margen para el log
 const PRESUPUESTO_MS = 150_000 - SND_TIMEOUT_MS - 15_000;
 const PAUSA_MS = 500; // entre consultas, para no saturar a SND
 const AUTOR = "Sistema (SND automático)";
+// Primera corrida del cron (*/20 6-8 * * * UTC): la única que loguea una noche sin pendientes
+const esPrimeraCorrida = (d: Date) => d.getUTCHours() === 6 && d.getUTCMinutes() < 20;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -32,6 +40,13 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** Fecha de hoy en Uruguay, 'YYYY-MM-DD'. */
 function hoyUY(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Montevideo" }).format(new Date());
+}
+
+/** Comienzo de la madrugada en curso: hoy a las INICIO_NOCHE_UTC, o ayer si todavía no llegó. */
+function inicioDeLaNoche(ahora: Date): string {
+  const d = new Date(Date.UTC(ahora.getUTCFullYear(), ahora.getUTCMonth(), ahora.getUTCDate(), INICIO_NOCHE_UTC));
+  if (d > ahora) d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString();
 }
 
 function sumarDias(iso: string, dias: number): string {
@@ -57,11 +72,13 @@ serve(async (req) => {
   }
 
   const inicio = Date.now();
+  const body = await req.json().catch(() => ({}));
+  const forzar = body?.forzar === true;
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
   const hoy = hoyUY();
   const limite = sumarDias(hoy, VENTANA_DIAS);
-  const chequeadoAntesDe = new Date(Date.now() - HORAS_ENTRE_CHEQUEOS * 3600_000).toISOString();
+  const chequeadoAntesDe = inicioDeLaNoche(new Date(inicio));
 
   const { data, error } = await supabase
     .from("players")
@@ -74,12 +91,21 @@ serve(async (req) => {
     ].join(","))
     .order("ficha_medica_chequeada_at", { ascending: true, nullsFirst: true })
     .limit(1000);
-  if (error) return json({ error: error.message }, 500);
+  if (error) {
+    const { error: logErr } = await supabase.from("activity_log").insert([{
+      action_type: "ficha_medica_auto",
+      performed_by: AUTOR,
+      target_type: "player",
+      details: { procesados: 0, error: error.message, terminado: true },
+    }]);
+    if (logErr) console.error("activity_log:", logErr.message);
+    return json({ error: error.message }, 500);
+  }
 
   const pendientes = (data as Player[])
     .filter((p) => !p.status || p.status === "activo")
     .filter((p) => p.gov_id && String(p.gov_id).trim())
-    .filter((p) => !p.ficha_medica_chequeada_at || p.ficha_medica_chequeada_at < chequeadoAntesDe)
+    .filter((p) => forzar || !p.ficha_medica_chequeada_at || new Date(p.ficha_medica_chequeada_at).toISOString() < chequeadoAntesDe)
     // Primero los que nunca se chequearon, después los de chequeo más viejo
     .sort((a, b) => (a.ficha_medica_chequeada_at ?? "").localeCompare(b.ficha_medica_chequeada_at ?? ""));
 
@@ -92,6 +118,43 @@ serve(async (req) => {
     errores: [] as string[],
   };
   let procesados = 0;
+  let logId: string | number | null = null;
+
+  const resultado = () => ({
+    procesados,
+    pendientes_restantes: pendientes.length - procesados,
+    actualizadas: resumen.actualizadas.length,
+    sin_cambios: resumen.sin_cambios,
+    sin_ficha_futbol: resumen.sin_ficha_futbol.length,
+    no_encontrados: resumen.no_encontrados.length,
+    errores: resumen.errores.length,
+  });
+
+  // Crea la fila de la corrida o la actualiza con el avance. Un fallo acá no corta el chequeo.
+  const guardarLog = async (extra: Record<string, unknown>) => {
+    const details = { ...resultado(), detalle: resumen, ...(forzar ? { forzado: true } : {}), ...extra };
+    if (logId) {
+      const { error: logErr } = await supabase.from("activity_log").update({ details }).eq("id", logId);
+      if (logErr) console.error("activity_log:", logErr.message);
+      return;
+    }
+    const { data: fila, error: logErr } = await supabase.from("activity_log").insert([{
+      action_type: "ficha_medica_auto",
+      performed_by: AUTOR,
+      target_type: "player",
+      details,
+    }]).select("id").single();
+    if (logErr) console.error("activity_log:", logErr.message);
+    else logId = fila.id;
+  };
+
+  if (tanda.length === 0) {
+    if (esPrimeraCorrida(new Date(inicio))) await guardarLog({ sin_pendientes: true, terminado: true });
+    return json(resultado());
+  }
+
+  // La fila se crea antes del primer jugador: si cortan la función, igual queda rastro
+  await guardarLog({ terminado: false });
 
   for (const p of tanda) {
     if (Date.now() - inicio > PRESUPUESTO_MS) break;
@@ -132,28 +195,11 @@ serve(async (req) => {
       .eq("id", p.id);
     if (marcaErr) console.error(`ficha_medica_chequeada_at ${p.id}:`, marcaErr.message);
     procesados++;
+    await guardarLog({ terminado: false });
     await sleep(PAUSA_MS);
   }
 
-  const resultado = {
-    procesados,
-    pendientes_restantes: pendientes.length - procesados,
-    actualizadas: resumen.actualizadas.length,
-    sin_cambios: resumen.sin_cambios,
-    sin_ficha_futbol: resumen.sin_ficha_futbol.length,
-    no_encontrados: resumen.no_encontrados.length,
-    errores: resumen.errores.length,
-  };
+  await guardarLog({ terminado: true });
 
-  if (procesados > 0) {
-    const { error: logErr } = await supabase.from("activity_log").insert([{
-      action_type: "ficha_medica_auto",
-      performed_by: AUTOR,
-      target_type: "player",
-      details: { ...resultado, detalle: resumen },
-    }]);
-    if (logErr) console.error("activity_log:", logErr.message);
-  }
-
-  return json(resultado);
+  return json(resultado());
 });

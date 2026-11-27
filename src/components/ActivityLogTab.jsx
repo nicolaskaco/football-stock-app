@@ -69,6 +69,8 @@ function normaliseActivityLog(rows) {
       case 'ficha_medica_auto': {
         label = 'Chequeo automático de fichas SND';
         const d = r.details || {};
+        if (d.error) { detail = `Error: ${d.error}`; break; }
+        if (d.sin_pendientes) { detail = 'Sin fichas pendientes'; break; }
         detail = [
           `${d.procesados ?? 0} consultado${d.procesados !== 1 ? 's' : ''}`,
           d.actualizadas ? `${d.actualizadas} actualizada${d.actualizadas !== 1 ? 's' : ''}` : null,
@@ -76,6 +78,7 @@ function normaliseActivityLog(rows) {
           d.no_encontrados ? `${d.no_encontrados} no encontrado${d.no_encontrados !== 1 ? 's' : ''} en SND` : null,
           d.sin_ficha_futbol ? `${d.sin_ficha_futbol} sin ficha de fútbol` : null,
           d.errores ? `${d.errores} con error` : null,
+          d.terminado === false ? 'cortado antes de terminar' : null,
         ].filter(Boolean).join(' · ');
         break;
       }
