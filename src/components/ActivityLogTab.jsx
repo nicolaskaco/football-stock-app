@@ -204,8 +204,8 @@ const TYPE_LABELS = {
   approved:          'Solicitud aprobada',
   rejected:          'Solicitud rechazada',
   permission_change: 'Permiso cambiado',
-  bulk_approve:      'Operación masiva',
-  bulk_reject:       'Operación masiva',
+  bulk_approve:      'Op. masiva: aprobación',
+  bulk_reject:       'Op. masiva: rechazo',
   import_cuentas_viatico: 'Importación de cuentas',
   import_planilla_comet: 'Planilla COMET',
   ajuste_suspension: 'Ajuste de suspensión',
@@ -215,13 +215,40 @@ const TYPE_LABELS = {
   telegram_parte_auto: 'Parte automático',
   telegram_fichas_cambios: 'Fichas a Telegram',
   telegram_pregunta: 'Pregunta con IA',
-  player_photo_uploaded: 'Foto de jugador',
-  player_photo_removed: 'Foto de jugador',
+  player_photo_uploaded: 'Foto subida',
+  player_photo_removed: 'Foto quitada',
   telegram_consulta: 'Consulta al bot',
   telegram_vinculo: 'Vínculo con el bot',
 };
 
 const ALL_TYPES = Object.keys(TYPE_LABELS);
+
+// Filter chips group related types. A new type needs an entry here or it has
+// no chip (it still shows while every type is selected).
+const FILTER_GROUPS = [
+  { key: 'login',       label: 'Inicio de sesión',    types: ['login'] },
+  { key: 'history',     label: 'Campos de jugador',   types: ['field_change'] },
+  { key: 'photos',      label: 'Fotos de jugador',    types: ['player_photo_uploaded', 'player_photo_removed'] },
+  { key: 'requests',    label: 'Solicitudes',         types: ['approved', 'rejected'] },
+  { key: 'bulk',        label: 'Operaciones masivas', types: ['bulk_approve', 'bulk_reject'] },
+  { key: 'permissions', label: 'Permisos',            types: ['permission_change'] },
+  { key: 'imports',     label: 'Importaciones',       types: ['import_cuentas_viatico', 'import_planilla_comet'] },
+  { key: 'suspension',  label: 'Suspensiones',        types: ['ajuste_suspension'] },
+  { key: 'fichas',      label: 'Fichas SND',          types: ['ficha_medica_auto'] },
+  { key: 'telegram',    label: 'Telegram (envíos)',   types: ['telegram_envio', 'telegram_resumen', 'telegram_parte_auto', 'telegram_fichas_cambios'] },
+  { key: 'bot',         label: 'Bot de Telegram',     types: ['telegram_consulta', 'telegram_pregunta', 'telegram_vinculo'] },
+];
+
+const isGroupActive = (group, types) => group.types.every(t => types.has(t));
+
+// With every type selected, a click keeps only that group; otherwise it
+// toggles the group. Removing the last group goes back to all.
+const toggleGroupTypes = (group, types) => {
+  if (types.size === ALL_TYPES.length) return new Set(group.types);
+  const next = new Set(types);
+  if (isGroupActive(group, types)) { group.types.forEach(t => next.delete(t)); } else { group.types.forEach(t => next.add(t)); }
+  return next.size === 0 ? new Set(ALL_TYPES) : next;
+};
 
 // ── Paging ─────────────────────────────────────────────────────────────────
 
@@ -381,10 +408,8 @@ export const ActivityLogTab = () => {
 
   const filtersActive = filters.types.size !== ALL_TYPES.length || filters.user || filters.from || filters.to;
 
-  const toggleType = (type) => {
-    const types = new Set(filters.types);
-    if (types.has(type)) { types.delete(type); } else { types.add(type); }
-    reload({ ...filters, types });
+  const toggleGroup = (group) => {
+    reload({ ...filters, types: toggleGroupTypes(group, filters.types) });
   };
 
   return (
@@ -405,17 +430,17 @@ export const ActivityLogTab = () => {
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
         {/* Type chips */}
         <div className="flex flex-wrap gap-2">
-          {ALL_TYPES.map(type => (
+          {FILTER_GROUPS.map(group => (
             <button
-              key={type}
-              onClick={() => toggleType(type)}
+              key={group.key}
+              onClick={() => toggleGroup(group)}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                filters.types.has(type)
-                  ? `${BADGE[type]} border-transparent`
+                isGroupActive(group, filters.types)
+                  ? `${BADGE[group.types[0]]} border-transparent`
                   : 'bg-white text-gray-400 border-gray-200 dark:bg-gray-800 dark:text-gray-500 dark:border-gray-600'
               }`}
             >
-              {TYPE_LABELS[type]}
+              {group.label}
             </button>
           ))}
           {filtersActive && (
