@@ -112,13 +112,20 @@ serve(async (req) => {
     : "🩺 <b>Fichas médicas</b>: todas vigentes por más de 30 días ✅");
 
   // ── Chequeo automático SND ──────────────────────────────────────
-  const corridas = sndRes.data || [];
+  // refresh-fichas-medicas deja al menos una fila por madrugada (sin_pendientes si no había
+  // nadie) y una fila con error si falló, así que una semana sin filas es que el cron no corrió.
+  const corridas = (sndRes.data || []).map((c) => (c.details || {}) as Record<string, unknown>);
+  const fallidas = corridas.filter((d) => d.error).length;
+  const consultas = corridas.filter((d) => !d.error && !d.sin_pendientes);
+  const sinPendientes = corridas.filter((d) => d.sin_pendientes).length;
   if (corridas.length) {
-    const suma = (k: string) => corridas.reduce((s, c) => s + (Number((c.details as Record<string, unknown>)?.[k]) || 0), 0);
-    secciones.push(`🔄 <b>Chequeo SND automático</b> (última semana): ${suma("procesados")} consultas, ${suma("actualizadas")} fichas actualizadas, ${suma("no_encontrados")} no encontrados en SND, ${suma("errores")} con error`);
+    const suma = (k: string) => consultas.reduce((s, d) => s + (Number(d[k]) || 0), 0);
+    const partes = [`${suma("procesados")} consultas, ${suma("actualizadas")} fichas actualizadas, ${suma("no_encontrados")} no encontrados en SND, ${suma("errores")} con error`];
+    if (sinPendientes) partes.push(`${sinPendientes} noche${sinPendientes !== 1 ? "s" : ""} sin pendientes`);
+    if (fallidas) partes.push(`⚠️ ${fallidas} corrida${fallidas !== 1 ? "s fallidas" : " fallida"}`);
+    secciones.push(`🔄 <b>Chequeo SND automático</b> (última semana): ${partes.join(" · ")}`);
   } else {
-    // refresh-fichas-medicas solo loguea las corridas que consultaron a alguien
-    secciones.push("🔄 <b>Chequeo SND automático</b>: sin consultas en la última semana (nadie pendiente, o el cron no corrió)");
+    secciones.push("🔄 <b>Chequeo SND automático</b>: ⚠️ no corrió en la última semana");
   }
 
   // ── Lesiones con retorno vencido ────────────────────────────────

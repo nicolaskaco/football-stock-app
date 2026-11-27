@@ -620,11 +620,11 @@ Players have a `ficha_medica_hasta` (date) column that records when their SND sp
     - active and not hidden;
     - have a document;
     - ficha missing, expired or expiring within 30 days;
-    - not checked in the last 20 h (`players.ficha_medica_chequeada_at`, never-checked first).
+    - not checked yet in the current night, which starts at 05:00 UTC (`players.ficha_medica_chequeada_at`, never-checked first). A manual run during the day does not take the next night's check away. A manual call with body `{"forzar": true}` also rechecks players already checked that night (its row has `forzado: true`).
   - **Errors**: each SND request has a 15 s timeout, and each run stops starting new players after 120 s. A player whose request fails is still marked as checked, so a document that SND always rejects can't block the queue; it is retried the next night.
   - **App saves**: `database.updatePlayer` drops `ficha_medica_hasta` and `ficha_medica_chequeada_at` from the payload. Saving a player opened before the nightly run doesn't undo the new date.
   - **What it writes**: it calls SND (shared code in `supabase/functions/_shared/snd.ts`, also used by `check-ficha-medica`) and writes `ficha_medica_hasta` only when the FÚTBOL date changed. Every change goes to `player_history` with `changed_by = 'Sistema (SND automático)'`.
-  - **Activity log**: each run that processed someone logs a `ficha_medica_auto` row in `activity_log` with the counts and the detail. It shows in Actividad as "Chequeo automático de fichas SND".
+  - **Activity log**: each run that processes someone logs a `ficha_medica_auto` row in `activity_log` with the counts and the detail. The row is created before the first player and updated after each one (`terminado: false` until the run ends, then `true`), so a run the platform cuts short still leaves its row, shown as "en curso" for its first 5 minutes and "cortado antes de terminar" after that. The first run of the night (06:00 UTC) also logs a row when nobody is pending (`sin_pendientes: true`, "Sin fichas pendientes"), so every night leaves a trace. If the `players` query fails, the run logs a row with `error` ("Error: …") and returns 500. It shows in Actividad as "Chequeo automático de fichas SND".
   - **Security**: the function is deployed with `--no-verify-jwt` and only accepts requests whose `x-cron-secret` header matches its `CRON_SECRET`. The cron reads the secret and the project URL from Vault (`cron_secret`, `project_url`).
 - **PlayerHistoryModal** displays "Ficha Médica" field changes with dates formatted as DD/MM/YYYY. A "Ficha Médica" filter button appears in the per-field filter row when ficha history entries exist.
 
@@ -833,7 +833,7 @@ Bot that posts to the club's Telegram group. Shared code is in `supabase/functio
 - **Toggle**: it only sends when `app_settings.telegram_digest_enabled = 'true'`. The setting starts off, and admins switch it in Configuración → "Resumen semanal por Telegram".
 - **Content**:
   - ficha médica expired or expiring in 30 days, per category (3era–7ma), with names and dates; players without a ficha are only counted;
-  - weekly totals of the automatic SND check;
+  - weekly totals of the automatic SND check, plus the nights with nothing pending and the runs that failed (a week with no rows shows "no corrió");
   - active injuries whose estimated return already passed, without the injury type;
   - change requests pending for 7 days or more;
   - inventory items with `quantity <= min_stock`.
